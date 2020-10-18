@@ -1,0 +1,88 @@
+; $Id: VBoxUSBMon.inf 135976 2020-02-04 10:35:17Z bird $
+;; @file
+; VBox USB Monitor driver - Installation file
+;
+
+;
+; Copyright (C) 2011-2020 Oracle Corporation
+;
+; This file is part of VirtualBox Open Source Edition (OSE), as
+; available from http://www.virtualbox.org. This file is free software;
+; you can redistribute it and/or modify it under the terms of the GNU
+; General Public License (GPL) as published by the Free Software
+; Foundation, in version 2 as it comes in the "COPYING" file of the
+; VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+; hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+;
+; The contents of this file may alternatively be used under the terms
+; of the Common Development and Distribution License Version 1.0
+; (CDDL) only, as it comes in the "COPYING.CDDL" file of the
+; VirtualBox OSE distribution, in which case the provisions of the
+; CDDL are applicable instead of those of the GPL.
+;
+; You may elect to license modified versions of this file under the
+; terms and conditions of either the GPL or the CDDL or both.
+;
+
+[Version]
+Signature="$Windows NT$"
+Class=System
+ClassGuid={4d36e97d-e325-11ce-bfc1-08002be10318}
+Provider=%ORACLE%
+DriverVer = 06/04/2020,6.1.10.38449 ; r138449
+DriverPackageType=KernelService
+CatalogFile=VBoxUSBMon.cat
+
+[DestinationDirs]
+DefaultDestDir = 12
+
+[DefaultInstall.ntamd64]
+CopyFiles=VBoxUSBMon_CopyFiles
+
+[DefaultInstall.ntamd64.Services]
+AddService=VBoxUSBMon,0x00000002,VBoxUSBMon_Service,VBoxUSBMon_AddEventLog
+
+;; Cannot get this to work (same works fine for VBoxDrv):
+;; [Manufacturer]
+;; %ORACLE%=Oracle,ntamd64
+;;
+;; ; Models section (referenced by [Manufacturer]).
+;; [Oracle.ntamd64]
+;; %VBoxUSBMon.DRVDESC%=VBoxUSBMonInstall,root\VBoxUSBMon
+;;
+;; [VBoxUSBMonInstall.ntamd64]
+;; CopyFiles=VBoxUSBMon_CopyFiles
+;;
+;; [VBoxUSBMonInstall.ntamd64.Services]
+;; AddService=VBoxUSBMon,0x00000002,VBoxUSBMon_Service,VBoxUSBMon_AddEventLog
+
+[SourceDisksFiles]
+VBoxUSBMon.sys=1
+
+[SourceDisksNames]
+1=%VBoxUSBMon.DSKDESC%,
+
+[VBoxUSBMon_CopyFiles]
+VBoxUSBMon.sys
+
+[VBoxUSBMon_Service]
+DisplayName    = %VBoxUSBMon.SVCDESC%
+ServiceType    = 1                  ; SERVICE_KERNEL_DRIVER
+;StartType      = 3                  ; SERVICE_DEMAND_START
+StartType      = 1                  ; autostart to fix Vista problem
+ErrorControl   = 1                  ; SERVICE_ERROR_NORMAL
+ServiceBinary  = %12%\VBoxUSBMon.sys
+
+[VBoxUSBMon_AddEventLog]
+AddReg         = VBoxUSBMon_AddEventLogRegistry
+
+[VBoxUSBMon_AddEventLogRegistry]
+HKR,,EventMessageFile,0x00020000,"%%SystemRoot%%\System32\IoLogMsg.dll"
+HKR,,TypesSupported,0x00010001,7
+
+[Strings]
+ORACLE = "Oracle Corporation"
+VBoxUSBMon.SVCDESC = "VirtualBox USB Monitor Service"
+VBoxUSBMon.DRVDESC = "VirtualBox USB Monitor Driver"
+VBoxUSBMon.DSKDESC = "VirtualBox USB Monitor Driver Installation Disk"
+

@@ -1,0 +1,23 @@
+# default: normalize EOL
+* text=auto
+
+.gitattributes   text
+.gitignore       text
+.editorconfig    text
+
+*.md    text
+*.txt   text
+*LICENSE   text
+
+*.yml   text
+
+*.sln   text
+
+*.csproj   text
+*.cs       text
+*.props    text
+
+# VBoxUsb drivers
+*.cat   binary
+*.inf   text
+*.sys   binary

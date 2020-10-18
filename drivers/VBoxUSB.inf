@@ -1,0 +1,79 @@
+; $Id: VBoxUSB.inf 135976 2020-02-04 10:35:17Z bird $
+;; @file
+; VBox host drivers - USB drivers - Win32 USB device
+;
+
+;
+; Copyright (C) 2011-2020 Oracle Corporation
+;
+; This file is part of VirtualBox Open Source Edition (OSE), as
+; available from http://www.virtualbox.org. This file is free software;
+; you can redistribute it and/or modify it under the terms of the GNU
+; General Public License (GPL) as published by the Free Software
+; Foundation, in version 2 as it comes in the "COPYING" file of the
+; VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+; hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+;
+; The contents of this file may alternatively be used under the terms
+; of the Common Development and Distribution License Version 1.0
+; (CDDL) only, as it comes in the "COPYING.CDDL" file of the
+; VirtualBox OSE distribution, in which case the provisions of the
+; CDDL are applicable instead of those of the GPL.
+;
+; You may elect to license modified versions of this file under the
+; terms and conditions of either the GPL or the CDDL or both.
+;
+
+[Version]
+Signature="$Windows NT$"
+Class=USB
+ClassGUID={36FC9E60-C465-11CF-8056-444553540000}
+provider=%ORACLE%
+DriverVer = 06/04/2020,6.1.10.38449 ; r138449
+CatalogFile=VBoxUSB.cat
+
+[SourceDisksNames]
+1=%Disk_Description%,,,
+
+[SourceDisksFiles]
+VBoxUSB.sys = 1
+
+[Manufacturer]
+%MfgName%=ORACLE, NTamd64
+
+[ORACLE.NTamd64]
+%USB\VID_80EE&PID_CAFE.DeviceDesc%=VBoxUSB.Dev, USB\VID_80EE&PID_CAFE
+
+[DestinationDirs]
+VBoxUSB.Files.Ext = 10,System32\Drivers
+
+[VBoxUSB.Dev.NT]
+CopyFiles=VBoxUSB.Files.Ext
+
+[VBoxUSB.Dev.NT.Services]
+Addservice = VBoxUSB, 0x00000002, VBoxUSB.AddService
+
+[VBoxUSB.AddService]
+DisplayName    = %VBoxUSB.SvcDesc%
+ServiceType    = 1                  ; SERVICE_KERNEL_DRIVER
+StartType      = 3                  ; SERVICE_DEMAND_START
+ErrorControl   = 1                  ; SERVICE_ERROR_NORMAL
+ServiceBinary  = %10%\System32\Drivers\VBoxUSB.sys
+AddReg         = VBoxUSB.AddReg
+LoadOrderGroup = Base
+
+[VBoxUSB.AddReg]
+HKR,,DevLoader,,*ntkern
+HKR,,NTMPDriver,,VBoxUSB.sys
+
+[VBoxUSB.Files.Ext]
+VBoxUSB.sys
+
+;---------------------------------------------------------------;
+
+[Strings]
+ORACLE="Oracle Corporation"
+MfgName="Oracle Corporation"
+Disk_Description="VBoxUSB Installation Disk"
+USB\VID_80EE&PID_CAFE.DeviceDesc="VirtualBox USB"
+VBoxUSB.SvcDesc="VirtualBox USB"
