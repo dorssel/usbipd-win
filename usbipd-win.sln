@@ -12,14 +12,14 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
-		Debug|Any CPU = Debug|Any CPU
-		Release|Any CPU = Release|Any CPU
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{5CE75792-6F4F-4B16-83E6-29052C6E0D8D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{5CE75792-6F4F-4B16-83E6-29052C6E0D8D}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{5CE75792-6F4F-4B16-83E6-29052C6E0D8D}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{5CE75792-6F4F-4B16-83E6-29052C6E0D8D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5CE75792-6F4F-4B16-83E6-29052C6E0D8D}.Debug|x64.ActiveCfg = Debug|x64
+		{5CE75792-6F4F-4B16-83E6-29052C6E0D8D}.Debug|x64.Build.0 = Debug|x64
+		{5CE75792-6F4F-4B16-83E6-29052C6E0D8D}.Release|x64.ActiveCfg = Release|x64
+		{5CE75792-6F4F-4B16-83E6-29052C6E0D8D}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
