@@ -20,14 +20,20 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+
+    <!-- supported (used by: dotnet restore) -->
+    <TargetFrameworks>netcoreapp3.1</TargetFrameworks>
     <Platforms>x64</Platforms>
+    <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
+
+    <!-- defaults (used by: dotnet build) -->
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <Platform>x64</Platform>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
-    
+    <SelfContained>false</SelfContained>
+
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Nullable>enable</Nullable>
-
-    <SelfContained>false</SelfContained>
 
     <Product>usbipd-win</Product>
     <Company>Frans van Dorsselaer</Company>
