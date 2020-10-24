@@ -41,7 +41,7 @@
 
   <ItemGroup>
     <Compile Include="Product.wxs" />
-    <Compile Include="obj\Debug\HeatGeneratedFileList.wxs">
+    <Compile Include="obj\$(Configuration)\HeatGeneratedFileList.wxs">
       <Link>Generated\HeatGeneratedFileList.wxs</Link>
     </Compile>
   </ItemGroup>
@@ -74,7 +74,7 @@
   </ItemGroup>
 
   <Import Project="$(MSBuildToolsPath)\Microsoft.Common.targets" />
-  <Import Project="$(WixTargetsPath)" Condition=" '$(ExcludeRestorePackageImports)' != 'true' " />
+  <Import Project="$(WixTargetsPath)" Condition=" '$(WixTargetsPath)' != '' " />
   <ImportGroup Condition=" '$(BuildingInsideVisualStudio)' == 'true' " >
     <Import Project="$(NuGetPackageRoot)gitversiontask\5.3.7\build\GitVersionTask.props" />
     <Import Project="$(NuGetPackageRoot)gitversiontask\5.3.7\build\GitVersionTask.targets" />
