@@ -10,6 +10,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		.editorconfig = .editorconfig
 	EndProjectSection
 EndProject
+Project("{930C7802-8A8C-48F9-8165-68863BCCD9DD}") = "Installer", "Installer\Installer.wixproj", "{080EF94C-A8EC-4975-A697-BBF8C1A56055}"
+	ProjectSection(ProjectDependencies) = postProject
+		{5CE75792-6F4F-4B16-83E6-29052C6E0D8D} = {5CE75792-6F4F-4B16-83E6-29052C6E0D8D}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -20,6 +25,8 @@ Global
 		{5CE75792-6F4F-4B16-83E6-29052C6E0D8D}.Debug|x64.Build.0 = Debug|x64
 		{5CE75792-6F4F-4B16-83E6-29052C6E0D8D}.Release|x64.ActiveCfg = Release|x64
 		{5CE75792-6F4F-4B16-83E6-29052C6E0D8D}.Release|x64.Build.0 = Release|x64
+		{080EF94C-A8EC-4975-A697-BBF8C1A56055}.Debug|x64.ActiveCfg = Debug|x64
+		{080EF94C-A8EC-4975-A697-BBF8C1A56055}.Release|x64.ActiveCfg = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

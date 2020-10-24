@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    usbipd-win
+    Copyright (C) 2020  Frans van Dorsselaer
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+-->
+<Project ToolsVersion="Current" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Release</Configuration>
+    <Platform>x64</Platform>
+    <ProjectGuid>080ef94c-a8ec-4975-a697-bbf8c1a56055</ProjectGuid>
+    <SchemaVersion>2.0</SchemaVersion>
+    <OutputType>Package</OutputType>
+    <OutputName>usbipd-win</OutputName>
+    <DefineSolutionProperties>false</DefineSolutionProperties>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x64' ">
+    <OutputPath>bin\$(Configuration)\</OutputPath>
+    <IntermediateOutputPath>obj\$(Configuration)\</IntermediateOutputPath>
+    <DefineConstants>Debug;PublishDir=../UsbIpServer/bin/publish</DefineConstants>
+    <Cultures>en-US</Cultures>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x64' ">
+    <OutputPath>bin\$(Configuration)\</OutputPath>
+    <IntermediateOutputPath>obj\$(Configuration)\</IntermediateOutputPath>
+    <DefineConstants>PublishDir=../UsbIpServer/bin/publish</DefineConstants>
+    <Cultures>en-US</Cultures>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Product.wxs" />
+    <Compile Include="obj\Debug\HeatGeneratedFileList.wxs">
+      <Link>Generated\HeatGeneratedFileList.wxs</Link>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <WixExtension Include="WixDifxAppExtension">
+      <HintPath>$(WixExtDir)\WixDifxAppExtension.dll</HintPath>
+      <Name>WixDifxAppExtension</Name>
+    </WixExtension>
+    <WixExtension Include="WixUIExtension">
+      <HintPath>$(WixExtDir)WixUIExtension.dll</HintPath>
+      <Name>WixUIExtension</Name>
+    </WixExtension>
+  </ItemGroup>
+  <ItemGroup>
+    <!--
+      Solution Explorer gives a (benign) warning for PackageReference in wixproj files.
+      -->
+    <PackageReference Include="GitVersionTask" Version="5.3.7" Visible="false">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="WiX" Version="3.*" Visible="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Generated\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="COPYING.rtf" />
+  </ItemGroup>
+
+  <Import Project="$(MSBuildToolsPath)\Microsoft.Common.targets" />
+  <Import Project="$(WixTargetsPath)" Condition=" '$(ExcludeRestorePackageImports)' != 'true' " />
+  <ImportGroup Condition=" '$(BuildingInsideVisualStudio)' == 'true' " >
+    <Import Project="$(NuGetPackageRoot)gitversiontask\5.3.7\build\GitVersionTask.props" />
+    <Import Project="$(NuGetPackageRoot)gitversiontask\5.3.7\build\GitVersionTask.targets" />
+  </ImportGroup>
+  
+  <Target Name="EnsureWixToolsetInstalled" AfterTargets="BeforeBuild" />
+  <Target Name="SetTarget" AfterTargets="GetVersion">
+    <Message Importance="high" Text="Version detected as $(GitVersion_FullSemVer)" />
+    <CreateProperty Value="$(OutputName)_$(GitVersion_FullSemVer)">
+      <Output TaskParameter="Value" PropertyName="TargetName" />
+    </CreateProperty>
+    <CreateProperty Value="$(TargetName)$(TargetExt)">
+      <Output TaskParameter="Value" PropertyName="TargetFileName" />
+    </CreateProperty>
+    <CreateProperty Value="$(TargetDir)$(TargetFileName)">
+      <Output TaskParameter="Value" PropertyName="TargetPath" />
+    </CreateProperty>
+    <CreateProperty Value="$(TargetName)$(TargetPdbExt)">
+      <Output TaskParameter="Value" PropertyName="TargetPdbName" />
+    </CreateProperty>
+  </Target>
+  <PropertyGroup>
+    <PreBuildEvent>del /s /q "$(ProjectDir)..\UsbIpServer\bin\publish" &gt; NUL:
+dotnet publish --nologo --no-build --self-contained --configuration $(Configuration) $(ProjectDir)..</PreBuildEvent>
+  </PropertyGroup>
+  <Target Name="Harvest" AfterTargets="PreBuildEvent">
+    <HeatDirectory ToolPath="$(WixToolPath)" OutputFile="$(IntermediateOutputPath)HeatGeneratedFileList.wxs" Directory="..\UsbIpServer\bin\publish" SuppressRootDirectory="true" SuppressFragments="true" SuppressCOM="true" SuppressRegistry="true" AutogenerateGuids="true" ComponentGroupName="UsbIpServer" DirectoryRefId="INSTALLFOLDER" PreprocessorVariable="var.PublishDir" />
+  </Target>
+</Project>

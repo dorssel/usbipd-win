@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    usbipd-win
+    Copyright (C) 2020  Frans van Dorsselaer
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+-->
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+	<Product Id="*" Name="usbipd-win" Language="1033" Version="$(var.GitVersion_MajorMinorPatch)" Manufacturer="Frans van Dorsselaer" UpgradeCode="ea1d5623-e6a7-4e4a-9259-e3972226646f">
+		<Package InstallerVersion="500" Compressed="yes" InstallScope="perMachine" />
+
+		<MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+		<MediaTemplate EmbedCab="yes" CompressionLevel="high" />
+
+		<Feature Id="ProductFeature" Title="Server" Level="1">
+			<ComponentGroupRef Id="UsbIpServer" />
+		</Feature>
+
+    <WixVariable Id="WixUILicenseRtf" Value="COPYING.rtf" />
+    <UIRef Id="WixUI_ErrorProgressText" />
+    <UIRef Id="WixUI_Minimal" />
+  </Product>
+
+	<Fragment>
+		<Directory Id="TARGETDIR" Name="SourceDir">
+			<Directory Id="ProgramFiles64Folder">
+				<Directory Id="INSTALLFOLDER" Name="usbipd-win" FileSource="../UsbIpServer/bin/publish" />
+			</Directory>
+		</Directory>
+	</Fragment>
+</Wix>
