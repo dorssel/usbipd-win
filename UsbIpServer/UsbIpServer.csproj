@@ -1,5 +1,6 @@
-﻿<!--
-    usbipd-win: a server for hosting USB devices across networks
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!--
+    usbipd-win
     Copyright (C) 2020  Frans van Dorsselaer
 
     This program is free software: you can redistribute it and/or modify

@@ -1,5 +1,5 @@
 ﻿/*
-    usbipd-win: a server for hosting USB devices across networks
+    usbipd-win
     Copyright (C) 2020  Frans van Dorsselaer
 
     This program is free software: you can redistribute it and/or modify
@@ -19,30 +19,68 @@
 using Microsoft.Extensions.CommandLineUtils;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using System;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 
 namespace UsbIpServer
 {
     static class Program
     {
+        static string Product { get => Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyProductAttribute>()!.Product; }
+        static string Copyright { get => Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyCopyrightAttribute>()!.Copyright; }
+
+        static void ShowCopyright()
+        {
+            Console.WriteLine($@"{Product} {GitVersionInformation.FullSemVer}
+{Copyright}
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+");
+        }
+
         static int Main(string[] args)
         {
             var app = new CommandLineApplication()
             {
-                Name = "usbip",
+                Name = Path.GetFileName(Process.GetCurrentProcess().MainModule.FileName),
             };
-            app.VersionOption("-v|--version", "0.1");
+            app.VersionOption("-v|--version", GitVersionInformation.FullSemVer, GitVersionInformation.InformationalVersion);
 
             void DefaultCmdLine(CommandLineApplication cmd)
             {
                 // all commands (as well as the top-level executable) have these
-                cmd.FullName = "UsbIp";
+                cmd.FullName = Product;
                 cmd.ShortVersionGetter = app.ShortVersionGetter;
                 cmd.HelpOption("-h|--help").ShowInHelpText = false;
             }
 
             DefaultCmdLine(app);
             app.OptionHelp.ShowInHelpText = true;
+            app.Command("license", (cmd) => {
+                cmd.Description = "Display license information";
+                DefaultCmdLine(cmd);
+                cmd.OnExecute(() => {
+                    ShowCopyright();
+                    return 0;
+                });
+            });
+#if false
+            // TODO: Linux style binding (optional?)
+            // for now, just allow any client to claim any device (!)
             app.Command("bind", (cmd) => {
                 cmd.Description = "Bind device to VBoxUsb.sys";
                 DefaultCmdLine(cmd);
@@ -53,6 +91,7 @@ namespace UsbIpServer
                 DefaultCmdLine(cmd);
                 cmd.Option("-b|--busid=<busid>", "Unbind VBoxUsb.sys from device on <busid>", CommandOptionType.SingleValue);
             });
+#endif
             app.Command("server", (cmd) => {
                 cmd.Description = "Run the server stand-alone on the console";
                 DefaultCmdLine(cmd);
@@ -61,11 +100,20 @@ namespace UsbIpServer
             });
 
             app.OnExecute(() => {
-                app.ShowHelp();
+                app.ShowRootCommandFullNameAndVersion();
+                app.ShowHint();
                 return 0;
             });
 
-            return app.Execute(args);
+            try
+            {
+                return app.Execute(args);
+            }
+            catch (CommandParsingException ex)
+            {
+                Console.Error.WriteLine(ex.Message);
+                return 1;
+            }
         }
 
         static int ExecuteServer(string[] args)

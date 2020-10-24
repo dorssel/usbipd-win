@@ -1,5 +1,5 @@
 ﻿/*
-    usbipd-win: a server for hosting USB devices across networks
+    usbipd-win
     Copyright (C) 2020  Frans van Dorsselaer
 
     This program is free software: you can redistribute it and/or modify
