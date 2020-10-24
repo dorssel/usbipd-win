@@ -27,11 +27,23 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Nullable>enable</Nullable>
 
+    <SelfContained>false</SelfContained>
+
     <Product>usbipd-win</Product>
     <Company>Frans van Dorsselaer</Company>
     <Copyright>Copyright (C) $([System.DateTime]::UtcNow.ToString("yyyy"))  $(Company)</Copyright>
 
+    <PublishDir>bin\publish</PublishDir>
+    <PublishTrimmed>true</PublishTrimmed>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="Drivers\**" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="..\COPYING.md" Link="COPYING.md" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="GitVersionTask" Version="5.3.7">
