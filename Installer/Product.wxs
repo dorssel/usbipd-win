@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version="1.0" encoding="UTF-8"?>
 <!--
     usbipd-win
     Copyright (C) 2020  Frans van Dorsselaer
@@ -17,26 +17,58 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 -->
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-	<Product Id="*" Name="usbipd-win" Language="1033" Version="$(var.GitVersion_MajorMinorPatch)" Manufacturer="Frans van Dorsselaer" UpgradeCode="ea1d5623-e6a7-4e4a-9259-e3972226646f">
-		<Package InstallerVersion="500" Compressed="yes" InstallScope="perMachine" />
+    <Product
+        Id="*"
+        Name="usbipd-win"
+        Language="1033"
+        Version="$(var.GitVersion_MajorMinorPatch)"
+        Manufacturer="Frans van Dorsselaer"
+        UpgradeCode="ea1d5623-e6a7-4e4a-9259-e3972226646f"
+        >
+        <Package InstallerVersion="500" Compressed="yes" InstallScope="perMachine" />
 
-		<MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
-		<MediaTemplate EmbedCab="yes" CompressionLevel="high" />
+        <?ifdef Debug ?>
+            <MediaTemplate EmbedCab="yes" CompressionLevel="none" />
+        <?else?>
+            <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
+        <?endif?>
 
-		<Feature Id="ProductFeature" Title="Server" Level="1">
-			<ComponentGroupRef Id="UsbIpServer" />
-		</Feature>
+        <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
 
-    <WixVariable Id="WixUILicenseRtf" Value="COPYING.rtf" />
-    <UIRef Id="WixUI_ErrorProgressText" />
-    <UIRef Id="WixUI_Minimal" />
-  </Product>
+        <!--
+        <SetProperty Id="ARPINSTALLLOCATION" Value="[APPLICATIONFOLDER]" After="CostFinalize" />
+        -->
+        
+        <Feature
+            Id="Server"
+            Level="1"
+            AllowAdvertise="no"
+            Display="expand"
+            Absent="disallow"
+            Title="Server"
+            Description="The user mode server application, installed as a service."
+            >
+            <ComponentGroupRef Id="UsbIpServer" />
+            <ComponentRef Id="UsbIpServer.exe" />
+            <Feature
+                Id="Drivers"
+                Level="1"
+                AllowAdvertise="no"
+                Title="Drivers"
+                Description="The VirtualBox USB drivers."
+                >
+                <ComponentGroupRef Id="Drivers" />
+            </Feature>
+        </Feature>
 
-	<Fragment>
-		<Directory Id="TARGETDIR" Name="SourceDir">
-			<Directory Id="ProgramFiles64Folder">
-				<Directory Id="INSTALLFOLDER" Name="usbipd-win" FileSource="../UsbIpServer/bin/publish" />
-			</Directory>
-		</Directory>
-	</Fragment>
+        <UIRef Id="UserInterface"/>
+    </Product>
+
+    <Fragment>
+        <Directory Id="TARGETDIR" Name="SourceDir">
+            <Directory Id="ProgramFiles64Folder">
+                <Directory Id="APPLICATIONFOLDER" Name="usbipd-win" FileSource="$(var.PublishDir)" />
+            </Directory>
+        </Directory>
+    </Fragment>
 </Wix>

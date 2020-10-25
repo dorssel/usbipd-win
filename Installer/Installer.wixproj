@@ -25,31 +25,46 @@
     <OutputType>Package</OutputType>
     <OutputName>usbipd-win</OutputName>
     <DefineSolutionProperties>false</DefineSolutionProperties>
+    <PublishDir>..\UsbIpServer\bin\publish</PublishDir>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x64' ">
     <OutputPath>bin\$(Configuration)\</OutputPath>
     <IntermediateOutputPath>obj\$(Configuration)\</IntermediateOutputPath>
-    <DefineConstants>Debug;PublishDir=../UsbIpServer/bin/publish</DefineConstants>
+    <DefineConstants>Debug;PublishDir=$(PublishDir);DriversDir=$(ProjectDir)..\Drivers</DefineConstants>
     <Cultures>en-US</Cultures>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x64' ">
     <OutputPath>bin\$(Configuration)\</OutputPath>
     <IntermediateOutputPath>obj\$(Configuration)\</IntermediateOutputPath>
-    <DefineConstants>PublishDir=../UsbIpServer/bin/publish</DefineConstants>
+    <DefineConstants>PublishDir=$(PublishDir);DriversDir=$(ProjectDir)..\Drivers</DefineConstants>
     <Cultures>en-US</Cultures>
   </PropertyGroup>
-
   <ItemGroup>
+    <Compile Include="Drivers.wxs" />
+    <Compile Include="Server.wxs" />
     <Compile Include="Product.wxs" />
-    <Compile Include="obj\$(Configuration)\HeatGeneratedFileList.wxs">
-      <Link>Generated\HeatGeneratedFileList.wxs</Link>
-    </Compile>
+    <Compile Include="UserInterface.wxs" />
+    <Content Include="COPYING.rtf" />
+    <Content Include="HarvestTransform.xslt" />
+    <HarvestDirectory Include="$(PublishDir)" Visible="false">
+      <DirectoryRefId>APPLICATIONFOLDER</DirectoryRefId>
+      <SuppressRootDirectory>true</SuppressRootDirectory>
+      <SuppressCOM>true</SuppressCOM>
+      <SuppressRegistry>true</SuppressRegistry>
+      <ComponentGroupName>UsbIpServer</ComponentGroupName>
+      <PreprocessorVariable>var.PublishDir</PreprocessorVariable>
+      <Transforms>HarvestTransform.xslt</Transforms>
+    </HarvestDirectory>
   </ItemGroup>
   <ItemGroup>
     <WixExtension Include="WixDifxAppExtension">
       <HintPath>$(WixExtDir)\WixDifxAppExtension.dll</HintPath>
       <Name>WixDifxAppExtension</Name>
     </WixExtension>
+    <WixLibrary Include="difxapp_x64">
+      <HintPath>$(WixExtDir)\difxapp_x64.wixlib</HintPath>
+      <Name>difxapp_x64</Name>
+    </WixLibrary>
     <WixExtension Include="WixUIExtension">
       <HintPath>$(WixExtDir)WixUIExtension.dll</HintPath>
       <Name>WixUIExtension</Name>
@@ -65,21 +80,12 @@
     </PackageReference>
     <PackageReference Include="WiX" Version="3.*" Visible="false" />
   </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Generated\" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="COPYING.rtf" />
-  </ItemGroup>
-
   <Import Project="$(MSBuildToolsPath)\Microsoft.Common.targets" />
   <Import Project="$(WixTargetsPath)" Condition=" '$(WixTargetsPath)' != '' " />
-  <ImportGroup Condition=" '$(BuildingInsideVisualStudio)' == 'true' " >
+  <ImportGroup Condition=" '$(BuildingInsideVisualStudio)' == 'true' ">
     <Import Project="$(NuGetPackageRoot)gitversiontask\5.3.7\build\GitVersionTask.props" />
     <Import Project="$(NuGetPackageRoot)gitversiontask\5.3.7\build\GitVersionTask.targets" />
   </ImportGroup>
-  
   <Target Name="EnsureWixToolsetInstalled" AfterTargets="BeforeBuild" />
   <Target Name="SetTarget" AfterTargets="GetVersion">
     <Message Importance="high" Text="Version detected as $(GitVersion_FullSemVer)" />
@@ -100,7 +106,4 @@
     <PreBuildEvent>del /s /q "$(ProjectDir)..\UsbIpServer\bin\publish" &gt; NUL:
 dotnet publish --nologo --no-build --self-contained --configuration $(Configuration) $(ProjectDir)..</PreBuildEvent>
   </PropertyGroup>
-  <Target Name="Harvest" AfterTargets="PreBuildEvent">
-    <HeatDirectory ToolPath="$(WixToolPath)" OutputFile="$(IntermediateOutputPath)HeatGeneratedFileList.wxs" Directory="..\UsbIpServer\bin\publish" SuppressRootDirectory="true" SuppressFragments="true" SuppressCOM="true" SuppressRegistry="true" AutogenerateGuids="true" ComponentGroupName="UsbIpServer" DirectoryRefId="INSTALLFOLDER" PreprocessorVariable="var.PublishDir" />
-  </Target>
 </Project>

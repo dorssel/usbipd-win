@@ -44,10 +44,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Include="Drivers\**" CopyToOutputDirectory="PreserveNewest" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Content Include="..\COPYING.md" Link="COPYING.md" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 

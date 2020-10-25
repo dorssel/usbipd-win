@@ -1,0 +1,60 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    usbipd-win
+    Copyright (C) 2020  Frans van Dorsselaer
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+-->
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+    <Fragment>
+        <WixVariable Id="WixUILicenseRtf" Value="COPYING.rtf" />
+        <UI Id="UserInterface">
+           <UIRef Id="UI_Minimal" /> 
+        </UI>
+    </Fragment>
+
+    <Fragment>
+        <UI Id="UI_Minimal">
+            <UIRef Id="WixUI_Minimal" />            
+        </UI>
+    </Fragment>
+
+    <Fragment>
+        <WixVariable Id="WixUISupportPerUser" Value="0" />
+        <Property Id="WixAppFolder" Value="WixPerMachineFolder" />
+        <Property Id="ApplicationFolderName" Value="usbipd-win" />
+
+        <!--
+        WixUI_Advanced defaults to "[ProgramFilesFolder][ApplicationFolderName]", which is wrong for x64 applications.
+        Fix the path with an override. https://github.com/wixtoolset/issues/issues/5908
+        <CustomAction Id="WixSetDefaultPerMachineFolder64" Property="WixPerMachineFolder" Value="[ProgramFiles64Folder][ApplicationFolderName]" Execute="immediate"/>
+
+        <InstallExecuteSequence>
+            <Custom Action="WixSetDefaultPerMachineFolder64" Before="CostInitialize" />
+        </InstallExecuteSequence>
+        <InstallUISequence>
+            <Custom Action="WixSetDefaultPerMachineFolder64" Before="CostInitialize" />
+        </InstallUISequence>
+        -->
+
+        <!--
+        BUG: Cost calculation is wrong for x64 installs (also for WixUI_FeatureTree). There is no known workaround.
+        -->
+        
+        <UI Id="UI_Advanced">
+            <UIRef Id="WixUI_Advanced" />
+            <UIRef Id="WixUI_ErrorProgressText" />
+        </UI>
+	</Fragment>
+</Wix>

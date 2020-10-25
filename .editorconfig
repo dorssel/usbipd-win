@@ -10,6 +10,10 @@ indent_style = space
 indent_size = 4
 insert_final_newline = true
 charset = utf-8-bom
+[*.{wxs,xslt}]
+indent_size = 4
+insert_final_newline = true
+charset = utf-8-bom
 ###############################
 # .NET Coding Conventions     #
 ###############################
