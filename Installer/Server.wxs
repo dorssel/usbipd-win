@@ -16,11 +16,21 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 -->
-<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
+     xmlns:fw="http://schemas.microsoft.com/wix/FirewallExtension">
     <Fragment>
         <DirectoryRef Id="APPLICATIONFOLDER">
             <Component Id="UsbIpServer.exe">
-                <File Source="$(var.PublishDir)\UsbIpSErver.exe" />
+                <File Source="$(var.PublishDir)\UsbIpSErver.exe">
+                    <fw:FirewallException
+                        Id="UsbIpServer.exe"
+                        Name="usbipd-win"
+                        Protocol="tcp"
+                        Port="3240"
+                        Profile="all"
+                        Scope="localSubnet"
+                    />
+                </File>
                 <ServiceInstall
                     Type="ownProcess"
                     ErrorControl="ignore"

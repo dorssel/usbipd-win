@@ -39,8 +39,7 @@
     <Company>Frans van Dorsselaer</Company>
     <Copyright>Copyright (C) $([System.DateTime]::UtcNow.ToString("yyyy"))  $(Company)</Copyright>
 
-    <PublishDir>bin\publish</PublishDir>
-    <PublishTrimmed>true</PublishTrimmed>
+    <PublishProfile>Properties\PublishProfiles\InputForInstaller.pubxml</PublishProfile>
   </PropertyGroup>
 
   <ItemGroup>

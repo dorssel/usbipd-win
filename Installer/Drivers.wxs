@@ -20,36 +20,43 @@
      xmlns:difx="http://schemas.microsoft.com/wix/DifxAppExtension">
     <Fragment>
         <DirectoryRef Id="APPLICATIONFOLDER">
-            <Directory Id="Drivers" Name="Drivers" FileSource="$(var.DriversDir)" />
+            <Directory Id="Drivers" Name="Drivers" />
         </DirectoryRef>
     </Fragment>
     <Fragment>
-        <DirectoryRef Id="Drivers">
-            <Directory Id="VBoxUSB" Name="VBoxUSB" FileSource="$(var.DriversDir)">
-                <Component Id="VBoxUSB.cat">
-                    <File Source="$(var.DriversDir)\VBoxUSB.cat" />
+        <DirectoryRef Id="Drivers" FileSource="$(var.DriversDir)">
+            <Component>
+                <File Id="README.txt" />
+            </Component>
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="Drivers" FileSource="$(var.DriversDir)">
+            <Directory Id="VBoxUSB" Name="VBoxUSB">
+                <Component>
+                    <File Id="VBoxUSB.cat" />
                 </Component>
-                <Component Id="VBoxUSB.sys">
-                    <File Source="$(var.DriversDir)\VBoxUSB.sys" />
+                <Component>
+                    <File Id="VBoxUSB.sys" />
                 </Component>
                 <Component Id="VBoxUSB.inf">
-                    <File Source="$(var.DriversDir)\VBoxUSB.inf" />
+                    <File Id="VBoxUSB.inf" />
                     <difx:Driver AddRemovePrograms="no" PlugAndPlayPrompt="no" />
                 </Component>
             </Directory>
         </DirectoryRef>
     </Fragment>
     <Fragment>
-        <DirectoryRef Id="Drivers">
-            <Directory Id="VBoxUSBMon" Name="VBoxUSBMon" FileSource="$(var.DriversDir)">
-                <Component Id="VBoxUSBMon.cat">
-                    <File Source="$(var.DriversDir)\VBoxUSBMon.cat" />
+        <DirectoryRef Id="Drivers" FileSource="$(var.DriversDir)">
+            <Directory Id="VBoxUSBMon" Name="VBoxUSBMon">
+                <Component>
+                    <File Id="VBoxUSBMon.cat" />
                 </Component>
-                <Component Id="VBoxUSBMon.sys">
-                    <File Source="$(var.DriversDir)\VBoxUSBMon.sys" />
+                <Component>
+                    <File Id="VBoxUSBMon.sys" />
                 </Component>
                 <Component Id="VBoxUSBMon.inf">
-                    <File Source="$(var.DriversDir)\VBoxUSBMon.inf" />
+                    <File Id="VBoxUSBMon.inf" />
                     <difx:Driver AddRemovePrograms="no" PlugAndPlayPrompt="no" />
                 </Component>
             </Directory>
@@ -57,6 +64,7 @@
     </Fragment>
     <Fragment>
         <ComponentGroup Id="VBoxUSB">
+            <ComponentRef Id="README.txt" />
             <ComponentRef Id="VBoxUSB.cat" />
             <ComponentRef Id="VBoxUSB.sys" />
             <ComponentRef Id="VBoxUSB.inf" />
@@ -64,6 +72,7 @@
     </Fragment>
     <Fragment>
         <ComponentGroup Id="VBoxUSBMon">
+            <ComponentRef Id="README.txt" />
             <ComponentRef Id="VBoxUSBMon.cat" />
             <ComponentRef Id="VBoxUSBMon.sys" />
             <ComponentRef Id="VBoxUSBMon.inf" />

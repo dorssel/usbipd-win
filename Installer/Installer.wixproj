@@ -57,6 +57,10 @@
     </HarvestDirectory>
   </ItemGroup>
   <ItemGroup>
+    <WixExtension Include="WixFirewallExtension">
+      <HintPath>$(WixExtDir)\WixFirewallExtension.dll</HintPath>
+      <Name>WixFirewallExtension</Name>
+    </WixExtension>
     <WixExtension Include="WixDifxAppExtension">
       <HintPath>$(WixExtDir)\WixDifxAppExtension.dll</HintPath>
       <Name>WixDifxAppExtension</Name>
@@ -104,6 +108,7 @@
   </Target>
   <PropertyGroup>
     <PreBuildEvent>del /s /q "$(ProjectDir)..\UsbIpServer\bin\publish" &gt; NUL:
-dotnet publish --nologo --no-build --self-contained --configuration $(Configuration) $(ProjectDir)..</PreBuildEvent>
+rmdir /s /q "$(ProjectDir)..\UsbIpServer\bin\publish" &gt; NUL:
+dotnet publish --nologo --no-build --configuration $(Configuration) $(ProjectDir)..</PreBuildEvent>
   </PropertyGroup>
 </Project>

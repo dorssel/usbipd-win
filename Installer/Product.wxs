@@ -18,12 +18,12 @@
 -->
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
     <Product
-        Id="*"
+        Id="{682E2D7D-3238-4FAC-A247-8EB306BF1C3C}"
         Name="usbipd-win"
         Language="1033"
         Version="$(var.GitVersion_MajorMinorPatch)"
         Manufacturer="Frans van Dorsselaer"
-        UpgradeCode="ea1d5623-e6a7-4e4a-9259-e3972226646f"
+        UpgradeCode="{EA1D5623-E6A7-4E4A-9259-E3972226646F}"
         >
         <Package InstallerVersion="500" Compressed="yes" InstallScope="perMachine" />
 
@@ -35,9 +35,9 @@
 
         <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
 
-        <!--
-        <SetProperty Id="ARPINSTALLLOCATION" Value="[APPLICATIONFOLDER]" After="CostFinalize" />
-        -->
+        <Property Id="ARPURLINFOABOUT">https://github.com/dorssel/usbipd-win</Property>
+        <Property Id="ARPURLUPDATEINFO">https://github.com/dorssel/usbipd-win/releases</Property>
+        <Property Id="ARPHELPLINK">https://github.com/dorssel/usbipd-win/issues</Property>
         
         <Feature
             Id="Server"
