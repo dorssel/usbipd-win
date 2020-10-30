@@ -18,7 +18,7 @@
 -->
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
     <Product
-        Id="{682E2D7D-3238-4FAC-A247-8EB306BF1C3C}"
+        Id="$(var.ProductId)"
         Name="usbipd-win"
         Language="1033"
         Version="$(var.GitVersion_MajorMinorPatch)"
@@ -33,7 +33,17 @@
             <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
         <?endif?>
 
-        <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+        <!--
+        We guarantee that two different x.y.z versions will have a different ProductId, so
+        everything is always a MajorUpgrade. MinorUpdates and Patches have many requirements
+        for Feature and Component changes, which we will no doubt forget about in the future.
+        This being a small product, a MajorUpgrade is a small price to pay to prevent any mishaps.
+        Since we strictly follow component rules, we use afterInstallExecute to speed things up a bit.
+        -->
+        <MajorUpgrade
+            Schedule="afterInstallExecute"
+            DowngradeErrorMessage="A newer version of [ProductName] is already installed."
+            />
 
         <Property Id="ARPURLINFOABOUT">https://github.com/dorssel/usbipd-win</Property>
         <Property Id="ARPURLUPDATEINFO">https://github.com/dorssel/usbipd-win/releases</Property>

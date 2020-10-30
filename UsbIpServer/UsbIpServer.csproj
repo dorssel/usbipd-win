@@ -25,6 +25,7 @@
     <TargetFrameworks>netcoreapp3.1</TargetFrameworks>
     <Platforms>x64</Platforms>
     <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
 
     <!-- defaults (used by: dotnet build) -->
     <TargetFramework>netcoreapp3.1</TargetFramework>
@@ -40,7 +41,7 @@
     <Copyright>Copyright (C) $([System.DateTime]::UtcNow.ToString("yyyy"))  $(Company)</Copyright>
 
     <PublishProfile>Properties\PublishProfiles\InputForInstaller.pubxml</PublishProfile>
-  </PropertyGroup>
+</PropertyGroup>
 
   <ItemGroup>
     <Content Include="..\COPYING.md" Link="COPYING.md" CopyToOutputDirectory="PreserveNewest" />

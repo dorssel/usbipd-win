@@ -23,6 +23,7 @@
   version="1.0"
   exclude-result-prefixes="xsl">
 
+    <!-- copy everything -->
     <xsl:template match="@*|node()">
         <xsl:copy>
             <xsl:apply-templates select="@*|node()"/>
