@@ -1,0 +1,1 @@
+assembly-file-versioning-format: '{Major}.{Minor}.{Patch}.{env:GITHUB_RUN_NUMBER ?? 0}'

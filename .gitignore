@@ -3,5 +3,4 @@ obj/
 .vs/
 *.user
 launchSettings.json
-/local/
 .vscode

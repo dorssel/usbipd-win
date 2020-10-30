@@ -25,6 +25,7 @@
     <TargetFrameworks>netcoreapp3.1</TargetFrameworks>
     <Platforms>x64</Platforms>
     <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
 
     <!-- defaults (used by: dotnet build) -->
     <TargetFramework>netcoreapp3.1</TargetFramework>
