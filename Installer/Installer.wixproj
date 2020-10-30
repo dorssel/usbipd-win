@@ -26,17 +26,25 @@
     <OutputName>usbipd-win</OutputName>
     <DefineSolutionProperties>false</DefineSolutionProperties>
     <PublishDir>..\UsbIpServer\bin\publish</PublishDir>
+    <!--
+    This ensures that each x.y.z version has a different product, so every upgrade is a MajorUpgrade.
+    It also ensures that 2 builds of the same x.y.z version will never be installed simultaneously.
+    The alternative (WiX AllowSameVersionUpgrades) causes ICE61.
+    
+    The chance of a hash-collision is much smaller than the chance of forgetting to update ProductId manually.
+    -->
+    <ProductId>EA1D5623-E6A7-4E4A-9259-E397$(GitVersion_MajorMinorPatch.GetHashCode().ToString(X8))</ProductId>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x64' ">
     <OutputPath>bin\$(Configuration)\</OutputPath>
     <IntermediateOutputPath>obj\$(Configuration)\</IntermediateOutputPath>
-    <DefineConstants>Debug;PublishDir=$(PublishDir);DriversDir=$(ProjectDir)..\Drivers</DefineConstants>
+    <DefineConstants>Debug;PublishDir=$(PublishDir);DriversDir=$(ProjectDir)..\Drivers;ProductId=$(ProductId)</DefineConstants>
     <Cultures>en-US</Cultures>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x64' ">
     <OutputPath>bin\$(Configuration)\</OutputPath>
     <IntermediateOutputPath>obj\$(Configuration)\</IntermediateOutputPath>
-    <DefineConstants>PublishDir=$(PublishDir);DriversDir=$(ProjectDir)..\Drivers</DefineConstants>
+    <DefineConstants>PublishDir=$(PublishDir);DriversDir=$(ProjectDir)..\Drivers;ProductId=$(ProductId)</DefineConstants>
     <Cultures>en-US</Cultures>
   </PropertyGroup>
   <ItemGroup>
