@@ -8,6 +8,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{4DF1A44E-CAFC-4543-AB76-76239FBEDF03}"
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
+		CODE_OF_CONDUCT.md = CODE_OF_CONDUCT.md
 		GitVersion.yml = GitVersion.yml
 	EndProjectSection
 EndProject
