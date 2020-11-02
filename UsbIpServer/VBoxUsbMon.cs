@@ -61,7 +61,7 @@ namespace UsbIpServer
             var fltAddOut = BytesToStruct<UsbSupFltAddOut>(output, 0);
             if (fltAddOut.rc != 0 /* VINF_SUCCESS */)
             {
-                throw new SystemException($"SUPUSBFLT_IOCTL_ADD_FILTER failed with returnCode {fltAddOut.rc}");
+                throw new UnexpectedResultException($"SUPUSBFLT_IOCTL_ADD_FILTER failed with returnCode {fltAddOut.rc}");
             }
         }
 

@@ -125,7 +125,9 @@ namespace UsbIpServer
             }
             catch
             {
+#pragma warning disable CA1508 // Avoid dead conditional code (false possitive)
                 if (status != Status.ST_OK)
+#pragma warning restore CA1508 // Avoid dead conditional code
                 {
                     await SendOpCodeAsync(OpCode.OP_REP_IMPORT, status);
                 }
@@ -142,7 +144,7 @@ namespace UsbIpServer
             var version = BinaryPrimitives.ReadUInt16BigEndian(buf.AsSpan(0));
             if (version != USBIP_VERSION)
             {
-                throw new ProtocolViolationException($"version mismatch: expected 1.11, got {version >> 8}.{version & 0xff}");
+                throw new ProtocolViolationException($"version mismatch: expected {USBIP_VERSION >> 8}.{USBIP_VERSION & 0xff}, got {version >> 8}.{version & 0xff}");
             }
 
             var opCode = (OpCode)BinaryPrimitives.ReadUInt16BigEndian(buf.AsSpan(2));

@@ -40,12 +40,16 @@
     <IntermediateOutputPath>obj\$(Configuration)\</IntermediateOutputPath>
     <DefineConstants>Debug;PublishDir=$(PublishDir);DriversDir=$(ProjectDir)..\Drivers;ProductId=$(ProductId)</DefineConstants>
     <Cultures>en-US</Cultures>
+    <SuppressAllWarnings>False</SuppressAllWarnings>
+    <Pedantic>True</Pedantic>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x64' ">
     <OutputPath>bin\$(Configuration)\</OutputPath>
     <IntermediateOutputPath>obj\$(Configuration)\</IntermediateOutputPath>
     <DefineConstants>PublishDir=$(PublishDir);DriversDir=$(ProjectDir)..\Drivers;ProductId=$(ProductId)</DefineConstants>
     <Cultures>en-US</Cultures>
+    <SuppressAllWarnings>False</SuppressAllWarnings>
+    <Pedantic>True</Pedantic>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Drivers.wxs" />
@@ -83,20 +87,17 @@
     </WixExtension>
   </ItemGroup>
   <ItemGroup>
-    <!--
-      Solution Explorer gives a (benign) warning for PackageReference in wixproj files.
-      -->
-    <PackageReference Include="GitVersionTask" Version="5.3.7" Visible="false">
+    <PackageReference Include="GitVersionTask" Version="5.5.0" Visible="false">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="WiX" Version="3.*" Visible="false" />
+    <PackageReference Include="WiX" Version="3.11.2" Visible="false" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.Common.targets" />
   <Import Project="$(WixTargetsPath)" Condition=" '$(WixTargetsPath)' != '' " />
   <ImportGroup Condition=" '$(BuildingInsideVisualStudio)' == 'true' ">
-    <Import Project="$(NuGetPackageRoot)gitversiontask\5.3.7\build\GitVersionTask.props" />
-    <Import Project="$(NuGetPackageRoot)gitversiontask\5.3.7\build\GitVersionTask.targets" />
+    <Import Project="$(NuGetPackageRoot)gitversiontask\5.5.0\build\GitVersionTask.props" />
+    <Import Project="$(NuGetPackageRoot)gitversiontask\5.5.0\build\GitVersionTask.targets" />
   </ImportGroup>
   <Target Name="EnsureWixToolsetInstalled" AfterTargets="BeforeBuild" />
   <Target Name="SetTarget" AfterTargets="GetVersion">
