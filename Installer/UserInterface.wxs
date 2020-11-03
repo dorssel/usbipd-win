@@ -20,13 +20,13 @@
     <Fragment>
         <WixVariable Id="WixUILicenseRtf" Value="COPYING.rtf" />
         <UI Id="UserInterface">
-           <UIRef Id="UI_Minimal" /> 
+            <UIRef Id="UI_Minimal" />
         </UI>
     </Fragment>
 
     <Fragment>
         <UI Id="UI_Minimal">
-            <UIRef Id="WixUI_Minimal" />            
+            <UIRef Id="WixUI_Minimal" />
         </UI>
     </Fragment>
 
@@ -51,10 +51,10 @@
         <!--
         BUG: Cost calculation is wrong for x64 installs (also for WixUI_FeatureTree). There is no known workaround.
         -->
-        
+
         <UI Id="UI_Advanced">
             <UIRef Id="WixUI_Advanced" />
             <UIRef Id="WixUI_ErrorProgressText" />
         </UI>
-	</Fragment>
+    </Fragment>
 </Wix>

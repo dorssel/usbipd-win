@@ -28,9 +28,9 @@
         <Package InstallerVersion="500" Compressed="yes" InstallScope="perMachine" />
 
         <?ifdef Debug ?>
-            <MediaTemplate EmbedCab="yes" CompressionLevel="none" />
+        <MediaTemplate EmbedCab="yes" CompressionLevel="none" />
         <?else?>
-            <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
+        <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
         <?endif?>
 
         <!--
@@ -48,7 +48,7 @@
         <Property Id="ARPURLINFOABOUT">https://github.com/dorssel/usbipd-win</Property>
         <Property Id="ARPURLUPDATEINFO">https://github.com/dorssel/usbipd-win/releases</Property>
         <Property Id="ARPHELPLINK">https://github.com/dorssel/usbipd-win/issues</Property>
-        
+
         <Feature
             Id="Server"
             Level="1"
