@@ -41,7 +41,7 @@ namespace UsbIpServer
             if (!ThreadPool.BindHandle(handle))
             {
                 handle.Dispose();
-                throw new SystemException("BindHandle failed");
+                throw new UnexpectedResultException("ThreadPool.BindHandle() failed");
             }
         }
 
@@ -69,7 +69,7 @@ namespace UsbIpServer
                     }
                     else
                     {
-                        taskCompletionSource.SetException(new SystemException($"DeviceIoControl returned error {(Win32Error)errorCode}"));
+                        taskCompletionSource.SetException(new Win32Exception((int)errorCode, $"DeviceIoControl returned error {(Win32Error)errorCode}"));
                     }
                     Overlapped.Free(nativeOverlapped);
                 }

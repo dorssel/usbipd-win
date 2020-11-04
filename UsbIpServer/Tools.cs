@@ -115,11 +115,11 @@ namespace UsbIpServer
             }
             if (devPropType != DevPropType.DEVPROP_TYPE_UINT32)
             {
-                throw new SystemException($"SetupDiGetDeviceProperty returned property type {devPropType}, expected {DevPropType.DEVPROP_TYPE_UINT32}");
+                throw new UnexpectedResultException($"SetupDiGetDeviceProperty returned property type {devPropType}, expected {DevPropType.DEVPROP_TYPE_UINT32}");
             }
             if (requiredSize != 4)
             {
-                throw new SystemException($"SetupDiGetDeviceProperty returned inconsistent size {requiredSize} != 4");
+                throw new UnexpectedResultException($"SetupDiGetDeviceProperty returned inconsistent size {requiredSize} != 4");
             }
             return BinaryPrimitives.ReadUInt32LittleEndian(output);
         }
@@ -129,7 +129,7 @@ namespace UsbIpServer
         {
             if (NativeMethods.SetupDiGetDeviceProperty(deviceInfoSet, devInfoData, devPropKey, out var devPropType, null, 0, out var requiredSize, 0))
             {
-                throw new SystemException($"SetupDiGetDeviceProperty succeeded, expected to fail with {Win32Error.ERROR_INSUFFICIENT_BUFFER}");
+                throw new UnexpectedResultException($"SetupDiGetDeviceProperty succeeded, expected to fail with {Win32Error.ERROR_INSUFFICIENT_BUFFER}");
             }
             else if ((Win32Error)Marshal.GetLastWin32Error() != Win32Error.ERROR_INSUFFICIENT_BUFFER)
             {
@@ -137,11 +137,11 @@ namespace UsbIpServer
             }
             if (devPropType != DevPropType.DEVPROP_TYPE_STRING)
             {
-                throw new SystemException($"SetupDiGetDeviceProperty returned property type {devPropType}, expected {DevPropType.DEVPROP_TYPE_STRING}");
+                throw new UnexpectedResultException($"SetupDiGetDeviceProperty returned property type {devPropType}, expected {DevPropType.DEVPROP_TYPE_STRING}");
             }
             if ((requiredSize < 2) || (requiredSize % 2 != 0))
             {
-                throw new SystemException($"SetupDiGetDeviceProperty returned size {requiredSize}, expected an even number >= 2");
+                throw new UnexpectedResultException($"SetupDiGetDeviceProperty returned size {requiredSize}, expected an even number >= 2");
             }
             var output = new byte[requiredSize];
             if (!NativeMethods.SetupDiGetDeviceProperty(deviceInfoSet, devInfoData, devPropKey, out devPropType, output, (uint)output.Length, out var requiredSize2, 0))
@@ -150,16 +150,16 @@ namespace UsbIpServer
             }
             if (devPropType != DevPropType.DEVPROP_TYPE_STRING)
             {
-                throw new SystemException($"SetupDiGetDeviceProperty returned property type {devPropType}, expected {DevPropType.DEVPROP_TYPE_STRING}");
+                throw new UnexpectedResultException($"SetupDiGetDeviceProperty returned property type {devPropType}, expected {DevPropType.DEVPROP_TYPE_STRING}");
             }
             if (requiredSize2 != requiredSize)
             {
-                throw new SystemException($"SetupDiGetDeviceProperty returned inconsistent size {requiredSize2} != {requiredSize}");
+                throw new UnexpectedResultException($"SetupDiGetDeviceProperty returned inconsistent size {requiredSize2} != {requiredSize}");
             }
             var result = Encoding.Unicode.GetString(output);
             if (result[^1] != '\0')
             {
-                throw new SystemException($"SetupDiGetDeviceProperty returned non-NUL terminated string");
+                throw new UnexpectedResultException($"SetupDiGetDeviceProperty returned non-NUL terminated string");
             }
             result = result[..^1];
 
@@ -234,7 +234,7 @@ namespace UsbIpServer
         {
             if (NativeMethods.SetupDiGetDeviceInterfaceDetail(deviceInfoSet, interfaceData, null, 0, out var requiredSize, IntPtr.Zero))
             {
-                throw new SystemException("SetupDiGetDeviceInterfaceDetail succeeded, expected to fail with ERROR_INSUFFICIENT_BUFFER");
+                throw new UnexpectedResultException("SetupDiGetDeviceInterfaceDetail succeeded, expected to fail with ERROR_INSUFFICIENT_BUFFER");
             }
             else if ((Win32Error)Marshal.GetLastWin32Error() != Win32Error.ERROR_INSUFFICIENT_BUFFER)
             {
@@ -242,7 +242,7 @@ namespace UsbIpServer
             }
             if ((requiredSize < 6) || (requiredSize % 2 != 0))
             {
-                throw new SystemException($"SetupDiGetDeviceInterfaceDetail returned size {requiredSize}, expected an even number >= 6");
+                throw new UnexpectedResultException($"SetupDiGetDeviceInterfaceDetail returned size {requiredSize}, expected an even number >= 6");
             }
             var output = new byte[requiredSize];
             BinaryPrimitives.WriteUInt32LittleEndian(output, 8 /* sizeof(SP_DEVICE_INTERFACE_DETAIL_DATA) */);
@@ -252,12 +252,12 @@ namespace UsbIpServer
             }
             if (requiredSize2 != requiredSize)
             {
-                throw new SystemException($"SetupDiGetDeviceInterfaceDetail returned inconsistent size {requiredSize2} != {requiredSize}");
+                throw new UnexpectedResultException($"SetupDiGetDeviceInterfaceDetail returned inconsistent size {requiredSize2} != {requiredSize}");
             }
             var devicePath = Encoding.Unicode.GetString(output.AsSpan(4));
             if (devicePath[^1] != '\0')
             {
-                throw new SystemException($"SetupDiGetDeviceInterfaceDetail returned non-NUL terminated string");
+                throw new UnexpectedResultException($"SetupDiGetDeviceInterfaceDetail returned non-NUL terminated string");
             }
             devicePath = devicePath[..^1];
             return devicePath;

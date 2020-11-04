@@ -45,7 +45,7 @@ namespace UsbIpServer.Interop
         public enum FileFlags : uint
         {
             /// <summary>WinSDK: WinBase.h</summary>
-            FILE_FLAG_OVERLAPPED = (1 << 30),
+            FILE_FLAG_OVERLAPPED = 1 << 30,
         }
 
         /// <summary>WinSDK: devpropdev.h: DEVPROPTYPE</summary>
@@ -62,19 +62,19 @@ namespace UsbIpServer.Interop
         public enum DiGetClassFlags : uint
         {
             /// <summary>WinSDK: SetupAPI.h</summary>
-            DIGCF_DEFAULT = (1 << 0),
+            DIGCF_DEFAULT = 1 << 0,
 
             /// <summary>WinSDK: SetupAPI.h</summary>
-            DIGCF_PRESENT = (1 << 1),
+            DIGCF_PRESENT = 1 << 1,
 
             /// <summary>WinSDK: SetupAPI.h</summary>
-            DIGCF_ALLCLASSES = (1 << 2),
+            DIGCF_ALLCLASSES = 1 << 2,
 
             /// <summary>WinSDK: SetupAPI.h</summary>
-            DIGCF_PROFILE = (1 << 3),
+            DIGCF_PROFILE = 1 << 3,
 
             /// <summary>WinSDK: SetupAPI.h</summary>
-            DIGCF_DEVICEINTERFACE = (1 << 4),
+            DIGCF_DEVICEINTERFACE = 1 << 4,
         }
 
         /// <summary>WinSDK: devpropdev.h: DEVPROPKEY</summary>
@@ -136,43 +136,53 @@ namespace UsbIpServer.Interop
         public static class NativeMethods
         {
             [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+            [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
             public static extern SafeFileHandle CreateFile(string lpFileName, [MarshalAs(UnmanagedType.U4)] FileAccess dwDesiredAccess,
                 [MarshalAs(UnmanagedType.U4)] FileShare dwShareMode, IntPtr lpSecurityAttributes, [MarshalAs(UnmanagedType.U4)] FileMode dwCreationDisposition,
                 [MarshalAs(UnmanagedType.U4)] FileAttributes dwFlagsAndAttributes, IntPtr hTemplateFile);
 
             [DllImport("kernel32.dll", SetLastError = true)]
+            [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
             public static extern bool DeviceIoControl(SafeFileHandle hDevice, uint ioControlCode, IntPtr inBuffer, uint nInBufferSize,
                 IntPtr outBuffer, uint nOutBufferSize, out uint pBytesReturned, IntPtr overlapped);
 
             [DllImport("setupapi.dll", SetLastError = true)]
+            [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
             public static extern bool SetupDiDestroyDeviceInfoList(IntPtr DeviceInfoSet);
 
             [DllImport("setupapi.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+            [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
             public static extern SafeDeviceInfoSetHandle SetupDiGetClassDevs(IntPtr ClassGuid, [MarshalAs(UnmanagedType.LPWStr)] string? Enumerator,
                 IntPtr hwndParent, DiGetClassFlags Flags);
 
             [DllImport("setupapi.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+            [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
             public static extern SafeDeviceInfoSetHandle SetupDiGetClassDevs(in Guid ClassGuid, [MarshalAs(UnmanagedType.LPWStr)] string? Enumerator,
                 IntPtr hwndParent, DiGetClassFlags Flags);
 
             [DllImport("setupapi.dll", SetLastError = true)]
+            [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
             public static extern bool SetupDiEnumDeviceInfo(SafeDeviceInfoSetHandle DeviceInfoSet, uint MemberIndex, ref SpDevInfoData DeviceInfoData);
 
             [DllImport("setupapi.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+            [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
             public static extern bool SetupDiGetDeviceProperty(SafeDeviceInfoSetHandle DeviceInfoSet, in SpDevInfoData DeviceInfoData,
                 in DevPropKey PropertyKey, [MarshalAs(UnmanagedType.U4)] out DevPropType PropertyType,
                 byte[]? PropertyBuffer, uint PropertyBufferSize, out uint RequiredSize, uint Flags);
 
             [DllImport("setupapi.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+            [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
             public static extern bool SetupDiGetDeviceProperty(SafeDeviceInfoSetHandle DeviceInfoSet, in SpDevInfoData DeviceInfoData,
                 in DevPropKey PropertyKey, [MarshalAs(UnmanagedType.U4)] out DevPropType PropertyType,
                 byte[]? PropertyBuffer, uint PropertyBufferSize, IntPtr RequiredSize, uint Flags);
 
             [DllImport("setupapi.dll", SetLastError = true)]
+            [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
             public static extern bool SetupDiEnumDeviceInterfaces(SafeDeviceInfoSetHandle hDevInfo, IntPtr devInfo,
                 in Guid interfaceClassGuid, uint memberIndex, ref SpDeviceInterfaceData deviceInterfaceData);
 
             [DllImport("setupapi.dll", SetLastError = true, CharSet = CharSet.Auto)]
+            [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
             public static extern bool SetupDiGetDeviceInterfaceDetail(
                SafeDeviceInfoSetHandle hDevInfo, in SpDeviceInterfaceData DeviceInterfaceData, byte[]? DeviceInterfaceDetailData, uint DeviceInterfaceDetailDataSize,
                out uint RequiredSize, IntPtr DeviceInfoData);

@@ -140,7 +140,8 @@ namespace UsbIpServer.Interop
         /// <summary>VBoxUsb: usb.h: USBDEVICESTATE</summary>
         public enum UsbDeviceState : uint
         {
-            UNSUPPORTED = 1,
+            INVALID = 0,
+            UNSUPPORTED,
             USED_BY_HOST,
             USED_BY_HOST_CAPTURABLE,
             UNUSED,
@@ -241,7 +242,7 @@ namespace UsbIpServer.Interop
         public enum UsbSupXferFlags : uint
         {
             USBSUP_FLAG_NONE = 0,
-            USBSUP_FLAG_SHORT_OK = (1 << 0),
+            USBSUP_FLAG_SHORT_OK = 1 << 0,
         }
 
         /// <summary>VBoxUsb: usblib-win.h: USBSUP_ERROR</summary>
