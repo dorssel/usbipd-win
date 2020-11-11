@@ -1,4 +1,4 @@
-# usbipd-win [![.NET Core](https://github.com/dorssel/usbipd-win/workflows/.NET%20Core/badge.svg?branch=master)](https://github.com/dorssel/usbipd-win/actions?query=workflow%3A%22.NET+Core%22+branch%3Amaster) [![CodeQL](https://github.com/dorssel/usbipd-win/workflows/CodeQL/badge.svg?branch=master)](https://github.com/dorssel/usbipd-win/actions?query=workflow%3ACodeQL)
+# usbipd-win [![Build](https://github.com/dorssel/usbipd-win/workflows/Build/badge.svg?branch=master)](https://github.com/dorssel/usbipd-win/actions?query=workflow%3ABuild+branch%3Amaster) [![CodeQL](https://github.com/dorssel/usbipd-win/workflows/CodeQL/badge.svg?branch=master)](https://github.com/dorssel/usbipd-win/actions?query=workflow%3ACodeQL)
 
 Windows software for hosting locally connected USB devices to other machines, including Hyper-V guests.
 
