@@ -20,7 +20,6 @@ using Microsoft.Extensions.CommandLineUtils;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -56,7 +55,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         {
             var app = new CommandLineApplication()
             {
-                Name = Path.GetFileName(Process.GetCurrentProcess().MainModule.FileName),
+                Name = Path.ChangeExtension(Path.GetFileName(Assembly.GetExecutingAssembly().Location), "exe"),
             };
             app.VersionOption("-v|--version", GitVersionInformation.FullSemVer, GitVersionInformation.InformationalVersion);
 
