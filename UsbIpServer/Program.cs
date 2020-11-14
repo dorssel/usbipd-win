@@ -33,7 +33,7 @@ namespace UsbIpServer
 
         static void ShowCopyright()
         {
-            Console.WriteLine($@"{Product} {GitVersionInformation.FullSemVer}
+            Console.WriteLine($@"{Product} {GitVersionInformation.MajorMinorPatch}
 {Copyright}
 
 This program is free software: you can redistribute it and/or modify
@@ -57,7 +57,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
             {
                 Name = Path.ChangeExtension(Path.GetFileName(Assembly.GetExecutingAssembly().Location), "exe"),
             };
-            app.VersionOption("-v|--version", GitVersionInformation.FullSemVer, GitVersionInformation.InformationalVersion);
+            app.VersionOption("-v|--version", GitVersionInformation.MajorMinorPatch, GitVersionInformation.InformationalVersion);
 
             void DefaultCmdLine(CommandLineApplication cmd)
             {
