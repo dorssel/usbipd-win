@@ -24,6 +24,8 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 
+[assembly: CLSCompliant(true)]
+
 namespace UsbIpServer
 {
     static class Program
