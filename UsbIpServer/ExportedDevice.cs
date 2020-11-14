@@ -36,7 +36,7 @@ namespace UsbIpServer
     sealed class ExportedDevice
     {
         public string Path { get; set; } = string.Empty;
-        public string BusId { get => $"{BusNum}-{DevNum}"; }
+        public string BusId => $"{BusNum}-{DevNum}";
         public uint BusNum { get; set; }
         public uint DevNum { get; set; }
         public Linux.UsbDeviceSpeed Speed { get; set; }
@@ -197,7 +197,7 @@ namespace UsbIpServer
                     await hubFile.IoControlAsync(IoControl.IOCTL_USB_GET_NODE_CONNECTION_INFORMATION_EX, buf, buf);
                     BytesToStruct(buf, 0, out data);
 
-                   var exportedDevice = new ExportedDevice()
+                    var exportedDevice = new ExportedDevice()
                     {
                         Path = instanceId,
                         BusNum = hubNum,

@@ -16,7 +16,6 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-using Microsoft.Win32.SafeHandles;
 using System;
 using System.ComponentModel;
 using System.IO;
@@ -24,6 +23,7 @@ using System.Net;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Win32.SafeHandles;
 using static UsbIpServer.Interop.WinSDK;
 
 namespace UsbIpServer
@@ -75,7 +75,7 @@ namespace UsbIpServer
                 }
 
                 var nativeOverlapped = overlapped.Pack(OnCompletion, new object?[] { input, output });
-                fixed (byte *pInput = input, pOutput = output)
+                fixed (byte* pInput = input, pOutput = output)
                 {
                     if (!NativeMethods.DeviceIoControl(handle, ioControlCode, (IntPtr)pInput, (uint)(input?.Length ?? 0),
                         (IntPtr)pOutput, (uint)(output?.Length ?? 0), out var bytesReturned, (IntPtr)nativeOverlapped))

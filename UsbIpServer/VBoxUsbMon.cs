@@ -171,7 +171,7 @@ namespace UsbIpServer
             }
         }
 
-        private bool IsDisposed;
+        bool IsDisposed;
         public void Dispose()
         {
             if (!IsDisposed)

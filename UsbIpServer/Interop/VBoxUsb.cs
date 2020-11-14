@@ -91,13 +91,13 @@ namespace UsbIpServer.Interop
         [StructLayout(LayoutKind.Sequential, Pack = 4)]
         public struct UsbFilter
         {
-            private uint u32Magic;
-            private UsbFilterType enmType;
+            uint u32Magic;
+            UsbFilterType enmType;
             [MarshalAs(UnmanagedType.ByValArray, SizeConst = (int)UsbFilterIdx.END)]
             public UsbFilterField[] aFields;
-            private readonly uint offCurEnd;
+            readonly uint offCurEnd;
             [MarshalAs(UnmanagedType.ByValArray, SizeConst = 256)]
-            private byte[] achStrTab;
+            byte[] achStrTab;
 
             public static UsbFilter Create(UsbFilterType type)
             {
@@ -160,7 +160,7 @@ namespace UsbIpServer.Interop
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
         public struct UsbSupClaimDev
         {
-            private readonly byte bInterfaceNumber;
+            readonly byte bInterfaceNumber;
             [MarshalAs(UnmanagedType.U1)]
             public bool fClaimed;
         }
