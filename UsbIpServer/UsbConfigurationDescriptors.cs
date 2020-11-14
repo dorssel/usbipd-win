@@ -32,7 +32,7 @@ namespace UsbIpServer
                 Descriptor = descriptor;
             }
 
-            public UsbEndpointType TransferType { get => (UsbEndpointType)(Descriptor.bmAttributes & 0x03); }
+            public UsbEndpointType TransferType => (UsbEndpointType)(Descriptor.bmAttributes & 0x03);
 
             public UsbEndpointDescriptor Descriptor { get; }
         }
@@ -67,7 +67,7 @@ namespace UsbIpServer
                 CurrentAlternate = alternateSetting;
             }
 
-            public UsbAlternateInterface Current { get => Alternates[CurrentAlternate]; }
+            public UsbAlternateInterface Current => Alternates[CurrentAlternate];
         }
 
         sealed class UsbConfiguration

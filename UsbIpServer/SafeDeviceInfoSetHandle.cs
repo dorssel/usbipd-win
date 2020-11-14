@@ -28,6 +28,9 @@ namespace UsbIpServer
         {
         }
 
-        protected override bool ReleaseHandle() => NativeMethods.SetupDiDestroyDeviceInfoList(handle);
+        protected override bool ReleaseHandle()
+        {
+            return NativeMethods.SetupDiDestroyDeviceInfoList(handle);
+        }
     }
 }

@@ -16,24 +16,26 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-using Microsoft.Extensions.CommandLineUtils;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using System;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using Microsoft.Extensions.CommandLineUtils;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+
+[assembly: CLSCompliant(true)]
 
 namespace UsbIpServer
 {
     static class Program
     {
-        static string Product { get => Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyProductAttribute>()!.Product; }
-        static string Copyright { get => Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyCopyrightAttribute>()!.Copyright; }
+        static string Product => Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyProductAttribute>()!.Product;
+        static string Copyright => Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyCopyrightAttribute>()!.Copyright;
 
         static void ShowCopyright()
         {
-            Console.WriteLine($@"{Product} {GitVersionInformation.FullSemVer}
+            Console.WriteLine($@"{Product} {GitVersionInformation.MajorMinorPatch}
 {Copyright}
 
 This program is free software: you can redistribute it and/or modify
@@ -57,7 +59,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
             {
                 Name = Path.ChangeExtension(Path.GetFileName(Assembly.GetExecutingAssembly().Location), "exe"),
             };
-            app.VersionOption("-v|--version", GitVersionInformation.FullSemVer, GitVersionInformation.InformationalVersion);
+            app.VersionOption("-v|--version", GitVersionInformation.MajorMinorPatch, GitVersionInformation.InformationalVersion);
 
             void DefaultCmdLine(CommandLineApplication cmd)
             {
@@ -69,10 +71,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
             DefaultCmdLine(app);
             app.OptionHelp.ShowInHelpText = true;
-            app.Command("license", (cmd) => {
+            app.Command("license", (cmd) =>
+            {
                 cmd.Description = "Display license information";
                 DefaultCmdLine(cmd);
-                cmd.OnExecute(() => {
+                cmd.OnExecute(() =>
+                {
                     ShowCopyright();
                     return 0;
                 });
@@ -91,14 +95,16 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                 cmd.Option("-b|--busid=<busid>", "Unbind VBoxUsb.sys from device on <busid>", CommandOptionType.SingleValue);
             });
 #endif
-            app.Command("server", (cmd) => {
+            app.Command("server", (cmd) =>
+            {
                 cmd.Description = "Run the server stand-alone on the console";
                 DefaultCmdLine(cmd);
                 cmd.Argument("key=value", ".NET configuration override", true);
                 cmd.OnExecute(() => ExecuteServer(cmd.Arguments.Single().Values.ToArray()));
             });
 
-            app.OnExecute(() => {
+            app.OnExecute(() =>
+            {
                 app.ShowRootCommandFullNameAndVersion();
                 app.ShowHint();
                 return 0;

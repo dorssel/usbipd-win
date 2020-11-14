@@ -16,10 +16,10 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-using Microsoft.Win32.SafeHandles;
 using System;
 using System.IO;
 using System.Runtime.InteropServices;
+using Microsoft.Win32.SafeHandles;
 using static UsbIpServer.Interop.Usb;
 
 namespace UsbIpServer.Interop
@@ -120,7 +120,7 @@ namespace UsbIpServer.Interop
             public uint cbSize;
             public Guid interfaceClassGuid;
             public uint flags;
-            private readonly UIntPtr reserved;
+            readonly UIntPtr reserved;
         }
 
         /// <summary>WinSDK: SetupAPI.h: SP_DEVINFO_DATA</summary>
@@ -130,7 +130,7 @@ namespace UsbIpServer.Interop
             public uint cbSize;
             public Guid ClassGuid;
             public uint DevInst;
-            private readonly UIntPtr Reserved;
+            readonly UIntPtr Reserved;
         }
 
         public static class NativeMethods

@@ -16,7 +16,6 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-using Microsoft.Extensions.Logging;
 using System;
 using System.Buffers.Binary;
 using System.Diagnostics.CodeAnalysis;
@@ -25,6 +24,7 @@ using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using static UsbIpServer.Interop.Usb;
 using static UsbIpServer.Interop.UsbIp;
 using static UsbIpServer.Interop.VBoxUsb;
@@ -82,10 +82,10 @@ namespace UsbIpServer
                     urb.type = UsbSupTransferType.USBSUP_TRANSFER_TYPE_BULK;
                     break;
                 case UsbEndpointType.USB_ENDPOINT_TYPE_INTERRUPT:
-                    throw new NotImplementedException("USB_ENDPOINT_TYPE_INTERRUPT");
                     // TODO: requires queuing reuests and handling USBIP_CMD_UNLINK
                     // urb.type = UsbSupTransferType.USBSUP_TRANSFER_TYPE_INTR;
                     // break;
+                    throw new NotImplementedException("USB_ENDPOINT_TYPE_INTERRUPT");
                 case UsbEndpointType.USB_ENDPOINT_TYPE_ISOCHRONOUS:
                     throw new NotImplementedException("USB_ENDPOINT_TYPE_ISOCHRONOUS");
             }
