@@ -1,3 +1,9 @@
+<!--
+SPDX-FileCopyrightText: 2019 Jan Krüger
+SPDX-FileCopyrightText: 2020 Frans van Dorsselaer
+
+SPDX-License-Identifier: GPL-2.0-only
+-->
 # Minimalist Code of Conduct
 
 We believe that an elaborate code of conduct invites a lot of fighting

@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: 2020 Frans van Dorsselaer
+
+SPDX-License-Identifier: GPL-2.0-only
+-->
 # Security Policy
 
 ## Supported Versions
