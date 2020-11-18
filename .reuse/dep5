@@ -1,0 +1,7 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: usbipd-win
+Source: https://github.com/dorssel/usbipd-win
+
+Files: Drivers/**/*
+Copyright: 2011-2020 Oracle Corporation
+License: GPL-2.0-only
