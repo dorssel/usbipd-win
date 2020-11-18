@@ -9,7 +9,7 @@ using static UsbIpServer.Tools;
 
 namespace UsbIpServer
 {
-    class UsbConfigurationDescriptors
+    sealed class UsbConfigurationDescriptors
     {
         sealed class UsbEndpoint
         {

@@ -6,7 +6,7 @@ using System;
 
 namespace UsbIpServer
 {
-    public class UnexpectedResultException : Exception
+    public sealed class UnexpectedResultException : Exception
     {
         public UnexpectedResultException()
         {
