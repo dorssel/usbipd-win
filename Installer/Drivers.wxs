@@ -14,7 +14,7 @@ SPDX-License-Identifier: GPL-2.0-only
     <Fragment>
         <DirectoryRef Id="Drivers" FileSource="$(var.DriversDir)">
             <Component>
-                <File Id="README.txt" />
+                <File Id="README.md" />
             </Component>
         </DirectoryRef>
     </Fragment>
@@ -52,7 +52,7 @@ SPDX-License-Identifier: GPL-2.0-only
     </Fragment>
     <Fragment>
         <ComponentGroup Id="VBoxUSB">
-            <ComponentRef Id="README.txt" />
+            <ComponentRef Id="README.md" />
             <ComponentRef Id="VBoxUSB.cat" />
             <ComponentRef Id="VBoxUSB.sys" />
             <ComponentRef Id="VBoxUSB.inf" />
@@ -60,7 +60,7 @@ SPDX-License-Identifier: GPL-2.0-only
     </Fragment>
     <Fragment>
         <ComponentGroup Id="VBoxUSBMon">
-            <ComponentRef Id="README.txt" />
+            <ComponentRef Id="README.md" />
             <ComponentRef Id="VBoxUSBMon.cat" />
             <ComponentRef Id="VBoxUSBMon.sys" />
             <ComponentRef Id="VBoxUSBMon.inf" />
