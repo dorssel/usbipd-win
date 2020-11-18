@@ -67,7 +67,7 @@ SPDX-License-Identifier: GPL-2.0-only
     </WixExtension>
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="GitVersionTask" Version="5.5.0" Visible="false">
+    <PackageReference Include="GitVersionTask" Version="5.5.1" Visible="false">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
@@ -76,8 +76,8 @@ SPDX-License-Identifier: GPL-2.0-only
   <Import Project="$(MSBuildToolsPath)\Microsoft.Common.targets" />
   <Import Project="$(WixTargetsPath)" Condition=" '$(WixTargetsPath)' != '' " />
   <ImportGroup Condition=" '$(BuildingInsideVisualStudio)' == 'true' ">
-    <Import Project="$(NuGetPackageRoot)gitversiontask\5.5.0\build\GitVersionTask.props" />
-    <Import Project="$(NuGetPackageRoot)gitversiontask\5.5.0\build\GitVersionTask.targets" />
+    <Import Project="$(NuGetPackageRoot)gitversiontask\5.5.1\build\GitVersionTask.props" />
+    <Import Project="$(NuGetPackageRoot)gitversiontask\5.5.1\build\GitVersionTask.targets" />
   </ImportGroup>
   <Target Name="EnsureWixToolsetInstalled" AfterTargets="BeforeBuild" />
   <Target Name="SetTarget" AfterTargets="GetVersion">
