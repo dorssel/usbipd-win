@@ -5,6 +5,14 @@ SPDX-FileCopyrightText: 2020 Frans van Dorsselaer
 SPDX-License-Identifier: GPL-2.0-only
 -->
 <Project ToolsVersion="Current" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!--
+  This fixup for Visual Studio allows us to use <PackageReference> in a WiX project file, even though
+  it is not officially supported. Modern MSBuild is perfectly capable, but WiX 3.x is a bit old fashioned.
+  -->
+  <PropertyGroup>
+    <GitVersionTaskVersion>5.5.1</GitVersionTaskVersion>
+  </PropertyGroup>
+  <Import Project="$(ProjectDir)VSFixup.targets" Condition=" '$(BuildingInsideVisualStudio)' == 'true' " />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Release</Configuration>
     <Platform>x64</Platform>
@@ -38,6 +46,7 @@ SPDX-License-Identifier: GPL-2.0-only
     <Compile Include="UserInterface.wxs" />
     <Content Include="COPYING.rtf" />
     <Content Include="HarvestTransform.xslt" />
+    <Content Include="VSFixup.targets" />
     <HarvestDirectory Include="$(PublishDir)" Visible="false">
       <DirectoryRefId>APPLICATIONFOLDER</DirectoryRefId>
       <SuppressRootDirectory>true</SuppressRootDirectory>
@@ -67,7 +76,7 @@ SPDX-License-Identifier: GPL-2.0-only
     </WixExtension>
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="GitVersionTask" Version="5.5.1" Visible="false">
+    <PackageReference Include="GitVersionTask" Version="$(GitVersionTaskVersion)" Visible="false">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
@@ -75,10 +84,6 @@ SPDX-License-Identifier: GPL-2.0-only
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.Common.targets" />
   <Import Project="$(WixTargetsPath)" Condition=" '$(WixTargetsPath)' != '' " />
-  <ImportGroup Condition=" '$(BuildingInsideVisualStudio)' == 'true' ">
-    <Import Project="$(NuGetPackageRoot)gitversiontask\5.5.1\build\GitVersionTask.props" />
-    <Import Project="$(NuGetPackageRoot)gitversiontask\5.5.1\build\GitVersionTask.targets" />
-  </ImportGroup>
   <Target Name="EnsureWixToolsetInstalled" AfterTargets="BeforeBuild" />
   <Target Name="SetTarget" AfterTargets="GetVersion">
     <Message Importance="high" Text="Version detected as $(GitVersion_FullSemVer)" />
