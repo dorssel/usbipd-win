@@ -7,11 +7,13 @@ using System.ComponentModel;
 using System.IO;
 using System.Net;
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Win32.SafeHandles;
 using static UsbIpServer.Interop.WinSDK;
 
+[assembly: SupportedOSPlatform("windows")]
 namespace UsbIpServer
 {
     sealed class DeviceFile : IDisposable
