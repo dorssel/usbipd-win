@@ -3,6 +3,7 @@ SPDX-FileCopyrightText: 2020 Frans van Dorsselaer
 
 SPDX-License-Identifier: GPL-2.0-only
 -->
+
 # Security Policy
 
 ## Supported Versions
@@ -10,7 +11,7 @@ SPDX-License-Identifier: GPL-2.0-only
 For each listed major.minor version, only the latest release contains all the security fixes,
 i.e. the release with the highest 'x' in 'major.minor.x'.
 
-Please consult https://github.com/dorssel/usbipd-win/issues for any known outstanding security
+Please consult [Issues](https://github.com/dorssel/usbipd-win/issues) for any known outstanding security
 vulnerabilities in the latest releases.
 
 | Version | Supported          |
@@ -20,6 +21,6 @@ vulnerabilities in the latest releases.
 
 ## Reporting a Vulnerability
 
-Please report vulnerabilities by creating an issue: https://github.com/dorssel/usbipd-win/issues.
+Please report vulnerabilities by creating a [New Issue](https://github.com/dorssel/usbipd-win/issues/new).
 
 Any reported security issues for supported versions will be resolved as soon as possible.

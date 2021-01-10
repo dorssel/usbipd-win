@@ -4,7 +4,8 @@
 
 bin/
 obj/
+packages/
 .vs/
+.vscode/
 *.user
 launchSettings.json
-.vscode

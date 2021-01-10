@@ -5,14 +5,14 @@ SPDX-FileCopyrightText: 2020 Frans van Dorsselaer
 SPDX-License-Identifier: GPL-2.0-only
 -->
 <Project ToolsVersion="Current" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <!--
-  This fixup for Visual Studio allows us to use <PackageReference> in a WiX project file, even though
-  it is not officially supported. Modern MSBuild is perfectly capable, but WiX 3.x is a bit old fashioned.
-  -->
   <PropertyGroup>
-    <GitVersionTaskVersion>5.5.1</GitVersionTaskVersion>
+    <BaseIntermediateOutputPath>obj</BaseIntermediateOutputPath>
+    <IntermediateOutputPath>$(BaseIntermediateOutputPath)\$(Configuration)\</IntermediateOutputPath>
+    <GenerateGitVersionInformation>false</GenerateGitVersionInformation>
+    <UpdateAssemblyInfo>false</UpdateAssemblyInfo>
   </PropertyGroup>
-  <Import Project="$(ProjectDir)VSFixup.targets" Condition=" '$(BuildingInsideVisualStudio)' == 'true' " />
+  <Import Project="..\packages\WiX.3.11.2\build\wix.props" Condition="Exists('..\packages\WiX.3.11.2\build\wix.props')" />
+  <Import Project="..\packages\GitVersion.MsBuild.5.6.3\build\GitVersion.MsBuild.props" Condition="Exists('..\packages\GitVersion.MsBuild.5.6.3\build\GitVersion.MsBuild.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Release</Configuration>
     <Platform>x64</Platform>
@@ -22,10 +22,11 @@ SPDX-License-Identifier: GPL-2.0-only
     <OutputName>usbipd-win</OutputName>
     <DefineSolutionProperties>false</DefineSolutionProperties>
     <PublishDir>..\UsbIpServer\bin\publish</PublishDir>
+    <NuGetPackageImportStamp>
+    </NuGetPackageImportStamp>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x64' ">
     <OutputPath>bin\$(Configuration)\</OutputPath>
-    <IntermediateOutputPath>obj\$(Configuration)\</IntermediateOutputPath>
     <DefineConstants>Debug;PublishDir=$(PublishDir);DriversDir=$(ProjectDir)..\Drivers</DefineConstants>
     <Cultures>en-US</Cultures>
     <SuppressAllWarnings>False</SuppressAllWarnings>
@@ -33,7 +34,6 @@ SPDX-License-Identifier: GPL-2.0-only
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x64' ">
     <OutputPath>bin\$(Configuration)\</OutputPath>
-    <IntermediateOutputPath>obj\$(Configuration)\</IntermediateOutputPath>
     <DefineConstants>PublishDir=$(PublishDir);DriversDir=$(ProjectDir)..\Drivers</DefineConstants>
     <Cultures>en-US</Cultures>
     <SuppressAllWarnings>False</SuppressAllWarnings>
@@ -46,7 +46,7 @@ SPDX-License-Identifier: GPL-2.0-only
     <Compile Include="UserInterface.wxs" />
     <Content Include="COPYING.rtf" />
     <Content Include="HarvestTransform.xslt" />
-    <Content Include="VSFixup.targets" />
+    <Content Include="packages.config" />
     <HarvestDirectory Include="$(PublishDir)" Visible="false">
       <DirectoryRefId>APPLICATIONFOLDER</DirectoryRefId>
       <SuppressRootDirectory>true</SuppressRootDirectory>
@@ -75,17 +75,16 @@ SPDX-License-Identifier: GPL-2.0-only
       <Name>WixUIExtension</Name>
     </WixExtension>
   </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="GitVersionTask" Version="$(GitVersionTaskVersion)" Visible="false">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-    <PackageReference Include="WiX" Version="3.11.2" Visible="false" />
-  </ItemGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.Common.targets" />
   <Import Project="$(WixTargetsPath)" Condition=" '$(WixTargetsPath)' != '' " />
+  <Target Name="BeforeBuild">
+    <MakeDir Directories="obj">
+    </MakeDir>
+  </Target>
   <Target Name="EnsureWixToolsetInstalled" AfterTargets="BeforeBuild" />
   <Target Name="SetTarget" AfterTargets="GetVersion">
+    <!--
+    Now that we have determined the version, augment the OutputName to include the version number.
+    -->
     <Message Importance="high" Text="Version detected as $(GitVersion_FullSemVer)" />
     <CreateProperty Value="$(OutputName)_$(GitVersion_MajorMinorPatch)">
       <Output TaskParameter="Value" PropertyName="TargetName" />
@@ -115,4 +114,13 @@ SPDX-License-Identifier: GPL-2.0-only
 rmdir /s /q "$(ProjectDir)..\UsbIpServer\bin\publish" &gt; NUL:
 dotnet publish --nologo --no-build --configuration $(Configuration) $(ProjectDir)..</PreBuildEvent>
   </PropertyGroup>
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('..\packages\GitVersion.MsBuild.5.6.3\build\GitVersion.MsBuild.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\GitVersion.MsBuild.5.6.3\build\GitVersion.MsBuild.props'))" />
+    <Error Condition="!Exists('..\packages\GitVersion.MsBuild.5.6.3\build\GitVersion.MsBuild.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\GitVersion.MsBuild.5.6.3\build\GitVersion.MsBuild.targets'))" />
+    <Error Condition="!Exists('..\packages\WiX.3.11.2\build\wix.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\WiX.3.11.2\build\wix.props'))" />
+  </Target>
+  <Import Project="..\packages\GitVersion.MsBuild.5.6.3\build\GitVersion.MsBuild.targets" Condition="Exists('..\packages\GitVersion.MsBuild.5.6.3\build\GitVersion.MsBuild.targets')" />
 </Project>
