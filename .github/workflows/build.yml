@@ -30,7 +30,7 @@ jobs:
     - name: setup-msbuild
       uses: microsoft/setup-msbuild@v1
     - name: Install dependencies (Installer)
-      run: msbuild Installer /t:restore
+      run: msbuild Installer -t:restore -p:RestorePackagesConfig=true -p:SolutionDir=$GITHUB_WORKSPACE
     - name: Build (Installer)
       run: msbuild Installer
     - name: Upload a Build Artifact
