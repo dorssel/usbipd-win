@@ -32,6 +32,12 @@ SPDX-License-Identifier: GPL-2.0-only
     <Company>Frans van Dorsselaer</Company>
     <Copyright>Copyright (C) $([System.DateTime]::UtcNow.ToString("yyyy"))  $(Company)</Copyright>
 
+    <!-- generate info, but exclude the stuff that is set by GitVersion -->
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
+    <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
+    <GenerateAssemblyInformationalVersionAttribute>false</GenerateAssemblyInformationalVersionAttribute>
+
     <PublishProfile>Properties\PublishProfiles\InputForInstaller.pubxml</PublishProfile>
   </PropertyGroup>
 
