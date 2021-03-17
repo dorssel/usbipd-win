@@ -6,13 +6,14 @@ SPDX-License-Identifier: GPL-2.0-only
 -->
 <Project ToolsVersion="Current" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
+    <TargetFramework>net5.0-windows</TargetFramework>
     <BaseIntermediateOutputPath>obj</BaseIntermediateOutputPath>
     <IntermediateOutputPath>$(BaseIntermediateOutputPath)\$(Configuration)\</IntermediateOutputPath>
     <GenerateGitVersionInformation>false</GenerateGitVersionInformation>
     <UpdateAssemblyInfo>false</UpdateAssemblyInfo>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
-  <Import Project="..\packages\WiX.3.11.2\build\wix.props" Condition="Exists('..\packages\WiX.3.11.2\build\wix.props')" />
-  <Import Project="..\packages\GitVersion.MsBuild.5.6.3\build\GitVersion.MsBuild.props" Condition="Exists('..\packages\GitVersion.MsBuild.5.6.3\build\GitVersion.MsBuild.props')" />
+  <Import Project="..\InstallerDependencies\obj\InstallerDependencies.csproj.nuget.g.props" Condition="Exists('..\InstallerDependencies\obj\InstallerDependencies.csproj.nuget.g.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Release</Configuration>
     <Platform>x64</Platform>
@@ -46,7 +47,6 @@ SPDX-License-Identifier: GPL-2.0-only
     <Compile Include="UserInterface.wxs" />
     <Content Include="COPYING.rtf" />
     <Content Include="HarvestTransform.xslt" />
-    <Content Include="packages.config" />
     <HarvestDirectory Include="$(PublishDir)" Visible="false">
       <DirectoryRefId>APPLICATIONFOLDER</DirectoryRefId>
       <SuppressRootDirectory>true</SuppressRootDirectory>
@@ -75,7 +75,6 @@ SPDX-License-Identifier: GPL-2.0-only
       <Name>WixUIExtension</Name>
     </WixExtension>
   </ItemGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.Common.targets" />
   <Import Project="$(WixTargetsPath)" Condition=" '$(WixTargetsPath)' != '' " />
   <Target Name="BeforeBuild">
     <MakeDir Directories="obj">
@@ -113,15 +112,7 @@ SPDX-License-Identifier: GPL-2.0-only
   <PropertyGroup>
     <PreBuildEvent>del /s /q "$(ProjectDir)..\UsbIpServer\bin\publish" &gt; NUL:
 rmdir /s /q "$(ProjectDir)..\UsbIpServer\bin\publish" &gt; NUL:
-dotnet publish --nologo --no-build --configuration $(Configuration) $(ProjectDir)..</PreBuildEvent>
+dotnet publish --nologo --no-restore --no-build --configuration $(Configuration) $(ProjectDir)..\UsbIpServer</PreBuildEvent>
   </PropertyGroup>
-  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
-    </PropertyGroup>
-    <Error Condition="!Exists('..\packages\GitVersion.MsBuild.5.6.3\build\GitVersion.MsBuild.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\GitVersion.MsBuild.5.6.3\build\GitVersion.MsBuild.props'))" />
-    <Error Condition="!Exists('..\packages\GitVersion.MsBuild.5.6.3\build\GitVersion.MsBuild.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\GitVersion.MsBuild.5.6.3\build\GitVersion.MsBuild.targets'))" />
-    <Error Condition="!Exists('..\packages\WiX.3.11.2\build\wix.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\WiX.3.11.2\build\wix.props'))" />
-  </Target>
-  <Import Project="..\packages\GitVersion.MsBuild.5.6.3\build\GitVersion.MsBuild.targets" Condition="Exists('..\packages\GitVersion.MsBuild.5.6.3\build\GitVersion.MsBuild.targets')" />
+  <Import Project="..\InstallerDependencies\obj\InstallerDependencies.csproj.nuget.g.targets" Condition="Exists('..\InstallerDependencies\obj\InstallerDependencies.csproj.nuget.g.targets')" />
 </Project>
