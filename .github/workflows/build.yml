@@ -16,24 +16,28 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - uses: actions/checkout@v2
+    - name: Checkout
+      uses: actions/checkout@v2
       with:
         fetch-depth: 0
     - name: Setup .NET
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: 5.0.x
+    - name: Cache
+      uses: actions/cache@v2
+      with:
+        path: ~/.nuget/packages
+        key: ${{ runner.os }}-nuget-${{ hashFiles('**/Directory.Packages.props', '**/global.json') }}
     - name: Install dependencies
       run: dotnet restore
     - name: Build
       run: dotnet build --configuration Release --no-restore
-    - name: setup-msbuild
+    - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v1
-    - name: Install dependencies (Installer)
-      run: msbuild Installer -t:restore -p:RestorePackagesConfig=true -p:SolutionDir=$Env:GITHUB_WORKSPACE
     - name: Build (Installer)
       run: msbuild Installer
-    - name: Upload a Build Artifact
+    - name: Upload Installer Artifact
       uses: actions/upload-artifact@v2
       with:
         name: msi-installer

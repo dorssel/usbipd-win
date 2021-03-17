@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+SPDX-FileCopyrightText: 2021 Frans van Dorsselaer
+
+SPDX-License-Identifier: GPL-2.0-only
+-->
+<Project>
+  <ItemGroup>
+    <!-- all -->
+    <PackageVersion Include="GitVersion.MsBuild" Version="5.6.6" />
+
+    <!-- UsbIpServer -->
+    <PackageVersion Include="Microsoft.Extensions.CommandLineUtils" Version="1.1.1" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting.WindowsServices" Version="5.0.1" />
+
+    <!-- Installer -->
+    <PackageVersion Include="WiX" Version="3.11.2" />
+  </ItemGroup>
+</Project>

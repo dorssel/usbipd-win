@@ -20,6 +20,7 @@ SPDX-License-Identifier: GPL-2.0-only
     <Platform>x64</Platform>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
 
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <SelfContained>false</SelfContained>
 
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -46,12 +47,12 @@ SPDX-License-Identifier: GPL-2.0-only
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="GitVersion.MsBuild" Version="5.6.3">
+    <PackageReference Include="GitVersion.MsBuild">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.Extensions.CommandLineUtils" Version="1.1.1" />
-    <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="5.0.1" />
+    <PackageReference Include="Microsoft.Extensions.CommandLineUtils" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" />
   </ItemGroup>
 
 </Project>

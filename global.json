@@ -1,0 +1,10 @@
+/*
+ * SPDX-FileCopyrightText: 2021 Frans van Dorsselaer
+ *
+ * SPDX-License-Identifier: GPL-2.0-only
+ */
+{
+  "msbuild-sdks": {
+    "Microsoft.Build.NoTargets": "3.0.4"
+  }
+}
