@@ -15,6 +15,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		Directory.Packages.props = Directory.Packages.props
 		GitVersion.yml = GitVersion.yml
 		global.json = global.json
+		nuget.config = nuget.config
 		README.md = README.md
 		SECURITY.md = SECURITY.md
 	EndProjectSection
@@ -25,7 +26,7 @@ Project("{930C7802-8A8C-48F9-8165-68863BCCD9DD}") = "Installer", "Installer\Inst
 		{5CE75792-6F4F-4B16-83E6-29052C6E0D8D} = {5CE75792-6F4F-4B16-83E6-29052C6E0D8D}
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InstallerDependencies", "InstallerDependencies\InstallerDependencies.csproj", "{00B55725-8FBA-40C0-A691-312935717AF3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "InstallerDependencies", "InstallerDependencies\InstallerDependencies.csproj", "{00B55725-8FBA-40C0-A691-312935717AF3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
