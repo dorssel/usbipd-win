@@ -34,7 +34,7 @@ jobs:
         path: ~/.nuget/packages
         key: ${{ runner.os }}-nuget-${{ hashFiles('**/Directory.Packages.props', '**/global.json') }}
     - name: Install dependencies
-      run: dotnet restore
+      run: dotnet clean --configuration Release && dotnet restore
     - name: Build
       run: dotnet build --configuration Release --no-restore
     - name: Setup MSBuild
