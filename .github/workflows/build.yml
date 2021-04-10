@@ -24,13 +24,13 @@ jobs:
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: 5.0.x
-    #- name: Cache
-    #  uses: actions/cache@v2
-    #  with:
-    #    path: ~/.nuget/packages
-    #    key: ${{ runner.os }}-nuget-${{ hashFiles('**/Directory.Packages.props', '**/global.json') }}
+    - name: Cache
+      uses: actions/cache@v2
+      with:
+        path: ~/.nuget/packages
+        key: ${{ runner.os }}-nuget-${{ hashFiles('**/Directory.Packages.props', '**/global.json') }}
     - name: Install dependencies
-      run: dotnet nuget locals all --clear && dotnet restore
+      run: dotnet restore
     - name: Build
       run: dotnet build --configuration Release --no-restore
     - name: Setup MSBuild
