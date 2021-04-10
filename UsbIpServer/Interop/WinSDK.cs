@@ -72,28 +72,28 @@ namespace UsbIpServer.Interop
         }
 
         /// <summary>WinSDK: devpkey.h</summary>
-        public static readonly DevPropKey DEVPKEY_Device_InstanceId = new DevPropKey()
+        public static readonly DevPropKey DEVPKEY_Device_InstanceId = new()
         {
             fmtid = new Guid(0x78c34fc8, 0x104a, 0x4aca, 0x9e, 0xa4, 0x52, 0x4d, 0x52, 0x99, 0x6e, 0x57),
             pid = 256
         };
 
         /// <summary>WinSDK: devpkey.h</summary>
-        public static readonly DevPropKey DEVPKEY_Device_Parent = new DevPropKey()
+        public static readonly DevPropKey DEVPKEY_Device_Parent = new()
         {
             fmtid = new Guid(0x4340a6c5, 0x93fa, 0x4706, 0x97, 0x2c, 0x7b, 0x64, 0x80, 0x08, 0xa5, 0xa7),
             pid = 8
         };
 
         /// <summary>WinSDK: devpkey.h</summary>
-        public static readonly DevPropKey DEVPKEY_Device_LocationInfo = new DevPropKey()
+        public static readonly DevPropKey DEVPKEY_Device_LocationInfo = new()
         {
             fmtid = new Guid(0xa45c254e, 0xdf1c, 0x4efd, 0x80, 0x20, 0x67, 0xd1, 0x46, 0xa8, 0x50, 0xe0),
             pid = 15
         };
 
         /// <summary>WinSDK: devpkey.h</summary>
-        public static readonly DevPropKey DEVPKEY_Device_Address = new DevPropKey()
+        public static readonly DevPropKey DEVPKEY_Device_Address = new()
         {
             fmtid = new Guid(0xa45c254e, 0xdf1c, 0x4efd, 0x80, 0x20, 0x67, 0xd1, 0x46, 0xa8, 0x50, 0xe0),
             pid = 30
@@ -175,7 +175,7 @@ namespace UsbIpServer.Interop
         }
 
         /// <summary>WinSDK: usbiodef.h</summary>
-        public static readonly Guid GUID_DEVINTERFACE_USB_HUB = new Guid(0xf18a0e88, 0xc30c, 0x11d0, 0x88, 0x15, 0x00, 0xa0, 0xc9, 0x06, 0xbe, 0xd8);
+        public static readonly Guid GUID_DEVINTERFACE_USB_HUB = new(0xf18a0e88, 0xc30c, 0x11d0, 0x88, 0x15, 0x00, 0xa0, 0xc9, 0x06, 0xbe, 0xd8);
 
         public enum DeviceType : ushort
         {
