@@ -11,10 +11,17 @@ SPDX-License-Identifier: GPL-2.0-only
     <Platforms>x64</Platforms>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <EnableNETAnalyzers>false</EnableNETAnalyzers>
+    <!-- This project is not really C#, so prevent creating any .cs files. -->
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GenerateGitVersionInformation>false</GenerateGitVersionInformation>
+    <UpdateAssemblyInfo>false</UpdateAssemblyInfo>
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="GitVersion.MsBuild">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="WiX" />
   </ItemGroup>
 
