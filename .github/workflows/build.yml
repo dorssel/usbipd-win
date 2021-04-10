@@ -4,10 +4,6 @@
 
 name: Build
 
-env:
-  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
-  DOTNET_CLI_TELEMETRY_OPTOUT: true
-
 on:
   push:
     branches: [ master ]
@@ -28,13 +24,13 @@ jobs:
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: 5.0.x
-    - name: Cache
-      uses: actions/cache@v2
-      with:
-        path: ~/.nuget/packages
-        key: ${{ runner.os }}-nuget-${{ hashFiles('**/Directory.Packages.props', '**/global.json') }}
+    #- name: Cache
+    #  uses: actions/cache@v2
+    #  with:
+    #    path: ~/.nuget/packages
+    #    key: ${{ runner.os }}-nuget-${{ hashFiles('**/Directory.Packages.props', '**/global.json') }}
     - name: Install dependencies
-      run: dotnet clean --configuration Release && dotnet restore
+      run: dotnet restore
     - name: Build
       run: dotnet build --configuration Release --no-restore
     - name: Setup MSBuild
