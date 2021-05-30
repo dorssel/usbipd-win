@@ -190,9 +190,10 @@ namespace UsbIpServer.Interop
         {
             /// <summary>WinSDK: usbiodef.h</summary>
             USB_GET_DESCRIPTOR_FROM_NODE_CONNECTION = 260,
-
             /// <summary>WinSDK: usbiodef.h</summary>
             USB_GET_NODE_CONNECTION_INFORMATION_EX = 274,
+            /// <summary>WinSDK: usbiodef.h</summary>
+            USB_GET_NODE_CONNECTION_INFORMATION_EX_V2 = 279,
         }
 
         public enum MethodCode : byte
@@ -218,6 +219,9 @@ namespace UsbIpServer.Interop
             /// <summary>WinSDK: usbioctl.h</summary>
             IOCTL_USB_GET_NODE_CONNECTION_INFORMATION_EX = (DeviceType.FILE_DEVICE_USB << 16) | (AccessCode.FILE_ANY_ACCESS << 14)
                 | (FunctionCode.USB_GET_NODE_CONNECTION_INFORMATION_EX << 2) | (MethodCode.METHOD_BUFFERED),
+
+            IOCTL_USB_GET_NODE_CONNECTION_INFORMATION_EX_V2 = (DeviceType.FILE_DEVICE_USB << 16) | (AccessCode.FILE_ANY_ACCESS << 14)
+                | (FunctionCode.USB_GET_NODE_CONNECTION_INFORMATION_EX_V2 << 2) | (MethodCode.METHOD_BUFFERED),
         }
 
         /// <summary>WinSDK: usbioctl.h: USB_DESCRIPTOR_REQUEST</summary>
@@ -261,6 +265,36 @@ namespace UsbIpServer.Interop
             public uint NumberOfOpenPipes;
             public uint ConnectionStatus;
             /* USB_PIPE_INFO PipeList[0]; */
+        }
+
+        /// <summary>WinSDK: usbioctl.h: USB_PROTOCOLS</summary>
+        [Flags]
+        public enum UsbProtocols : uint
+        {
+            None = 0,
+            Usb110 = (1 << 0),
+            Usb200 = (1 << 1),
+            Usb300 = (1 << 2),
+        }
+
+        /// <summary>WinSDK: usbioctl.h: USB_NODE_CONNECTION_INFORMATION_EX_V2_FLAGS</summary>
+        [Flags]
+        public enum UsbNodeConnectionInformationExV2Flags : uint
+        {
+            DeviceIsOperatingAtSuperSpeedOrHigher = (1 << 0),
+            DeviceIsSuperSpeedCapableOrHigher = (1 << 1),
+            DeviceIsOperatingAtSuperSpeedPlusOrHigher = (1 << 2),
+            DeviceIsSuperSpeedPlusCapableOrHigher = (1 << 3),
+        }
+
+        /// <summary>WinSDK: usbioctl.h: USB_NODE_CONNECTION_INFORMATION_EX_V2</summary>
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        public struct UsbNodeConnectionInformationExV2
+        {
+            public uint ConnectionIndex;
+            public uint Length;
+            public UsbProtocols SupportedUsbProtocols;
+            public UsbNodeConnectionInformationExV2Flags Flags;
         }
     }
 }

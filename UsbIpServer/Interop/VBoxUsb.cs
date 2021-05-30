@@ -177,6 +177,8 @@ namespace UsbIpServer.Interop
             /// <summary>VBoxUsb: usblib-win.h</summary>
             SUPUSB_IOCTL_USB_RESET = (DeviceType.FILE_DEVICE_UNKNOWN << 16) | (AccessCode.FILE_WRITE_ACCESS << 14) | (0x608 << 2) | (MethodCode.METHOD_BUFFERED),
             /// <summary>VBoxUsb: usblib-win.h</summary>
+            SUPUSB_IOCTL_USB_SELECT_INTERFACE = (DeviceType.FILE_DEVICE_UNKNOWN << 16) | (AccessCode.FILE_WRITE_ACCESS << 14) | (0x609 << 2) | (MethodCode.METHOD_BUFFERED),
+            /// <summary>VBoxUsb: usblib-win.h</summary>
             SUPUSB_IOCTL_USB_SET_CONFIG = (DeviceType.FILE_DEVICE_UNKNOWN << 16) | (AccessCode.FILE_WRITE_ACCESS << 14) | (0x60a << 2) | (MethodCode.METHOD_BUFFERED),
             /// <summary>VBoxUsb: usblib-win.h</summary>
             SUPUSB_IOCTL_USB_CLAIM_DEVICE = (DeviceType.FILE_DEVICE_UNKNOWN << 16) | (AccessCode.FILE_WRITE_ACCESS << 14) | (0x60b << 2) | (MethodCode.METHOD_BUFFERED),
@@ -184,6 +186,8 @@ namespace UsbIpServer.Interop
             SUPUSB_IOCTL_USB_RELEASE_DEVICE = (DeviceType.FILE_DEVICE_UNKNOWN << 16) | (AccessCode.FILE_WRITE_ACCESS << 14) | (0x60c << 2) | (MethodCode.METHOD_BUFFERED),
             /// <summary>VBoxUsb: usblib-win.h</summary>
             SUPUSB_IOCTL_IS_OPERATIONAL = (DeviceType.FILE_DEVICE_UNKNOWN << 16) | (AccessCode.FILE_WRITE_ACCESS << 14) | (0x60d << 2) | (MethodCode.METHOD_BUFFERED),
+            /// <summary>VBoxUsb: usblib-win.h</summary>
+            SUPUSB_IOCTL_USB_CLEAR_ENDPOINT = (DeviceType.FILE_DEVICE_UNKNOWN << 16) | (AccessCode.FILE_WRITE_ACCESS << 14) | (0x60e << 2) | (MethodCode.METHOD_BUFFERED),
             /// <summary>VBoxUsb: usblib-win.h</summary>
             SUPUSB_IOCTL_GET_VERSION = (DeviceType.FILE_DEVICE_UNKNOWN << 16) | (AccessCode.FILE_WRITE_ACCESS << 14) | (0x60f << 2) | (MethodCode.METHOD_BUFFERED),
         }
@@ -266,6 +270,28 @@ namespace UsbIpServer.Interop
             public uint numIsoPkts;     /* [in] number of isochronous packets (8 max) */
             [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
             public UsbSupIsoPkt[] aIsoPkts;    /* [in/out] isochronous packet descriptors */
+        }
+
+        /// <summary>VBoxUsb: usblib-win.h: USBSUP_SET_CONFIG</summary>
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        public struct UsbSupSetConfig
+        {
+            public byte bConfigurationValue;
+        }
+
+        /// <summary>VBoxUsb: usblib-win.h: USBSUP_SELECT_INTERFACE</summary>
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        public struct UsbSupSelectInterface
+        {
+            public byte bInterfaceNumber;
+            public byte bAlternateSetting;
+        }
+
+        /// <summary>VBoxUsb: usblib-win.h: USBSUP_CLEAR_ENDPOINT</summary>
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        public struct UsbSupClearEndpoint
+        {
+            public byte bEndpoint;
         }
     }
 }

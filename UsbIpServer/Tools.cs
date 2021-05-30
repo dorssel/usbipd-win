@@ -268,5 +268,23 @@ namespace UsbIpServer
                 throw new NotSupportedException($"DEVPKEY_Device_LocationInfo returned unexpected {nameof(connectionIndex)} 0");
             }
         }
+
+        /// <summary>
+        /// See <see href="https://www.kernel.org/doc/html/latest/driver-api/usb/error-codes.html"/>.
+        /// </summary>
+        public static Linux.Errno ConvertError(VBoxUsb.UsbSupError usbSupError)
+        {
+            return usbSupError switch
+            {
+                VBoxUsb.UsbSupError.USBSUP_XFER_OK => Linux.Errno.SUCCESS,
+                VBoxUsb.UsbSupError.USBSUP_XFER_STALL => Linux.Errno.EPIPE,
+                VBoxUsb.UsbSupError.USBSUP_XFER_DNR => Linux.Errno.ETIME,
+                VBoxUsb.UsbSupError.USBSUP_XFER_CRC => Linux.Errno.EILSEQ,
+                VBoxUsb.UsbSupError.USBSUP_XFER_NAC => Linux.Errno.EPROTO,
+                VBoxUsb.UsbSupError.USBSUP_XFER_UNDERRUN => Linux.Errno.EREMOTEIO,
+                VBoxUsb.UsbSupError.USBSUP_XFER_OVERRUN => Linux.Errno.EOVERFLOW,
+                _ => Linux.Errno.EPROTO,
+            };
+        }
     }
 }

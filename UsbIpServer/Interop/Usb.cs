@@ -91,8 +91,22 @@ namespace UsbIpServer.Interop
             public byte bInterval;
         }
 
+        public enum UsbRequestTypeRecipient : byte
+        {
+            /// <summary>WinSDK: usbspec.h: BMREQUEST_TO_DEVICE</summary>
+            DEVICE = 0,
+            /// <summary>WinSDK: usbspec.h: BMREQUEST_TO_INTERFACE</summary>
+            INTERFACE,
+            /// <summary>WinSDK: usbspec.h: BMREQUEST_TO_ENDPOINT</summary>
+            ENDPOINT,
+            /// <summary>WinSDK: usbspec.h: BMREQUEST_TO_OTHER</summary>
+            OTHER,
+        }
+
         public enum UsbRequest : byte
         {
+            /// <summary>WinSDK: usbspec.h: USB_REQUEST_SET_CONFIGURATION</summary>
+            CLEAR_FEATURE = 0x01,
             /// <summary>WinSDK: usbspec.h: USB_REQUEST_SET_CONFIGURATION</summary>
             SET_CONFIGURATION = 0x09,
             /// <summary>WinSDK: usbspec.h: USB_REQUEST_SET_INTERFACE</summary>
@@ -103,7 +117,7 @@ namespace UsbIpServer.Interop
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
         public struct UsbDefaultPipeSetupPacket
         {
-            public byte bmRequestType;
+            public UsbRequestTypeRecipient bmRequestType;
             public UsbRequest bRequest;
             public ushort wValue;
             public ushort wIndex;

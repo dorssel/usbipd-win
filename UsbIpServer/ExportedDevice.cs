@@ -183,12 +183,36 @@ namespace UsbIpServer
                     await hubFile.IoControlAsync(IoControl.IOCTL_USB_GET_NODE_CONNECTION_INFORMATION_EX, buf, buf);
                     BytesToStruct(buf, 0, out data);
 
+                    var speed = MapWindowsSpeedToLinuxSpeed(data.Speed);
+
+                    var data2 = new UsbNodeConnectionInformationExV2()
+                    {
+                        ConnectionIndex = connectionIndex,
+                        Length = (uint)Marshal.SizeOf<UsbNodeConnectionInformationExV2>(),
+                        SupportedUsbProtocols = UsbProtocols.Usb110 | UsbProtocols.Usb200 | UsbProtocols.Usb300,
+                    };
+                    var buf2 = StructToBytes(data2);
+                    await hubFile.IoControlAsync(IoControl.IOCTL_USB_GET_NODE_CONNECTION_INFORMATION_EX_V2, buf2, buf2);
+                    BytesToStruct(buf2, 0, out data2);
+
+                    if ((data2.SupportedUsbProtocols & UsbProtocols.Usb300) != 0)
+                    {
+                        if ((data2.Flags & UsbNodeConnectionInformationExV2Flags.DeviceIsOperatingAtSuperSpeedPlusOrHigher) != 0)
+                        {
+                            speed = Linux.UsbDeviceSpeed.USB_SPEED_SUPER_PLUS;
+                        }
+                        else if ((data2.Flags & UsbNodeConnectionInformationExV2Flags.DeviceIsOperatingAtSuperSpeedOrHigher) != 0)
+                        {
+                            speed = Linux.UsbDeviceSpeed.USB_SPEED_SUPER;
+                        }
+                    }
+
                     var exportedDevice = new ExportedDevice()
                     {
                         Path = instanceId,
                         BusNum = hubNum,
                         DevNum = connectionIndex,
-                        Speed = MapWindowsSpeedToLinuxSpeed(data.Speed),
+                        Speed = speed,
                         VendorId = data.DeviceDescriptor.idVendor,
                         ProductId = data.DeviceDescriptor.idProduct,
                         BcdDevice = data.DeviceDescriptor.bcdDevice,

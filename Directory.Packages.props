@@ -7,7 +7,7 @@ SPDX-License-Identifier: GPL-2.0-only
 <Project>
   <ItemGroup>
     <!-- all -->
-    <PackageVersion Include="GitVersion.MsBuild" Version="5.6.8" />
+    <PackageVersion Include="GitVersion.MsBuild" Version="5.6.9" />
 
     <!-- UsbIpServer -->
     <PackageVersion Include="Microsoft.Extensions.CommandLineUtils" Version="1.1.1" />
