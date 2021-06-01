@@ -16,7 +16,23 @@ SPDX-License-Identifier: GPL-2.0-only
             <Component>
                 <File Id="README.md" />
             </Component>
+            <Component>
+                <File Id="Oracle.cer" />
+            </Component>
         </DirectoryRef>
+
+        <CustomAction
+            Id="DriverSilentInstall"
+            Directory="TARGETDIR"
+            ExeCommand="[System64Folder]certutil.exe –addstore –f TrustedPublisher &quot;[#Oracle.cer]&quot;"
+            Execute="deferred"
+            Return="ignore"
+            />
+
+        <InstallExecuteSequence>
+            <!-- Only on *non-interactive* *install or upgrade*. Required for 'winget' package manager. -->
+            <Custom Action="DriverSilentInstall" Before="MsiProcessDrivers"><![CDATA[(UILevel < 5) AND NOT Installed AND NOT REMOVE]]></Custom>
+        </InstallExecuteSequence>
     </Fragment>
     <Fragment>
         <DirectoryRef Id="Drivers" FileSource="$(var.DriversDir)">
@@ -53,6 +69,7 @@ SPDX-License-Identifier: GPL-2.0-only
     <Fragment>
         <ComponentGroup Id="VBoxUSB">
             <ComponentRef Id="README.md" />
+            <ComponentRef Id="Oracle.cer" />
             <ComponentRef Id="VBoxUSB.cat" />
             <ComponentRef Id="VBoxUSB.sys" />
             <ComponentRef Id="VBoxUSB.inf" />

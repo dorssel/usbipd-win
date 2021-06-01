@@ -29,3 +29,4 @@
 *.cat   binary
 *.inf   text
 *.sys   binary
+*.cer   binary
