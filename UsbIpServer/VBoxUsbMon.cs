@@ -18,7 +18,7 @@ namespace UsbIpServer
 {
     sealed class VBoxUsbMon : IDisposable
     {
-        readonly DeviceFile UsbMonitor = new DeviceFile(USBMON_DEVICE_NAME);
+        readonly DeviceFile UsbMonitor = new(USBMON_DEVICE_NAME);
 
         public async Task CheckVersion()
         {
