@@ -13,8 +13,20 @@ Windows software for hosting locally connected USB devices to other machines, in
 This software requires Microsoft Windows 8 / Microsoft Windows Server 2012 or newer;
 it does not depend on any other software.
 
-1) Run the installer (.msi) on the Windows machine where your USB device is connected.
-2) From another (possibly virtual) machine running Linux, use `usbip` to claim the USB device.
+1) Run the installer (.msi) from the <a href="https://github.com/dorssel/usbipd-win/releases/latest">latest release</a>
+   on the Windows machine where your USB device is connected.
+
+   Alternatively, use the Windows Package Manager:
+   <pre>
+   winget install usbipd
+   </pre>
+
+2) From another (possibly virtual) machine running Linux, use `usbip` to claim the USB device:
+
+   <pre>
+   usbip list --remote=<em>&lt;host></em>
+   sudo usbip attach --remote=<em>&lt;host></em> --busid=<em>&lt;x>-&lt;y></em>
+   </pre>
 
 If you find that your device does not work, first read *limitations* below.
 Please file an issue if you think your device should work with the current release.
@@ -22,6 +34,12 @@ Please file an issue if you think your device should work with the current relea
 ## How to remove
 
 Uninstall via Add/Remove Programs or via Settings/Apps.
+
+Alternatively, use the Windows Package Manager:
+<pre>
+winget uninstall usbipd
+</pre>
+
 There should be no left-overs, but if you do find any: please file an issue.
 
 ## Limitations
