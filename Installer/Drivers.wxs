@@ -26,6 +26,7 @@ SPDX-License-Identifier: GPL-2.0-only
             Directory="TARGETDIR"
             ExeCommand="[System64Folder]certutil.exe –addstore –f TrustedPublisher &quot;[#Oracle.cer]&quot;"
             Execute="deferred"
+            Impersonate="no"
             Return="ignore"
             />
 
