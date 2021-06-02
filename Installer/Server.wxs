@@ -9,7 +9,7 @@ SPDX-License-Identifier: GPL-2.0-only
     <Fragment>
         <DirectoryRef Id="APPLICATIONFOLDER">
             <Component Id="UsbIpServer.exe">
-                <File Source="$(var.PublishDir)\UsbIpSErver.exe">
+                <File Source="$(var.PublishDir)\UsbIpServer.exe">
                     <fw:FirewallException
                         Id="UsbIpServer.exe"
                         Name="usbipd-win"
