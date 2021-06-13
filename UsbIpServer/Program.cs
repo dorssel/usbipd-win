@@ -3,12 +3,16 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using Microsoft.Extensions.CommandLineUtils;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Hosting.WindowsServices;
+using Microsoft.Extensions.Logging;
 
 [assembly: CLSCompliant(true)]
 
@@ -108,8 +112,36 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
         static int ExecuteServer(string[] args)
         {
-            Host.CreateDefaultBuilder(args)
+            Host.CreateDefaultBuilder()
                 .UseWindowsService()
+                .ConfigureAppConfiguration((context, builder) =>
+                {
+                    var defaultConfig = new Dictionary<string, string>();
+                    if (WindowsServiceHelpers.IsWindowsService())
+                    {
+                        // EventLog defaults to Warning, which is OK for .NET components,
+                        //      but we want to specifically log Information from our own component.
+                        defaultConfig.Add($"Logging:EventLog:LogLevel:{nameof(UsbIpServer)}", "Information");
+                    }
+                    else
+                    {
+                        // When not running as a Windows service, do not spam the EventLog.
+                        defaultConfig.Add("Logging:EventLog:LogLevel:Default", "None");
+                    }
+                    // set the above as defaults
+                    builder.AddInMemoryCollection(defaultConfig);
+                    // allow overrides from the environment
+                    builder.AddEnvironmentVariables();
+                    // allow overrides from the command line
+                    builder.AddCommandLine(args);
+                })
+                .ConfigureLogging((context, logging) =>
+                {
+                    logging.AddEventLog(settings =>
+                    {
+                        settings.SourceName = Product;
+                    });
+                })
                 .ConfigureServices((hostContext, services) =>
                 {
                     services.AddHostedService<Server>();

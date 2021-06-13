@@ -97,17 +97,26 @@ namespace UsbIpServer
                 await mon.RunFilters();
                 status = Status.ST_DEV_BUSY;
                 ClientContext.AttachedDevice = await mon.ClaimDevice(exportedDevice);
-                ClientContext.ConfigurationDescriptors = exportedDevice.ConfigurationDescriptors;
 
-                status = Status.ST_DEV_ERR;
-                var cfg = new byte[1] { 0 };
-                await ClientContext.AttachedDevice.IoControlAsync(VBoxUsb.IoControl.SUPUSB_IOCTL_USB_SET_CONFIG, cfg, null);
+                Logger.LogInformation(LogEvents.ClientAttach, $"Client {ClientContext.TcpClient.Client.RemoteEndPoint} claimed device at {exportedDevice.BusId} ({exportedDevice.Path}).");
+                try
+                {
+                    ClientContext.ConfigurationDescriptors = exportedDevice.ConfigurationDescriptors;
 
-                status = Status.ST_OK;
-                await SendOpCodeAsync(OpCode.OP_REP_IMPORT, Status.ST_OK);
-                exportedDevice.Serialize(Stream, false);
+                    status = Status.ST_DEV_ERR;
+                    var cfg = new byte[1] { 0 };
+                    await ClientContext.AttachedDevice.IoControlAsync(VBoxUsb.IoControl.SUPUSB_IOCTL_USB_SET_CONFIG, cfg, null);
 
-                await ServiceProvider.GetRequiredService<AttachedClient>().RunAsync(cancellationToken);
+                    status = Status.ST_OK;
+                    await SendOpCodeAsync(OpCode.OP_REP_IMPORT, Status.ST_OK);
+                    exportedDevice.Serialize(Stream, false);
+
+                    await ServiceProvider.GetRequiredService<AttachedClient>().RunAsync(cancellationToken);
+                }
+                finally
+                {
+                    Logger.LogInformation(LogEvents.ClientDetach, $"Client {ClientContext.TcpClient.Client.RemoteEndPoint} released device at {exportedDevice.BusId} ({exportedDevice.Path}).");
+                }
             }
             catch
             {
