@@ -21,7 +21,7 @@ namespace UsbIpServer
     [SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes", Justification = "Instantiated by DI")]
     sealed class AttachedClient
     {
-        public AttachedClient(ILogger<ConnectedClient> logger, ClientContext clientContext)
+        public AttachedClient(ILogger<AttachedClient> logger, ClientContext clientContext)
         {
             Logger = logger;
             ClientContext = clientContext;
