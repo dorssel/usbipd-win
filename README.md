@@ -46,6 +46,8 @@ There should be no left-overs, but if you do find any: please file an issue.
 
 - For now, only USB devices with so called *bulk* endpoints work (USB flash drives, FTDI USB-to-serial, etc.).
 
+More information can be found on the [wiki](https://github.com/dorssel/usbipd-win/wiki).
+
 ## How it works
 
 The software glues together the UsbIp network protocol (as implemented by the Linux kernel) and the USB drivers.
