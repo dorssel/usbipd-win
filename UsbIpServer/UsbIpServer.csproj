@@ -53,6 +53,7 @@ SPDX-License-Identifier: GPL-2.0-only
     </PackageReference>
     <PackageReference Include="Microsoft.Extensions.CommandLineUtils" />
     <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" />
+    <PackageReference Include="Microsoft.Win32.Registry" />
   </ItemGroup>
 
 </Project>

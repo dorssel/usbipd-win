@@ -70,6 +70,21 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                     return 0;
                 });
             });
+
+            app.Command("list", (cmd) =>
+            {
+
+            });
+
+            app.Command("bind", (cmd) =>
+            {
+
+            });
+
+            app.Command("unbind", (cmd) =>
+            {
+
+            });
 #if false
             // TODO: Linux style binding (optional?)
             // for now, just allow any client to claim any device (!)
