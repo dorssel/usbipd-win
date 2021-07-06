@@ -87,7 +87,9 @@ namespace UsbIpServer
 
             try
             {
-                var exportedDevices = await ExportedDevice.GetAll(cancellationToken);
+                var exportedDevices = (await ExportedDevice.GetAll(cancellationToken))
+                    .Where(x => RegistryUtils.getAvailableDevicesIds().Contains(x.BusId))
+                    .ToArray();
 
                 status = Status.ST_NODEV;
                 var exportedDevice = exportedDevices.Single(x => x.BusId == busid);
