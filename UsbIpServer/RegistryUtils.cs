@@ -56,6 +56,11 @@ namespace UsbIpServer
             return registryDevices.ToArray();
         }
 
+        public static HashSet<string> getAvailableDevicesIds()
+        {
+            return getRegistryDevices().Select(x=> x.busId).ToHashSet();
+        }
+
         public static void enableRegistryDevice(string busId)
         {
             var devices = Registry.LocalMachine.CreateSubKey(devicesRegistryPath);
