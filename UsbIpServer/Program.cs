@@ -13,6 +13,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Hosting.WindowsServices;
 using Microsoft.Extensions.Logging;
+using Microsoft.Win32;
 
 [assembly: CLSCompliant(true)]
 
@@ -44,6 +45,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
         static int Main(string[] args)
         {
+            // if registry key is not defined, define it
+            var localMachineKeys = Registry.LocalMachine.CreateSubKey(@"SOFTWARE\USBIPD-WIN");
+
             var app = new CommandLineApplication()
             {
                 Name = Path.ChangeExtension(Path.GetFileName(Assembly.GetExecutingAssembly().Location), "exe"),
@@ -71,19 +75,44 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                 });
             });
 
+            
             app.Command("list", (cmd) =>
             {
+                cmd.Description = "List available USB devices.";
+                cmd.OnExecute(() =>
+                {
+                    var devices = RegistryUtils.getRegistryDevices();
+                    foreach (var device in devices)
+                    {
+                        Console.WriteLine(device.busId + "\t" + "available: " + device.isAvailable);
+                    }
 
+                    return 0;
+                });
             });
 
             app.Command("bind", (cmd) =>
             {
+                cmd.Description = "Bind device";
+                var busId = cmd.Option("-b|--busid=<busid>", "Share device having <busid>", CommandOptionType.SingleValue);
+                cmd.OnExecute(() =>
+                {
+                    RegistryUtils.enableRegistryDevice(busId.Value());
 
+                    return 0;
+                });
             });
 
             app.Command("unbind", (cmd) =>
             {
+                cmd.Description = "Bind device";
+                var busId = cmd.Option("-b|--busid=<busid>", "Share device having <busid>", CommandOptionType.SingleValue);
+                cmd.OnExecute(() =>
+                {
+                    RegistryUtils.disableRegistryDevice(busId.Value());
 
+                    return 0;
+                });
             });
 #if false
             // TODO: Linux style binding (optional?)
