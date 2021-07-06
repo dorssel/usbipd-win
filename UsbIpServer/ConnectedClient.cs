@@ -16,6 +16,7 @@ using Microsoft.Extensions.Logging;
 using UsbIpServer.Interop;
 using static UsbIpServer.Interop.UsbIp;
 using static UsbIpServer.Tools;
+using Microsoft.Win32;
 
 namespace UsbIpServer
 {
@@ -62,6 +63,8 @@ namespace UsbIpServer
         async Task HandleRequestDeviceListAsync(CancellationToken cancellationToken)
         {
             var exportedDevices = await ExportedDevice.GetAll(cancellationToken);
+
+
 
             await SendOpCodeAsync(OpCode.OP_REP_DEVLIST, Status.ST_OK);
 
