@@ -21,22 +21,6 @@ namespace UsbIpServer
 
         const string devicesRegistryPath = @"SOFTWARE\USBIPD-WIN";
 
-        //public static string[] getAvailableDevices()
-        //{
-        //    var availableDevices  = new string[0];
-        //    var devices = Registry.LocalMachine.CreateSubKey(devicesRegistryPath);
-        //    foreach(var d in devices.GetSubKeyNames())
-        //    {
-        //        var deviceKey = devices.OpenSubKey(d);
-        //        if (deviceKey != null && deviceKey.GetValue("available") != null && deviceKey.GetValue("available").ToString()  == "True")
-        //        {
-        //            availableDevices.Append(d);
-        //        }
-        //    }
-
-        //    return availableDevices;
-        //}
-
         public static RegistryDevice[] getRegistryDevices()
         {
             var registryDevices = new List<RegistryDevice>();

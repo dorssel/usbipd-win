@@ -84,7 +84,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                     var devices = RegistryUtils.getRegistryDevices();
                     foreach (var device in devices)
                     {
-                        Console.WriteLine(device.busId + "\t" + "available: " + device.isAvailable);
+                        Console.WriteLine($"device:{device.busId}\tavailable:{device.isAvailable}");
                     }
 
                     return 0;
@@ -95,10 +95,21 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
             {
                 cmd.Description = "Bind device";
                 var busId = cmd.Option("-b|--busid=<busid>", "Share device having <busid>", CommandOptionType.SingleValue);
+                var bindAll = cmd.Option("-a|--all", "Share all devices.", CommandOptionType.NoValue);
                 cmd.OnExecute(() =>
                 {
-                    RegistryUtils.enableRegistryDevice(busId.Value());
+                    if (bindAll.HasValue())
+                    {
+                        var ids = RegistryUtils.getAvailableDevicesIds();
+                        foreach (var id in ids)
+                        {
+                            RegistryUtils.enableRegistryDevice(id);
+                        }
 
+                        return 0;
+                    }
+
+                    RegistryUtils.enableRegistryDevice(busId.Value());
                     return 0;
                 });
             });
@@ -107,27 +118,26 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
             {
                 cmd.Description = "Unbind device";
                 var busId = cmd.Option("-b|--busid=<busid>", "Stop sharing device having <busid>", CommandOptionType.SingleValue);
+                var unbindAll = cmd.Option("-a|--all", "Stop sharing all devices.", CommandOptionType.NoValue);
                 cmd.OnExecute(() =>
                 {
-                    RegistryUtils.disableRegistryDevice(busId.Value());
+                    if (unbindAll.HasValue())
+                    {
+                        var ids = RegistryUtils.getAvailableDevicesIds();
+                        foreach (var id in ids)
+                        {
+                            RegistryUtils.disableRegistryDevice(id);
+                        }
+
+                        return 0;
+                    }
+
+                    RegistryUtils.disableRegistryDevice(busId.Value()); 
 
                     return 0;
                 });
             });
-#if false
-            // TODO: Linux style binding (optional?)
-            // for now, just allow any client to claim any device (!)
-            app.Command("bind", (cmd) => {
-                cmd.Description = "Bind device to VBoxUsb.sys";
-                DefaultCmdLine(cmd);
-                cmd.Option("-b|--busid=<busid>", "Bind VBoxUsb.sys to device on <busid>", CommandOptionType.SingleValue);
-            });
-            app.Command("unbind", (cmd) => {
-                cmd.Description = "Unbind device from VBoxUsb.sys";
-                DefaultCmdLine(cmd);
-                cmd.Option("-b|--busid=<busid>", "Unbind VBoxUsb.sys from device on <busid>", CommandOptionType.SingleValue);
-            });
-#endif
+
             app.Command("server", (cmd) =>
             {
                 cmd.Description = "Run the server stand-alone on the console";
