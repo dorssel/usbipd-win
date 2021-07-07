@@ -42,7 +42,7 @@ namespace UsbIpServer
 
         public static HashSet<string> getAvailableDevicesIds()
         {
-            return getRegistryDevices().Select(x=> x.busId).ToHashSet();
+            return getRegistryDevices().Where(x => x.isAvailable).Select(x=> x.busId).ToHashSet();
         }
 
         public static void enableRegistryDevice(string busId)
