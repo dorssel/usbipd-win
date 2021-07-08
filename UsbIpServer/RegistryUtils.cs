@@ -43,8 +43,7 @@ namespace UsbIpServer
             return GetRegistryDevices().Where(x => x.IsAvailable).Select(x=> x.BusId).Contains(busId);
         }
 
-
-        public static void EnableRegistryDevice(string busId)
+        public static void SetDeviceAvailability(string busId, bool enable)
         {
             var devices = Registry.LocalMachine.CreateSubKey(devicesRegistryPath);
             var deviceIds = devices.GetSubKeyNames();
@@ -53,21 +52,7 @@ namespace UsbIpServer
                 if (id == busId)
                 {
                     var d = devices.CreateSubKey(id);
-                    d.SetValue("available", true);
-                }
-            }
-        }
-
-        public static void DisableRegistryDevice(string busId)
-        {
-            var devices = Registry.LocalMachine.CreateSubKey(devicesRegistryPath);
-            var deviceIds = devices.GetSubKeyNames();
-            foreach (var id in deviceIds)
-            {
-                if (id == busId)
-                {
-                    var d = devices.CreateSubKey(id);
-                    d.SetValue("available", false);
+                    d.SetValue("available", enable);
                 }
             }
         }

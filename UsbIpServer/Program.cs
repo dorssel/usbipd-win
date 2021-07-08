@@ -106,13 +106,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                         var connectedDevices = await ExportedDevice.GetAll(cancellationToken);
                         foreach (var id in connectedDevices.Select(x => x.BusId))
                         {
-                            RegistryUtils.EnableRegistryDevice(id);
+                            RegistryUtils.SetDeviceAvailability(id, true);
                         }
 
                         return 0;
                     }
 
-                    RegistryUtils.EnableRegistryDevice(busId.Value());
+                    RegistryUtils.SetDeviceAvailability(busId.Value(), true);
                     return 0;
                 });
             });
@@ -130,13 +130,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                         var connectedDevices = await ExportedDevice.GetAll(cancellationToken);
                         foreach (var id in connectedDevices.Select(x => x.BusId))
                         {
-                            RegistryUtils.DisableRegistryDevice(id);
+                            RegistryUtils.SetDeviceAvailability(id, false);
                         }
 
                         return 0;
                     }
 
-                    RegistryUtils.DisableRegistryDevice(busId.Value());
+                    RegistryUtils.SetDeviceAvailability(busId.Value(), false);
                     return 0;
                 });
             });
