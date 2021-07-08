@@ -56,37 +56,5 @@ namespace UsbIpServer
                 }
             }
         }
-
-        public static async Task UpdateRegistry(CancellationToken stoppingToken)
-        {
-            // sync device list
-            var devices = await ExportedDevice.GetAll(stoppingToken);
-            var deviceKeys = Registry.LocalMachine.CreateSubKey(devicesRegistryPath);
-
-            // update device list
-            foreach (var d in devices)
-            {
-                var deviceKey = deviceKeys.CreateSubKey(d.BusId);
-                if (!deviceKey.GetValueNames().Contains("available"))
-                {
-                    // first time seen, so don't share by default
-                    deviceKey.SetValue("available", false);
-                }
-
-                // get device information 
-                deviceKey.SetValue("vendor-id", d.VendorId);
-                deviceKey.SetValue("product-id", d.ProductId);
-            }
-
-            // delete outdated devices from registry
-            var busIds = devices.Select(x => x.BusId).ToArray();
-            foreach (var busId in deviceKeys.GetSubKeyNames())
-            {
-                if (!busIds.Contains(busId))
-                {
-                    deviceKeys.DeleteSubKey(busId);
-                }
-            }
-        }
     }
 }
