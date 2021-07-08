@@ -36,7 +36,7 @@ namespace UsbIpServer
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            await RegistryUtils.updateRegistry(stoppingToken);
+            await RegistryUtils.UpdateRegistry(stoppingToken);
 
             using var singleton = new Mutex(true, SingletonMutexName, out var createdNew);
             if (!createdNew)

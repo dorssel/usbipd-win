@@ -63,7 +63,7 @@ namespace UsbIpServer
         async Task HandleRequestDeviceListAsync(CancellationToken cancellationToken)
         {
             var exportedDevices = (await ExportedDevice.GetAll(cancellationToken))
-                .Where(x => RegistryUtils.getAvailableDevicesIds().Contains(x.BusId))
+                .Where(x => RegistryUtils.IsDeviceAvailable(x.BusId))
                 .ToArray();
             await SendOpCodeAsync(OpCode.OP_REP_DEVLIST, Status.ST_OK);
 
@@ -88,7 +88,7 @@ namespace UsbIpServer
             try
             {
                 var exportedDevices = (await ExportedDevice.GetAll(cancellationToken))
-                    .Where(x => RegistryUtils.getAvailableDevicesIds().Contains(x.BusId))
+                    .Where(x => RegistryUtils.IsDeviceAvailable(x.BusId))
                     .ToArray();
 
                 status = Status.ST_NODEV;

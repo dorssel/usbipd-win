@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using Microsoft.Extensions.CommandLineUtils;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -78,13 +79,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
             
             app.Command("list", (cmd) =>
             {
-                cmd.Description = "List available USB devices.";
-                cmd.OnExecute(() =>
+                cmd.Description = "List connected USB devices.";
+                cmd.OnExecute(async () =>
                 {
-                    var devices = RegistryUtils.getRegistryDevices();
-                    foreach (var device in devices)
-                    {
-                        Console.WriteLine($"device:{device.busId}\tavailable:{device.isAvailable}");
+                    var cancellationToken = (new CancellationTokenSource()).Token;
+                    var connectedDevices = await ExportedDevice.GetAll(cancellationToken);
+                    foreach (var device in connectedDevices)
+                    {  
+                        Console.WriteLine($"device:{device.BusId}\tavailable:{RegistryUtils.IsDeviceAvailable(device.BusId)}");
                     }
 
                     return 0;
@@ -96,20 +98,21 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                 cmd.Description = "Bind device";
                 var busId = cmd.Option("-b|--busid=<busid>", "Share device having <busid>", CommandOptionType.SingleValue);
                 var bindAll = cmd.Option("-a|--all", "Share all devices.", CommandOptionType.NoValue);
-                cmd.OnExecute(() =>
+                cmd.OnExecute(async () =>
                 {
                     if (bindAll.HasValue())
                     {
-                        var ids = RegistryUtils.getAvailableDevicesIds();
-                        foreach (var id in ids)
+                        var cancellationToken = (new CancellationTokenSource()).Token;
+                        var connectedDevices = await ExportedDevice.GetAll(cancellationToken);
+                        foreach (var id in connectedDevices.Select(x => x.BusId))
                         {
-                            RegistryUtils.enableRegistryDevice(id);
+                            RegistryUtils.EnableRegistryDevice(id);
                         }
 
                         return 0;
                     }
 
-                    RegistryUtils.enableRegistryDevice(busId.Value());
+                    RegistryUtils.EnableRegistryDevice(busId.Value());
                     return 0;
                 });
             });
@@ -119,21 +122,21 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                 cmd.Description = "Unbind device";
                 var busId = cmd.Option("-b|--busid=<busid>", "Stop sharing device having <busid>", CommandOptionType.SingleValue);
                 var unbindAll = cmd.Option("-a|--all", "Stop sharing all devices.", CommandOptionType.NoValue);
-                cmd.OnExecute(() =>
+                cmd.OnExecute(async () =>
                 {
                     if (unbindAll.HasValue())
                     {
-                        var ids = RegistryUtils.getAvailableDevicesIds();
-                        foreach (var id in ids)
+                        var cancellationToken = (new CancellationTokenSource()).Token;
+                        var connectedDevices = await ExportedDevice.GetAll(cancellationToken);
+                        foreach (var id in connectedDevices.Select(x => x.BusId))
                         {
-                            RegistryUtils.disableRegistryDevice(id);
+                            RegistryUtils.DisableRegistryDevice(id);
                         }
 
                         return 0;
                     }
 
-                    RegistryUtils.disableRegistryDevice(busId.Value()); 
-
+                    RegistryUtils.DisableRegistryDevice(busId.Value());
                     return 0;
                 });
             });
