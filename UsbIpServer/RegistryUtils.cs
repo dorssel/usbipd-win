@@ -13,15 +13,15 @@ namespace UsbIpServer
     {
         public struct RegistryDevice
         {
-            public string busId;
-            public string vendorId;
-            public string productId;
-            public bool isAvailable;
+            public string BusId;
+            public string VendorId;
+            public string ProductId;
+            public bool IsAvailable;
         }
 
         const string devicesRegistryPath = @"SOFTWARE\USBIPD-WIN";
 
-        public static RegistryDevice[] getRegistryDevices()
+        public static IEnumerable<RegistryDevice> GetRegistryDevices()
         {
             var registryDevices = new List<RegistryDevice>();
             var devices = Registry.LocalMachine.CreateSubKey(devicesRegistryPath);
@@ -30,22 +30,23 @@ namespace UsbIpServer
             {   
                 var d = devices.OpenSubKey(id);
                 RegistryDevice registryDevice;
-                registryDevice.busId = id;
-                registryDevice.productId = (string)d.GetValue("product-id");
-                registryDevice.vendorId = (string)d.GetValue("vendor-id");
-                registryDevice.isAvailable = (string)d.GetValue("available") == "True" ;
+                registryDevice.BusId = id;
+                registryDevice.ProductId = (string)d.GetValue("product-id");
+                registryDevice.VendorId = (string)d.GetValue("vendor-id");
+                registryDevice.IsAvailable = (string)d.GetValue("available") == "True" ;
                 registryDevices.Add(registryDevice);
             }
 
-            return registryDevices.ToArray();
+            return registryDevices;
         }
 
-        public static HashSet<string> getAvailableDevicesIds()
+        public static bool IsDeviceAvailable(string busId)
         {
-            return getRegistryDevices().Where(x => x.isAvailable).Select(x=> x.busId).ToHashSet();
+            return GetRegistryDevices().Where(x => x.IsAvailable).Select(x=> x.BusId).Contains(busId);
         }
 
-        public static void enableRegistryDevice(string busId)
+
+        public static void EnableRegistryDevice(string busId)
         {
             var devices = Registry.LocalMachine.CreateSubKey(devicesRegistryPath);
             var deviceIds = devices.GetSubKeyNames();
@@ -59,7 +60,7 @@ namespace UsbIpServer
             }
         }
 
-        public static void disableRegistryDevice(string busId)
+        public static void DisableRegistryDevice(string busId)
         {
             var devices = Registry.LocalMachine.CreateSubKey(devicesRegistryPath);
             var deviceIds = devices.GetSubKeyNames();
@@ -73,7 +74,7 @@ namespace UsbIpServer
             }
         }
 
-        public static async Task updateRegistry(CancellationToken stoppingToken)
+        public static async Task UpdateRegistry(CancellationToken stoppingToken)
         {
             // sync device list
             var devices = await ExportedDevice.GetAll(stoppingToken);
