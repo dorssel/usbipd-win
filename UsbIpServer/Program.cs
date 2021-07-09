@@ -205,6 +205,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                     services.AddScoped<ClientContext>();
                     services.AddScoped<ConnectedClient>();
                     services.AddScoped<AttachedClient>();
+                    services.AddSingleton<TokenTracker>();
+                    services.AddSingleton<RegistryWatcher>();
                 })
                 .Build()
                 .Run();
