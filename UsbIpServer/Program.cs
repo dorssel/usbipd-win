@@ -46,9 +46,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
         static int Main(string[] args)
         {
-            // if registry key is not defined, define it
-            var localMachineKeys = Registry.LocalMachine.CreateSubKey(@"SOFTWARE\USBIPD-WIN");
-
+            // if registry key does not exist, this will initialize it.
+            RegistryUtils.InitializeRegistry();
             var app = new CommandLineApplication()
             {
                 Name = Path.ChangeExtension(Path.GetFileName(Assembly.GetExecutingAssembly().Location), "exe"),

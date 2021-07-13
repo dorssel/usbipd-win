@@ -48,5 +48,10 @@ namespace UsbIpServer
             var deviceKey = Registry.LocalMachine.CreateSubKey($@"{devicesRegistryPath}\{busId}");
             deviceKey.SetValue("available", enable);
         }
+
+        public static void InitializeRegistry()
+        {
+            Registry.LocalMachine.CreateSubKey(devicesRegistryPath);
+        }
     }
 }
