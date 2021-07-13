@@ -6,7 +6,6 @@ using System;
 using System.Buffers.Binary;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using System.Management;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -23,14 +22,12 @@ namespace UsbIpServer
     [SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes", Justification = "Instantiated by DI")]
     sealed class ConnectedClient
     {
-        public ConnectedClient(ILogger<ConnectedClient> logger, RegistryWatcher watcher, ClientContext clientContext, TokenTracker tracker,IServiceProvider serviceProvider)
+        public ConnectedClient(ILogger<ConnectedClient> logger, RegistryWatcher watcher, ClientContext clientContext, IServiceProvider serviceProvider)
         {
             Logger = logger;
             ClientContext = clientContext;
             ServiceProvider = serviceProvider;
-            TTracker = tracker;
             Watcher = watcher;
-            Watcher.AddHandler(HandleEvent);
 
             var client = clientContext.TcpClient;
             client.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
@@ -41,25 +38,10 @@ namespace UsbIpServer
             Stream = client.GetStream();
         }
 
-        private void HandleEvent(object? sender, EventArgs e)
-        {
-            // something change in the registry, so check if we should unbind device
-            var devicesToUnbind = RegistryUtils.GetRegistryDevices().Where(x => !x.IsAvailable);
-            foreach (var device in devicesToUnbind)
-            {
-                if (TTracker.Tokens.ContainsKey(device.BusId))
-                {
-                    TTracker.Tokens[device.BusId].Cancel();
-                    TTracker.Tokens.Remove(device.BusId);
-                }
-            }
-        }
-
         readonly ILogger Logger;
         readonly ClientContext ClientContext;
         readonly IServiceProvider ServiceProvider;
         readonly NetworkStream Stream;
-        readonly TokenTracker TTracker;
         readonly RegistryWatcher Watcher;
 
         public async Task RunAsync(CancellationToken cancellationToken)
@@ -84,6 +66,7 @@ namespace UsbIpServer
             var exportedDevices = (await ExportedDevice.GetAll(cancellationToken))
                 .Where(x => RegistryUtils.IsDeviceAvailable(x.BusId))
                 .ToArray();
+
             await SendOpCodeAsync(OpCode.OP_REP_DEVLIST, Status.ST_OK);
 
             // reply count
@@ -136,11 +119,8 @@ namespace UsbIpServer
 
                     // setup token to free device
                     using var attachedClientTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+                    Watcher.WatchDevice(busid, () => attachedClientTokenSource.Cancel());
                     var attachedClientToken = attachedClientTokenSource.Token;
-                    TTracker.Tokens[busid] =  attachedClientTokenSource;
-
-
-
                     await ServiceProvider.GetRequiredService<AttachedClient>().RunAsync(attachedClientToken);
                 }
                 finally
