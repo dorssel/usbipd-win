@@ -79,6 +79,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
             app.Command("list", (cmd) =>
             {
                 cmd.Description = "List connected USB devices.";
+                DefaultCmdLine(cmd);
                 cmd.OnExecute(async () =>
                 {
                     var cancellationToken = (new CancellationTokenSource()).Token;
@@ -97,6 +98,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                 cmd.Description = "Bind device";
                 var busId = cmd.Option("-b|--busid=<busid>", "Share device having <busid>", CommandOptionType.SingleValue);
                 var bindAll = cmd.Option("-a|--all", "Share all devices.", CommandOptionType.NoValue);
+                DefaultCmdLine(cmd);
                 cmd.OnExecute(async () =>
                 {
                     if (bindAll.HasValue())
@@ -121,6 +123,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                 cmd.Description = "Unbind device";
                 var busId = cmd.Option("-b|--busid=<busid>", "Stop sharing device having <busid>", CommandOptionType.SingleValue);
                 var unbindAll = cmd.Option("-a|--all", "Stop sharing all devices.", CommandOptionType.NoValue);
+                DefaultCmdLine(cmd);
                 cmd.OnExecute(async () =>
                 {
                     if (unbindAll.HasValue())

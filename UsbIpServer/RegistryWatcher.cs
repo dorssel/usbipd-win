@@ -25,7 +25,7 @@ namespace UsbIpServer
 
         private void HandleEvent(object sender, EventArrivedEventArgs e)
         {
-            // something change in the registry, so check if we should unbind device
+            // something changed in the registry, so check if we should unbind device
             var devicesToUnbind = RegistryUtils.GetRegistryDevices().Where(x => !x.IsAvailable);
             foreach (var device in devicesToUnbind)
             {
