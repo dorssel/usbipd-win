@@ -40,7 +40,7 @@ namespace UsbIpServer
 
         public static bool IsDeviceAvailable(string busId)
         {
-            return GetRegistryDevices().Where(x => x.IsAvailable).Select(x=> x.BusId).Contains(busId);
+            return GetRegistryDevices().Any(x => x.IsAvailable && x.BusId == busId);
         }
 
         public static void SetDeviceAvailability(string busId, bool enable)
