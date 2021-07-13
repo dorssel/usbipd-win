@@ -76,7 +76,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                 });
             });
 
-            
             app.Command("list", (cmd) =>
             {
                 cmd.Description = "List connected USB devices.";

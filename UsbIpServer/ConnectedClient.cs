@@ -140,8 +140,6 @@ namespace UsbIpServer
             }
         }
 
-      
-
         async Task<OpCode> RecvOpCodeAsync(CancellationToken cancellationToken)
         {
             var buf = new byte[8];

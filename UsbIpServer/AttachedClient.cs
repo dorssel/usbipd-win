@@ -199,9 +199,6 @@ namespace UsbIpServer
 
         public async Task RunAsync(CancellationToken cancellationToken)
         {
-            //using var source = new CancellationTokenSource();
-            //source.CancelAfter(15000);
-            //cancellationToken = source.Token;
             while (true)
             {
                 var buf = new byte[48 /* sizeof(usbip_header) */];
