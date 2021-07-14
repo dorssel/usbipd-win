@@ -51,6 +51,7 @@ namespace UsbIpServer
 
         public static void InitializeRegistry()
         {
+            Registry.LocalMachine.DeleteSubKey(devicesRegistryPath);
             Registry.LocalMachine.CreateSubKey(devicesRegistryPath);
         }
     }
