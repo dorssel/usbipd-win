@@ -35,21 +35,18 @@ namespace UsbIpServer
             }
         }
 
-        public static void StructToBytes<T>(in T s, byte[] bytes, int offset) where T : struct
+        public static void StructToBytes<T>(in T s, Span<byte> bytes) where T : struct
         {
-            if (offset > bytes.Length)
+            var required = Marshal.SizeOf<T>();
+            if (bytes.Length < required)
             {
-                throw new ArgumentException($"offset {offset} > array length {bytes.Length}", nameof(offset));
-            }
-            if (bytes.Length - offset < Marshal.SizeOf<T>())
-            {
-                throw new ArgumentException($"remaining buffer length {bytes.Length - offset} (from offset {offset}) < structure size {Marshal.SizeOf<T>()}", nameof(bytes));
+                throw new ArgumentException($"buffer too small for structure: {bytes.Length} < {required}", nameof(bytes));
             }
             unsafe
             {
                 fixed (byte* dst = bytes)
                 {
-                    Marshal.StructureToPtr(s, (IntPtr)(dst + offset), false);
+                    Marshal.StructureToPtr(s, (IntPtr)dst, false);
                 }
             }
         }
@@ -57,32 +54,29 @@ namespace UsbIpServer
         public static byte[] StructToBytes<T>(in T s) where T : struct
         {
             var buf = new byte[Marshal.SizeOf<T>()];
-            StructToBytes(s, buf, 0);
+            StructToBytes(s, buf);
             return buf;
         }
 
-        public static void BytesToStruct<T>(ReadOnlySpan<byte> bytes, int offset, out T s) where T : struct
+        public static void BytesToStruct<T>(ReadOnlySpan<byte> bytes, out T s) where T : struct
         {
-            if (offset > bytes.Length)
+            var required = Marshal.SizeOf<T>();
+            if (bytes.Length < required)
             {
-                throw new ArgumentException($"offset {offset} > array length {bytes.Length}", nameof(offset));
-            }
-            if (bytes.Length - offset < Marshal.SizeOf<T>())
-            {
-                throw new ArgumentException($"remaining buffer length {bytes.Length - offset} (from offset {offset}) < structure size {Marshal.SizeOf<T>()}", nameof(bytes));
+                throw new ArgumentException($"buffer too small for structure: {bytes.Length} < {required}", nameof(bytes));
             }
             unsafe
             {
                 fixed (byte* src = bytes)
                 {
-                    s = Marshal.PtrToStructure<T>((IntPtr)(src + offset));
+                    s = Marshal.PtrToStructure<T>((IntPtr)src);
                 }
             }
         }
 
-        public static T BytesToStruct<T>(ReadOnlySpan<byte> bytes, int offset) where T : struct
+        public static T BytesToStruct<T>(ReadOnlySpan<byte> bytes) where T : struct
         {
-            BytesToStruct(bytes, offset, out T result);
+            BytesToStruct(bytes, out T result);
             return result;
         }
 

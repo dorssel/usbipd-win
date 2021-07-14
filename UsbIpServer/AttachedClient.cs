@@ -84,7 +84,7 @@ namespace UsbIpServer
 
             if (transferType == UsbEndpointType.USB_ENDPOINT_TYPE_CONTROL)
             {
-                StructToBytes(submit.setup, buf, 0);
+                StructToBytes(submit.setup, buf);
             }
 
             if (basic.direction == UsbIpDir.USBIP_DIR_OUT)
@@ -148,9 +148,9 @@ namespace UsbIpServer
                 try
                 {
                     urb.buf = gc.AddrOfPinnedObject();
-                    StructToBytes(urb, bytes, 0);
+                    StructToBytes(urb, bytes);
                     await Device.IoControlAsync(IoControl.SUPUSB_IOCTL_SEND_URB, bytes, bytes);
-                    BytesToStruct(bytes, 0, out urb);
+                    BytesToStruct(bytes, out urb);
                 }
                 finally
                 {
@@ -222,7 +222,7 @@ namespace UsbIpServer
                             start_frame = BinaryPrimitives.ReadInt32BigEndian(buf.AsSpan(28)),
                             number_of_packets = BinaryPrimitives.ReadInt32BigEndian(buf.AsSpan(32)),
                             interval = BinaryPrimitives.ReadInt32BigEndian(buf.AsSpan(36)),
-                            setup = BytesToStruct<UsbDefaultPipeSetupPacket>(buf, 40),
+                            setup = BytesToStruct<UsbDefaultPipeSetupPacket>(buf.AsSpan(40)),
                         };
                         Logger.LogTrace($"USBIP_CMD_SUBMIT, seqnum={basic.seqnum}, flags={submit.transfer_flags}, length={submit.transfer_buffer_length}, ep={basic.ep}");
                         await HandleSubmitAsync(basic, submit, cancellationToken);

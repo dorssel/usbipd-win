@@ -112,9 +112,9 @@ namespace UsbIpServer
                         wValue = (ushort)(((byte)UsbDescriptorType.USB_CONFIGURATION_DESCRIPTOR_TYPE << 8) | configIndex)
                     }
                 };
-                StructToBytes(request, buf, 0);
+                StructToBytes(request, buf);
                 await hub.IoControlAsync(IoControl.IOCTL_USB_GET_DESCRIPTOR_FROM_NODE_CONNECTION, buf, buf);
-                BytesToStruct(buf, Marshal.SizeOf<UsbDescriptorRequest>(), out UsbConfigurationDescriptor configuration);
+                BytesToStruct(buf.AsSpan(Marshal.SizeOf<UsbDescriptorRequest>()), out UsbConfigurationDescriptor configuration);
                 buf = new byte[Marshal.SizeOf<UsbDescriptorRequest>() + configuration.wTotalLength];
                 request = new UsbDescriptorRequest()
                 {
@@ -124,7 +124,7 @@ namespace UsbIpServer
                         wValue = (ushort)(((byte)UsbDescriptorType.USB_CONFIGURATION_DESCRIPTOR_TYPE << 8) | configIndex)
                     }
                 };
-                StructToBytes(request, buf, 0);
+                StructToBytes(request, buf);
                 await hub.IoControlAsync(IoControl.IOCTL_USB_GET_DESCRIPTOR_FROM_NODE_CONNECTION, buf, buf);
 
                 result.AddDescriptor(buf.AsSpan(Marshal.SizeOf<UsbDescriptorRequest>()));
@@ -181,7 +181,7 @@ namespace UsbIpServer
                     var data = new UsbNodeConnectionInformationEx() { ConnectionIndex = connectionIndex };
                     var buf = StructToBytes(data);
                     await hubFile.IoControlAsync(IoControl.IOCTL_USB_GET_NODE_CONNECTION_INFORMATION_EX, buf, buf);
-                    BytesToStruct(buf, 0, out data);
+                    BytesToStruct(buf, out data);
 
                     var speed = MapWindowsSpeedToLinuxSpeed(data.Speed);
 
@@ -193,7 +193,7 @@ namespace UsbIpServer
                     };
                     var buf2 = StructToBytes(data2);
                     await hubFile.IoControlAsync(IoControl.IOCTL_USB_GET_NODE_CONNECTION_INFORMATION_EX_V2, buf2, buf2);
-                    BytesToStruct(buf2, 0, out data2);
+                    BytesToStruct(buf2, out data2);
 
                     if ((data2.SupportedUsbProtocols & UsbProtocols.Usb300) != 0)
                     {

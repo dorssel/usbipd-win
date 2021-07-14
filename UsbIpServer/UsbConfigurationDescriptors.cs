@@ -82,7 +82,7 @@ namespace UsbIpServer
             UsbAlternateInterface? alternateInterface = null;
             while (offset != descriptor.Length)
             {
-                BytesToStruct(descriptor, offset, out UsbCommonDescriptor common);
+                BytesToStruct(descriptor[offset..], out UsbCommonDescriptor common);
                 switch (common.bDescriptorType)
                 {
                     case UsbDescriptorType.USB_CONFIGURATION_DESCRIPTOR_TYPE:
@@ -90,7 +90,7 @@ namespace UsbIpServer
                         {
                             throw new ArgumentException("duplicate USB_CONFIGURATION_DESCRIPTOR_TYPE");
                         }
-                        BytesToStruct(descriptor, offset, out UsbConfigurationDescriptor config);
+                        BytesToStruct(descriptor[offset..], out UsbConfigurationDescriptor config);
                         configuration = new UsbConfiguration(config);
                         Configurations.Add(config.bConfigurationValue, configuration);
                         break;
@@ -99,7 +99,7 @@ namespace UsbIpServer
                         {
                             throw new ArgumentException("expected USB_CONFIGURATION_DESCRIPTOR_TYPE");
                         }
-                        BytesToStruct(descriptor, offset, out UsbInterfaceDescriptor iface);
+                        BytesToStruct(descriptor[offset..], out UsbInterfaceDescriptor iface);
                         if (iface.bAlternateSetting == 0)
                         {
                             configuration.Interfaces[iface.bInterfaceNumber] = new UsbInterface();
@@ -112,7 +112,7 @@ namespace UsbIpServer
                         {
                             throw new ArgumentException("expected USB_INTERFACE_DESCRIPTOR_TYPE");
                         }
-                        BytesToStruct(descriptor, offset, out UsbEndpointDescriptor ep);
+                        BytesToStruct(descriptor[offset..], out UsbEndpointDescriptor ep);
                         var endpoint = new UsbEndpoint(ep);
                         switch (endpoint.TransferType)
                         {
