@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Management;
+using System.Threading;
 
 namespace UsbIpServer
 {
@@ -23,10 +24,11 @@ namespace UsbIpServer
             watcher.Start();
         }
 
-        private void HandleEvent(object sender, EventArrivedEventArgs e)
+        private async void HandleEvent(object sender, EventArrivedEventArgs e)
         {
             // something changed in the registry, so check if we should unbind device
-            var devicesToUnbind = RegistryUtils.GetRegistryDevices().Where(x => !x.IsAvailable);
+            var connectedDevices = await ExportedDevice.GetAll(CancellationToken.None);
+            var devicesToUnbind = connectedDevices.Where(x => RegistryUtils.IsDeviceAvailable(x.BusId));
             foreach (var device in devicesToUnbind)
             {
                 if (devices.ContainsKey(device.BusId))

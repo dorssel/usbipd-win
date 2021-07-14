@@ -46,7 +46,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
         static int Main(string[] args)
         {
-            RegistryUtils.InitializeRegistry();
             var app = new CommandLineApplication()
             {
                 Name = Path.ChangeExtension(Path.GetFileName(Assembly.GetExecutingAssembly().Location), "exe"),
@@ -80,8 +79,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                 DefaultCmdLine(cmd);
                 cmd.OnExecute(async () =>
                 {
-                    var cancellationToken = (new CancellationTokenSource()).Token;
-                    var connectedDevices = await ExportedDevice.GetAll(cancellationToken);
+                    var connectedDevices = await ExportedDevice.GetAll(CancellationToken.None);
                     foreach (var device in connectedDevices)
                     {  
                         Console.WriteLine($"device:{device.BusId}\tavailable:{RegistryUtils.IsDeviceAvailable(device.BusId)}");
@@ -101,8 +99,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                 {
                     if (bindAll.HasValue())
                     {
-                        var cancellationToken = (new CancellationTokenSource()).Token;
-                        var connectedDevices = await ExportedDevice.GetAll(cancellationToken);
+                        var connectedDevices = await ExportedDevice.GetAll(CancellationToken.None);
                         foreach (var id in connectedDevices.Select(x => x.BusId))
                         {
                             RegistryUtils.SetDeviceAvailability(id, true);
@@ -126,8 +123,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                 {
                     if (unbindAll.HasValue())
                     {
-                        var cancellationToken = (new CancellationTokenSource()).Token;
-                        var connectedDevices = await ExportedDevice.GetAll(cancellationToken);
+                        var connectedDevices = await ExportedDevice.GetAll(CancellationToken.None);
                         foreach (var id in connectedDevices.Select(x => x.BusId))
                         {
                             RegistryUtils.SetDeviceAvailability(id, false);
