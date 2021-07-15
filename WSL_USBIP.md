@@ -1,5 +1,9 @@
 # Setting up USBIP on WSL
 
+Update WSL:
+```
+wsl --update
+```
 List your distributions:
 ```
 wsl list
@@ -68,11 +72,15 @@ Install usb.ids so you have names displayed for usb devices.
 ```
 sudo apt-get instal hwdata
 ```
-
 Copy Image
-
 ```
 cp arch/x86/boot/bzImage /mnt/c/Users/<user>/usbip-bzImage
+```
+
+Create a `.wslconfig` file on `/mnt/c/Users/<user>/` and add a reference to the created image with the following:
+```
+[wsl2]
+kernel=c:\\users\\t-nelsont\\configurations\\wsl-new
 ```
 
 READY TO USE
