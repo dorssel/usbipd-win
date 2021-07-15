@@ -79,7 +79,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                 DefaultCmdLine(cmd);
                 cmd.OnExecute(async () =>
                 {
-                    Console.WriteLine($"{"BusId", -10}{"Available", -5}");
+                    Console.WriteLine($"{"Device", -10}{"Available", -5}");
                     var connectedDevices = await ExportedDevice.GetAll(CancellationToken.None);
                     foreach (var device in connectedDevices)
                     {
