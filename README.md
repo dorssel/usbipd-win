@@ -60,9 +60,9 @@ The software itself consists of an auto-start background service.
 
 The installer also adds a firewall rule to allow all local subnets to connect to the service; this firewall rule can be tweaked to fine tune access control.
 
-## USBIP on WSL
+## USBIP on WSL 2
 
-Currently WSL does not support USB devices by default. A workaround to this limitation is to use usbip. For instructions on how to setup usbip can be found [here](WSL_USBIP.md).
+Currently WSL 2 does not support USB devices by default. A workaround to this limitation is to use usbip. For instructions on how to setup usbip can be found [here](WSL_USBIP.md).
 
 ## Limitations
 

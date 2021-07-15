@@ -1,4 +1,4 @@
-# Setting up USBIP on WSL
+# Setting up USBIP on WSL 2
 
 Update WSL:
 ```
