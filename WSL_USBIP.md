@@ -4,7 +4,7 @@ Update WSL:
 ```
 wsl --update
 ```
-List your distributions:
+List your distributions.
 ```
 wsl list
 ```
@@ -20,15 +20,15 @@ Run new distribution.
 ```
 wsl --distribution Ubuntu-usbip --user <user>
 ```
-Update resources
+Update resources.
 ```
 sudo apt update
 ```
-Install prerequisites
+Install prerequisites.
 ```
 sudo apt install build-essential flex bison libssl-dev libelf-dev libncurses-dev autoconf libudev-dev libtool
 ```
-Clone kernel that matches wsl version. To find the version you can run 
+Clone kernel that matches wsl version. To find the version you can run.
 ```
 uname -r
 ```
@@ -56,14 +56,14 @@ Select desired features. In my case I selected USB/IP, VHCI HCD, Debug messages 
 sudo make -j 8 && sudo make modules_install -j 8 && sudo make install -j 8
 cp arch/x86/boot/bzImage /mnt/c/Users/<user>/usbip-bzImage
 ```
-build USBIP tools:
+Build USBIP tools.
 ```
 /usr/src/5.4.72-microsoft-standard$ cd tools/usb/usbip
 /usr/src/5.4.72-microsoft-standard/tools/usb/usbip$ sudo ./autogen.sh
 /usr/src/5.4.72-microsoft-standard/tools/usb/usbip$ sudo ./configure
 /usr/src/5.4.72-microsoft-standard/tools/usb/usbip$ sudo make install -j 12
 ```
-Copy tools libraries location so usbip tools can get them
+Copy tools libraries location so usbip tools can get them.
 ```
 sudo cp libsrc/.libs/libusbip.so.0 /lib/libusbip.so.0
 ```
@@ -72,12 +72,12 @@ Install usb.ids so you have names displayed for usb devices.
 ```
 sudo apt-get instal hwdata
 ```
-Copy Image
+Copy image.
 ```
 cp arch/x86/boot/bzImage /mnt/c/Users/<user>/usbip-bzImage
 ```
 
-Create a `.wslconfig` file on `/mnt/c/Users/<user>/` and add a reference to the created image with the following:
+Create a `.wslconfig` file on `/mnt/c/Users/<user>/` and add a reference to the created image with the following.
 ```
 [wsl2]
 kernel=c:\\users\\t-nelsont\\configurations\\wsl-new
