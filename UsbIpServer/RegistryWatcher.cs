@@ -28,7 +28,7 @@ namespace UsbIpServer
         {
             // something changed in the registry, so check if we should unbind device
             var connectedDevices = await ExportedDevice.GetAll(CancellationToken.None);
-            var devicesToUnbind = connectedDevices.Where(x => RegistryUtils.IsDeviceAvailable(x.BusId));
+            var devicesToUnbind = connectedDevices.Where(x => !RegistryUtils.IsDeviceAvailable(x.BusId));
             foreach (var device in devicesToUnbind)
             {
                 if (devices.ContainsKey(device.BusId))
