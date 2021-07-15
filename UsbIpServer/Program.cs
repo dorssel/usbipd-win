@@ -79,10 +79,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                 DefaultCmdLine(cmd);
                 cmd.OnExecute(async () =>
                 {
+                    Console.WriteLine($"{"BusId", -10}{"Available", -5}");
                     var connectedDevices = await ExportedDevice.GetAll(CancellationToken.None);
                     foreach (var device in connectedDevices)
-                    {  
-                        Console.WriteLine($"device:{device.BusId}\tavailable:{RegistryUtils.IsDeviceAvailable(device.BusId)}");
+                    {
+                        Console.WriteLine($"{device.BusId, -10}{ (RegistryUtils.IsDeviceAvailable(device.BusId)? "Yes": "No"), -5}");
                     }
 
                     return 0;

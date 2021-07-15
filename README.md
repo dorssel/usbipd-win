@@ -14,12 +14,18 @@ This software requires Microsoft Windows 8 / Microsoft Windows Server 2012 or ne
 it does not depend on any other software.
 
 1) Run the installer (.msi) from the <a href="https://github.com/dorssel/usbipd-win/releases/latest">latest release</a>
-   on the Windows machine where your USB device is connected.
+   on the Windows machine where your USB device is connected. This will install and run a service called `usbpd-win`. You can check 
+   the status of this service using the Services app from Windows.
 
    Alternatively, use the Windows Package Manager:
    <pre>
    winget install usbipd
    </pre>
+
+2) To control the devices shared:
+- open an elevated command prompt
+
+
 
 2) From another (possibly virtual) machine running Linux, use `usbip` to claim the USB device:
 

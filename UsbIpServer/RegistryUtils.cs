@@ -19,15 +19,10 @@ namespace UsbIpServer
         public static void SetDeviceAvailability(string busId, bool enable)
         {
             if (enable)
-            {
-              
+            { 
                 var key = Registry.LocalMachine.CreateSubKey($@"{devicesRegistryPath}\{busId}");
-                Console.WriteLine(key);
-                Console.WriteLine("hello");
-                Console.WriteLine(busId);
             } else
             {
-                Console.WriteLine("bye");
                 Registry.LocalMachine.DeleteSubKey($@"{devicesRegistryPath}\{busId}");
             }
         }
