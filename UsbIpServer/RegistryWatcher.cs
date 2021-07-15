@@ -34,7 +34,7 @@ namespace UsbIpServer
                 if (devices.ContainsKey(device.BusId))
                 {
                     devices[device.BusId]();
-                    devices.Remove(device.BusId);
+                    StopWatchingDevice(device.BusId);
                 }
             }
         }
@@ -42,6 +42,11 @@ namespace UsbIpServer
         public void WatchDevice(string busId, Action cancellationAction)
         {
             devices[busId] = cancellationAction;
+        }
+
+        public void StopWatchingDevice(string busId)
+        {
+            devices.Remove(busId);
         }
 
         public void Dispose()

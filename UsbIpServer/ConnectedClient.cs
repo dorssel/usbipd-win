@@ -128,6 +128,7 @@ namespace UsbIpServer
                 }
                 finally
                 {
+                    Watcher.StopWatchingDevice(busid);
                     Logger.LogInformation(LogEvents.ClientDetach, $"Client {ClientContext.TcpClient.Client.RemoteEndPoint} released device at {exportedDevice.BusId} ({exportedDevice.Path}).");
                 }
             }
