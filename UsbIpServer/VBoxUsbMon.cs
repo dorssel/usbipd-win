@@ -3,15 +3,15 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 using System;
-using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
+using Windows.Win32;
+
 using UsbIpServer.Interop;
 using static UsbIpServer.Interop.VBoxUsb;
-using static UsbIpServer.Interop.WinSDK;
 using static UsbIpServer.Tools;
 
 namespace UsbIpServer
@@ -58,11 +58,7 @@ namespace UsbIpServer
 
         async Task<DeviceFile> ClaimDeviceOnce(ExportedDevice device)
         {
-            using var deviceInfoSet = NativeMethods.SetupDiGetClassDevs(GUID_CLASS_VBOXUSB, null, IntPtr.Zero, DiGetClassFlags.DIGCF_DEVICEINTERFACE | DiGetClassFlags.DIGCF_PRESENT);
-            if (deviceInfoSet.IsInvalid)
-            {
-                throw new Win32Exception("SetupDiGetClassDevs");
-            }
+            using var deviceInfoSet = SetupDiGetClassDevs(GUID_CLASS_VBOXUSB, null, default, Constants.DIGCF_DEVICEINTERFACE | Constants.DIGCF_PRESENT);
             foreach (var (infoData, interfaceData) in EnumDeviceInterfaces(deviceInfoSet, GUID_CLASS_VBOXUSB))
             {
                 GetBusId(deviceInfoSet, infoData, out var hubNum, out var connectionIndex);

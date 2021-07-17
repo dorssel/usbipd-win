@@ -4,7 +4,9 @@
 
 using System;
 using System.Collections.Generic;
-using static UsbIpServer.Interop.Usb;
+using Windows.Win32;
+using Windows.Win32.Devices.Usb;
+
 using static UsbIpServer.Tools;
 
 namespace UsbIpServer
@@ -13,19 +15,19 @@ namespace UsbIpServer
     {
         sealed class UsbEndpoint
         {
-            public UsbEndpoint(UsbEndpointDescriptor descriptor)
+            public UsbEndpoint(USB_ENDPOINT_DESCRIPTOR descriptor)
             {
                 Descriptor = descriptor;
             }
 
-            public UsbEndpointType TransferType => (UsbEndpointType)(Descriptor.bmAttributes & 0x03);
+            public byte TransferType => (byte)(Descriptor.bmAttributes & 0x03);
 
-            public UsbEndpointDescriptor Descriptor { get; }
+            public USB_ENDPOINT_DESCRIPTOR Descriptor { get; }
         }
 
         sealed class UsbAlternateInterface
         {
-            public UsbAlternateInterface(UsbInterfaceDescriptor descriptor)
+            public UsbAlternateInterface(USB_INTERFACE_DESCRIPTOR descriptor)
             {
                 Descriptor = descriptor;
             }
@@ -35,7 +37,7 @@ namespace UsbIpServer
             /// </summary>
             public SortedDictionary<byte, UsbEndpoint> Endpoints { get; } = new SortedDictionary<byte, UsbEndpoint>();
 
-            public UsbInterfaceDescriptor Descriptor { get; }
+            public USB_INTERFACE_DESCRIPTOR Descriptor { get; }
         }
 
         sealed class UsbInterface
@@ -58,14 +60,14 @@ namespace UsbIpServer
 
         sealed class UsbConfiguration
         {
-            public UsbConfiguration(UsbConfigurationDescriptor descriptor)
+            public UsbConfiguration(USB_CONFIGURATION_DESCRIPTOR descriptor)
             {
                 Descriptor = descriptor;
             }
 
             public SortedDictionary<byte, UsbInterface> Interfaces { get; } = new SortedDictionary<byte, UsbInterface>();
 
-            public UsbConfigurationDescriptor Descriptor { get; }
+            public USB_CONFIGURATION_DESCRIPTOR Descriptor { get; }
         }
 
         SortedDictionary<byte, UsbConfiguration> Configurations { get; set; } = new SortedDictionary<byte, UsbConfiguration>();
@@ -82,24 +84,24 @@ namespace UsbIpServer
             UsbAlternateInterface? alternateInterface = null;
             while (offset != descriptor.Length)
             {
-                BytesToStruct(descriptor[offset..], out UsbCommonDescriptor common);
-                switch (common.bDescriptorType)
+                BytesToStruct(descriptor[offset..], out USB_COMMON_DESCRIPTOR common);
+                switch ((uint)common.bDescriptorType)
                 {
-                    case UsbDescriptorType.USB_CONFIGURATION_DESCRIPTOR_TYPE:
+                    case Constants.USB_CONFIGURATION_DESCRIPTOR_TYPE:
                         if (configuration != null)
                         {
                             throw new ArgumentException("duplicate USB_CONFIGURATION_DESCRIPTOR_TYPE");
                         }
-                        BytesToStruct(descriptor[offset..], out UsbConfigurationDescriptor config);
+                        BytesToStruct(descriptor[offset..], out USB_CONFIGURATION_DESCRIPTOR config);
                         configuration = new UsbConfiguration(config);
                         Configurations.Add(config.bConfigurationValue, configuration);
                         break;
-                    case UsbDescriptorType.USB_INTERFACE_DESCRIPTOR_TYPE:
+                    case Constants.USB_INTERFACE_DESCRIPTOR_TYPE:
                         if (configuration == null)
                         {
                             throw new ArgumentException("expected USB_CONFIGURATION_DESCRIPTOR_TYPE");
                         }
-                        BytesToStruct(descriptor[offset..], out UsbInterfaceDescriptor iface);
+                        BytesToStruct(descriptor[offset..], out USB_INTERFACE_DESCRIPTOR iface);
                         if (iface.bAlternateSetting == 0)
                         {
                             configuration.Interfaces[iface.bInterfaceNumber] = new UsbInterface();
@@ -107,16 +109,16 @@ namespace UsbIpServer
                         alternateInterface = new UsbAlternateInterface(iface);
                         configuration.Interfaces[iface.bInterfaceNumber].Alternates[iface.bAlternateSetting] = alternateInterface;
                         break;
-                    case UsbDescriptorType.USB_ENDPOINT_DESCRIPTOR_TYPE:
+                    case Constants.USB_ENDPOINT_DESCRIPTOR_TYPE:
                         if (alternateInterface == null)
                         {
                             throw new ArgumentException("expected USB_INTERFACE_DESCRIPTOR_TYPE");
                         }
-                        BytesToStruct(descriptor[offset..], out UsbEndpointDescriptor ep);
+                        BytesToStruct(descriptor[offset..], out USB_ENDPOINT_DESCRIPTOR ep);
                         var endpoint = new UsbEndpoint(ep);
-                        switch (endpoint.TransferType)
+                        switch ((uint)endpoint.TransferType)
                         {
-                            case UsbEndpointType.USB_ENDPOINT_TYPE_CONTROL:
+                            case Constants.USB_ENDPOINT_TYPE_CONTROL:
                                 alternateInterface.Endpoints.Add((byte)(ep.bEndpointAddress & 0x0f), endpoint);
                                 break;
                             default:
@@ -174,9 +176,9 @@ namespace UsbIpServer
                     var alternate = iface.Current;
                     foreach (var endpoint in alternate.Endpoints.Values)
                     {
-                        switch (endpoint.TransferType)
+                        switch ((uint)endpoint.TransferType)
                         {
-                            case UsbEndpointType.USB_ENDPOINT_TYPE_CONTROL:
+                            case Constants.USB_ENDPOINT_TYPE_CONTROL:
                                 // for easy cache lookup, control endpoints are registered as both input and output
                                 EndpointCache[(byte)(endpoint.Descriptor.bEndpointAddress & 0x0f)] = endpoint;
                                 EndpointCache[(byte)((endpoint.Descriptor.bEndpointAddress & 0x0f) | 0x80)] = endpoint;
@@ -192,12 +194,12 @@ namespace UsbIpServer
 
         SortedDictionary<byte, UsbEndpoint> EndpointCache { get; } = new SortedDictionary<byte, UsbEndpoint>();
 
-        public UsbEndpointType GetEndpointType(uint endpoint, bool input)
+        public uint GetEndpointType(uint endpoint, bool input)
         {
             if (endpoint == 0)
             {
                 // every configuration (even low-power) always has an "endpoint 0" which is the default control pipe (input and output) 
-                return UsbEndpointType.USB_ENDPOINT_TYPE_CONTROL;
+                return Constants.USB_ENDPOINT_TYPE_CONTROL;
             }
             else if (endpoint > 0x0f)
             {

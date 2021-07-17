@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 using System.Runtime.InteropServices;
-using static UsbIpServer.Interop.Usb;
+using Windows.Win32.Devices.Usb;
 
 namespace UsbIpServer.Interop
 {
@@ -97,7 +97,7 @@ namespace UsbIpServer.Interop
             public int number_of_packets;
             public int interval;
 
-            public UsbDefaultPipeSetupPacket setup;
+            public USB_DEFAULT_PIPE_SETUP_PACKET setup;
         }
 
         /// <summary>UsbIp: drivers/usbip_common.h: usbip_header_ret_submit</summary>

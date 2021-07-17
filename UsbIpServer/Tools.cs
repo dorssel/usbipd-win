@@ -3,19 +3,42 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 using System;
-using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using Windows.Win32;
+using Windows.Win32.Devices.DeviceAndDriverInstallation;
+using Windows.Win32.Devices.Usb;
+using Windows.Win32.Foundation;
+using Windows.Win32.System.Diagnostics.Debug;
+using Windows.Win32.System.PropertiesSystem;
+using Windows.Win32.System.SystemServices;
+
 using UsbIpServer.Interop;
-using static UsbIpServer.Interop.WinSDK;
+
+namespace Windows.Win32.System.SystemServices
+{
+    internal partial struct DEVPROPKEY
+    {
+        /// <summary>
+        /// *HACK*
+        /// 
+        /// CsWin32 confuses PROPERTYKEY and DEVPROPKEY, which are in fact the exact same structure.
+        /// This is a c++-like "reinterpret_cast".
+        /// </summary>
+        public static ref DEVPROPKEY From(in PROPERTYKEY propertyKey)
+        {
+            return ref Unsafe.As<PROPERTYKEY, DEVPROPKEY>(ref Unsafe.AsRef(in propertyKey));
+        }
+    }
+}
 
 namespace UsbIpServer
 {
@@ -80,172 +103,214 @@ namespace UsbIpServer
             return result;
         }
 
+        /// <summary>
+        /// Wrapper for <see cref="PInvoke.SetupDiGetClassDevs(Guid?, string, HWND, uint)"/> that returns
+        /// a <see cref="SafeDeviceInfoSetHandle"/> instead of an unsafe <see cref="void"/>*.
+        /// This removes the need to call SetupDiGetClassDevs from an unsafe context.
+        /// </summary>
+        public static SafeDeviceInfoSetHandle SetupDiGetClassDevs(Guid? ClassGuid, string? Enumerator, HWND hwndParent, uint Flags)
+        {
+            unsafe
+            {
+                SafeDeviceInfoSetHandle deviceInfoSet = new(PInvoke.SetupDiGetClassDevs(ClassGuid, Enumerator, hwndParent, Flags));
+                if (deviceInfoSet.IsInvalid)
+                {
+                    throw new Win32Exception("SetupDiGetClassDevs");
+                }
+                return deviceInfoSet;
+            }
+
+        }
+
         public static bool IsUsbHub(string deviceInstanceId)
         {
-            using var hubs = NativeMethods.SetupDiGetClassDevs(GUID_DEVINTERFACE_USB_HUB, deviceInstanceId, IntPtr.Zero, DiGetClassFlags.DIGCF_DEVICEINTERFACE);
-            return EnumDeviceInterfaces(hubs, GUID_DEVINTERFACE_USB_HUB).Any();
+            using var hubs = SetupDiGetClassDevs(Constants.GUID_DEVINTERFACE_USB_HUB, deviceInstanceId, default, Constants.DIGCF_DEVICEINTERFACE);
+            return EnumDeviceInterfaces(hubs, Constants.GUID_DEVINTERFACE_USB_HUB).Any();
         }
 
-        public static uint GetDevicePropertyUInt32(SafeDeviceInfoSetHandle deviceInfoSet, SpDevInfoData devInfoData, DevPropKey devPropKey)
+        public static uint GetDevicePropertyUInt32(SafeDeviceInfoSetHandle deviceInfoSet, in SP_DEVINFO_DATA devInfoData, in PROPERTYKEY propertyKey)
         {
-            var output = new byte[4];
-            if (!NativeMethods.SetupDiGetDeviceProperty(deviceInfoSet, devInfoData, devPropKey, out var devPropType, output, (uint)output.Length, out var requiredSize, 0))
+            unsafe
             {
-                throw new Win32Exception("SetupDiGetDeviceProperty");
+                uint value;
+                uint requiredSize;
+                if (!PInvoke.SetupDiGetDeviceProperty(deviceInfoSet.PInvokeHandle, in devInfoData, in DEVPROPKEY.From(in propertyKey), out var devPropType, (byte*)&value, 4, &requiredSize, 0))
+                {
+                    throw new Win32Exception("SetupDiGetDeviceProperty");
+                }
+                if (devPropType != Constants.DEVPROP_TYPE_UINT32)
+                {
+                    throw new UnexpectedResultException($"SetupDiGetDeviceProperty returned property type {devPropType}, expected {nameof(Constants.DEVPROP_TYPE_UINT32)}");
+                }
+                if (requiredSize != 4)
+                {
+                    throw new UnexpectedResultException($"SetupDiGetDeviceProperty returned inconsistent size {requiredSize} != 4");
+                }
+                return value;
             }
-            if (devPropType != DevPropType.DEVPROP_TYPE_UINT32)
-            {
-                throw new UnexpectedResultException($"SetupDiGetDeviceProperty returned property type {devPropType}, expected {DevPropType.DEVPROP_TYPE_UINT32}");
-            }
-            if (requiredSize != 4)
-            {
-                throw new UnexpectedResultException($"SetupDiGetDeviceProperty returned inconsistent size {requiredSize} != 4");
-            }
-            return BinaryPrimitives.ReadUInt32LittleEndian(output);
         }
 
-
-        public static string GetDevicePropertyString(SafeDeviceInfoSetHandle deviceInfoSet, SpDevInfoData devInfoData, DevPropKey devPropKey)
+        public static string GetDevicePropertyString(SafeDeviceInfoSetHandle deviceInfoSet, in SP_DEVINFO_DATA devInfoData, in PROPERTYKEY propertyKey)
         {
-            if (NativeMethods.SetupDiGetDeviceProperty(deviceInfoSet, devInfoData, devPropKey, out var devPropType, null, 0, out var requiredSize, 0))
+            unsafe
             {
-                throw new UnexpectedResultException($"SetupDiGetDeviceProperty succeeded, expected to fail with {Win32Error.ERROR_INSUFFICIENT_BUFFER}");
+                uint requiredSize;
+                if (PInvoke.SetupDiGetDeviceProperty(deviceInfoSet.PInvokeHandle, in devInfoData, in DEVPROPKEY.From(in propertyKey), out var devPropType, null, 0, &requiredSize, 0))
+                {
+                    throw new UnexpectedResultException($"SetupDiGetDeviceProperty succeeded, expected to fail with {WIN32_ERROR.ERROR_INSUFFICIENT_BUFFER}");
+                }
+                else if ((WIN32_ERROR)Marshal.GetLastWin32Error() != WIN32_ERROR.ERROR_INSUFFICIENT_BUFFER)
+                {
+                    throw new Win32Exception("SetupDiGetDeviceProperty");
+                }
+                if (devPropType != Constants.DEVPROP_TYPE_STRING)
+                {
+                    throw new UnexpectedResultException($"SetupDiGetDeviceProperty returned property type {devPropType}, expected {nameof(Constants.DEVPROP_TYPE_STRING)}");
+                }
+                if ((requiredSize < 2) || (requiredSize % 2 != 0))
+                {
+                    throw new UnexpectedResultException($"SetupDiGetDeviceProperty returned size {requiredSize}, expected an even number >= 2");
+                }
+                var output = stackalloc char[(int)requiredSize / 2];
+                uint requiredSize2;
+                if (!PInvoke.SetupDiGetDeviceProperty(deviceInfoSet.PInvokeHandle, in devInfoData, in DEVPROPKEY.From(in propertyKey), out devPropType, (byte*)output, requiredSize, &requiredSize2, 0))
+                {
+                    throw new Win32Exception("SetupDiGetDeviceProperty");
+                }
+                if (devPropType != Constants.DEVPROP_TYPE_STRING)
+                {
+                    throw new UnexpectedResultException($"SetupDiGetDeviceProperty returned property type {devPropType}, expected {nameof(Constants.DEVPROP_TYPE_STRING)}");
+                }
+                if (requiredSize2 != requiredSize)
+                {
+                    throw new UnexpectedResultException($"SetupDiGetDeviceProperty returned inconsistent size {requiredSize2} != {requiredSize}");
+                }
+                if (output[requiredSize / 2 - 1] != '\0')
+                {
+                    throw new UnexpectedResultException($"SetupDiGetDeviceProperty returned non-NUL terminated string");
+                }
+                return new string(output, 0, (int)(requiredSize / 2 - 1));
             }
-            else if ((Win32Error)Marshal.GetLastWin32Error() != Win32Error.ERROR_INSUFFICIENT_BUFFER)
-            {
-                throw new Win32Exception("SetupDiGetDeviceProperty");
-            }
-            if (devPropType != DevPropType.DEVPROP_TYPE_STRING)
-            {
-                throw new UnexpectedResultException($"SetupDiGetDeviceProperty returned property type {devPropType}, expected {DevPropType.DEVPROP_TYPE_STRING}");
-            }
-            if ((requiredSize < 2) || (requiredSize % 2 != 0))
-            {
-                throw new UnexpectedResultException($"SetupDiGetDeviceProperty returned size {requiredSize}, expected an even number >= 2");
-            }
-            var output = new byte[requiredSize];
-            if (!NativeMethods.SetupDiGetDeviceProperty(deviceInfoSet, devInfoData, devPropKey, out devPropType, output, (uint)output.Length, out var requiredSize2, 0))
-            {
-                throw new Win32Exception("SetupDiGetDeviceProperty");
-            }
-            if (devPropType != DevPropType.DEVPROP_TYPE_STRING)
-            {
-                throw new UnexpectedResultException($"SetupDiGetDeviceProperty returned property type {devPropType}, expected {DevPropType.DEVPROP_TYPE_STRING}");
-            }
-            if (requiredSize2 != requiredSize)
-            {
-                throw new UnexpectedResultException($"SetupDiGetDeviceProperty returned inconsistent size {requiredSize2} != {requiredSize}");
-            }
-            var result = Encoding.Unicode.GetString(output);
-            if (result[^1] != '\0')
-            {
-                throw new UnexpectedResultException($"SetupDiGetDeviceProperty returned non-NUL terminated string");
-            }
-            result = result[..^1];
-
-            return result;
         }
 
-        public static string GetDevicePropertyString(string deviceInstanceId, DevPropKey propKey)
+        public static string GetDevicePropertyString(string deviceInstanceId, in PROPERTYKEY devPropKey)
         {
-            using var deviceInfoSet = NativeMethods.SetupDiGetClassDevs(IntPtr.Zero, deviceInstanceId, IntPtr.Zero,
-                DiGetClassFlags.DIGCF_DEVICEINTERFACE | DiGetClassFlags.DIGCF_ALLCLASSES | DiGetClassFlags.DIGCF_PRESENT);
-            if (deviceInfoSet.IsInvalid)
-            {
-                throw new Win32Exception("SetupDiGetClassDevs");
-            }
+            using var deviceInfoSet = SetupDiGetClassDevs(null, deviceInstanceId, default, Constants.DIGCF_DEVICEINTERFACE | Constants.DIGCF_ALLCLASSES | Constants.DIGCF_PRESENT);
             var devinfoData = EnumDeviceInfo(deviceInfoSet).Single();
-            return GetDevicePropertyString(deviceInfoSet, devinfoData, propKey);
+            return GetDevicePropertyString(deviceInfoSet, devinfoData, in devPropKey);
         }
 
-        public static Linux.UsbDeviceSpeed MapWindowsSpeedToLinuxSpeed(UsbDeviceSpeed w)
+        public static Linux.UsbDeviceSpeed MapWindowsSpeedToLinuxSpeed(USB_DEVICE_SPEED w)
         {
             // Windows and Linux each use a *different* enum for this
             return w switch
             {
-                UsbDeviceSpeed.UsbLowSpeed => Linux.UsbDeviceSpeed.USB_SPEED_LOW,
-                UsbDeviceSpeed.UsbFullSpeed => Linux.UsbDeviceSpeed.USB_SPEED_FULL,
-                UsbDeviceSpeed.UsbHighSpeed => Linux.UsbDeviceSpeed.USB_SPEED_HIGH,
-                UsbDeviceSpeed.UsbSuperSpeed => Linux.UsbDeviceSpeed.USB_SPEED_SUPER,
+                USB_DEVICE_SPEED.UsbLowSpeed => Linux.UsbDeviceSpeed.USB_SPEED_LOW,
+                USB_DEVICE_SPEED.UsbFullSpeed => Linux.UsbDeviceSpeed.USB_SPEED_FULL,
+                USB_DEVICE_SPEED.UsbHighSpeed => Linux.UsbDeviceSpeed.USB_SPEED_HIGH,
+                USB_DEVICE_SPEED.UsbSuperSpeed => Linux.UsbDeviceSpeed.USB_SPEED_SUPER,
                 _ => Linux.UsbDeviceSpeed.USB_SPEED_UNKNOWN,
             };
         }
 
-        public static IEnumerable<SpDevInfoData> EnumDeviceInfo(SafeDeviceInfoSetHandle deviceInfoSet)
+        static bool EnumDeviceInfo(SafeDeviceInfoSetHandle deviceInfoSet, uint index, out SP_DEVINFO_DATA devInfoData)
         {
-            var devInfoData = new SpDevInfoData() { cbSize = (uint)Marshal.SizeOf<SpDevInfoData>() };
-            for (uint i = 0; ; ++i)
+            unsafe
             {
-                if (!NativeMethods.SetupDiEnumDeviceInfo(deviceInfoSet, i, ref devInfoData))
+                devInfoData.cbSize = (uint)Marshal.SizeOf<SP_DEVINFO_DATA>();
+                if (PInvoke.SetupDiEnumDeviceInfo(deviceInfoSet.PInvokeHandle, index, out devInfoData))
                 {
-                    if ((Win32Error)Marshal.GetLastWin32Error() == Win32Error.ERROR_NO_MORE_ITEMS)
-                    {
-                        yield break;
-                    }
+                    return true;
+                }
+                else if ((WIN32_ERROR)Marshal.GetLastWin32Error() == WIN32_ERROR.ERROR_NO_MORE_ITEMS)
+                {
+                    return false;
+                }
+                else
+                {
                     throw new Win32Exception("SetupDiEnumDeviceInfo");
                 }
+            }
+        }
+
+        public static IEnumerable<SP_DEVINFO_DATA> EnumDeviceInfo(SafeDeviceInfoSetHandle deviceInfoSet)
+        {
+            uint index = 0;
+            while (EnumDeviceInfo(deviceInfoSet, index++, out var devInfoData))
+            {
                 yield return devInfoData;
             }
         }
 
-        public static IEnumerable<(SpDevInfoData infoData, SpDeviceInterfaceData interfaceData)> EnumDeviceInterfaces(SafeDeviceInfoSetHandle deviceInfoSet, Guid interfaceClassGuid)
+        static bool EnumDeviceInterfaces(SafeDeviceInfoSetHandle deviceInfoSet, SP_DEVINFO_DATA? devInfoData, in Guid interfaceClassGuid, uint index, out SP_DEVICE_INTERFACE_DATA interfaceData)
         {
-            var infoData = new SpDevInfoData() { cbSize = (uint)Marshal.SizeOf<SpDevInfoData>() };
-            var interfaceData = new SpDeviceInterfaceData() { cbSize = (uint)Marshal.SizeOf<SpDeviceInterfaceData>() };
-            for (uint i = 0; ; ++i)
+            unsafe
             {
-                if (!NativeMethods.SetupDiEnumDeviceInfo(deviceInfoSet, i, ref infoData))
+                interfaceData.cbSize = (uint)Marshal.SizeOf<SP_DEVICE_INTERFACE_DATA>();
+                if (PInvoke.SetupDiEnumDeviceInterfaces(deviceInfoSet.PInvokeHandle, devInfoData, in interfaceClassGuid, index, out interfaceData))
                 {
-                    if ((Win32Error)Marshal.GetLastWin32Error() == Win32Error.ERROR_NO_MORE_ITEMS)
-                    {
-                        yield break;
-                    }
-                    throw new Win32Exception("SetupDiEnumDeviceInfo");
+                    return true;
                 }
-                if (!NativeMethods.SetupDiEnumDeviceInterfaces(deviceInfoSet, IntPtr.Zero, interfaceClassGuid, i, ref interfaceData))
+                else if ((WIN32_ERROR)Marshal.GetLastWin32Error() == WIN32_ERROR.ERROR_NO_MORE_ITEMS)
+                {
+                    return false;
+                }
+                else
                 {
                     throw new Win32Exception("SetupDiEnumDeviceInterfaces");
                 }
-                yield return (infoData, interfaceData);
+
             }
         }
 
-        public static string GetDeviceInterfaceDetail(SafeDeviceInfoSetHandle deviceInfoSet, in SpDeviceInterfaceData interfaceData)
+        public static IEnumerable<(SP_DEVINFO_DATA infoData, SP_DEVICE_INTERFACE_DATA interfaceData)> EnumDeviceInterfaces(SafeDeviceInfoSetHandle deviceInfoSet, Guid interfaceClassGuid)
         {
-            if (NativeMethods.SetupDiGetDeviceInterfaceDetail(deviceInfoSet, interfaceData, null, 0, out var requiredSize, IntPtr.Zero))
+            foreach (var devInfoData in EnumDeviceInfo(deviceInfoSet))
             {
-                throw new UnexpectedResultException("SetupDiGetDeviceInterfaceDetail succeeded, expected to fail with ERROR_INSUFFICIENT_BUFFER");
+                if (!EnumDeviceInterfaces(deviceInfoSet, devInfoData, interfaceClassGuid, 0, out var interfaceData))
+                {
+                    throw new Win32Exception("SetupDiEnumDeviceInterfaces");
+                }
+                yield return (devInfoData, interfaceData);
             }
-            else if ((Win32Error)Marshal.GetLastWin32Error() != Win32Error.ERROR_INSUFFICIENT_BUFFER)
-            {
-                throw new Win32Exception("SetupDiGetDeviceInterfaceDetail");
-            }
-            if ((requiredSize < 6) || (requiredSize % 2 != 0))
-            {
-                throw new UnexpectedResultException($"SetupDiGetDeviceInterfaceDetail returned size {requiredSize}, expected an even number >= 6");
-            }
-            var output = new byte[requiredSize];
-            BinaryPrimitives.WriteUInt32LittleEndian(output, 8 /* sizeof(SP_DEVICE_INTERFACE_DETAIL_DATA) */);
-            if (!NativeMethods.SetupDiGetDeviceInterfaceDetail(deviceInfoSet, interfaceData, output, (uint)output.Length, out var requiredSize2, IntPtr.Zero))
-            {
-                throw new Win32Exception("SetupDiGetDeviceInterfaceDetail");
-            }
-            if (requiredSize2 != requiredSize)
-            {
-                throw new UnexpectedResultException($"SetupDiGetDeviceInterfaceDetail returned inconsistent size {requiredSize2} != {requiredSize}");
-            }
-            var devicePath = Encoding.Unicode.GetString(output.AsSpan(4));
-            if (devicePath[^1] != '\0')
-            {
-                throw new UnexpectedResultException($"SetupDiGetDeviceInterfaceDetail returned non-NUL terminated string");
-            }
-            devicePath = devicePath[..^1];
-            return devicePath;
         }
 
-        public static void GetBusId(SafeDeviceInfoSetHandle deviceInfoSet, in SpDevInfoData devInfoData, out ushort hubNum, out ushort connectionIndex)
+        public static string GetDeviceInterfaceDetail(SafeDeviceInfoSetHandle deviceInfoSet, in SP_DEVICE_INTERFACE_DATA interfaceData)
         {
-            var locationInfo = GetDevicePropertyString(deviceInfoSet, devInfoData, DEVPKEY_Device_LocationInfo);
+            unsafe
+            {
+                uint requiredSize;
+                if (PInvoke.SetupDiGetDeviceInterfaceDetail(deviceInfoSet.PInvokeHandle, in interfaceData, null, 0, &requiredSize, null))
+                {
+                    throw new UnexpectedResultException("SetupDiGetDeviceInterfaceDetail succeeded, expected to fail with ERROR_INSUFFICIENT_BUFFER");
+                }
+                else if ((WIN32_ERROR)Marshal.GetLastWin32Error() != WIN32_ERROR.ERROR_INSUFFICIENT_BUFFER)
+                {
+                    throw new Win32Exception("SetupDiGetDeviceInterfaceDetail");
+                }
+                if ((requiredSize < 6) || (requiredSize % 2 != 0))
+                {
+                    throw new UnexpectedResultException($"SetupDiGetDeviceInterfaceDetail returned size {requiredSize}, expected an even number >= 6");
+                }
+                var output = stackalloc byte[(int)requiredSize];
+                var detailData = (SP_DEVICE_INTERFACE_DETAIL_DATA_W*)output;
+                detailData->cbSize = (uint)Marshal.SizeOf<SP_DEVICE_INTERFACE_DETAIL_DATA_W>();
+                uint requiredSize2;
+                if (!PInvoke.SetupDiGetDeviceInterfaceDetail(deviceInfoSet.PInvokeHandle, in interfaceData, detailData, requiredSize, &requiredSize2, null))
+                {
+                    throw new Win32Exception("SetupDiGetDeviceInterfaceDetail");
+                }
+                if (requiredSize2 != requiredSize)
+                {
+                    throw new UnexpectedResultException($"SetupDiGetDeviceInterfaceDetail returned inconsistent size {requiredSize2} != {requiredSize}");
+                }
+                return new string(&detailData->DevicePath._0);
+            }
+        }
+
+        public static void GetBusId(SafeDeviceInfoSetHandle deviceInfoSet, in SP_DEVINFO_DATA devInfoData, out ushort hubNum, out ushort connectionIndex)
+        {
+            var locationInfo = GetDevicePropertyString(deviceInfoSet, devInfoData, in Constants.DEVPKEY_Device_LocationInfo);
             var match = Regex.Match(locationInfo, "^Port_#([0-9]{4}).Hub_#([0-9]{4})$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
             if (!match.Success)
             {
