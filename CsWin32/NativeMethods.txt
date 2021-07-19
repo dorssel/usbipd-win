@@ -1,4 +1,8 @@
-﻿CreateFile
+﻿// SPDX-FileCopyrightText: 2021 Frans van Dorsselaer
+//
+// SPDX-License-Identifier: GPL-2.0-only
+
+CreateFile
 DeviceIoControl
 SetupDiDestroyDeviceInfoList
 SetupDiEnumDeviceInfo
