@@ -62,7 +62,7 @@ The installer also adds a firewall rule to allow all local subnets to connect to
 
 ## USBIP on WSL 2
 
-Currently WSL 2 does not support USB devices by default. A workaround to this limitation is to use usbip. For instructions on how to setup usbip can be found [here](WSL_USBIP.md).
+Currently WSL 2 does not support USB devices by default. A workaround to this limitation is to use usbip. For instructions on how to setup a Linux usbip client can be found [here](WSL_USBIP.md).
 
 ## Limitations
 

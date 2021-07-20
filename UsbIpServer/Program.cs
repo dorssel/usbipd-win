@@ -79,11 +79,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                 DefaultCmdLine(cmd);
                 cmd.OnExecute(async () =>
                 {
-                    Console.WriteLine($"{"Device", -10}{"Available", -5}");
+                    Console.WriteLine($"{"ID", -6}{"Device", -60}{"Available", -5}");
                     var connectedDevices = await ExportedDevice.GetAll(CancellationToken.None);
+                    var deviceChecker = new DeviceInfoChecker();
                     foreach (var device in connectedDevices)
                     {
-                        Console.WriteLine($"{device.BusId, -10}{ (RegistryUtils.IsDeviceAvailable(device.BusId)? "Yes": "No"), -5}");
+                        Console.WriteLine($"{device.BusId, -6}{deviceChecker.GetDeviceName(device.Path.Replace(@"\\", @"\", StringComparison.Ordinal)),-60}{ (RegistryUtils.IsDeviceAvailable(device.BusId)? "Yes": "No"), -5}");
                     }
 
                     return 0;
