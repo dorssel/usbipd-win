@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Management;
+using System.Linq;
 
 namespace UsbIpServer
 {
@@ -29,7 +30,7 @@ namespace UsbIpServer
 
         public string GetDeviceName(string path)
         {
-            var possibleDeviceNames = new HashSet<string>();
+            var possibleDeviceNames = new SortedSet<string>();
             foreach (var usbDevice in devices)
             {
                 var parts = path.Split(@"\");

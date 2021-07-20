@@ -44,6 +44,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ");
         }
 
+        public static string Truncate(this string value, int maxChars)
+        {
+            return value.Length <= maxChars ? value : value.Substring(0, maxChars + 3) + "...";
+        }
+
         static int Main(string[] args)
         {
             var app = new CommandLineApplication()
@@ -84,7 +89,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                     var deviceChecker = new DeviceInfoChecker();
                     foreach (var device in connectedDevices)
                     {
-                        Console.WriteLine($"{device.BusId, -6}{deviceChecker.GetDeviceName(device.Path.Replace(@"\\", @"\", StringComparison.Ordinal)),-60}{ (RegistryUtils.IsDeviceAvailable(device.BusId)? "Yes": "No"), -5}");
+                        Console.WriteLine($"{device.BusId, -6}{Truncate(deviceChecker.GetDeviceName(device.Path.Replace(@"\\", @"\", StringComparison.Ordinal)), 60),-60}{ (RegistryUtils.IsDeviceAvailable(device.BusId)? "Yes": "No"), -5}");
                     }
 
                     return 0;
