@@ -46,7 +46,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
         public static string Truncate(this string value, int maxChars)
         {
-            return value.Length <= maxChars ? value : value.Substring(0, maxChars + 3) + "...";
+            return value.Length <= maxChars ? value : value.Substring(0, maxChars - 3) + "...";
         }
 
         static int Main(string[] args)
