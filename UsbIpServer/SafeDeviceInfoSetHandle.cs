@@ -2,8 +2,9 @@
 //
 // SPDX-License-Identifier: GPL-2.0-only
 
+using System;
 using Microsoft.Win32.SafeHandles;
-using static UsbIpServer.Interop.WinSDK;
+using Windows.Win32;
 
 namespace UsbIpServer
 {
@@ -14,9 +15,20 @@ namespace UsbIpServer
         {
         }
 
+        public unsafe SafeDeviceInfoSetHandle(void *handle)
+            : base(true)
+        {
+            this.handle = (IntPtr)handle;
+        }
+
+        public unsafe void* PInvokeHandle { get => IsInvalid ? null : (void*)handle; }
+
         protected override bool ReleaseHandle()
         {
-            return NativeMethods.SetupDiDestroyDeviceInfoList(handle);
+            unsafe
+            {
+                return PInvoke.SetupDiDestroyDeviceInfoList((void*)handle);
+            }
         }
     }
 }

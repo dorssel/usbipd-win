@@ -11,7 +11,9 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using static UsbIpServer.Interop.Usb;
+using Windows.Win32;
+using Windows.Win32.Devices.Usb;
+
 using static UsbIpServer.Interop.UsbIp;
 using static UsbIpServer.Interop.VBoxUsb;
 using static UsbIpServer.Tools;
@@ -62,29 +64,31 @@ namespace UsbIpServer
             var payloadOffset = 0;
             switch (transferType)
             {
-                case UsbEndpointType.USB_ENDPOINT_TYPE_CONTROL:
+                case Constants.USB_ENDPOINT_TYPE_CONTROL:
                     urb.type = UsbSupTransferType.USBSUP_TRANSFER_TYPE_MSG;
-                    payloadOffset = Marshal.SizeOf<UsbDefaultPipeSetupPacket>();
+                    payloadOffset = Marshal.SizeOf<USB_DEFAULT_PIPE_SETUP_PACKET>();
                     urb.len += (uint)payloadOffset;
                     break;
-                case UsbEndpointType.USB_ENDPOINT_TYPE_BULK:
+                case Constants.USB_ENDPOINT_TYPE_BULK:
                     urb.type = UsbSupTransferType.USBSUP_TRANSFER_TYPE_BULK;
                     break;
-                case UsbEndpointType.USB_ENDPOINT_TYPE_INTERRUPT:
+                case Constants.USB_ENDPOINT_TYPE_INTERRUPT:
                     // TODO: requires queuing reuests and handling USBIP_CMD_UNLINK
                     // urb.type = UsbSupTransferType.USBSUP_TRANSFER_TYPE_INTR;
                     // break;
                     throw new NotImplementedException("USB_ENDPOINT_TYPE_INTERRUPT");
-                case UsbEndpointType.USB_ENDPOINT_TYPE_ISOCHRONOUS:
+                case Constants.USB_ENDPOINT_TYPE_ISOCHRONOUS:
                     throw new NotImplementedException("USB_ENDPOINT_TYPE_ISOCHRONOUS");
+                default:
+                    throw new UnexpectedResultException($"unknown endpoint type {transferType}");
             }
 
             var bytes = new byte[Marshal.SizeOf<UsbSupUrb>()];
             var buf = new byte[urb.len];
 
-            if (transferType == UsbEndpointType.USB_ENDPOINT_TYPE_CONTROL)
+            if (transferType == Constants.USB_ENDPOINT_TYPE_CONTROL)
             {
-                StructToBytes(submit.setup, buf, 0);
+                StructToBytes(submit.setup, buf);
             }
 
             if (basic.direction == UsbIpDir.USBIP_DIR_OUT)
@@ -99,48 +103,48 @@ namespace UsbIpServer
             }
 
             if ((basic.ep == 0)
-                && (submit.setup.bmRequestType == UsbRequestTypeRecipient.DEVICE)
-                && (submit.setup.bRequest == UsbRequest.SET_CONFIGURATION))
+                && (submit.setup.bmRequestType.B == Constants.BMREQUEST_TO_DEVICE)
+                && (submit.setup.bRequest == Constants.USB_REQUEST_SET_CONFIGURATION))
             {
                 // VBoxUsb needs this to get the endpoint handles
                 var setConfig = new UsbSupSetConfig()
                 {
-                    bConfigurationValue = (byte)submit.setup.wValue,
+                    bConfigurationValue = submit.setup.wValue.Anonymous.LowByte,
                 };
                 Logger.LogDebug($"Trapped SET_CONFIGURATION: {setConfig.bConfigurationValue}");
                 await Device.IoControlAsync(IoControl.SUPUSB_IOCTL_USB_SET_CONFIG, StructToBytes(setConfig), null);
                 ConfigurationDescriptors.SetConfiguration(setConfig.bConfigurationValue);
             }
             else if ((basic.ep == 0)
-                && (submit.setup.bmRequestType == UsbRequestTypeRecipient.DEVICE)
-                && (submit.setup.bRequest == UsbRequest.SET_INTERFACE))
+                && (submit.setup.bmRequestType.B == Constants.BMREQUEST_TO_DEVICE)
+                && (submit.setup.bRequest == Constants.USB_REQUEST_SET_INTERFACE))
             {
                 // VBoxUsb needs this to get the endpoint handles
                 var selectInterface = new UsbSupSelectInterface()
                 {
-                    bInterfaceNumber = (byte)submit.setup.wIndex,
-                    bAlternateSetting = (byte)submit.setup.wValue,
+                    bInterfaceNumber = submit.setup.wIndex.Anonymous.LowByte,
+                    bAlternateSetting = submit.setup.wValue.Anonymous.LowByte,
                 };
                 Logger.LogDebug($"Trapped SET_INTERFACE: {selectInterface.bInterfaceNumber} -> {selectInterface.bAlternateSetting}");
                 await Device.IoControlAsync(IoControl.SUPUSB_IOCTL_USB_SELECT_INTERFACE, StructToBytes(selectInterface), null);
                 ConfigurationDescriptors.SetInterface(selectInterface.bInterfaceNumber, selectInterface.bAlternateSetting);
             }
             else if ((basic.ep == 0)
-                && (submit.setup.bmRequestType == UsbRequestTypeRecipient.ENDPOINT)
-                && (submit.setup.bRequest == UsbRequest.CLEAR_FEATURE)
-                && (submit.setup.wValue == 0))
+                && (submit.setup.bmRequestType.B == Constants.BMREQUEST_TO_ENDPOINT)
+                && (submit.setup.bRequest == Constants.USB_REQUEST_CLEAR_FEATURE)
+                && (submit.setup.wValue.W == 0))
             {
                 // VBoxUsb needs this to notify the host controller
                 var clearEndpoint = new UsbSupClearEndpoint()
                 {
-                    bEndpoint = (byte)submit.setup.wIndex,
+                    bEndpoint = submit.setup.wIndex.Anonymous.LowByte,
                 };
                 Logger.LogDebug($"Trapped CLEAR_FEATURE: {clearEndpoint.bEndpoint}");
                 await Device.IoControlAsync(IoControl.SUPUSB_IOCTL_USB_CLEAR_ENDPOINT, StructToBytes(clearEndpoint), null);
             }
             else
             {
-                if (transferType == UsbEndpointType.USB_ENDPOINT_TYPE_CONTROL)
+                if (transferType == Constants.USB_ENDPOINT_TYPE_CONTROL)
                 {
                     Logger.LogTrace($"{submit.setup.bmRequestType} {submit.setup.bRequest} {submit.setup.wValue} {submit.setup.wIndex} {submit.setup.wLength}");
                 }
@@ -148,9 +152,9 @@ namespace UsbIpServer
                 try
                 {
                     urb.buf = gc.AddrOfPinnedObject();
-                    StructToBytes(urb, bytes, 0);
+                    StructToBytes(urb, bytes);
                     await Device.IoControlAsync(IoControl.SUPUSB_IOCTL_SEND_URB, bytes, bytes);
-                    BytesToStruct(bytes, 0, out urb);
+                    BytesToStruct(bytes, out urb);
                 }
                 finally
                 {
@@ -168,7 +172,7 @@ namespace UsbIpServer
                 error_count = 0,
             };
 
-            if (transferType == UsbEndpointType.USB_ENDPOINT_TYPE_CONTROL)
+            if (transferType == Constants.USB_ENDPOINT_TYPE_CONTROL)
             {
                 retSubmit.actual_length = (retSubmit.actual_length > payloadOffset) ? (retSubmit.actual_length - payloadOffset) : 0;
             }
@@ -222,7 +226,7 @@ namespace UsbIpServer
                             start_frame = BinaryPrimitives.ReadInt32BigEndian(buf.AsSpan(28)),
                             number_of_packets = BinaryPrimitives.ReadInt32BigEndian(buf.AsSpan(32)),
                             interval = BinaryPrimitives.ReadInt32BigEndian(buf.AsSpan(36)),
-                            setup = BytesToStruct<UsbDefaultPipeSetupPacket>(buf, 40),
+                            setup = BytesToStruct<USB_DEFAULT_PIPE_SETUP_PACKET>(buf.AsSpan(40)),
                         };
                         Logger.LogTrace($"USBIP_CMD_SUBMIT, seqnum={basic.seqnum}, flags={submit.transfer_flags}, length={submit.transfer_buffer_length}, ep={basic.ep}");
                         await HandleSubmitAsync(basic, submit, cancellationToken);

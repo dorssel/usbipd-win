@@ -11,8 +11,10 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Windows.Win32;
+using Windows.Win32.Devices.Usb;
+
 using UsbIpServer.Interop;
-using static UsbIpServer.Interop.Usb;
 using static UsbIpServer.Interop.UsbIp;
 using static UsbIpServer.Interop.WinSDK;
 using static UsbIpServer.Tools;
@@ -103,28 +105,28 @@ namespace UsbIpServer
 
             for (byte configIndex = 0; configIndex < numConfigurations; ++configIndex)
             {
-                var buf = new byte[Marshal.SizeOf<UsbDescriptorRequest>() + Marshal.SizeOf<UsbConfigurationDescriptor>()];
+                var buf = new byte[Marshal.SizeOf<UsbDescriptorRequest>() + Marshal.SizeOf<USB_CONFIGURATION_DESCRIPTOR>()];
                 var request = new UsbDescriptorRequest()
                 {
                     ConnectionIndex = connectionIndex,
                     SetupPacket = {
-                        wLength = (ushort)Marshal.SizeOf<UsbConfigurationDescriptor>(),
-                        wValue = (ushort)(((byte)UsbDescriptorType.USB_CONFIGURATION_DESCRIPTOR_TYPE << 8) | configIndex)
+                        wLength = (ushort)Marshal.SizeOf<USB_CONFIGURATION_DESCRIPTOR>(),
+                        wValue = (ushort)(((byte)Constants.USB_CONFIGURATION_DESCRIPTOR_TYPE << 8) | configIndex)
                     }
                 };
-                StructToBytes(request, buf, 0);
+                StructToBytes(request, buf);
                 await hub.IoControlAsync(IoControl.IOCTL_USB_GET_DESCRIPTOR_FROM_NODE_CONNECTION, buf, buf);
-                BytesToStruct(buf, Marshal.SizeOf<UsbDescriptorRequest>(), out UsbConfigurationDescriptor configuration);
+                BytesToStruct(buf.AsSpan(Marshal.SizeOf<UsbDescriptorRequest>()), out USB_CONFIGURATION_DESCRIPTOR configuration);
                 buf = new byte[Marshal.SizeOf<UsbDescriptorRequest>() + configuration.wTotalLength];
                 request = new UsbDescriptorRequest()
                 {
                     ConnectionIndex = connectionIndex,
                     SetupPacket = {
                         wLength = configuration.wTotalLength,
-                        wValue = (ushort)(((byte)UsbDescriptorType.USB_CONFIGURATION_DESCRIPTOR_TYPE << 8) | configIndex)
+                        wValue = (ushort)(((byte)Constants.USB_CONFIGURATION_DESCRIPTOR_TYPE << 8) | configIndex)
                     }
                 };
-                StructToBytes(request, buf, 0);
+                StructToBytes(request, buf);
                 await hub.IoControlAsync(IoControl.IOCTL_USB_GET_DESCRIPTOR_FROM_NODE_CONNECTION, buf, buf);
 
                 result.AddDescriptor(buf.AsSpan(Marshal.SizeOf<UsbDescriptorRequest>()));
@@ -137,18 +139,18 @@ namespace UsbIpServer
         {
             var exportedDevices = new SortedDictionary<string, ExportedDevice>();
 
-            using var deviceInfoSet = NativeMethods.SetupDiGetClassDevs(IntPtr.Zero, "USB", IntPtr.Zero, DiGetClassFlags.DIGCF_ALLCLASSES | DiGetClassFlags.DIGCF_PRESENT);
+            using var deviceInfoSet = SetupDiGetClassDevs(null, "USB", default, Constants.DIGCF_ALLCLASSES | Constants.DIGCF_PRESENT);
             foreach (var devInfoData in EnumDeviceInfo(deviceInfoSet))
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                var instanceId = GetDevicePropertyString(deviceInfoSet, devInfoData, DEVPKEY_Device_InstanceId);
+                var instanceId = GetDevicePropertyString(deviceInfoSet, devInfoData, in Constants.DEVPKEY_Device_InstanceId);
                 if (IsUsbHub(instanceId))
                 {
                     // device is itself a USB hub, which is not supported
                     continue;
                 }
-                var parentId = GetDevicePropertyString(deviceInfoSet, devInfoData, DEVPKEY_Device_Parent);
+                var parentId = GetDevicePropertyString(deviceInfoSet, devInfoData, in Constants.DEVPKEY_Device_Parent);
                 if (!IsUsbHub(parentId))
                 {
                     // parent is not a USB hub (which it must be for this device to be supported)
@@ -159,7 +161,7 @@ namespace UsbIpServer
 
                 GetBusId(deviceInfoSet, devInfoData, out var hubNum, out var connectionIndex);
 
-                var address = GetDevicePropertyUInt32(deviceInfoSet, devInfoData, DEVPKEY_Device_Address);
+                var address = GetDevicePropertyUInt32(deviceInfoSet, devInfoData, in Constants.DEVPKEY_Device_Address);
                 if (connectionIndex != address)
                 {
                     throw new NotSupportedException($"DEVPKEY_Device_Address ({address}) does not match DEVPKEY_Device_LocationInfo ({connectionIndex})");
@@ -167,65 +169,65 @@ namespace UsbIpServer
 
                 // now query the parent USB hub for device details
 
+                cancellationToken.ThrowIfCancellationRequested();
+
+#pragma warning disable CA2000 // Dispose objects before losing scope (false possitive)
+                using var hubs = SetupDiGetClassDevs(Constants.GUID_DEVINTERFACE_USB_HUB, parentId, default, Constants.DIGCF_DEVICEINTERFACE | Constants.DIGCF_PRESENT);
+#pragma warning restore CA2000 // Dispose objects before losing scope
+                var (_, interfaceData) = EnumDeviceInterfaces(hubs, Constants.GUID_DEVINTERFACE_USB_HUB).Single();
+                var hubPath = GetDeviceInterfaceDetail(hubs, interfaceData);
+
+                cancellationToken.ThrowIfCancellationRequested();
+                using var hubFile = new DeviceFile(hubPath);
+                using var cancellationTokenRegistration = cancellationToken.Register(() => hubFile.Dispose());
+
+                var data = new UsbNodeConnectionInformationEx() { ConnectionIndex = connectionIndex };
+                var buf = StructToBytes(data);
+                await hubFile.IoControlAsync(IoControl.IOCTL_USB_GET_NODE_CONNECTION_INFORMATION_EX, buf, buf);
+                BytesToStruct(buf, out data);
+
+                var speed = MapWindowsSpeedToLinuxSpeed((USB_DEVICE_SPEED)data.Speed);
+
+                var data2 = new UsbNodeConnectionInformationExV2()
                 {
-                    cancellationToken.ThrowIfCancellationRequested();
+                    ConnectionIndex = connectionIndex,
+                    Length = (uint)Marshal.SizeOf<UsbNodeConnectionInformationExV2>(),
+                    SupportedUsbProtocols = UsbProtocols.Usb110 | UsbProtocols.Usb200 | UsbProtocols.Usb300,
+                };
+                var buf2 = StructToBytes(data2);
+                await hubFile.IoControlAsync(IoControl.IOCTL_USB_GET_NODE_CONNECTION_INFORMATION_EX_V2, buf2, buf2);
+                BytesToStruct(buf2, out data2);
 
-                    using var hubs = NativeMethods.SetupDiGetClassDevs(GUID_DEVINTERFACE_USB_HUB, parentId, IntPtr.Zero, DiGetClassFlags.DIGCF_DEVICEINTERFACE | DiGetClassFlags.DIGCF_PRESENT);
-                    var (_, interfaceData) = EnumDeviceInterfaces(hubs, GUID_DEVINTERFACE_USB_HUB).Single();
-                    var hubPath = GetDeviceInterfaceDetail(hubs, interfaceData);
-
-                    cancellationToken.ThrowIfCancellationRequested();
-                    using var hubFile = new DeviceFile(hubPath);
-                    using var cancellationTokenRegistration = cancellationToken.Register(() => hubFile.Dispose());
-
-                    var data = new UsbNodeConnectionInformationEx() { ConnectionIndex = connectionIndex };
-                    var buf = StructToBytes(data);
-                    await hubFile.IoControlAsync(IoControl.IOCTL_USB_GET_NODE_CONNECTION_INFORMATION_EX, buf, buf);
-                    BytesToStruct(buf, 0, out data);
-
-                    var speed = MapWindowsSpeedToLinuxSpeed(data.Speed);
-
-                    var data2 = new UsbNodeConnectionInformationExV2()
+                if ((data2.SupportedUsbProtocols & UsbProtocols.Usb300) != 0)
+                {
+                    if ((data2.Flags & UsbNodeConnectionInformationExV2Flags.DeviceIsOperatingAtSuperSpeedPlusOrHigher) != 0)
                     {
-                        ConnectionIndex = connectionIndex,
-                        Length = (uint)Marshal.SizeOf<UsbNodeConnectionInformationExV2>(),
-                        SupportedUsbProtocols = UsbProtocols.Usb110 | UsbProtocols.Usb200 | UsbProtocols.Usb300,
-                    };
-                    var buf2 = StructToBytes(data2);
-                    await hubFile.IoControlAsync(IoControl.IOCTL_USB_GET_NODE_CONNECTION_INFORMATION_EX_V2, buf2, buf2);
-                    BytesToStruct(buf2, 0, out data2);
-
-                    if ((data2.SupportedUsbProtocols & UsbProtocols.Usb300) != 0)
-                    {
-                        if ((data2.Flags & UsbNodeConnectionInformationExV2Flags.DeviceIsOperatingAtSuperSpeedPlusOrHigher) != 0)
-                        {
-                            speed = Linux.UsbDeviceSpeed.USB_SPEED_SUPER_PLUS;
-                        }
-                        else if ((data2.Flags & UsbNodeConnectionInformationExV2Flags.DeviceIsOperatingAtSuperSpeedOrHigher) != 0)
-                        {
-                            speed = Linux.UsbDeviceSpeed.USB_SPEED_SUPER;
-                        }
+                        speed = Linux.UsbDeviceSpeed.USB_SPEED_SUPER_PLUS;
                     }
-
-                    var exportedDevice = new ExportedDevice()
+                    else if ((data2.Flags & UsbNodeConnectionInformationExV2Flags.DeviceIsOperatingAtSuperSpeedOrHigher) != 0)
                     {
-                        Path = instanceId,
-                        BusNum = hubNum,
-                        DevNum = connectionIndex,
-                        Speed = speed,
-                        VendorId = data.DeviceDescriptor.idVendor,
-                        ProductId = data.DeviceDescriptor.idProduct,
-                        BcdDevice = data.DeviceDescriptor.bcdDevice,
-                        DeviceClass = data.DeviceDescriptor.bDeviceClass,
-                        DeviceSubClass = data.DeviceDescriptor.bDeviceSubClass,
-                        DeviceProtocol = data.DeviceDescriptor.bDeviceProtocol,
-                        ConfigurationValue = data.CurrentConfigurationValue,
-                        NumConfigurations = data.DeviceDescriptor.bNumConfigurations,
-                        ConfigurationDescriptors = await GetConfigurationDescriptor(hubFile, connectionIndex, data.DeviceDescriptor.bNumConfigurations),
-                    };
-
-                    exportedDevices.Add(exportedDevice.BusId, exportedDevice);
+                        speed = Linux.UsbDeviceSpeed.USB_SPEED_SUPER;
+                    }
                 }
+
+                var exportedDevice = new ExportedDevice()
+                {
+                    Path = instanceId,
+                    BusNum = hubNum,
+                    DevNum = connectionIndex,
+                    Speed = speed,
+                    VendorId = data.DeviceDescriptor.idVendor,
+                    ProductId = data.DeviceDescriptor.idProduct,
+                    BcdDevice = data.DeviceDescriptor.bcdDevice,
+                    DeviceClass = data.DeviceDescriptor.bDeviceClass,
+                    DeviceSubClass = data.DeviceDescriptor.bDeviceSubClass,
+                    DeviceProtocol = data.DeviceDescriptor.bDeviceProtocol,
+                    ConfigurationValue = data.CurrentConfigurationValue,
+                    NumConfigurations = data.DeviceDescriptor.bNumConfigurations,
+                    ConfigurationDescriptors = await GetConfigurationDescriptor(hubFile, connectionIndex, data.DeviceDescriptor.bNumConfigurations),
+                };
+
+                exportedDevices.Add(exportedDevice.BusId, exportedDevice);
             }
 
             return exportedDevices.Values.ToArray();

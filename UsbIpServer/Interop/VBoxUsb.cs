@@ -4,7 +4,7 @@
 
 using System;
 using System.Runtime.InteropServices;
-using static UsbIpServer.Interop.WinSDK;
+using Windows.Win32;
 
 namespace UsbIpServer.Interop
 {
@@ -160,36 +160,36 @@ namespace UsbIpServer.Interop
         public enum IoControl : uint
         {
             /// <summary>VBoxUsb: usblib-win.h</summary>
-            SUPUSBFLT_IOCTL_GET_VERSION = (DeviceType.FILE_DEVICE_UNKNOWN << 16) | (AccessCode.FILE_WRITE_ACCESS << 14) | (0x610 << 2) | (MethodCode.METHOD_BUFFERED),
+            SUPUSBFLT_IOCTL_GET_VERSION = (Constants.FILE_DEVICE_UNKNOWN << 16) | (Constants.FILE_WRITE_ACCESS << 14) | (0x610 << 2) | (Constants.METHOD_BUFFERED),
             /// <summary>VBoxUsb: usblib-win.h</summary>
-            SUPUSBFLT_IOCTL_ADD_FILTER = (DeviceType.FILE_DEVICE_UNKNOWN << 16) | (AccessCode.FILE_WRITE_ACCESS << 14) | (0x611 << 2) | (MethodCode.METHOD_BUFFERED),
+            SUPUSBFLT_IOCTL_ADD_FILTER = (Constants.FILE_DEVICE_UNKNOWN << 16) | (Constants.FILE_WRITE_ACCESS << 14) | (0x611 << 2) | (Constants.METHOD_BUFFERED),
             /// <summary>VBoxUsb: usblib-win.h</summary>
-            SUPUSBFLT_IOCTL_REMOVE_FILTER = (DeviceType.FILE_DEVICE_UNKNOWN << 16) | (AccessCode.FILE_WRITE_ACCESS << 14) | (0x612 << 2) | (MethodCode.METHOD_BUFFERED),
+            SUPUSBFLT_IOCTL_REMOVE_FILTER = (Constants.FILE_DEVICE_UNKNOWN << 16) | (Constants.FILE_WRITE_ACCESS << 14) | (0x612 << 2) | (Constants.METHOD_BUFFERED),
             /// <summary>VBoxUsb: usblib-win.h</summary>
-            SUPUSBFLT_IOCTL_RUN_FILTERS = (DeviceType.FILE_DEVICE_UNKNOWN << 16) | (AccessCode.FILE_WRITE_ACCESS << 14) | (0x615 << 2) | (MethodCode.METHOD_BUFFERED),
+            SUPUSBFLT_IOCTL_RUN_FILTERS = (Constants.FILE_DEVICE_UNKNOWN << 16) | (Constants.FILE_WRITE_ACCESS << 14) | (0x615 << 2) | (Constants.METHOD_BUFFERED),
             /// <summary>VBoxUsb: usblib-win.h</summary>
-            SUPUSBFLT_IOCTL_GET_DEVICE = (DeviceType.FILE_DEVICE_UNKNOWN << 16) | (AccessCode.FILE_WRITE_ACCESS << 14) | (0x617 << 2) | (MethodCode.METHOD_BUFFERED),
+            SUPUSBFLT_IOCTL_GET_DEVICE = (Constants.FILE_DEVICE_UNKNOWN << 16) | (Constants.FILE_WRITE_ACCESS << 14) | (0x617 << 2) | (Constants.METHOD_BUFFERED),
 
             /// <summary>VBoxUsb: usblib-win.h</summary>
-            SUPUSB_IOCTL_GET_DEVICE = (DeviceType.FILE_DEVICE_UNKNOWN << 16) | (AccessCode.FILE_WRITE_ACCESS << 14) | (0x603 << 2) | (MethodCode.METHOD_BUFFERED),
+            SUPUSB_IOCTL_GET_DEVICE = (Constants.FILE_DEVICE_UNKNOWN << 16) | (Constants.FILE_WRITE_ACCESS << 14) | (0x603 << 2) | (Constants.METHOD_BUFFERED),
             /// <summary>VBoxUsb: usblib-win.h</summary>
-            SUPUSB_IOCTL_SEND_URB = (DeviceType.FILE_DEVICE_UNKNOWN << 16) | (AccessCode.FILE_WRITE_ACCESS << 14) | (0x607 << 2) | (MethodCode.METHOD_BUFFERED),
+            SUPUSB_IOCTL_SEND_URB = (Constants.FILE_DEVICE_UNKNOWN << 16) | (Constants.FILE_WRITE_ACCESS << 14) | (0x607 << 2) | (Constants.METHOD_BUFFERED),
             /// <summary>VBoxUsb: usblib-win.h</summary>
-            SUPUSB_IOCTL_USB_RESET = (DeviceType.FILE_DEVICE_UNKNOWN << 16) | (AccessCode.FILE_WRITE_ACCESS << 14) | (0x608 << 2) | (MethodCode.METHOD_BUFFERED),
+            SUPUSB_IOCTL_USB_RESET = (Constants.FILE_DEVICE_UNKNOWN << 16) | (Constants.FILE_WRITE_ACCESS << 14) | (0x608 << 2) | (Constants.METHOD_BUFFERED),
             /// <summary>VBoxUsb: usblib-win.h</summary>
-            SUPUSB_IOCTL_USB_SELECT_INTERFACE = (DeviceType.FILE_DEVICE_UNKNOWN << 16) | (AccessCode.FILE_WRITE_ACCESS << 14) | (0x609 << 2) | (MethodCode.METHOD_BUFFERED),
+            SUPUSB_IOCTL_USB_SELECT_INTERFACE = (Constants.FILE_DEVICE_UNKNOWN << 16) | (Constants.FILE_WRITE_ACCESS << 14) | (0x609 << 2) | (Constants.METHOD_BUFFERED),
             /// <summary>VBoxUsb: usblib-win.h</summary>
-            SUPUSB_IOCTL_USB_SET_CONFIG = (DeviceType.FILE_DEVICE_UNKNOWN << 16) | (AccessCode.FILE_WRITE_ACCESS << 14) | (0x60a << 2) | (MethodCode.METHOD_BUFFERED),
+            SUPUSB_IOCTL_USB_SET_CONFIG = (Constants.FILE_DEVICE_UNKNOWN << 16) | (Constants.FILE_WRITE_ACCESS << 14) | (0x60a << 2) | (Constants.METHOD_BUFFERED),
             /// <summary>VBoxUsb: usblib-win.h</summary>
-            SUPUSB_IOCTL_USB_CLAIM_DEVICE = (DeviceType.FILE_DEVICE_UNKNOWN << 16) | (AccessCode.FILE_WRITE_ACCESS << 14) | (0x60b << 2) | (MethodCode.METHOD_BUFFERED),
+            SUPUSB_IOCTL_USB_CLAIM_DEVICE = (Constants.FILE_DEVICE_UNKNOWN << 16) | (Constants.FILE_WRITE_ACCESS << 14) | (0x60b << 2) | (Constants.METHOD_BUFFERED),
             /// <summary>VBoxUsb: usblib-win.h</summary>
-            SUPUSB_IOCTL_USB_RELEASE_DEVICE = (DeviceType.FILE_DEVICE_UNKNOWN << 16) | (AccessCode.FILE_WRITE_ACCESS << 14) | (0x60c << 2) | (MethodCode.METHOD_BUFFERED),
+            SUPUSB_IOCTL_USB_RELEASE_DEVICE = (Constants.FILE_DEVICE_UNKNOWN << 16) | (Constants.FILE_WRITE_ACCESS << 14) | (0x60c << 2) | (Constants.METHOD_BUFFERED),
             /// <summary>VBoxUsb: usblib-win.h</summary>
-            SUPUSB_IOCTL_IS_OPERATIONAL = (DeviceType.FILE_DEVICE_UNKNOWN << 16) | (AccessCode.FILE_WRITE_ACCESS << 14) | (0x60d << 2) | (MethodCode.METHOD_BUFFERED),
+            SUPUSB_IOCTL_IS_OPERATIONAL = (Constants.FILE_DEVICE_UNKNOWN << 16) | (Constants.FILE_WRITE_ACCESS << 14) | (0x60d << 2) | (Constants.METHOD_BUFFERED),
             /// <summary>VBoxUsb: usblib-win.h</summary>
-            SUPUSB_IOCTL_USB_CLEAR_ENDPOINT = (DeviceType.FILE_DEVICE_UNKNOWN << 16) | (AccessCode.FILE_WRITE_ACCESS << 14) | (0x60e << 2) | (MethodCode.METHOD_BUFFERED),
+            SUPUSB_IOCTL_USB_CLEAR_ENDPOINT = (Constants.FILE_DEVICE_UNKNOWN << 16) | (Constants.FILE_WRITE_ACCESS << 14) | (0x60e << 2) | (Constants.METHOD_BUFFERED),
             /// <summary>VBoxUsb: usblib-win.h</summary>
-            SUPUSB_IOCTL_GET_VERSION = (DeviceType.FILE_DEVICE_UNKNOWN << 16) | (AccessCode.FILE_WRITE_ACCESS << 14) | (0x60f << 2) | (MethodCode.METHOD_BUFFERED),
+            SUPUSB_IOCTL_GET_VERSION = (Constants.FILE_DEVICE_UNKNOWN << 16) | (Constants.FILE_WRITE_ACCESS << 14) | (0x60f << 2) | (Constants.METHOD_BUFFERED),
         }
 
         /// <summary>VBoxUsb: usblib-win.h</summary>
