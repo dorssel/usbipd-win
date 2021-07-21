@@ -3,15 +3,15 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 using System;
-using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
+using Windows.Win32;
+
 using UsbIpServer.Interop;
 using static UsbIpServer.Interop.VBoxUsb;
-using static UsbIpServer.Interop.WinSDK;
 using static UsbIpServer.Tools;
 
 namespace UsbIpServer
@@ -24,7 +24,7 @@ namespace UsbIpServer
         {
             var output = new byte[Marshal.SizeOf<UsbSupVersion>()];
             await UsbMonitor.IoControlAsync(VBoxUsb.IoControl.SUPUSBFLT_IOCTL_GET_VERSION, null, output);
-            BytesToStruct(output, 0, out UsbSupVersion version);
+            BytesToStruct(output, out UsbSupVersion version);
             if ((version.major != USBMON_MAJOR_VERSION) || (version.minor < USBMON_MINOR_VERSION))
             {
                 throw new NotSupportedException($"version not supported: {version.major}.{version.minor}, expected {USBMON_MAJOR_VERSION}.{USBMON_MINOR_VERSION}");
@@ -44,7 +44,7 @@ namespace UsbIpServer
 
             var output = new byte[Marshal.SizeOf<UsbSupFltAddOut>()];
             await UsbMonitor.IoControlAsync(VBoxUsb.IoControl.SUPUSBFLT_IOCTL_ADD_FILTER, StructToBytes(filter), output);
-            var fltAddOut = BytesToStruct<UsbSupFltAddOut>(output, 0);
+            var fltAddOut = BytesToStruct<UsbSupFltAddOut>(output);
             if (fltAddOut.rc != 0 /* VINF_SUCCESS */)
             {
                 throw new UnexpectedResultException($"SUPUSBFLT_IOCTL_ADD_FILTER failed with returnCode {fltAddOut.rc}");
@@ -58,11 +58,7 @@ namespace UsbIpServer
 
         async Task<DeviceFile> ClaimDeviceOnce(ExportedDevice device)
         {
-            using var deviceInfoSet = NativeMethods.SetupDiGetClassDevs(GUID_CLASS_VBOXUSB, null, IntPtr.Zero, DiGetClassFlags.DIGCF_DEVICEINTERFACE | DiGetClassFlags.DIGCF_PRESENT);
-            if (deviceInfoSet.IsInvalid)
-            {
-                throw new Win32Exception("SetupDiGetClassDevs");
-            }
+            using var deviceInfoSet = SetupDiGetClassDevs(GUID_CLASS_VBOXUSB, null, default, Constants.DIGCF_DEVICEINTERFACE | Constants.DIGCF_PRESENT);
             foreach (var (infoData, interfaceData) in EnumDeviceInterfaces(deviceInfoSet, GUID_CLASS_VBOXUSB))
             {
                 GetBusId(deviceInfoSet, infoData, out var hubNum, out var connectionIndex);
@@ -79,7 +75,7 @@ namespace UsbIpServer
                     {
                         var output = new byte[Marshal.SizeOf<UsbSupVersion>()];
                         await dev.IoControlAsync(VBoxUsb.IoControl.SUPUSB_IOCTL_GET_VERSION, null, output);
-                        BytesToStruct(output, 0, out UsbSupVersion version);
+                        BytesToStruct(output, out UsbSupVersion version);
                         if ((version.major != USBDRV_MAJOR_VERSION) || (version.minor < USBDRV_MINOR_VERSION))
                         {
                             throw new NotSupportedException($"device version not supported: {version.major}.{version.minor}, expected {USBDRV_MAJOR_VERSION}.{USBDRV_MINOR_VERSION}");
@@ -93,7 +89,7 @@ namespace UsbIpServer
                         var getDev = new UsbSupGetDev();
                         var output = new byte[Marshal.SizeOf<UsbSupGetDev>()];
                         await dev.IoControlAsync(VBoxUsb.IoControl.SUPUSB_IOCTL_GET_DEVICE, StructToBytes(getDev), output);
-                        BytesToStruct(output, 0, out getDev);
+                        BytesToStruct(output, out getDev);
                         hdev = getDev.hDevice;
                     }
                     {
@@ -103,13 +99,13 @@ namespace UsbIpServer
                         };
                         var output = new byte[Marshal.SizeOf<UsbSupGetDevMon>()];
                         await UsbMonitor.IoControlAsync(VBoxUsb.IoControl.SUPUSBFLT_IOCTL_GET_DEVICE, StructToBytes(getDev), output);
-                        var getDevMon = BytesToStruct<UsbSupGetDevMon>(output, 0);
+                        var getDevMon = BytesToStruct<UsbSupGetDevMon>(output);
                     }
                     {
                         var claimDev = new UsbSupClaimDev();
                         var output = new byte[Marshal.SizeOf<UsbSupClaimDev>()];
                         await dev.IoControlAsync(VBoxUsb.IoControl.SUPUSB_IOCTL_USB_CLAIM_DEVICE, StructToBytes(claimDev), output);
-                        BytesToStruct(output, 0, out claimDev);
+                        BytesToStruct(output, out claimDev);
                         if (!claimDev.fClaimed)
                         {
                             throw new ProtocolViolationException("could not claim");
@@ -122,7 +118,7 @@ namespace UsbIpServer
                         };
                         var output = new byte[Marshal.SizeOf<UsbSupGetDevMon>()];
                         await UsbMonitor.IoControlAsync(VBoxUsb.IoControl.SUPUSBFLT_IOCTL_GET_DEVICE, StructToBytes(getDev), output);
-                        var getDevMon = BytesToStruct<UsbSupGetDevMon>(output, 0);
+                        var getDevMon = BytesToStruct<UsbSupGetDevMon>(output);
                     }
                     var result = dev;
                     dev = null!;

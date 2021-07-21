@@ -13,6 +13,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+
 using UsbIpServer.Interop;
 using static UsbIpServer.Interop.UsbIp;
 using static UsbIpServer.Tools;

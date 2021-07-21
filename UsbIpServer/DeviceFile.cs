@@ -4,24 +4,26 @@
 
 using System;
 using System.ComponentModel;
-using System.IO;
 using System.Net;
 using System.Runtime.InteropServices;
-using System.Runtime.Versioning;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Win32.SafeHandles;
-using static UsbIpServer.Interop.WinSDK;
+using Windows.Win32;
+using Windows.Win32.Storage.FileSystem;
+using Windows.Win32.System.Diagnostics.Debug;
+using Windows.Win32.System.SystemServices;
 
-[assembly: SupportedOSPlatform("windows")]
 namespace UsbIpServer
 {
     sealed class DeviceFile : IDisposable
     {
         public DeviceFile(string fileName)
         {
-            handle = NativeMethods.CreateFile(fileName, FileAccess.ReadWrite, FileShare.ReadWrite,
-                IntPtr.Zero, FileMode.Open, (FileAttributes)FileFlags.FILE_FLAG_OVERLAPPED, IntPtr.Zero);
+            handle = PInvoke.CreateFile(fileName, FILE_ACCESS_FLAGS.FILE_READ_DATA | FILE_ACCESS_FLAGS.FILE_WRITE_DATA,
+                FILE_SHARE_MODE.FILE_SHARE_READ | FILE_SHARE_MODE.FILE_SHARE_WRITE,
+                null, FILE_CREATION_DISPOSITION.OPEN_EXISTING, FILE_FLAGS_AND_ATTRIBUTES.FILE_FLAG_OVERLAPPED, null);
+
             if (handle.IsInvalid)
             {
                 throw new Win32Exception("CreateFile");
@@ -44,7 +46,7 @@ namespace UsbIpServer
             {
                 void OnCompletion(uint errorCode, uint numBytes, NativeOverlapped* nativeOverlapped)
                 {
-                    if ((Win32Error)errorCode == Win32Error.ERROR_SUCCESS)
+                    if ((WIN32_ERROR)errorCode == WIN32_ERROR.ERROR_SUCCESS)
                     {
                         if (exactOutput && ((output?.Length ?? 0) != numBytes))
                         {
@@ -57,7 +59,7 @@ namespace UsbIpServer
                     }
                     else
                     {
-                        taskCompletionSource.SetException(new Win32Exception((int)errorCode, $"DeviceIoControl returned error {(Win32Error)errorCode}"));
+                        taskCompletionSource.SetException(new Win32Exception((int)errorCode, $"DeviceIoControl returned error {(WIN32_ERROR)errorCode}"));
                     }
                     Overlapped.Free(nativeOverlapped);
                 }
@@ -65,11 +67,11 @@ namespace UsbIpServer
                 var nativeOverlapped = overlapped.Pack(OnCompletion, new object?[] { input, output });
                 fixed (byte* pInput = input, pOutput = output)
                 {
-                    if (!NativeMethods.DeviceIoControl(handle, ioControlCode, (IntPtr)pInput, (uint)(input?.Length ?? 0),
-                        (IntPtr)pOutput, (uint)(output?.Length ?? 0), out var bytesReturned, (IntPtr)nativeOverlapped))
+                    if (!PInvoke.DeviceIoControl(handle, ioControlCode, pInput, (uint)(input?.Length ?? 0),
+                        pOutput, (uint)(output?.Length ?? 0), null, (OVERLAPPED *)nativeOverlapped))
                     {
-                        var errorCode = (Win32Error)Marshal.GetLastWin32Error();
-                        if (errorCode != Win32Error.ERROR_IO_PENDING)
+                        var errorCode = (WIN32_ERROR)Marshal.GetLastWin32Error();
+                        if (errorCode != WIN32_ERROR.ERROR_IO_PENDING)
                         {
                             OnCompletion((uint)errorCode, 0, nativeOverlapped);
                         }

@@ -7,7 +7,7 @@ namespace UsbIpServer.Interop
     static class Linux
     {
         /// <summary>linux: ch9.h: usb_device_speed
-        /// <para><seealso cref="WinSDK.UsbDeviceSpeed"/></para></summary>
+        /// <para><seealso cref="Windows.Win32.Devices.Usb.USB_DEVICE_SPEED"/></para></summary>
         public enum UsbDeviceSpeed : uint
         {
             USB_SPEED_UNKNOWN = 0,
