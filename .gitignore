@@ -9,4 +9,3 @@ packages/
 .vscode/
 *.user
 launchSettings.json
-Generated/

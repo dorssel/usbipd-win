@@ -8,6 +8,7 @@ using System.ComponentModel;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -34,13 +35,7 @@ namespace Windows.Win32.System.SystemServices
         /// </summary>
         public static ref DEVPROPKEY From(in PROPERTYKEY propertyKey)
         {
-            unsafe
-            {
-                fixed (PROPERTYKEY* pk = &propertyKey)
-                {
-                    return ref *(DEVPROPKEY*)pk;
-                }
-            }
+            return ref Unsafe.As<PROPERTYKEY, DEVPROPKEY>(ref Unsafe.AsRef(in propertyKey));
         }
     }
 }
