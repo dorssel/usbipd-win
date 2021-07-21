@@ -171,7 +171,9 @@ namespace UsbIpServer
 
                 cancellationToken.ThrowIfCancellationRequested();
 
+#pragma warning disable CA2000 // Dispose objects before losing scope (false possitive)
                 using var hubs = SetupDiGetClassDevs(Constants.GUID_DEVINTERFACE_USB_HUB, parentId, default, Constants.DIGCF_DEVICEINTERFACE | Constants.DIGCF_PRESENT);
+#pragma warning restore CA2000 // Dispose objects before losing scope
                 var (_, interfaceData) = EnumDeviceInterfaces(hubs, Constants.GUID_DEVINTERFACE_USB_HUB).Single();
                 var hubPath = GetDeviceInterfaceDetail(hubs, interfaceData);
 

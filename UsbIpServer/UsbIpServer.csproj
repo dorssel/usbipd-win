@@ -8,13 +8,9 @@ SPDX-License-Identifier: GPL-2.0-only
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-
-    <!-- supported (used by: dotnet restore) -->
-    <TargetFrameworks>net5.0-windows</TargetFrameworks>
     <Platforms>x64</Platforms>
-    <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
     <ApplicationManifest>app.manifest</ApplicationManifest>
-    
+
     <!-- defaults (used by: dotnet build) -->
     <TargetFramework>net5.0-windows</TargetFramework>
     <Platform>x64</Platform>
@@ -53,12 +49,10 @@ SPDX-License-Identifier: GPL-2.0-only
     </PackageReference>
     <PackageReference Include="Microsoft.Extensions.CommandLineUtils" />
     <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\CsWin32\CsWin32.csproj">
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
+    <PackageReference Include="Microsoft.Windows.CsWin32">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
 
 </Project>
