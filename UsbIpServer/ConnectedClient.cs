@@ -1,4 +1,4 @@
-﻿// SPDX-FileCopyrightText: 2020 Frans van Dorsselaer
+﻿// SPDX-FileCopyrightText: 2020 Frans van Dorsselaer, Microsoft Corporation
 //
 // SPDX-License-Identifier: GPL-2.0-only
 

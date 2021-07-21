@@ -1,4 +1,4 @@
-﻿// SPDX-FileCopyrightText: 2020 Frans van Dorsselaer
+﻿// SPDX-FileCopyrightText: 2020 Frans van Dorsselaer, Microsoft Corporation
 //
 // SPDX-License-Identifier: GPL-2.0-only
 
@@ -15,7 +15,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Hosting.WindowsServices;
 using Microsoft.Extensions.Logging;
-using Microsoft.Win32;
 
 [assembly: CLSCompliant(true)]
 [assembly: SupportedOSPlatform("windows8.0")]

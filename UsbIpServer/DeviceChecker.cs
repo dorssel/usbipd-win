@@ -1,6 +1,9 @@
-﻿using System.Collections.Generic;
+﻿// SPDX-FileCopyrightText: Microsoft Corporation
+//
+// SPDX-License-Identifier: GPL-2.0-only
+
+using System.Collections.Generic;
 using System.Management;
-using System.Linq;
 
 namespace UsbIpServer
 {
