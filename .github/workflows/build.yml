@@ -32,9 +32,7 @@ jobs:
     - name: Install dependencies
       run: dotnet restore
     - name: Build
-      run: |
-        dotnet build --configuration Release --no-restore CsWin32
-        dotnet build --configuration Release --no-restore UsbIpServer
+      run: dotnet build --configuration Release --no-restore UsbIpServer
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v1
     - name: Build (Installer)
