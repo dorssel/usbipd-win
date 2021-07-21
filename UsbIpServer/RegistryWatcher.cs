@@ -10,7 +10,7 @@ using System.Threading;
 
 namespace UsbIpServer
 {
-    sealed public class RegistryWatcher : IDisposable
+    sealed class RegistryWatcher : IDisposable
     {
         private readonly ManagementEventWatcher? watcher;
 

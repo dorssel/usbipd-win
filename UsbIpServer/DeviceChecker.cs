@@ -7,7 +7,7 @@ using System.Management;
 
 namespace UsbIpServer
 {
-    internal sealed class DeviceInfoChecker
+    sealed class DeviceInfoChecker
     {
         List<DeviceInfo> devices = new List<DeviceInfo>();
 
@@ -54,7 +54,7 @@ namespace UsbIpServer
         }
     }
 
-    internal sealed class DeviceInfo
+    sealed class DeviceInfo
     {
         public DeviceInfo(string deviceID, string pnpDeviceID, string description)
         {
