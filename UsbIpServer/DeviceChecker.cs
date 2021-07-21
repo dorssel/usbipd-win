@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace UsbIpServer
 {
-    class DeviceInfoChecker
+    internal sealed class DeviceInfoChecker
     {
         List<DeviceInfo> devices = new List<DeviceInfo>();
 
@@ -19,9 +19,9 @@ namespace UsbIpServer
             foreach (ManagementObject device in collection)
             {
                 devices.Add(new DeviceInfo(
-                (string)device.GetPropertyValue("DeviceID"),
-                (string)device.GetPropertyValue("PNPDeviceID"),
-                (string)device.GetPropertyValue("Description")
+                    (string)device.GetPropertyValue("DeviceID"),
+                    (string)device.GetPropertyValue("PNPDeviceID"),
+                    (string)device.GetPropertyValue("Description")
                 ));
             }
 
@@ -33,6 +33,10 @@ namespace UsbIpServer
             var possibleDeviceNames = new SortedSet<string>();
             foreach (var usbDevice in devices)
             {
+                // Example Path: USB\VID_046D&PID_C539\7&674AA44&0&3
+                // The first part is device type, second is vid and pid and third is specific to the device,
+                // but we deal with composite devices which have multiple devices in a single device.
+                // We get all names/description to give a hint to the user.
                 var parts = path.Split(@"\");
                 var type = parts[0];
                 var vid_pid = parts[1];
@@ -47,7 +51,7 @@ namespace UsbIpServer
         }
     }
 
-    class DeviceInfo
+    internal sealed class DeviceInfo
     {
         public DeviceInfo(string deviceID, string pnpDeviceID, string description)
         {

@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using System.Linq;
 using Microsoft.Win32;
-using System.Threading;
+using System.Security.Principal;
 
 namespace UsbIpServer
 {
@@ -20,7 +17,7 @@ namespace UsbIpServer
         {
             if (enable)
             { 
-                var key = Registry.LocalMachine.CreateSubKey($@"{devicesRegistryPath}\{busId}");
+                Registry.LocalMachine.CreateSubKey($@"{devicesRegistryPath}\{busId}");
             } else
             {
                 Registry.LocalMachine.DeleteSubKey($@"{devicesRegistryPath}\{busId}");
@@ -36,6 +33,18 @@ namespace UsbIpServer
         {
             Registry.LocalMachine.DeleteSubKeyTree(devicesRegistryPath);
             Registry.LocalMachine.CreateSubKey(devicesRegistryPath);
+        }
+
+        public static bool HasRegistryAccess()
+        {
+            bool isElevated;
+            using (WindowsIdentity identity = WindowsIdentity.GetCurrent())
+            {
+                WindowsPrincipal principal = new WindowsPrincipal(identity);
+                isElevated = principal.IsInRole(WindowsBuiltInRole.Administrator);
+            }
+
+            return isElevated;
         }
     }
 }

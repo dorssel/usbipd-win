@@ -83,4 +83,4 @@ Create a `.wslconfig` file on `/mnt/c/Users/<user>/` and add a reference to the 
 kernel=c:\\users\\t-nelsont\\configurations\\wsl-new
 ```
 
-READY TO USE
+Your WSL distro is now ready to use!

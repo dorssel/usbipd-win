@@ -63,9 +63,14 @@ namespace UsbIpServer
 
         static async Task<ExportedDevice[]> GetAvailableDevicesAsync(CancellationToken cancellationToken)
         {
-            return (await ExportedDevice.GetAll(cancellationToken))
-                .Where(x => RegistryUtils.IsDeviceAvailable(x.BusId))
-                .ToArray();
+            if (RegistryUtils.HasRegistryAccess())
+            {
+                return (await ExportedDevice.GetAll(cancellationToken))
+               .Where(x => RegistryUtils.IsDeviceAvailable(x.BusId))
+               .ToArray();
+            }
+
+            return await ExportedDevice.GetAll(cancellationToken);
         }
 
         async Task HandleRequestDeviceListAsync(CancellationToken cancellationToken)
