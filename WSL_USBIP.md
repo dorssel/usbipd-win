@@ -1,3 +1,9 @@
+<!--
+SPDX-FileCopyrightText: Microsoft Corporation
+
+SPDX-License-Identifier: GPL-2.0-only
+-->
+
 # Setting up USBIP on WSL 2
 
 Update WSL:
