@@ -12,13 +12,10 @@ SPDX-License-Identifier: GPL-2.0-only
     <!-- UsbIpServer -->
     <PackageVersion Include="Microsoft.Extensions.CommandLineUtils" Version="1.1.1" />
     <PackageVersion Include="Microsoft.Extensions.Hosting.WindowsServices" Version="5.0.1" />
-<<<<<<< HEAD
     <PackageVersion Include="Microsoft.Win32.Registry" Version="5.0.0" />
     <PackageVersion Include="System.Management" Version="5.0.0" />
-=======
     <PackageVersion Include="Microsoft.Windows.CsWin32" Version="0.1.506-beta" />
 
->>>>>>> d6e9aff2f8de2ab8835a8a91664a49f9e2357f56
     <!-- Installer -->
     <PackageVersion Include="WiX" Version="3.11.2" />
   </ItemGroup>
