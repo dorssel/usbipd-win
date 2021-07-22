@@ -8,7 +8,7 @@ using System.Security.Principal;
 
 namespace UsbIpServer
 {
-    sealed class RegistryUtils
+    static class RegistryUtils
     {
         const string devicesRegistryPath = @"SOFTWARE\USBIPD-WIN";
 
