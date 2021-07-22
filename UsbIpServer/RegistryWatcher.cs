@@ -7,9 +7,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Management;
 using System.Threading;
+using System.Diagnostics.CodeAnalysis;
 
 namespace UsbIpServer
 {
+    [SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes", Justification = "Instantiated by DI")]
     sealed class RegistryWatcher : IDisposable
     {
         readonly ManagementEventWatcher? watcher;

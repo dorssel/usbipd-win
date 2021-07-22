@@ -22,7 +22,7 @@ namespace UsbIpServer
             if (enable)
             { 
                 Registry.LocalMachine.CreateSubKey($@"{devicesRegistryPath}\{busId}");
-            } else
+            } else if (IsDeviceAvailable(busId))
             {
                 Registry.LocalMachine.DeleteSubKey($@"{devicesRegistryPath}\{busId}");
             }
