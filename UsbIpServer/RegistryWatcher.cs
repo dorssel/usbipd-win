@@ -12,9 +12,9 @@ namespace UsbIpServer
 {
     sealed class RegistryWatcher : IDisposable
     {
-        private readonly ManagementEventWatcher? watcher;
+        readonly ManagementEventWatcher? watcher;
 
-        private readonly Dictionary<string, Action> devices = new Dictionary<string, Action>();
+        readonly Dictionary<string, Action> devices = new Dictionary<string, Action>();
 
         public RegistryWatcher()
         {
@@ -28,7 +28,7 @@ namespace UsbIpServer
             watcher.Start();
         }
 
-        private async void HandleEvent(object sender, EventArrivedEventArgs e)
+        async void HandleEvent(object sender, EventArrivedEventArgs e)
         {
             // something changed in the registry, so check if we should unbind device
             var connectedDevices = await ExportedDevice.GetAll(CancellationToken.None);
