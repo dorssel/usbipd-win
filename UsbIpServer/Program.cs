@@ -1,4 +1,4 @@
-﻿// SPDX-FileCopyrightText: 2020 Frans van Dorsselaer
+﻿// SPDX-FileCopyrightText: 2020 Frans van Dorsselaer, Microsoft Corporation
 //
 // SPDX-License-Identifier: GPL-2.0-only
 
@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using System.Runtime.Versioning;
 using Microsoft.Extensions.CommandLineUtils;
 using Microsoft.Extensions.Configuration;
@@ -44,6 +45,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ");
         }
 
+        public static string Truncate(this string value, int maxChars)
+        {
+            return value.Length <= maxChars ? value : value.Substring(0, maxChars - 3) + "...";
+        }
+
         static int Main(string[] args)
         {
             var app = new CommandLineApplication()
@@ -72,20 +78,73 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                     return 0;
                 });
             });
-#if false
-            // TODO: Linux style binding (optional?)
-            // for now, just allow any client to claim any device (!)
-            app.Command("bind", (cmd) => {
-                cmd.Description = "Bind device to VBoxUsb.sys";
+
+            app.Command("list", (cmd) =>
+            {
+                cmd.Description = "List connected USB devices.";
                 DefaultCmdLine(cmd);
-                cmd.Option("-b|--busid=<busid>", "Bind VBoxUsb.sys to device on <busid>", CommandOptionType.SingleValue);
+                cmd.OnExecute(async () =>
+                {
+                    Console.WriteLine($"{"ID", -6}{"Device", -60}{"Available", -5}");
+                    var connectedDevices = await ExportedDevice.GetAll(CancellationToken.None);
+                    var deviceChecker = new DeviceInfoChecker();
+                    foreach (var device in connectedDevices)
+                    {
+                        Console.WriteLine($"{device.BusId, -6}{Truncate(deviceChecker.GetDeviceName(device.Path.Replace(@"\\", @"\", StringComparison.Ordinal)), 60),-60}{ (RegistryUtils.IsDeviceAvailable(device.BusId)? "Yes": "No"), -5}");
+                    }
+
+                    return 0;
+                });
             });
-            app.Command("unbind", (cmd) => {
-                cmd.Description = "Unbind device from VBoxUsb.sys";
+
+            app.Command("bind", (cmd) =>
+            {
+                cmd.Description = "Bind device";
+                var busId = cmd.Option("-b|--busid=<busid>", "Share device having <busid>", CommandOptionType.SingleValue);
+                var bindAll = cmd.Option("-a|--all", "Share all devices.", CommandOptionType.NoValue);
                 DefaultCmdLine(cmd);
-                cmd.Option("-b|--busid=<busid>", "Unbind VBoxUsb.sys from device on <busid>", CommandOptionType.SingleValue);
+                cmd.OnExecute(async () =>
+                {
+                    if (bindAll.HasValue())
+                    {
+                        var connectedDevices = await ExportedDevice.GetAll(CancellationToken.None);
+                        foreach (var id in connectedDevices.Select(x => x.BusId))
+                        {
+                            RegistryUtils.SetDeviceAvailability(id, true);
+                        }
+
+                        return 0;
+                    }
+
+                    RegistryUtils.SetDeviceAvailability(busId.Value(), true);
+                    return 0;
+                });
             });
-#endif
+
+            app.Command("unbind", (cmd) =>
+            {
+                cmd.Description = "Unbind device";
+                var busId = cmd.Option("-b|--busid=<busid>", "Stop sharing device having <busid>", CommandOptionType.SingleValue);
+                var unbindAll = cmd.Option("-a|--all", "Stop sharing all devices.", CommandOptionType.NoValue);
+                DefaultCmdLine(cmd);
+                cmd.OnExecute(async () =>
+                {
+                    if (unbindAll.HasValue())
+                    {
+                        var connectedDevices = await ExportedDevice.GetAll(CancellationToken.None);
+                        foreach (var id in connectedDevices.Select(x => x.BusId))
+                        {
+                            RegistryUtils.SetDeviceAvailability(id, false);
+                        }
+
+                        return 0;
+                    }
+
+                    RegistryUtils.SetDeviceAvailability(busId.Value(), false);
+                    return 0;
+                });
+            });
+
             app.Command("server", (cmd) =>
             {
                 cmd.Description = "Run the server stand-alone on the console";
@@ -150,6 +209,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                     services.AddScoped<ClientContext>();
                     services.AddScoped<ConnectedClient>();
                     services.AddScoped<AttachedClient>();
+                    services.AddSingleton<RegistryWatcher>();
                 })
                 .Build()
                 .Run();

@@ -1,4 +1,4 @@
-﻿// SPDX-FileCopyrightText: 2020 Frans van Dorsselaer
+﻿// SPDX-FileCopyrightText: 2020 Frans van Dorsselaer, Microsoft Corporation
 //
 // SPDX-License-Identifier: GPL-2.0-only
 
@@ -23,11 +23,12 @@ namespace UsbIpServer
     [SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes", Justification = "Instantiated by DI")]
     sealed class ConnectedClient
     {
-        public ConnectedClient(ILogger<ConnectedClient> logger, ClientContext clientContext, IServiceProvider serviceProvider)
+        public ConnectedClient(ILogger<ConnectedClient> logger, RegistryWatcher watcher, ClientContext clientContext, IServiceProvider serviceProvider)
         {
             Logger = logger;
             ClientContext = clientContext;
             ServiceProvider = serviceProvider;
+            Watcher = watcher;
 
             var client = clientContext.TcpClient;
             client.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
@@ -42,6 +43,7 @@ namespace UsbIpServer
         readonly ClientContext ClientContext;
         readonly IServiceProvider ServiceProvider;
         readonly NetworkStream Stream;
+        readonly RegistryWatcher Watcher;
 
         public async Task RunAsync(CancellationToken cancellationToken)
         {
@@ -60,9 +62,21 @@ namespace UsbIpServer
             }
         }
 
+        static async Task<ExportedDevice[]> GetAvailableDevicesAsync(CancellationToken cancellationToken)
+        {
+            if (RegistryUtils.HasRegistryAccess())
+            {
+                return (await ExportedDevice.GetAll(cancellationToken))
+               .Where(x => RegistryUtils.IsDeviceAvailable(x.BusId))
+               .ToArray();
+            }
+
+            return await ExportedDevice.GetAll(cancellationToken);
+        }
+
         async Task HandleRequestDeviceListAsync(CancellationToken cancellationToken)
         {
-            var exportedDevices = await ExportedDevice.GetAll(cancellationToken);
+            var exportedDevices = await GetAvailableDevicesAsync(cancellationToken);
 
             await SendOpCodeAsync(OpCode.OP_REP_DEVLIST, Status.ST_OK);
 
@@ -86,7 +100,7 @@ namespace UsbIpServer
 
             try
             {
-                var exportedDevices = await ExportedDevice.GetAll(cancellationToken);
+                var exportedDevices = await GetAvailableDevicesAsync(cancellationToken);
 
                 status = Status.ST_NODEV;
                 var exportedDevice = exportedDevices.Single(x => x.BusId == busid);
@@ -112,10 +126,15 @@ namespace UsbIpServer
                     await SendOpCodeAsync(OpCode.OP_REP_IMPORT, Status.ST_OK);
                     exportedDevice.Serialize(Stream, false);
 
-                    await ServiceProvider.GetRequiredService<AttachedClient>().RunAsync(cancellationToken);
+                    // setup token to free device
+                    using var attachedClientTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+                    Watcher.WatchDevice(busid, () => attachedClientTokenSource.Cancel());
+                    var attachedClientToken = attachedClientTokenSource.Token;
+                    await ServiceProvider.GetRequiredService<AttachedClient>().RunAsync(attachedClientToken);
                 }
                 finally
                 {
+                    Watcher.StopWatchingDevice(busid);
                     Logger.LogInformation(LogEvents.ClientDetach, $"Client {ClientContext.TcpClient.Client.RemoteEndPoint} released device at {exportedDevice.BusId} ({exportedDevice.Path}).");
                 }
             }
