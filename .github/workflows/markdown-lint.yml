@@ -22,4 +22,4 @@ jobs:
       uses: avto-dev/markdown-lint@v1.5.0
       with:
         ignore: COPYING.md
-        args: **/*.md
+        args: '**/*.md'
