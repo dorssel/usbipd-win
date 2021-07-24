@@ -4,9 +4,14 @@ SPDX-FileCopyrightText: 2020 Frans van Dorsselaer
 SPDX-License-Identifier: GPL-2.0-only
 -->
 
-# usbipd-win [![Build](https://github.com/dorssel/usbipd-win/workflows/Build/badge.svg?branch=master)](https://github.com/dorssel/usbipd-win/actions?query=workflow%3ABuild+branch%3Amaster) [![CodeQL](https://github.com/dorssel/usbipd-win/workflows/CodeQL/badge.svg?branch=master)](https://github.com/dorssel/usbipd-win/actions?query=workflow%3ACodeQL+branch%3Amaster) [![REUSE](https://github.com/dorssel/usbipd-win/workflows/REUSE/badge.svg?branch=master)](https://github.com/dorssel/usbipd-win/actions?query=workflow%3AREUSE+branch%3Amaster)
+# usbipd-win
 
-Windows software for hosting locally connected USB devices to other machines, including Hyper-V guests.
+[![Build](https://github.com/dorssel/usbipd-win/workflows/Build/badge.svg?branch=master)](https://github.com/dorssel/usbipd-win/actions?query=workflow%3ABuild+branch%3Amaster)
+[![CodeQL](https://github.com/dorssel/usbipd-win/workflows/CodeQL/badge.svg?branch=master)](https://github.com/dorssel/usbipd-win/actions?query=workflow%3ACodeQL+branch%3Amaster)
+[![REUSE](https://github.com/dorssel/usbipd-win/workflows/REUSE/badge.svg?branch=master)](https://github.com/dorssel/usbipd-win/actions?query=workflow%3AREUSE+branch%3Amaster)
+[![Markdown](https://github.com/dorssel/usbipd-win/workflows/Markdown/badge.svg?branch=master)](https://github.com/dorssel/usbipd-win/actions?query=workflow%3AMarkdown+branch%3Amaster)
+
+Windows software for hosting locally connected USB devices to other machines, including Hyper-V guests and WSL 2.
 
 ## How to use
 
@@ -15,13 +20,17 @@ it does not depend on any other software.
 
 ### Installation
 
-Run the installer (.msi) from the <a href="https://github.com/dorssel/usbipd-win/releases/latest">latest release</a> on the Windows machine where your USB device is connected. 
+Run the installer (.msi) from the [latest release](https://github.com/dorssel/usbipd-win/releases/latest)
+on the Windows machine where your USB device is connected.
 
 Alternatively, use the Windows Package Manager:
-```
+
+```pwsh
 winget install usbipd
 ```
-This will install and run a service called `usbpd-win`. You can check the status of this service using the Services app from Windows. Additionally, it will add `UsbIpServer` in your path.
+
+This will install and run a service called `usbpd-win`. You can check the status of this service using the Services app from Windows.
+Additionally, it will add `UsbIpServer` in your path.
 
 ### Lookup and Enable Devices
 
@@ -31,10 +40,10 @@ By default devices are not shared with usbip clients. To lookup and share device
 
 From another (possibly virtual) machine running Linux, use `usbip` to claim the USB device:
 
-   <pre>
-   usbip list --remote=<em>&lt;host></em>
-   sudo usbip attach --remote=<em>&lt;host></em> --busid=<em>&lt;x>-&lt;y></em>
-   </pre>
+```bash
+usbip list --remote=<host>
+sudo usbip attach --remote=<host> --busid=<bus-port>
+```
 
 If you find that your device does not work, first read *limitations* below.
 Please file an issue if you think your device should work with the current release.
@@ -44,9 +53,10 @@ Please file an issue if you think your device should work with the current relea
 Uninstall via Add/Remove Programs or via Settings/Apps.
 
 Alternatively, use the Windows Package Manager:
-<pre>
+
+```pwsh
 winget uninstall usbipd
-</pre>
+```
 
 There should be no left-overs, but if you do find any: please file an issue.
 
@@ -62,11 +72,11 @@ The installer also adds a firewall rule to allow all local subnets to connect to
 
 ## USBIP on WSL 2
 
-Currently WSL 2 does not support USB devices by default. A workaround to this limitation is to use usbip. For instructions on how to setup a Linux usbip client can be found [here](WSL_USBIP.md).
+Currently WSL 2 does not support USB devices by default. A workaround to this limitation is to use usbip.
+For instructions on how to setup a Linux usbip client can be found [here](WSL_USBIP.md).
 
 ## Limitations
 
 - For now, only USB devices with so called *bulk* endpoints work (USB flash drives, FTDI USB-to-serial, etc.).
 
 More information can be found on the [wiki](https://github.com/dorssel/usbipd-win/wiki).
-
