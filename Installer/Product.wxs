@@ -47,7 +47,7 @@ SPDX-License-Identifier: GPL-2.0-only
             Description="The user mode server application, installed as a service."
             >
             <ComponentGroupRef Id="UsbIpServer" />
-            <ComponentRef Id="UsbIpServer.exe" />
+            <ComponentRef Id="usbipd.exe" />
             <Feature
                 Id="Drivers"
                 Level="1"

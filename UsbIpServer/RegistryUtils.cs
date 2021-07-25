@@ -2,41 +2,46 @@
 //
 // SPDX-License-Identifier: GPL-2.0-only
 
+using System;
 using System.Linq;
-using Microsoft.Win32;
 using System.Security.Principal;
+using Microsoft.Win32;
 
 namespace UsbIpServer
 {
     static class RegistryUtils
     {
-        const string devicesRegistryPath = @"SOFTWARE\USBIPD-WIN";
+        const string DevicesRegistryPath = @"SOFTWARE\usbipd-win";
 
         public static bool IsDeviceAvailable(string busId)
         {
-            return Registry.LocalMachine.CreateSubKey(devicesRegistryPath).GetSubKeyNames().Any(x => x == busId);
+            return Registry.LocalMachine.OpenSubKey(DevicesRegistryPath)?.GetSubKeyNames().Any(x => x == busId) ?? false;
         }
 
         public static void SetDeviceAvailability(string busId, bool enable)
         {
             if (enable)
             { 
-                Registry.LocalMachine.CreateSubKey($@"{devicesRegistryPath}\{busId}");
+                Registry.LocalMachine.CreateSubKey($@"{DevicesRegistryPath}\{busId}");
             } else if (IsDeviceAvailable(busId))
             {
-                Registry.LocalMachine.DeleteSubKey($@"{devicesRegistryPath}\{busId}");
+                Registry.LocalMachine.DeleteSubKey($@"{DevicesRegistryPath}\{busId}");
             }
         }
 
         public static string[] GetRegistryDevices()
         {
-            return Registry.LocalMachine.CreateSubKey(devicesRegistryPath).GetSubKeyNames();
+            return Registry.LocalMachine.OpenSubKey(DevicesRegistryPath)?.GetSubKeyNames() ?? Array.Empty<string>();
         }
 
         public static void InitializeRegistry()
         {
-            Registry.LocalMachine.DeleteSubKeyTree(devicesRegistryPath);
-            Registry.LocalMachine.CreateSubKey(devicesRegistryPath);
+            var devices = Registry.LocalMachine.OpenSubKey(DevicesRegistryPath, true)
+                ?? throw new UnexpectedResultException($"registry key missing; try reinstalling the product");
+            foreach (var subKeyName in devices.GetSubKeyNames())
+            {
+                devices.DeleteSubKey(subKeyName);
+            }
         }
 
         public static bool HasRegistryAccess()
