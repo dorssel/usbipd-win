@@ -11,7 +11,7 @@ SPDX-License-Identifier: GPL-2.0-only
 [![REUSE](https://github.com/dorssel/usbipd-win/workflows/REUSE/badge.svg?branch=master)](https://github.com/dorssel/usbipd-win/actions?query=workflow%3AREUSE+branch%3Amaster)
 [![Markdown](https://github.com/dorssel/usbipd-win/workflows/Markdown/badge.svg?branch=master)](https://github.com/dorssel/usbipd-win/actions?query=workflow%3AMarkdown+branch%3Amaster)
 
-Windows software for hosting locally connected USB devices to other machines, including Hyper-V guests and WSL 2.
+Windows software for sharing locally connected USB devices to other machines, including Hyper-V guests and WSL 2.
 
 ## How to use
 
@@ -29,7 +29,8 @@ Alternatively, use the Windows Package Manager:
 winget install usbipd
 ```
 
-This will install and run a service called `usbipd` (display name: USBIP Service). You can check the status of this service using the Services app from Windows.
+This will install and run a service called `usbipd` (display name: USBIP Device Host).
+You can check the status of this service using the Services app from Windows.
 Additionally, it will add the command line tool `usbipd` in your path.
 
 ### Lookup and Enable Devices

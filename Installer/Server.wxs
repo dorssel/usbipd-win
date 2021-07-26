@@ -26,7 +26,7 @@ SPDX-License-Identifier: GPL-2.0-only
                         Port="3240"
                         Profile="all"
                         Scope="localSubnet"
-                        Description="Allow computers on local subnets to access the USBIP Host Service."
+                        Description="Allow computers on local subnets to access the USBIP Device Host service."
                     />
                 </File>
                 <ServiceInstall
@@ -35,8 +35,8 @@ SPDX-License-Identifier: GPL-2.0-only
                     Name="usbipd"
                     Arguments="server"
                     Start="auto"
-                    DisplayName="USBIP Service"
-                    Description="Enables sharing of locally connected USB devices to other machines."
+                    DisplayName="USBIP Device Host"
+                    Description="Enables sharing of locally connected USB devices to other machines. If this service is stopped, clients will not be able to attach shared devices."
                     />
                 <!-- Stop and remove the old service of version <= 0.3.1, if any -->
                 <ServiceControl
