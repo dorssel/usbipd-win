@@ -29,10 +29,10 @@ namespace UsbIpServer
 
         public static bool IsDeviceShared(ExportedDevice device)
         {
-            var deviceKeyNames = Registry.LocalMachine.CreateSubKey(devicesRegistryPath).GetSubKeyNames();
+            var deviceKeyNames = Registry.LocalMachine.CreateSubKey(DevicesRegistryPath).GetSubKeyNames();
             foreach (var keyName in deviceKeyNames)
             {
-                var deviceKey = Registry.LocalMachine.CreateSubKey(@$"{devicesRegistryPath}\{keyName}");
+                var deviceKey = Registry.LocalMachine.CreateSubKey(@$"{DevicesRegistryPath}\{keyName}");
                 if (IsDeviceMatchInRegistry(deviceKey, device))
                 {
                     return true;
@@ -74,7 +74,7 @@ namespace UsbIpServer
         public static void ShareDevice(ExportedDevice device)
         {
             var guid = Guid.NewGuid();
-            var entry = Registry.LocalMachine.CreateSubKey(@$"{devicesRegistryPath}\{guid}");
+            var entry = Registry.LocalMachine.CreateSubKey(@$"{DevicesRegistryPath}\{guid}");
             entry.SetValue(DeviceFilter.VENDOR_ID, device.VendorId);
             entry.SetValue(DeviceFilter.PRODUCT_ID, device.ProductId);
             entry.SetValue(DeviceFilter.BCD_DEVICE, device.BcdDevice);
@@ -87,13 +87,13 @@ namespace UsbIpServer
 
         public static void StopSharingDevice(ExportedDevice device)
         {
-            var deviceKeyNames = Registry.LocalMachine.CreateSubKey(devicesRegistryPath).GetSubKeyNames();
+            var deviceKeyNames = Registry.LocalMachine.CreateSubKey(DevicesRegistryPath).GetSubKeyNames();
             foreach (var keyName in deviceKeyNames)
             {
-                var deviceKey = Registry.LocalMachine.CreateSubKey(@$"{devicesRegistryPath}\{keyName}");
+                var deviceKey = Registry.LocalMachine.CreateSubKey(@$"{DevicesRegistryPath}\{keyName}");
                 if (IsDeviceMatchInRegistry(deviceKey, device))
                 {
-                    Registry.LocalMachine.DeleteSubKeyTree(@$"{devicesRegistryPath}\{keyName}");
+                    Registry.LocalMachine.DeleteSubKeyTree(@$"{DevicesRegistryPath}\{keyName}");
                 }               
             }
         }
