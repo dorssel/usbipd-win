@@ -8,30 +8,67 @@ SPDX-License-Identifier: GPL-2.0-only
      xmlns:fw="http://schemas.microsoft.com/wix/FirewallExtension">
     <Fragment>
         <DirectoryRef Id="APPLICATIONFOLDER">
-            <Component Id="UsbIpServer.exe">
-                <File Source="$(var.PublishDir)\UsbIpServer.exe">
+            <!--
+            The product name is 'usbipd-win', but our users are well aware they are
+            running a Windows operating system. Hence, the executable, service name,
+            and firewall rule do not use the '-win' postfix.
+            -->
+            <Component Id="usbipd.exe">
+                <!--
+                The assemblyname is called UsbIpServer for historic reasons,
+                'usbipd.exe' is the canonical executable name.
+                -->
+                <File Source="$(var.PublishDir)\UsbIpServer.exe" Name="usbipd.exe">
                     <fw:FirewallException
-                        Id="UsbIpServer.exe"
-                        Name="usbipd-win"
+                        Id="usbipd"
+                        Name="usbipd"
                         Protocol="tcp"
                         Port="3240"
                         Profile="all"
                         Scope="localSubnet"
+                        Description="Allow computers on local subnets to access the USBIP Device Host service."
                     />
                 </File>
                 <ServiceInstall
                     Type="ownProcess"
                     ErrorControl="ignore"
-                    Name="usbipd-win"
+                    Name="usbipd"
                     Arguments="server"
                     Start="auto"
+                    DisplayName="USBIP Device Host"
+                    Description="Enables sharing of locally connected USB devices to other machines. If this service is stopped, clients will not be able to attach shared devices."
+                    />
+                <!-- Stop and remove the old service of version <= 0.3.1, if any -->
+                <ServiceControl
+                    Id="usbipd_old"
+                    Name="usbipd-win"
+                    Remove="both"
+                    Stop="both"
                     />
                 <ServiceControl
-                    Id="UsbIpServer.exe"
-                    Name="usbipd-win"
+                    Id="usbipd"
+                    Name="usbipd"
                     Remove="uninstall"
                     Stop="both"
                     Start="install"
+                    />
+                <!--
+                The registry uses the full product name by convention.
+                -->
+                <RegistryKey
+                    Root="HKLM"
+                    Key="SOFTWARE\usbipd-win"
+                    ForceCreateOnInstall="yes"
+                    ForceDeleteOnUninstall="yes"
+                    />
+                <Environment
+                    Id="PATH"
+                    Name="PATH"
+                    Action="set"
+                    Permanent="no"
+                    System="yes"
+                    Part="last"
+                    Value="[APPLICATIONFOLDER]"
                     />
             </Component>
         </DirectoryRef>

@@ -11,7 +11,7 @@ SPDX-License-Identifier: GPL-2.0-only
 [![REUSE](https://github.com/dorssel/usbipd-win/workflows/REUSE/badge.svg?branch=master)](https://github.com/dorssel/usbipd-win/actions?query=workflow%3AREUSE+branch%3Amaster)
 [![Markdown](https://github.com/dorssel/usbipd-win/workflows/Markdown/badge.svg?branch=master)](https://github.com/dorssel/usbipd-win/actions?query=workflow%3AMarkdown+branch%3Amaster)
 
-Windows software for hosting locally connected USB devices to other machines, including Hyper-V guests and WSL 2.
+Windows software for sharing locally connected USB devices to other machines, including Hyper-V guests and WSL 2.
 
 ## How to use
 
@@ -29,12 +29,21 @@ Alternatively, use the Windows Package Manager:
 winget install usbipd
 ```
 
-This will install and run a service called `usbpd-win`. You can check the status of this service using the Services app from Windows.
-Additionally, it will add `UsbIpServer` in your path.
+This will install and run a service called `usbipd` (display name: USBIP Device Host).
+You can check the status of this service using the Services app from Windows.
+Additionally, it will add the command line tool `usbipd` in your path.
 
 ### Lookup and Enable Devices
 
-By default devices are not shared with usbip clients. To lookup and share devices, open a command prompt and use `UsbIpServer` tool.
+By default devices are not shared with usbip clients.
+To lookup and share devices, open a command prompt as an Administrator and use the `usbipd` tool.
+For example:
+
+```pwsh
+usbipd --help
+usbipd list
+usbipd bind --busid=<bus-port>
+```
 
 ### Connecting Devices
 
@@ -68,12 +77,13 @@ This *should* play nice with a coexisting full installation of VirtualBox, but t
 
 The software itself consists of an auto-start background service.
 
-The installer also adds a firewall rule to allow all local subnets to connect to the service; this firewall rule can be tweaked to fine tune access control.
+The installer also adds a firewall rule called `usbipd` to allow all local subnets to connect to the service;
+this firewall rule can be tweaked to fine tune access control.
 
 ## USBIP on WSL 2
 
-Currently WSL 2 does not support USB devices by default. A workaround to this limitation is to use usbip.
-For instructions on how to setup a Linux usbip client can be found [here](WSL_USBIP.md).
+Currently, WSL 2 does not support USB devices by default. A workaround to this limitation is to use usbip.
+Instructions on how to setup a Linux usbip client can be found [here](WSL_USBIP.md).
 
 ## Limitations
 
