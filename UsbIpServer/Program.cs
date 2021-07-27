@@ -134,18 +134,23 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                 DefaultCmdLine(cmd);
                 cmd.OnExecute(async () =>
                 {
+                    var connectedDevices = await ExportedDevice.GetAll(CancellationToken.None);
                     if (unbindAll.HasValue())
                     {
-                        var connectedDevices = await ExportedDevice.GetAll(CancellationToken.None);
-                        foreach (var id in connectedDevices.Select(x => x.BusId))
+                        
+                        foreach (var device in connectedDevices)
                         {
-                            //RegistryUtils.SetDeviceAvailability(id, false);
+                            RegistryUtils.StopSharingDevice(device);
                         }
 
                         return 0;
                     }
 
-                    //RegistryUtils.SetDeviceAvailability(busId.Value(), false);
+                    var targetDevice = connectedDevices.Where(x => x.BusId == busId.Value()).First();
+                    if (targetDevice != null && RegistryUtils.IsDeviceShared(targetDevice))
+                    {
+                        RegistryUtils.StopSharingDevice(targetDevice);
+                    }
                     return 0;
                 });
             });
