@@ -4,11 +4,12 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Threading;
 using System.Runtime.Versioning;
+using System.Threading;
 using Microsoft.Extensions.CommandLineUtils;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -54,7 +55,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         {
             var app = new CommandLineApplication()
             {
-                Name = Path.ChangeExtension(Path.GetFileName(Assembly.GetExecutingAssembly().Location), "exe"),
+                Name = Path.GetFileName(Process.GetCurrentProcess().ProcessName),
             };
             app.VersionOption("-v|--version", GitVersionInformation.MajorMinorPatch, GitVersionInformation.InformationalVersion);
 
