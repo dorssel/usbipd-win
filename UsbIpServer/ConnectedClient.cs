@@ -62,12 +62,12 @@ namespace UsbIpServer
             }
         }
 
-        static async Task<ExportedDevice[]> GetAvailableDevicesAsync(CancellationToken cancellationToken)
+        static async Task<ExportedDevice[]> GetSharedDevicesAsync(CancellationToken cancellationToken)
         {
             if (RegistryUtils.HasRegistryAccess())
             {
                 return (await ExportedDevice.GetAll(cancellationToken))
-               .Where(x => RegistryUtils.IsDeviceAvailable(x.BusId))
+               .Where(x => RegistryUtils.IsDeviceShared(x))
                .ToArray();
             }
 
@@ -76,7 +76,7 @@ namespace UsbIpServer
 
         async Task HandleRequestDeviceListAsync(CancellationToken cancellationToken)
         {
-            var exportedDevices = await GetAvailableDevicesAsync(cancellationToken);
+            var exportedDevices = await GetSharedDevicesAsync(cancellationToken);
 
             await SendOpCodeAsync(OpCode.OP_REP_DEVLIST, Status.ST_OK);
 
@@ -100,7 +100,7 @@ namespace UsbIpServer
 
             try
             {
-                var exportedDevices = await GetAvailableDevicesAsync(cancellationToken);
+                var exportedDevices = await GetSharedDevicesAsync(cancellationToken);
 
                 status = Status.ST_NODEV;
                 var exportedDevice = exportedDevices.Single(x => x.BusId == busid);

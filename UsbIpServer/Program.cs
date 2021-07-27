@@ -90,7 +90,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                     var deviceChecker = new DeviceInfoChecker();
                     foreach (var device in connectedDevices)
                     {
-                        Console.WriteLine($"{device.BusId, -6}{Truncate(deviceChecker.GetDeviceName(device.Path.Replace(@"\\", @"\", StringComparison.Ordinal)), 60),-60}{ (RegistryUtils.IsDeviceAvailable(device.BusId)? "Yes": "No"), -5}");
+                        Console.WriteLine($"{device.BusId, -6}{Truncate(deviceChecker.GetDeviceName(device.Path.Replace(@"\\", @"\", StringComparison.Ordinal)), 60),-60}{ (RegistryUtils.IsDeviceShared(device)? "Yes": "No"), -5}");
                     }
 
                     return 0;
@@ -105,18 +105,23 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                 DefaultCmdLine(cmd);
                 cmd.OnExecute(async () =>
                 {
+                    var connectedDevices = await ExportedDevice.GetAll(CancellationToken.None);
                     if (bindAll.HasValue())
                     {
-                        var connectedDevices = await ExportedDevice.GetAll(CancellationToken.None);
-                        foreach (var id in connectedDevices.Select(x => x.BusId))
+                        foreach (var device in connectedDevices)
                         {
-                            RegistryUtils.SetDeviceAvailability(id, true);
+                            RegistryUtils.ShareDevice(device);
                         }
 
                         return 0;
                     }
 
-                    RegistryUtils.SetDeviceAvailability(busId.Value(), true);
+                    var targetDevice = connectedDevices.Where(x => x.BusId == busId.Value()).First();
+                    if (targetDevice != null && RegistryUtils.IsDeviceShared(targetDevice))
+                    {
+                        RegistryUtils.ShareDevice(targetDevice);
+                    }
+                    
                     return 0;
                 });
             });
@@ -134,13 +139,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                         var connectedDevices = await ExportedDevice.GetAll(CancellationToken.None);
                         foreach (var id in connectedDevices.Select(x => x.BusId))
                         {
-                            RegistryUtils.SetDeviceAvailability(id, false);
+                            //RegistryUtils.SetDeviceAvailability(id, false);
                         }
 
                         return 0;
                     }
 
-                    RegistryUtils.SetDeviceAvailability(busId.Value(), false);
+                    //RegistryUtils.SetDeviceAvailability(busId.Value(), false);
                     return 0;
                 });
             });

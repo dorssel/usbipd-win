@@ -44,11 +44,6 @@ namespace UsbIpServer
             }
 
             TcpListener.Start();
-
-            if (RegistryUtils.HasRegistryAccess())
-            {
-                RegistryUtils.InitializeRegistry();
-            }
             
             using var cancellationTokenRegistration = stoppingToken.Register(() => TcpListener.Stop());
 
