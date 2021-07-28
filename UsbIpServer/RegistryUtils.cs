@@ -71,7 +71,7 @@ namespace UsbIpServer
 
         // To share is to equivalently have it in the registry.
         // If a device is not in the registry, then it is not shared.
-        public static void ShareDevice(ExportedDevice device)
+        public static void ShareDevice(ExportedDevice device, string name)
         {
             var guid = Guid.NewGuid();
             var entry = Registry.LocalMachine.CreateSubKey(@$"{DevicesRegistryPath}\{guid}");

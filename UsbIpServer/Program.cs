@@ -86,7 +86,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                 DefaultCmdLine(cmd);
                 cmd.OnExecute(async () =>
                 {
-                    Console.WriteLine($"{"ID", -6}{"Device", -60}{"Available", -5}");
+                    Console.WriteLine($"{"ID", -6}{"Device", -60}{"Shared", -5}");
                     var connectedDevices = await ExportedDevice.GetAll(CancellationToken.None);
                     var deviceChecker = new DeviceInfoChecker();
                     foreach (var device in connectedDevices)
@@ -118,9 +118,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                     }
 
                     var targetDevice = connectedDevices.Where(x => x.BusId == busId.Value()).First();
-                    if (targetDevice != null && RegistryUtils.IsDeviceShared(targetDevice))
+                    if (targetDevice != null && !RegistryUtils.IsDeviceShared(targetDevice))
                     {
-                        RegistryUtils.ShareDevice(targetDevice);
+                        RegistryUtils.ShareDevice(targetDevice, description);
                     }
                     
                     return 0;
