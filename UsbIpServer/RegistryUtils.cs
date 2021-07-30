@@ -8,6 +8,8 @@ using System.Security.Principal;
 using System;
 using System.Globalization;
 using Microsoft.Win32;
+using System.Collections;
+using System.Collections.Generic;
 
 namespace UsbIpServer
 {
@@ -29,41 +31,23 @@ namespace UsbIpServer
 
         public static bool IsDeviceShared(ExportedDevice device)
         {
-            var deviceKeyNames = Registry.LocalMachine.CreateSubKey(DevicesRegistryPath).GetSubKeyNames();
-            foreach (var keyName in deviceKeyNames)
-            {
-                var deviceKey = Registry.LocalMachine.CreateSubKey(@$"{DevicesRegistryPath}\{keyName}");
-                if (IsDeviceMatchInRegistry(deviceKey, device))
-                {
-                    return true;
-                }
-            }
-
-            return false;
+            return GetRegistryKey(device) != null;
         }
 
-        static bool IsDeviceMatchInRegistry(RegistryKey deviceKey, ExportedDevice device)
+        static bool IsDeviceMatch(RegistryKey deviceKey, ExportedDevice device)
         {
-            try
+            
+            var cultureInfo = new CultureInfo("en-US");
+            if ((string?)deviceKey.GetValue(DeviceFilter.VENDOR_ID) == device.VendorId.ToString(cultureInfo) &&
+                (string?)deviceKey.GetValue(DeviceFilter.PRODUCT_ID) == device.ProductId.ToString(cultureInfo) &&
+                (string?)deviceKey.GetValue(DeviceFilter.BCD_DEVICE) == device.BcdDevice.ToString(cultureInfo) &&
+                (string?)deviceKey.GetValue(DeviceFilter.DEVICE_CLASS) == device.DeviceClass.ToString(cultureInfo) &&
+                (string?)deviceKey.GetValue(DeviceFilter.DEVICE_SUBCLASS) == device.DeviceSubClass.ToString(cultureInfo) &&
+                (string?)deviceKey.GetValue(DeviceFilter.DEVICE_PROTOCOL) == device.DeviceProtocol.ToString(cultureInfo) &&
+                (string?)deviceKey.GetValue(DeviceFilter.DEV_NUM) == device.DevNum.ToString(cultureInfo) &&
+                (string?)deviceKey.GetValue(DeviceFilter.BUS_ID) == device.BusId)
             {
-                var cultureInfo = new CultureInfo("en-US");
-#pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
-                if ((string)deviceKey.GetValue(DeviceFilter.VENDOR_ID) == device.VendorId.ToString(cultureInfo) |
-                    (string)deviceKey.GetValue(DeviceFilter.PRODUCT_ID) == device.ProductId.ToString(cultureInfo) ||
-                    (string)deviceKey.GetValue(DeviceFilter.BCD_DEVICE) == device.BcdDevice.ToString(cultureInfo) ||
-                    (string)deviceKey.GetValue(DeviceFilter.DEVICE_CLASS) == device.DeviceClass.ToString(cultureInfo) ||
-                    (string)deviceKey.GetValue(DeviceFilter.DEVICE_SUBCLASS) == device.DeviceSubClass.ToString(cultureInfo) ||
-                    (string)deviceKey.GetValue(DeviceFilter.DEVICE_PROTOCOL) == device.DeviceProtocol.ToString(cultureInfo) ||
-                    (string)deviceKey.GetValue(DeviceFilter.DEV_NUM) == device.DevNum.ToString(cultureInfo) ||
-                    (string)deviceKey.GetValue(DeviceFilter.BUS_ID) == device.BusId)
-#pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.
-                {
-                    return true;
-                }
-            }
-            catch (NullReferenceException)
-            {
-                // this is expected if a value does not exist in the registry key.
+                return true;
             }
 
             return false;
@@ -83,34 +67,85 @@ namespace UsbIpServer
             entry.SetValue(DeviceFilter.DEVICE_PROTOCOL, device.DeviceProtocol);
             entry.SetValue(DeviceFilter.DEV_NUM, device.DevNum);
             entry.SetValue(DeviceFilter.BUS_ID, device.BusId);
+            entry.SetValue("Name", name);
         }
 
         public static void StopSharingDevice(ExportedDevice device)
+        {
+            var key = GetRegistryKey(device);
+            if (key != null)
+            {
+                Registry.LocalMachine.DeleteSubKeyTree(@$"{DevicesRegistryPath}\{key.Name}");
+            }
+        }
+
+        public class PersistedDevice
+        {
+            public string Guid { get; }
+            public string BusId { get; }
+            public string Name { get; }
+            public PersistedDevice(string guid, string busid, string name)
+            {
+                Guid = guid;
+                BusId = busid;
+                Name = name;
+            }
+
+        }
+
+        static RegistryKey? GetRegistryKey(ExportedDevice device)
         {
             var deviceKeyNames = Registry.LocalMachine.CreateSubKey(DevicesRegistryPath).GetSubKeyNames();
             foreach (var keyName in deviceKeyNames)
             {
                 var deviceKey = Registry.LocalMachine.CreateSubKey(@$"{DevicesRegistryPath}\{keyName}");
-                if (IsDeviceMatchInRegistry(deviceKey, device))
+                if (IsDeviceMatch(deviceKey, device))
                 {
-                    Registry.LocalMachine.DeleteSubKeyTree(@$"{DevicesRegistryPath}\{keyName}");
-                }               
+                    return deviceKey;
+                }
             }
+
+            return null;
         }
 
-        public static string[] GetRegistryDevices()
+        public static void SetDeviceAsAttached(ExportedDevice device)
         {
-            return Registry.LocalMachine.OpenSubKey(DevicesRegistryPath)?.GetSubKeyNames() ?? Array.Empty<string>();
-        }
-
-        public static void InitializeRegistry()
-        {
-            var devices = Registry.LocalMachine.OpenSubKey(DevicesRegistryPath, true)
-                ?? throw new UnexpectedResultException($"registry key missing; try reinstalling the product");
-            foreach (var subKeyName in devices.GetSubKeyNames())
+            var key = GetRegistryKey(device);
+            if (key != null)
             {
-                devices.DeleteSubKey(subKeyName);
+                key.CreateSubKey("Attached", true, RegistryOptions.Volatile);
             }
+        }
+
+        public static List<PersistedDevice> GetPersistedDevices(ExportedDevice[] connectedDevices)
+        {
+            var persistedDevices = new List<PersistedDevice>();
+            var deviceKeyNames = Registry.LocalMachine.CreateSubKey(DevicesRegistryPath).GetSubKeyNames();
+            foreach (var keyName in deviceKeyNames)
+            {
+                var deviceKey = Registry.LocalMachine.CreateSubKey(@$"{DevicesRegistryPath}\{keyName}");
+                var deviceFound = false;
+                foreach (var connectedDevice in connectedDevices)
+                {
+                    if (IsDeviceMatch(deviceKey, connectedDevice))
+                    {
+                        deviceFound = true;
+                    }
+                }
+
+                if (!deviceFound)
+                {
+                    persistedDevices.Add(
+                        new PersistedDevice(
+                            keyName,
+                            (string?)deviceKey.GetValue(DeviceFilter.BUS_ID)??"",
+                            (string?)deviceKey.GetValue("Name")??""
+                            )
+                        ); ;
+                }
+            }
+
+            return persistedDevices;
         }
 
         public static bool HasRegistryAccess()

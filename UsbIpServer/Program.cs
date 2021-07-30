@@ -86,12 +86,21 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                 DefaultCmdLine(cmd);
                 cmd.OnExecute(async () =>
                 {
-                    Console.WriteLine($"{"ID", -6}{"Device", -60}{"Shared", -5}");
                     var connectedDevices = await ExportedDevice.GetAll(CancellationToken.None);
+                    var persistedDevices = RegistryUtils.GetPersistedDevices(connectedDevices);
                     var deviceChecker = new DeviceInfoChecker();
+                    Console.WriteLine("Present:");
+                    Console.WriteLine($"{"BUS-ID",-8}{"Device",-60}{"Shared",-5}");
                     foreach (var device in connectedDevices)
                     {
-                        Console.WriteLine($"{device.BusId, -6}{Truncate(deviceChecker.GetDeviceName(device.Path.Replace(@"\\", @"\", StringComparison.Ordinal)), 60),-60}{ (RegistryUtils.IsDeviceShared(device)? "Yes": "No"), -5}");
+                        Console.WriteLine($"{device.BusId, -8}{Truncate(deviceChecker.GetDeviceName(device.Path.Replace(@"\\", @"\", StringComparison.Ordinal)), 60),-60}{ (RegistryUtils.IsDeviceShared(device)? "Yes": "No"), -5}");
+                    }
+                    Console.Write("\n");
+                    Console.WriteLine("Persisted:");
+                    Console.WriteLine($"{"GUID",-38}{"BUS-ID",-8}{"Device",-60}");
+                    foreach (var device in persistedDevices)
+                    {
+                        Console.WriteLine($"{device.Guid,-38}{device.BusId, -8}{Truncate(device.Name, 60),-60}");
                     }
 
                     return 0;
@@ -111,7 +120,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                     {
                         foreach (var device in connectedDevices)
                         {
-                            RegistryUtils.ShareDevice(device);
+                            var checker = new DeviceInfoChecker();
+                            RegistryUtils.ShareDevice(device, checker.GetDeviceName(device.Path));
                         }
 
                         return 0;
@@ -120,7 +130,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                     var targetDevice = connectedDevices.Where(x => x.BusId == busId.Value()).First();
                     if (targetDevice != null && !RegistryUtils.IsDeviceShared(targetDevice))
                     {
-                        RegistryUtils.ShareDevice(targetDevice, description);
+                        var checker = new DeviceInfoChecker();
+                        RegistryUtils.ShareDevice(targetDevice, checker.GetDeviceName(targetDevice.Path));
                     }
                     
                     return 0;
