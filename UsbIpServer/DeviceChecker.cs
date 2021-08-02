@@ -31,8 +31,20 @@ namespace UsbIpServer
             collection.Dispose();
         }
 
-        public string GetDeviceName(string path)
+        public string GetDeviceName(ExportedDevice device)
         {
+            // first try to get name from registry
+            var registryKey = RegistryUtils.GetRegistryKey(device);
+            if (registryKey != null)
+            {
+                var name = (string?)registryKey.GetValue("Name");
+                if (name != null)
+                {
+                    return name;
+                }
+            }
+
+            var path = device.Path;
             var possibleDeviceNames = new SortedSet<string>();
             foreach (var usbDevice in devices)
             {

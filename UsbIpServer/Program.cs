@@ -90,10 +90,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                     var persistedDevices = RegistryUtils.GetPersistedDevices(connectedDevices);
                     var deviceChecker = new DeviceInfoChecker();
                     Console.WriteLine("Present:");
-                    Console.WriteLine($"{"BUS-ID",-8}{"Device",-60}{"Shared",-5}");
+                    Console.WriteLine($"{"BUS-ID",-8}{"Device",-60}{"Status",-5}");
                     foreach (var device in connectedDevices)
                     {
-                        Console.WriteLine($"{device.BusId, -8}{Truncate(deviceChecker.GetDeviceName(device.Path.Replace(@"\\", @"\", StringComparison.Ordinal)), 60),-60}{ (RegistryUtils.IsDeviceShared(device)? "Yes": "No"), -5}");
+                        Console.WriteLine($"{device.BusId, -8}{Truncate(deviceChecker.GetDeviceName(device), 60),-60}{ (RegistryUtils.IsDeviceShared(device)? RegistryUtils.IsDeviceAttached(device)? "Attached" : "Shared" : "Not-Shared"), -5}");
                     }
                     Console.Write("\n");
                     Console.WriteLine("Persisted:");
@@ -121,7 +121,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                         foreach (var device in connectedDevices)
                         {
                             var checker = new DeviceInfoChecker();
-                            RegistryUtils.ShareDevice(device, checker.GetDeviceName(device.Path));
+                            RegistryUtils.ShareDevice(device, checker.GetDeviceName(device));
                         }
 
                         return 0;
@@ -131,7 +131,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                     if (targetDevice != null && !RegistryUtils.IsDeviceShared(targetDevice))
                     {
                         var checker = new DeviceInfoChecker();
-                        RegistryUtils.ShareDevice(targetDevice, checker.GetDeviceName(targetDevice.Path));
+                        RegistryUtils.ShareDevice(targetDevice, checker.GetDeviceName(targetDevice));
                     }
                     
                     return 0;
@@ -142,27 +142,34 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
             {
                 cmd.Description = "Unbind device";
                 var busId = cmd.Option("-b|--busid=<busid>", "Stop sharing device having <busid>", CommandOptionType.SingleValue);
+                var guid = cmd.Option("-g|--guid=<guid>", "Stop sharing persisted device having <guid>", CommandOptionType.SingleValue);
                 var unbindAll = cmd.Option("-a|--all", "Stop sharing all devices.", CommandOptionType.NoValue);
                 DefaultCmdLine(cmd);
                 cmd.OnExecute(async () =>
                 {
-                    var connectedDevices = await ExportedDevice.GetAll(CancellationToken.None);
+                    
                     if (unbindAll.HasValue())
-                    {
-                        
-                        foreach (var device in connectedDevices)
-                        {
-                            RegistryUtils.StopSharingDevice(device);
-                        }
-
+                    {                        
+                        RegistryUtils.StopSharingAllDevices();
                         return 0;
                     }
 
-                    var targetDevice = connectedDevices.Where(x => x.BusId == busId.Value()).First();
-                    if (targetDevice != null && RegistryUtils.IsDeviceShared(targetDevice))
+                    if (busId.HasValue())
                     {
-                        RegistryUtils.StopSharingDevice(targetDevice);
+                        var connectedDevices = await ExportedDevice.GetAll(CancellationToken.None);
+                        var targetDevice = connectedDevices.Where(x => x.BusId == busId.Value()).First();
+                        if (targetDevice != null && RegistryUtils.IsDeviceShared(targetDevice))
+                        {
+                            RegistryUtils.StopSharingDevice(targetDevice);
+                        }
+                        return 0;
                     }
+
+                    if (guid.HasValue())
+                    {
+                        RegistryUtils.StopSharingDevice(guid.Value());
+                    }
+                    
                     return 0;
                 });
             });

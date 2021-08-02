@@ -130,16 +130,19 @@ namespace UsbIpServer
                     using var attachedClientTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
                     Watcher.WatchDevice(busid, () => attachedClientTokenSource.Cancel());
                     var attachedClientToken = attachedClientTokenSource.Token;
+                    RegistryUtils.SetDeviceAsAttached(exportedDevice);
                     await ServiceProvider.GetRequiredService<AttachedClient>().RunAsync(attachedClientToken);
                 }
                 finally
                 {
                     Watcher.StopWatchingDevice(busid);
+                    RegistryUtils.SetDeviceAsDetached(exportedDevice);
                     Logger.LogInformation(LogEvents.ClientDetach, $"Client {ClientContext.TcpClient.Client.RemoteEndPoint} released device at {exportedDevice.BusId} ({exportedDevice.Path}).");
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                Logger.LogError(LogEvents.ClientError, $"An exception occurred while communicating with the client: {ex}");
 #pragma warning disable CA1508 // Avoid dead conditional code (false possitive)
                 if (status != Status.ST_OK)
 #pragma warning restore CA1508 // Avoid dead conditional code

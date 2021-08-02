@@ -8,5 +8,6 @@ namespace UsbIpServer
     {
         public const int ClientAttach = 1;
         public const int ClientDetach = 2;
+        public const int ClientError = 3;
     }
 }

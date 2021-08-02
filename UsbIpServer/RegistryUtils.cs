@@ -5,10 +5,8 @@
 using System;
 using System.Linq;
 using System.Security.Principal;
-using System;
 using System.Globalization;
 using Microsoft.Win32;
-using System.Collections;
 using System.Collections.Generic;
 
 namespace UsbIpServer
@@ -32,6 +30,17 @@ namespace UsbIpServer
         public static bool IsDeviceShared(ExportedDevice device)
         {
             return GetRegistryKey(device) != null;
+        }
+
+        public static bool IsDeviceAttached(ExportedDevice device)
+        {
+            var key = GetRegistryKey(device);
+            if (key != null)
+            {
+                return key.GetSubKeyNames().Contains("Attached");
+            }
+
+            return false;
         }
 
         static bool IsDeviceMatch(RegistryKey deviceKey, ExportedDevice device)
@@ -72,10 +81,24 @@ namespace UsbIpServer
 
         public static void StopSharingDevice(ExportedDevice device)
         {
-            var key = GetRegistryKey(device);
-            if (key != null)
+            var guid = GetRegistryKeyName(device);
+            if (guid != null)
             {
-                Registry.LocalMachine.DeleteSubKeyTree(@$"{DevicesRegistryPath}\{key.Name}");
+                Registry.LocalMachine.DeleteSubKeyTree(@$"{DevicesRegistryPath}\{guid}");
+            }
+        }
+
+        public static void StopSharingDevice(string guid)
+        {
+            Registry.LocalMachine.DeleteSubKeyTree(@$"{DevicesRegistryPath}\{guid}");
+        }
+
+        public static void StopSharingAllDevices()
+        {
+            var deviceKeyNames = Registry.LocalMachine.CreateSubKey(DevicesRegistryPath).GetSubKeyNames();
+            foreach (var keyName in deviceKeyNames)
+            {
+                StopSharingDevice(keyName);
             }
         }
 
@@ -93,7 +116,7 @@ namespace UsbIpServer
 
         }
 
-        static RegistryKey? GetRegistryKey(ExportedDevice device)
+        public static RegistryKey? GetRegistryKey(ExportedDevice device)
         {
             var deviceKeyNames = Registry.LocalMachine.CreateSubKey(DevicesRegistryPath).GetSubKeyNames();
             foreach (var keyName in deviceKeyNames)
@@ -108,6 +131,23 @@ namespace UsbIpServer
             return null;
         }
 
+        public static string? GetRegistryKeyName(ExportedDevice device)
+        {
+            var deviceKeyNames = Registry.LocalMachine.CreateSubKey(DevicesRegistryPath).GetSubKeyNames();
+            foreach (var keyName in deviceKeyNames)
+            {
+                var deviceKey = Registry.LocalMachine.CreateSubKey(@$"{DevicesRegistryPath}\{keyName}");
+                if (IsDeviceMatch(deviceKey, device))
+                {
+                    return keyName;
+                }
+            }
+
+            return null;
+        }
+
+
+
         public static void SetDeviceAsAttached(ExportedDevice device)
         {
             var key = GetRegistryKey(device);
@@ -117,6 +157,15 @@ namespace UsbIpServer
             }
         }
 
+        public static void SetDeviceAsDetached(ExportedDevice device)
+        {
+            var keyName = GetRegistryKeyName(device);
+            if (keyName != null)
+            {
+                Registry.LocalMachine.DeleteSubKeyTree(@$"{DevicesRegistryPath}\{keyName}\Attached");
+            }
+        }
+        
         public static List<PersistedDevice> GetPersistedDevices(ExportedDevice[] connectedDevices)
         {
             var persistedDevices = new List<PersistedDevice>();
