@@ -127,14 +127,21 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                         return 0;
                     }
 
-                    var targetDevice = connectedDevices.Where(x => x.BusId == busId.Value()).First();
-                    if (targetDevice != null && !RegistryUtils.IsDeviceShared(targetDevice))
+                    try
                     {
-                        var checker = new DeviceInfoChecker();
-                        RegistryUtils.ShareDevice(targetDevice, checker.GetDeviceName(targetDevice));
+                        var targetDevice = connectedDevices.Where(x => x.BusId == busId.Value()).First();
+                        if (targetDevice != null && !RegistryUtils.IsDeviceShared(targetDevice))
+                        {
+                            var checker = new DeviceInfoChecker();
+                            RegistryUtils.ShareDevice(targetDevice, checker.GetDeviceName(targetDevice));
+                        }
+
+                        return 0;
+                    } catch (InvalidOperationException)
+                    {
+                        Console.Error.WriteLine("There's no device with the specified BUS-ID.");
+                        return 1;
                     }
-                    
-                    return 0;
                 });
             });
 
@@ -156,20 +163,36 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
                     if (busId.HasValue())
                     {
-                        var connectedDevices = await ExportedDevice.GetAll(CancellationToken.None);
-                        var targetDevice = connectedDevices.Where(x => x.BusId == busId.Value()).First();
-                        if (targetDevice != null && RegistryUtils.IsDeviceShared(targetDevice))
+                        try
                         {
-                            RegistryUtils.StopSharingDevice(targetDevice);
-                        }
-                        return 0;
+                            var connectedDevices = await ExportedDevice.GetAll(CancellationToken.None);
+                            var targetDevice = connectedDevices.Where(x => x.BusId == busId.Value()).First();
+                            if (targetDevice != null && RegistryUtils.IsDeviceShared(targetDevice))
+                            {
+                                RegistryUtils.StopSharingDevice(targetDevice);
+                            }
+
+                            return 0;
+                        } catch (InvalidOperationException)
+                        {
+                            Console.Error.WriteLine("There's no device with the specified BUS-ID.");
+                            return 1;
+                        }   
                     }
 
                     if (guid.HasValue())
                     {
-                        RegistryUtils.StopSharingDevice(guid.Value());
+                        try
+                        {
+                            RegistryUtils.StopSharingDevice(guid.Value());
+                            return 0;
+                        } catch (ArgumentException)
+                        {
+                            Console.Error.WriteLine("There's no device with the specified GUID.");
+                            return 1;
+                        }
                     }
-                    
+
                     return 0;
                 });
             });
