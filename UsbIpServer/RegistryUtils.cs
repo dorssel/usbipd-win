@@ -165,7 +165,16 @@ namespace UsbIpServer
                 Registry.LocalMachine.DeleteSubKeyTree(@$"{DevicesRegistryPath}\{keyName}\Attached");
             }
         }
-        
+
+        public static void SetDeviceAddress(ExportedDevice device, string address)
+        {
+            var key = GetRegistryKey(device);
+            if (key != null)
+            {
+                key.SetValue("VIP", address);
+            }
+        }
+
         public static List<PersistedDevice> GetPersistedDevices(ExportedDevice[] connectedDevices)
         {
             var persistedDevices = new List<PersistedDevice>();

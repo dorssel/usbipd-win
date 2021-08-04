@@ -131,6 +131,8 @@ namespace UsbIpServer
                     Watcher.WatchDevice(busid, () => attachedClientTokenSource.Cancel());
                     var attachedClientToken = attachedClientTokenSource.Token;
                     RegistryUtils.SetDeviceAsAttached(exportedDevice);
+                    var iPEndPoint = ClientContext.TcpClient.Client.RemoteEndPoint as IPEndPoint;
+                    RegistryUtils.SetDeviceAddress(exportedDevice, iPEndPoint!.Address.MapToIPv4().ToString());
                     await ServiceProvider.GetRequiredService<AttachedClient>().RunAsync(attachedClientToken);
                 }
                 finally
