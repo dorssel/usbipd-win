@@ -171,7 +171,7 @@ namespace UsbIpServer
             var key = GetRegistryKey(device);
             if (key != null)
             {
-                key.SetValue("VIP", address);
+                key.SetValue("IPAddress", address);
             }
         }
 
