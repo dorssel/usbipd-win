@@ -103,6 +103,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                         Console.WriteLine($"{device.Guid,-38}{device.BusId, -8}{Truncate(device.Name, 60),-60}");
                     }
 
+                    if (!Server.IsServerRunning())
+                    {
+                        Console.WriteLine("\nWARNING: Server is currently not running.");
+                    }
+
                     return 0;
                 });
             });
