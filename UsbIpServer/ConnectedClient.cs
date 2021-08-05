@@ -13,6 +13,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using System.IO;
 
 using UsbIpServer.Interop;
 using static UsbIpServer.Interop.UsbIp;
@@ -132,7 +133,7 @@ namespace UsbIpServer
                     var attachedClientToken = attachedClientTokenSource.Token;
                     RegistryUtils.SetDeviceAsAttached(exportedDevice);
                     var iPEndPoint = ClientContext.TcpClient.Client.RemoteEndPoint as IPEndPoint;
-                    RegistryUtils.SetDeviceAddress(exportedDevice, iPEndPoint!.Address.MapToIPv4().ToString());
+                    RegistryUtils.SetDeviceAddress(exportedDevice, iPEndPoint!.Address.ToString());
                     await ServiceProvider.GetRequiredService<AttachedClient>().RunAsync(attachedClientToken);
                 }
                 finally
@@ -144,7 +145,12 @@ namespace UsbIpServer
             }
             catch (Exception ex)
             {
-                Logger.LogError(LogEvents.ClientError, $"An exception occurred while communicating with the client: {ex}");
+                // EndOfStream is client hang ups and OperationCanceled is detachments
+                if (!(ex is EndOfStreamException || ex is OperationCanceledException))
+                {
+                    Logger.LogError(LogEvents.ClientError, $"An exception occurred while communicating with the client: {ex}");
+                }
+                
 #pragma warning disable CA1508 // Avoid dead conditional code (false possitive)
                 if (status != Status.ST_OK)
 #pragma warning restore CA1508 // Avoid dead conditional code
