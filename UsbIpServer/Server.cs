@@ -35,10 +35,15 @@ namespace UsbIpServer
             return ExecuteAsync(stoppingToken);
         }
 
-        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+        public static bool IsServerRunning()
         {
             using var singleton = new Mutex(true, SingletonMutexName, out var createdNew);
-            if (!createdNew)
+            return !createdNew;
+        }
+
+        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+        {    
+            if (IsServerRunning())
             {
                 throw new InvalidOperationException("Another instance is already running.");
             }

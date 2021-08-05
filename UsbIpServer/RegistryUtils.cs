@@ -37,7 +37,7 @@ namespace UsbIpServer
             var key = GetRegistryKey(device);
             if (key != null)
             {
-                return key.GetSubKeyNames().Contains("Attached");
+                return key.GetSubKeyNames().Contains("Attached") && Server.IsServerRunning();
             }
 
             return false;
