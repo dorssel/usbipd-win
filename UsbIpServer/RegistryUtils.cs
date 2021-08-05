@@ -46,7 +46,7 @@ namespace UsbIpServer
         static bool IsDeviceMatch(RegistryKey deviceKey, ExportedDevice device)
         {
             
-            var cultureInfo = new CultureInfo("en-US");
+            var cultureInfo = CultureInfo.InvariantCulture;
             if ((string?)deviceKey.GetValue(DeviceFilter.VENDOR_ID) == device.VendorId.ToString(cultureInfo) &&
                 (string?)deviceKey.GetValue(DeviceFilter.PRODUCT_ID) == device.ProductId.ToString(cultureInfo) &&
                 (string?)deviceKey.GetValue(DeviceFilter.BCD_DEVICE) == device.BcdDevice.ToString(cultureInfo) &&
