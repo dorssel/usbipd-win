@@ -13,6 +13,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using System.IO;
 
 using UsbIpServer.Interop;
 using static UsbIpServer.Interop.UsbIp;
@@ -62,12 +63,12 @@ namespace UsbIpServer
             }
         }
 
-        static async Task<ExportedDevice[]> GetAvailableDevicesAsync(CancellationToken cancellationToken)
+        static async Task<ExportedDevice[]> GetSharedDevicesAsync(CancellationToken cancellationToken)
         {
             if (RegistryUtils.HasRegistryAccess())
             {
                 return (await ExportedDevice.GetAll(cancellationToken))
-               .Where(x => RegistryUtils.IsDeviceAvailable(x.BusId))
+               .Where(x => RegistryUtils.IsDeviceShared(x))
                .ToArray();
             }
 
@@ -76,7 +77,7 @@ namespace UsbIpServer
 
         async Task HandleRequestDeviceListAsync(CancellationToken cancellationToken)
         {
-            var exportedDevices = await GetAvailableDevicesAsync(cancellationToken);
+            var exportedDevices = await GetSharedDevicesAsync(cancellationToken);
 
             await SendOpCodeAsync(OpCode.OP_REP_DEVLIST, Status.ST_OK);
 
@@ -100,7 +101,7 @@ namespace UsbIpServer
 
             try
             {
-                var exportedDevices = await GetAvailableDevicesAsync(cancellationToken);
+                var exportedDevices = await GetSharedDevicesAsync(cancellationToken);
 
                 status = Status.ST_NODEV;
                 var exportedDevice = exportedDevices.Single(x => x.BusId == busid);
@@ -130,16 +131,26 @@ namespace UsbIpServer
                     using var attachedClientTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
                     Watcher.WatchDevice(busid, () => attachedClientTokenSource.Cancel());
                     var attachedClientToken = attachedClientTokenSource.Token;
+                    RegistryUtils.SetDeviceAsAttached(exportedDevice);
+                    var iPEndPoint = ClientContext.TcpClient.Client.RemoteEndPoint as IPEndPoint;
+                    RegistryUtils.SetDeviceAddress(exportedDevice, iPEndPoint!.Address.ToString());
                     await ServiceProvider.GetRequiredService<AttachedClient>().RunAsync(attachedClientToken);
                 }
                 finally
                 {
                     Watcher.StopWatchingDevice(busid);
+                    RegistryUtils.SetDeviceAsDetached(exportedDevice);
                     Logger.LogInformation(LogEvents.ClientDetach, $"Client {ClientContext.TcpClient.Client.RemoteEndPoint} released device at {exportedDevice.BusId} ({exportedDevice.Path}).");
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                // EndOfStream is client hang ups and OperationCanceled is detachments
+                if (!(ex is EndOfStreamException || ex is OperationCanceledException))
+                {
+                    Logger.LogError(LogEvents.ClientError, $"An exception occurred while communicating with the client: {ex}");
+                }
+                
 #pragma warning disable CA1508 // Avoid dead conditional code (false possitive)
                 if (status != Status.ST_OK)
 #pragma warning restore CA1508 // Avoid dead conditional code

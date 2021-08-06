@@ -35,19 +35,25 @@ namespace UsbIpServer
             return ExecuteAsync(stoppingToken);
         }
 
-        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+        public static bool IsServerRunning()
         {
             using var singleton = new Mutex(true, SingletonMutexName, out var createdNew);
-            if (!createdNew)
+            return !createdNew;
+        }
+
+        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+        {    
+            if (IsServerRunning())
             {
-                throw new InvalidOperationException("Another instance is already running");
+                throw new InvalidOperationException("Another instance is already running.");
             }
 
             TcpListener.Start();
 
-            if (RegistryUtils.HasRegistryAccess())
-            {
-                RegistryUtils.InitializeRegistry();
+            // To start, all devices should not be marked as attached.
+            var devices = await ExportedDevice.GetAll(CancellationToken.None);
+            foreach (var device in devices) {
+                RegistryUtils.SetDeviceAsDetached(device);
             }
             
             using var cancellationTokenRegistration = stoppingToken.Register(() => TcpListener.Stop());

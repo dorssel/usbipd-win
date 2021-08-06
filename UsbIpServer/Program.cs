@@ -86,12 +86,26 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                 DefaultCmdLine(cmd);
                 cmd.OnExecute(async () =>
                 {
-                    Console.WriteLine($"{"ID", -6}{"Device", -60}{"Available", -5}");
                     var connectedDevices = await ExportedDevice.GetAll(CancellationToken.None);
+                    var persistedDevices = RegistryUtils.GetPersistedDevices(connectedDevices);
                     var deviceChecker = new DeviceInfoChecker();
+                    Console.WriteLine("Present:");
+                    Console.WriteLine($"{"BUS-ID",-8}{"Device",-60}{"Status",-5}");
                     foreach (var device in connectedDevices)
                     {
-                        Console.WriteLine($"{device.BusId, -6}{Truncate(deviceChecker.GetDeviceName(device.Path.Replace(@"\\", @"\", StringComparison.Ordinal)), 60),-60}{ (RegistryUtils.IsDeviceAvailable(device.BusId)? "Yes": "No"), -5}");
+                        Console.WriteLine($"{device.BusId, -8}{Truncate(deviceChecker.GetDeviceName(device), 60),-60}{ (RegistryUtils.IsDeviceShared(device)? RegistryUtils.IsDeviceAttached(device)? "Attached" : "Shared" : "Not-Shared"), -5}");
+                    }
+                    Console.Write("\n");
+                    Console.WriteLine("Persisted:");
+                    Console.WriteLine($"{"GUID",-38}{"BUS-ID",-8}{"Device",-60}");
+                    foreach (var device in persistedDevices)
+                    {
+                        Console.WriteLine($"{device.Guid,-38}{device.BusId, -8}{Truncate(device.Name, 60),-60}");
+                    }
+
+                    if (!Server.IsServerRunning())
+                    {
+                        Console.WriteLine("\nWARNING: Server is currently not running.");
                     }
 
                     return 0;
@@ -106,19 +120,33 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                 DefaultCmdLine(cmd);
                 cmd.OnExecute(async () =>
                 {
+                    var connectedDevices = await ExportedDevice.GetAll(CancellationToken.None);
                     if (bindAll.HasValue())
                     {
-                        var connectedDevices = await ExportedDevice.GetAll(CancellationToken.None);
-                        foreach (var id in connectedDevices.Select(x => x.BusId))
+                        foreach (var device in connectedDevices)
                         {
-                            RegistryUtils.SetDeviceAvailability(id, true);
+                            var checker = new DeviceInfoChecker();
+                            RegistryUtils.ShareDevice(device, checker.GetDeviceName(device));
                         }
 
                         return 0;
                     }
 
-                    RegistryUtils.SetDeviceAvailability(busId.Value(), true);
-                    return 0;
+                    try
+                    {
+                        var targetDevice = connectedDevices.Where(x => x.BusId == busId.Value()).First();
+                        if (targetDevice != null && !RegistryUtils.IsDeviceShared(targetDevice))
+                        {
+                            var checker = new DeviceInfoChecker();
+                            RegistryUtils.ShareDevice(targetDevice, checker.GetDeviceName(targetDevice));
+                        }
+
+                        return 0;
+                    } catch (InvalidOperationException)
+                    {
+                        Console.Error.WriteLine("There's no device with the specified BUS-ID.");
+                        return 1;
+                    }
                 });
             });
 
@@ -126,22 +154,50 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
             {
                 cmd.Description = "Unbind device";
                 var busId = cmd.Option("-b|--busid=<busid>", "Stop sharing device having <busid>", CommandOptionType.SingleValue);
+                var guid = cmd.Option("-g|--guid=<guid>", "Stop sharing persisted device having <guid>", CommandOptionType.SingleValue);
                 var unbindAll = cmd.Option("-a|--all", "Stop sharing all devices.", CommandOptionType.NoValue);
                 DefaultCmdLine(cmd);
                 cmd.OnExecute(async () =>
                 {
+                    
                     if (unbindAll.HasValue())
-                    {
-                        var connectedDevices = await ExportedDevice.GetAll(CancellationToken.None);
-                        foreach (var id in connectedDevices.Select(x => x.BusId))
-                        {
-                            RegistryUtils.SetDeviceAvailability(id, false);
-                        }
-
+                    {                        
+                        RegistryUtils.StopSharingAllDevices();
                         return 0;
                     }
 
-                    RegistryUtils.SetDeviceAvailability(busId.Value(), false);
+                    if (busId.HasValue())
+                    {
+                        try
+                        {
+                            var connectedDevices = await ExportedDevice.GetAll(CancellationToken.None);
+                            var targetDevice = connectedDevices.Where(x => x.BusId == busId.Value()).First();
+                            if (targetDevice != null && RegistryUtils.IsDeviceShared(targetDevice))
+                            {
+                                RegistryUtils.StopSharingDevice(targetDevice);
+                            }
+
+                            return 0;
+                        } catch (InvalidOperationException)
+                        {
+                            Console.Error.WriteLine("There's no device with the specified BUS-ID.");
+                            return 1;
+                        }   
+                    }
+
+                    if (guid.HasValue())
+                    {
+                        try
+                        {
+                            RegistryUtils.StopSharingDevice(guid.Value());
+                            return 0;
+                        } catch (ArgumentException)
+                        {
+                            Console.Error.WriteLine("There's no device with the specified GUID.");
+                            return 1;
+                        }
+                    }
+
                     return 0;
                 });
             });
