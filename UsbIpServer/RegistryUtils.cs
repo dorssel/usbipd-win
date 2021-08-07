@@ -8,12 +8,15 @@ using System.Security.Principal;
 using System.Globalization;
 using Microsoft.Win32;
 using System.Collections.Generic;
+using System.Net;
 
 namespace UsbIpServer
 {
     static class RegistryUtils
     {
         const string DevicesRegistryPath = @"SOFTWARE\usbipd-win";
+        const string IPAddressName = "IPAddress";
+        const string TemporaryName = "Temporary";
 
         static class DeviceFilter
         {
@@ -43,6 +46,11 @@ namespace UsbIpServer
             return false;
         }
 
+        public static bool IsDeviceSharedTemporarily(ExportedDevice device)
+        {
+            return (string?)GetRegistryKey(device)?.GetValue(TemporaryName) == "True";
+        }
+
         static bool IsDeviceMatch(RegistryKey deviceKey, ExportedDevice device)
         {
             
@@ -64,10 +72,10 @@ namespace UsbIpServer
 
         // To share is to equivalently have it in the registry.
         // If a device is not in the registry, then it is not shared.
-        public static void ShareDevice(ExportedDevice device, string name)
+        public static void ShareDevice(ExportedDevice device, string name, bool isTemporary)
         {
             var guid = Guid.NewGuid();
-            var entry = Registry.LocalMachine.CreateSubKey(@$"{DevicesRegistryPath}\{guid}");
+            var entry = Registry.LocalMachine.CreateSubKey(@$"{DevicesRegistryPath}\{guid}", true, isTemporary ? RegistryOptions.Volatile : RegistryOptions.None);
             entry.SetValue(DeviceFilter.VENDOR_ID, device.VendorId);
             entry.SetValue(DeviceFilter.PRODUCT_ID, device.ProductId);
             entry.SetValue(DeviceFilter.BCD_DEVICE, device.BcdDevice);
@@ -77,6 +85,7 @@ namespace UsbIpServer
             entry.SetValue(DeviceFilter.DEV_NUM, device.DevNum);
             entry.SetValue(DeviceFilter.BUS_ID, device.BusId);
             entry.SetValue("Name", name);
+            entry.SetValue(TemporaryName, isTemporary);
         }
 
         public static void StopSharingDevice(ExportedDevice device)
@@ -96,6 +105,16 @@ namespace UsbIpServer
         public static void StopSharingAllDevices()
         {
             var deviceKeyNames = Registry.LocalMachine.CreateSubKey(DevicesRegistryPath).GetSubKeyNames();
+            foreach (var keyName in deviceKeyNames)
+            {
+                StopSharingDevice(keyName);
+            }
+        }
+
+        public static void StopSharingTemporaryDevices()
+        {
+            var deviceKeyNames = Registry.LocalMachine.CreateSubKey(DevicesRegistryPath).GetSubKeyNames()
+                .Where(key => (string?)Registry.LocalMachine.OpenSubKey(@$"{DevicesRegistryPath}\{key}")?.GetValue(TemporaryName) == "True");
             foreach (var keyName in deviceKeyNames)
             {
                 StopSharingDevice(keyName);
@@ -171,8 +190,14 @@ namespace UsbIpServer
             var key = GetRegistryKey(device);
             if (key != null)
             {
-                key.SetValue("IPAddress", address);
+                key.SetValue(IPAddressName, address);
             }
+        }
+
+        public static IPAddress? GetDeviceAddress(ExportedDevice device)
+        {
+            var value = (string?)GetRegistryKey(device)?.GetValue(IPAddressName);
+            return value == null ? null : IPAddress.Parse(value);
         }
 
         public static List<PersistedDevice> GetPersistedDevices(ExportedDevice[] connectedDevices)

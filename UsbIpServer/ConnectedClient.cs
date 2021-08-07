@@ -134,12 +134,36 @@ namespace UsbIpServer
                     RegistryUtils.SetDeviceAsAttached(exportedDevice);
                     var iPEndPoint = ClientContext.TcpClient.Client.RemoteEndPoint as IPEndPoint;
                     RegistryUtils.SetDeviceAddress(exportedDevice, iPEndPoint!.Address.ToString());
+
+                    // Poll for the device to be unplugged
+                    var pollTask = Task.Run(async () =>
+                    {
+                        while ((await ExportedDevice.GetAll(attachedClientToken)).Any(device => device.BusId == busid))
+                        {
+                            await Task.Delay(TimeSpan.FromSeconds(1.0), attachedClientToken);
+                        }
+
+                        attachedClientTokenSource.Cancel();
+                    }, attachedClientToken);
+
                     await ServiceProvider.GetRequiredService<AttachedClient>().RunAsync(attachedClientToken);
+
+                    // If we made it this far without cancellation, cancel now to stop the polling loop.
+                    attachedClientTokenSource.Cancel();
                 }
                 finally
                 {
                     Watcher.StopWatchingDevice(busid);
-                    RegistryUtils.SetDeviceAsDetached(exportedDevice);
+
+                    if (RegistryUtils.IsDeviceSharedTemporarily(exportedDevice))
+                    {
+                        RegistryUtils.StopSharingDevice(exportedDevice);
+                    }
+                    else
+                    {
+                        RegistryUtils.SetDeviceAsDetached(exportedDevice);
+                    }
+
                     Logger.LogInformation(LogEvents.ClientDetach, $"Client {ClientContext.TcpClient.Client.RemoteEndPoint} released device at {exportedDevice.BusId} ({exportedDevice.Path}).");
                 }
             }

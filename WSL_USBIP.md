@@ -4,6 +4,55 @@ SPDX-FileCopyrightText: Microsoft Corporation
 SPDX-License-Identifier: GPL-2.0-only
 -->
 
+# WSL convenience commands
+
+After following the setup instructions below, you can use the WSL convenience
+commands to easily attach devices to a WSL instance and view which distributions
+devices are attached to.
+
+```
+> usbipd wsl list
+ID    NAME                                       STATE
+1-7   USB Input Device                           Not attached
+4-4   STMicroelectronics STLink dongle, STMic... Not attached
+5-2   Surface Ethernet Adapter                   Not attached
+
+> usbipd wsl attach 4-4
+[sudo] password for user:
+
+> usbipd wsl list
+ID    NAME                                       STATE
+1-7   USB Input Device                           Not attached
+4-4   STMicroelectronics STLink dongle, STMic... Attached - Ubuntu
+5-2   Surface Ethernet Adapter                   Not attached
+```
+
+Now the device is available in WSL.
+
+```
+$ lsusb
+Bus 002 Device 001: ID 1d6b:0003 Linux Foundation 3.0 root hub
+Bus 001 Device 002: ID 0483:374b STMicroelectronics ST-LINK/V2.1
+Bus 001 Device 001: ID 1d6b:0002 Linux Foundation 2.0 root hub
+```
+
+`wsl detach` can be used to stop sharing the device. The device will also
+automatically stop sharing if it is unplugged or the computer is restarted.
+
+```
+> usbipd wsl detach 4-4
+
+> usbipd wsl list
+ID    NAME                                       STATE
+1-7   USB Input Device                           Not attached
+4-4   STMicroelectronics STLink dongle, STMic... Not attached
+5-2   Surface Ethernet Adapter                   Not attached
+```
+
+Use the `--help` to learn more about these convenience commands. In particular,
+the `--distribution` and `--usbippath` options can be useful to customize how
+the WSL commands are invoked.
+
 # Setting up USBIP on WSL 2
 
 Update WSL:
