@@ -1,4 +1,7 @@
-﻿using System;
+﻿// SPDX-FileCopyrightText: Copyright (c) Microsoft Corporation
+//
+// SPDX-License-Identifier: GPL-2.0-only
+
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
