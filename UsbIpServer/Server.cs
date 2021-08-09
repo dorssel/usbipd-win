@@ -57,8 +57,6 @@ namespace UsbIpServer
                 RegistryUtils.SetDeviceAsDetached(device);
             }
 
-            RegistryUtils.StopSharingTemporaryDevices();
-            
             using var cancellationTokenRegistration = stoppingToken.Register(() => TcpListener.Stop());
 
             while (true)

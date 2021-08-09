@@ -121,9 +121,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                 cmd.Description = "Bind device";
                 var busId = cmd.Option("-b|--busid=<busid>", "Share device having <busid>", CommandOptionType.SingleValue);
                 var bindAll = cmd.Option("-a|--all", "Share all devices.", CommandOptionType.NoValue);
-                var temporary = cmd.Option("-t|--temporary", "Do not automatically share this device if it is reconnected.", CommandOptionType.NoValue);
                 DefaultCmdLine(cmd);
-                cmd.OnExecute(() => BindDeviceAsync(bindAll.HasValue(), busId.Value(), temporary.HasValue(), CancellationToken.None));
+                cmd.OnExecute(() => BindDeviceAsync(bindAll.HasValue(), busId.Value(), CancellationToken.None));
             });
 
             app.Command("unbind", (cmd) =>
@@ -220,11 +219,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                             return 1;
                         }
 
-                        // The WSL convenience always use temporary sharing. This simplifies the mental
-                        // model for the user and avoids complexity with automatically reaching back into
-                        // WSL (which might not be running) when the device is reconnected. For users that
-                        // want more control, the normal usbipd commands are always available.
-                        var bindResult = await BindDeviceAsync(bindAll: false, busId.Value, isTemporary: true, CancellationToken.None);
+                        var bindResult = await BindDeviceAsync(bindAll: false, busId.Value, CancellationToken.None);
                         if (bindResult != 0)
                         {
                             Console.Error.WriteLine($"Failed to bind device with ID \"{busId.Value}\".");
@@ -329,7 +324,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
             return 0;
         }
 
-        static async Task<int> BindDeviceAsync(bool bindAll, string busId, bool isTemporary, CancellationToken cancellationToken)
+        static async Task<int> BindDeviceAsync(bool bindAll, string busId, CancellationToken cancellationToken)
         {
             var connectedDevices = await ExportedDevice.GetAll(cancellationToken);
             if (bindAll)
@@ -337,7 +332,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                 foreach (var device in connectedDevices)
                 {
                     var checker = new DeviceInfoChecker();
-                    RegistryUtils.ShareDevice(device, checker.GetDeviceName(device), isTemporary);
+                    RegistryUtils.ShareDevice(device, checker.GetDeviceName(device));
                 }
 
                 return 0;
@@ -349,7 +344,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                 if (targetDevice != null && !RegistryUtils.IsDeviceShared(targetDevice))
                 {
                     var checker = new DeviceInfoChecker();
-                    RegistryUtils.ShareDevice(targetDevice, checker.GetDeviceName(targetDevice), isTemporary);
+                    RegistryUtils.ShareDevice(targetDevice, checker.GetDeviceName(targetDevice));
                 }
 
                 return 0;

@@ -54,7 +54,12 @@ namespace UsbIpServer
             }
 
             var runningDistrosResult = await ProcessUtils.RunCapturedProcessAsync("wsl.exe", new[] { "--list", "--quiet", "--running" }, Encoding.Unicode, cancellationToken);
+
+            // The compiler erroneously thinks that this exit code check and the
+            // ipResult exit code check below are always false.
+#pragma warning disable CA1508 // Avoid dead conditional code
             if (runningDistrosResult.ExitCode != 0)
+#pragma warning restore CA1508 // Avoid dead conditional code
             {
                 throw new UnexpectedResultException($"WSL failed to list running distributions: {runningDistrosResult.StandardError}");
             }
@@ -63,7 +68,9 @@ namespace UsbIpServer
             foreach (var distroName in runningDistrosResult.StandardOutput.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
             {
                 var ipResult = await ProcessUtils.RunCapturedProcessAsync("wsl.exe", new[] { "--distribution", distroName, "--", "hostname", "-I" }, Encoding.UTF8, cancellationToken);
+#pragma warning disable CA1508 // Avoid dead conditional code
                 if (ipResult.ExitCode != 0)
+#pragma warning restore CA1508 // Avoid dead conditional code
                 {
                     // Ignore this distro if we couldn't get an IP address.
                     continue;

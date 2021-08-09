@@ -154,15 +154,7 @@ namespace UsbIpServer
                 finally
                 {
                     Watcher.StopWatchingDevice(busid);
-
-                    if (RegistryUtils.IsDeviceSharedTemporarily(exportedDevice))
-                    {
-                        RegistryUtils.StopSharingDevice(exportedDevice);
-                    }
-                    else
-                    {
-                        RegistryUtils.SetDeviceAsDetached(exportedDevice);
-                    }
+                    RegistryUtils.SetDeviceAsDetached(exportedDevice);
 
                     Logger.LogInformation(LogEvents.ClientDetach, $"Client {ClientContext.TcpClient.Client.RemoteEndPoint} released device at {exportedDevice.BusId} ({exportedDevice.Path}).");
                 }
