@@ -228,7 +228,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
                         var path = usbipPath.HasValue() ? usbipPath.Value() : "usbip";
                         var wslResult = await ProcessUtils.RunUncapturedProcessAsync(
-                            "wsl.exe",
+                            WslDistributions.WslPath,
                             (distro.HasValue() ? new[] { "--distribution", distro.Value() } : Enumerable.Empty<string>()).Concat(
                                 new[] { "--", "sudo", path, "attach", $"--remote={address}", $"--busid={busId.Value}" }),
                             CancellationToken.None);
@@ -368,7 +368,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
             {
                 try
                 {
-                    var connectedDevices = await ExportedDevice.GetAll(CancellationToken.None);
+                    var connectedDevices = await ExportedDevice.GetAll(cancellationToken);
                     var targetDevice = connectedDevices.Where(x => x.BusId == busId).First();
                     if (targetDevice != null && RegistryUtils.IsDeviceShared(targetDevice))
                     {

@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
@@ -14,6 +15,8 @@ namespace UsbIpServer
 {
     class WslDistributions
     {
+        public static readonly string WslPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "wsl.exe");
+
         public record Distribution(string Name, IPAddress IPAddress);
 
         readonly string? defaultDistro;
@@ -30,7 +33,7 @@ namespace UsbIpServer
 
         public static async Task<WslDistributions> CreateAsync(CancellationToken cancellationToken)
         {
-            var allDistrosResult = await ProcessUtils.RunCapturedProcessAsync("wsl.exe", new[] { "--list" }, Encoding.Unicode, cancellationToken);
+            var allDistrosResult = await ProcessUtils.RunCapturedProcessAsync(WslPath, new[] { "--list" }, Encoding.Unicode, cancellationToken);
             if (allDistrosResult.ExitCode != 0)
             {
                 throw new UnexpectedResultException($"WSL failed to list distributions: {allDistrosResult.StandardError}");
@@ -53,7 +56,7 @@ namespace UsbIpServer
                 }
             }
 
-            var runningDistrosResult = await ProcessUtils.RunCapturedProcessAsync("wsl.exe", new[] { "--list", "--quiet", "--running" }, Encoding.Unicode, cancellationToken);
+            var runningDistrosResult = await ProcessUtils.RunCapturedProcessAsync(WslPath, new[] { "--list", "--quiet", "--running" }, Encoding.Unicode, cancellationToken);
 
             // The compiler erroneously thinks that this exit code check and the
             // ipResult exit code check below are always false.
@@ -67,7 +70,7 @@ namespace UsbIpServer
             var distros = new List<Distribution>();
             foreach (var distroName in runningDistrosResult.StandardOutput.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
             {
-                var ipResult = await ProcessUtils.RunCapturedProcessAsync("wsl.exe", new[] { "--distribution", distroName, "--", "hostname", "-I" }, Encoding.UTF8, cancellationToken);
+                var ipResult = await ProcessUtils.RunCapturedProcessAsync(WslPath, new[] { "--distribution", distroName, "--", "hostname", "-I" }, Encoding.UTF8, cancellationToken);
 #pragma warning disable CA1508 // Avoid dead conditional code
                 if (ipResult.ExitCode != 0)
 #pragma warning restore CA1508 // Avoid dead conditional code
