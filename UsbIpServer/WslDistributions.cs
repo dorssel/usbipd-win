@@ -19,6 +19,8 @@ namespace UsbIpServer
 
         public record Distribution(string Name, IPAddress IPAddress);
 
+        public static bool IsWslInstalled() => File.Exists(WslPath);
+
         readonly string? defaultDistro;
 
         WslDistributions(List<Distribution> distributions, string? defaultDistro)

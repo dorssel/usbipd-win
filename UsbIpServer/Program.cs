@@ -148,11 +148,22 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                 metacmd.Description = "Convenience commands for attaching devices to Windows Subsystem for Linux (WSL).";
                 DefaultCmdLine(metacmd);
 
+                Task<int> CheckWslInstalledAsync(Func<Task<int>> continuation)
+                {
+                    if (!WslDistributions.IsWslInstalled())
+                    {
+                        Console.Error.WriteLine("Windows Subsystem for Linux is not installed. See https://aka.ms/installwsl");
+                        return Task.FromResult(1);
+                    }
+
+                    return continuation();
+                }
+
                 metacmd.Command("list", (cmd) =>
                 {
                     cmd.Description = "Lists all USB devices that are available for being attached into WSL.";
                     DefaultCmdLine(cmd);
-                    cmd.OnExecute(async () =>
+                    cmd.OnExecute(() => CheckWslInstalledAsync(async () =>
                     {
                         var distros = await WslDistributions.CreateAsync(CancellationToken.None);
                         var connectedDevices = await ExportedDevice.GetAll(CancellationToken.None);
@@ -178,7 +189,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                         }
 
                         return 0;
-                    });
+                    }));
                 });
 
                 metacmd.Command("attach", (cmd) =>
@@ -189,7 +200,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                     var usbipPath = cmd.Option("--usbippath", "Path in the WSL instance to the usbip client tools (optional).", CommandOptionType.SingleValue);
                     DefaultCmdLine(cmd);
 
-                    cmd.OnExecute(async () =>
+                    cmd.OnExecute(() => CheckWslInstalledAsync(async () =>
                     {
                         var address = NetworkInterface.GetAllNetworkInterfaces()
                             .FirstOrDefault(nic => nic.Name.Contains("WSL", StringComparison.OrdinalIgnoreCase))?.GetIPProperties().UnicastAddresses
@@ -239,7 +250,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                         }
 
                         return 0;
-                    });
+                    }));
                 });
 
                 metacmd.Command("detach", (cmd) =>
@@ -251,7 +262,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
                     // This command only exists for convenience. There's no extra work to do in the WSL instance.
                     // Terminating the connection on Windows will also cause WSL to detach.
-                    cmd.OnExecute(() => UnbindDeviceAsync(detachAll.HasValue(), busId.Value, guid: null, CancellationToken.None));
+                    cmd.OnExecute(() => CheckWslInstalledAsync(() => UnbindDeviceAsync(detachAll.HasValue(), busId.Value, guid: null, CancellationToken.None)));
                 });
 
                 metacmd.OnExecute(() =>
