@@ -17,7 +17,7 @@ namespace UsbIpServer
     {
         public static readonly string WslPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "wsl.exe");
 
-        public record Distribution(string Name, IPAddress IPAddress);
+        public record Distribution(string Name, IPAddress IPAddress, ulong? Version);
 
         public static bool IsWslInstalled() => File.Exists(WslPath);
 
@@ -81,8 +81,32 @@ namespace UsbIpServer
                     continue;
                 }
 
-                // hostname output sometimes includes whitespace at the end, so trim before parsing.
-                distros.Add(new Distribution(distroName, IPAddress.Parse(ipResult.StandardOutput.Trim())));
+                ulong? version = null;
+                try
+                {
+                    if (NativeWslApi.WslGetDistributionConfiguration(distroName, out ulong knownVersion, out ulong _, out NativeWslApi.WSL_DISTRIBUTION_FLAGS _, out IntPtr _, out ulong _) == 0)
+                    {
+                        version = knownVersion;
+                    }
+                }
+                catch (DllNotFoundException ex)
+                {
+                    // For some reason the WSL API couldn't be loaded.
+                    // We'll just leave the version set to null (unknown).
+                }
+
+                // hostname can include multiple IP addresses, but in most cases there's
+                // only one. Since we don't have a good way to figure out which one is the
+                // WSL virtual switch, just take the first one and hope it's correct.
+                var firstAddress = ipResult.StandardOutput.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).FirstOrDefault();
+
+                if (firstAddress == null || !IPAddress.TryParse(firstAddress, out IPAddress? address))
+                {
+                    // Ignore this distro if the IP address coudn't be parsed.
+                    continue;
+                }
+
+                distros.Add(new Distribution(distroName, address, version));
             }
 
             return new WslDistributions(distros, defaultDistro);

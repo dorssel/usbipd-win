@@ -11,6 +11,7 @@ using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using System.Threading;
 using System.Threading.Tasks;
@@ -20,6 +21,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Hosting.WindowsServices;
 using Microsoft.Extensions.Logging;
+using static UsbIpServer.NativeWslApi;
 
 [assembly: CLSCompliant(true)]
 [assembly: SupportedOSPlatform("windows8.0")]
@@ -28,6 +30,8 @@ namespace UsbIpServer
 {
     static class Program
     {
+        const string InstallWslUrl = "https://aka.ms/installwsl";
+
         static string Product => Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyProductAttribute>()!.Product;
         static string Copyright => Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyCopyrightAttribute>()!.Copyright;
 
@@ -152,7 +156,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                 {
                     if (!WslDistributions.IsWslInstalled())
                     {
-                        Console.Error.WriteLine("Windows Subsystem for Linux is not installed. See https://aka.ms/installwsl");
+                        Console.Error.WriteLine($"Windows Subsystem for Linux is not installed. See {InstallWslUrl}");
                         return Task.FromResult(1);
                     }
 
@@ -213,20 +217,34 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                             return 1;
                         }
 
+                        // Initialize security attributes to allow communication with the WSL API
+                        Marshal.ThrowExceptionForHR(CoInitializeSecurity(IntPtr.Zero, -1, IntPtr.Zero, IntPtr.Zero,
+                            RpcAuthnLevel.Default, RpcImpLevel.Impersonate, IntPtr.Zero, EoAuthnCap.StaticCloaking, IntPtr.Zero));
+
                         var distros = await WslDistributions.CreateAsync(CancellationToken.None);
 
                         // Make sure the distro is running before we attach. While WSL is capable of
                         // starting on the fly when wsl.exe is invoked, that will cause confusing behavior
                         // where we might attach a USB device to WSL, then immediately detach it when the
                         // WSL VM is shutdown shortly afterwards.
-                        if (distro.HasValue() && distros.LookupByName(distro.Value()) == null)
+                        WslDistributions.Distribution? distroData = distro.HasValue() ? distros.LookupByName(distro.Value()) : distros.DefaultDistribution;
+
+                        if (distroData == null)
                         {
-                            Console.Error.WriteLine($"The WSL distribution {distro.Value()} is not running or does exist.");
-                            return 1;
+                            if (distro.HasValue())
+                            {
+                                Console.Error.WriteLine($"The WSL distribution {distro.Value()} is not running or does exist.");
+                                return 1;
+                            }
+                            else if (!distro.HasValue())
+                            {
+                                Console.Error.WriteLine($"The default WSL distribution is not running.");
+                                return 1;
+                            }
                         }
-                        else if (!distro.HasValue() && distros.DefaultDistribution == null)
+                        else if ((distroData?.Version ?? 1) < 2)
                         {
-                            Console.Error.WriteLine($"The default WSL distribution is not running.");
+                            Console.Error.WriteLine($"The specified WSL distribution is running WSL 1, but WSL 2 is required. Learn how to upgrade at {InstallWslUrl}");
                             return 1;
                         }
 
