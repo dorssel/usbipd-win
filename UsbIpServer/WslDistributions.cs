@@ -89,7 +89,7 @@ namespace UsbIpServer
                         version = knownVersion;
                     }
                 }
-                catch (DllNotFoundException ex)
+                catch (DllNotFoundException)
                 {
                     // For some reason the WSL API couldn't be loaded.
                     // We'll just leave the version set to null (unknown).
