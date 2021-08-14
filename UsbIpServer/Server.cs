@@ -42,8 +42,9 @@ namespace UsbIpServer
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
-        {    
-            if (IsServerRunning())
+        {
+            using var mutex = new Mutex(true, SingletonMutexName, out var createdNew);
+            if (!createdNew)
             {
                 throw new InvalidOperationException("Another instance is already running.");
             }
@@ -55,7 +56,7 @@ namespace UsbIpServer
             foreach (var device in devices) {
                 RegistryUtils.SetDeviceAsDetached(device);
             }
-            
+
             using var cancellationTokenRegistration = stoppingToken.Register(() => TcpListener.Stop());
 
             while (true)

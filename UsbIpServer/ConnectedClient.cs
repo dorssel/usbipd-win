@@ -24,12 +24,13 @@ namespace UsbIpServer
     [SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes", Justification = "Instantiated by DI")]
     sealed class ConnectedClient
     {
-        public ConnectedClient(ILogger<ConnectedClient> logger, RegistryWatcher watcher, ClientContext clientContext, IServiceProvider serviceProvider)
+        public ConnectedClient(ILogger<ConnectedClient> logger, RegistryWatcher registryWatcher, DeviceChangeWatcher deviceChangeWatcher, ClientContext clientContext, IServiceProvider serviceProvider)
         {
             Logger = logger;
             ClientContext = clientContext;
             ServiceProvider = serviceProvider;
-            Watcher = watcher;
+            RegistryWatcher = registryWatcher;
+            DeviceChangeWatcher = deviceChangeWatcher;
 
             var client = clientContext.TcpClient;
             client.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
@@ -44,7 +45,8 @@ namespace UsbIpServer
         readonly ClientContext ClientContext;
         readonly IServiceProvider ServiceProvider;
         readonly NetworkStream Stream;
-        readonly RegistryWatcher Watcher;
+        readonly RegistryWatcher RegistryWatcher;
+        readonly DeviceChangeWatcher DeviceChangeWatcher;
 
         public async Task RunAsync(CancellationToken cancellationToken)
         {
@@ -129,17 +131,22 @@ namespace UsbIpServer
 
                     // setup token to free device
                     using var attachedClientTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-                    Watcher.WatchDevice(busid, () => attachedClientTokenSource.Cancel());
+                    Action cancelAction = () => attachedClientTokenSource.Cancel();
+                    RegistryWatcher.WatchDevice(busid, cancelAction);
+                    DeviceChangeWatcher.WatchForDeviceRemoval(busid, cancelAction);
                     var attachedClientToken = attachedClientTokenSource.Token;
                     RegistryUtils.SetDeviceAsAttached(exportedDevice);
                     var iPEndPoint = ClientContext.TcpClient.Client.RemoteEndPoint as IPEndPoint;
                     RegistryUtils.SetDeviceAddress(exportedDevice, iPEndPoint!.Address.ToString());
+
                     await ServiceProvider.GetRequiredService<AttachedClient>().RunAsync(attachedClientToken);
                 }
                 finally
                 {
-                    Watcher.StopWatchingDevice(busid);
+                    RegistryWatcher.StopWatchingDevice(busid);
+                    DeviceChangeWatcher.StopWatchingDevice(busid);
                     RegistryUtils.SetDeviceAsDetached(exportedDevice);
+
                     Logger.LogInformation(LogEvents.ClientDetach, $"Client {ClientContext.TcpClient.Client.RemoteEndPoint} released device at {exportedDevice.BusId} ({exportedDevice.Path}).");
                 }
             }

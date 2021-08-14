@@ -8,12 +8,14 @@ using System.Security.Principal;
 using System.Globalization;
 using Microsoft.Win32;
 using System.Collections.Generic;
+using System.Net;
 
 namespace UsbIpServer
 {
     static class RegistryUtils
     {
         const string DevicesRegistryPath = @"SOFTWARE\usbipd-win";
+        const string IPAddressName = "IPAddress";
 
         static class DeviceFilter
         {
@@ -171,8 +173,14 @@ namespace UsbIpServer
             var key = GetRegistryKey(device);
             if (key != null)
             {
-                key.SetValue("IPAddress", address);
+                key.SetValue(IPAddressName, address);
             }
+        }
+
+        public static IPAddress? GetDeviceAddress(ExportedDevice device)
+        {
+            var value = (string?)GetRegistryKey(device)?.GetValue(IPAddressName);
+            return value == null ? null : IPAddress.Parse(value);
         }
 
         public static List<PersistedDevice> GetPersistedDevices(ExportedDevice[] connectedDevices)
