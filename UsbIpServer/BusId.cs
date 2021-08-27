@@ -1,4 +1,8 @@
-﻿using System;
+﻿// SPDX-FileCopyrightText: 2021 Frans van Dorsselaer
+//
+// SPDX-License-Identifier: GPL-2.0-only
+
+using System;
 using System.Text.RegularExpressions;
 
 namespace UsbIpServer
