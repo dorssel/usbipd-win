@@ -5,6 +5,7 @@
 using System;
 using System.Buffers.Binary;
 using System.Diagnostics.CodeAnalysis;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -13,7 +14,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using System.IO;
 
 using UsbIpServer.Interop;
 using static UsbIpServer.Interop.UsbIp;
@@ -67,7 +67,7 @@ namespace UsbIpServer
 
         static async Task<ExportedDevice[]> GetSharedDevicesAsync(CancellationToken cancellationToken)
         {
-            if (RegistryUtils.HasRegistryAccess())
+            if (RegistryUtils.HasWriteAccess())
             {
                 return (await ExportedDevice.GetAll(cancellationToken))
                .Where(x => RegistryUtils.IsDeviceShared(x))
@@ -98,25 +98,39 @@ namespace UsbIpServer
         {
             var buf = new byte[SYSFS_BUS_ID_SIZE];
             await RecvExactSizeAsync(Stream, buf, cancellationToken);
-            var busid = Encoding.UTF8.GetString(buf).TrimEnd('\0');
+            if (!BusId.TryParse(Encoding.UTF8.GetString(buf).TrimEnd('\0'), out var busId))
+            {
+                await SendOpCodeAsync(OpCode.OP_REP_IMPORT, Status.ST_NODEV);
+                return;
+            }
+
+            // whatever happens, try to report "something" to the client
             var status = Status.ST_ERROR;
 
             try
             {
                 var exportedDevices = await GetSharedDevicesAsync(cancellationToken);
+                var exportedDevice = exportedDevices.SingleOrDefault(x => x.BusId == busId);
+                if (exportedDevice is null)
+                {
+                    await SendOpCodeAsync(OpCode.OP_REP_IMPORT, Status.ST_NODEV);
+                    return;
+                }
 
-                status = Status.ST_NODEV;
-                var exportedDevice = exportedDevices.Single(x => x.BusId == busid);
+                if (RegistryUtils.IsDeviceAttached(exportedDevice))
+                {
+                    await SendOpCodeAsync(OpCode.OP_REP_IMPORT, Status.ST_DEV_BUSY);
+                    return;
+                }
 
                 status = Status.ST_NA;
                 using var mon = new VBoxUsbMon();
                 await mon.CheckVersion();
                 await mon.AddFilter(exportedDevice);
                 await mon.RunFilters();
-                status = Status.ST_DEV_BUSY;
                 ClientContext.AttachedDevice = await mon.ClaimDevice(exportedDevice);
 
-                Logger.LogInformation(LogEvents.ClientAttach, $"Client {ClientContext.TcpClient.Client.RemoteEndPoint} claimed device at {exportedDevice.BusId} ({exportedDevice.Path}).");
+                Logger.LogInformation(LogEvents.ClientAttach, $"Client {ClientContext.ClientAddress} claimed device at {exportedDevice.BusId} ({exportedDevice.Path}).");
                 try
                 {
                     ClientContext.ConfigurationDescriptors = exportedDevice.ConfigurationDescriptors;
@@ -131,23 +145,23 @@ namespace UsbIpServer
 
                     // setup token to free device
                     using var attachedClientTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-                    Action cancelAction = () => attachedClientTokenSource.Cancel();
-                    RegistryWatcher.WatchDevice(busid, cancelAction);
-                    DeviceChangeWatcher.WatchForDeviceRemoval(busid, cancelAction);
+                    void cancelAction() {
+                        attachedClientTokenSource.Cancel();
+                    }
+                    RegistryWatcher.WatchDevice(busId, cancelAction);
+                    DeviceChangeWatcher.WatchForDeviceRemoval(busId, cancelAction);
                     var attachedClientToken = attachedClientTokenSource.Token;
-                    RegistryUtils.SetDeviceAsAttached(exportedDevice);
-                    var iPEndPoint = ClientContext.TcpClient.Client.RemoteEndPoint as IPEndPoint;
-                    RegistryUtils.SetDeviceAddress(exportedDevice, iPEndPoint!.Address.ToString());
+                    RegistryUtils.SetDeviceAsAttached(exportedDevice, ClientContext.ClientAddress);
 
                     await ServiceProvider.GetRequiredService<AttachedClient>().RunAsync(attachedClientToken);
                 }
                 finally
                 {
-                    RegistryWatcher.StopWatchingDevice(busid);
-                    DeviceChangeWatcher.StopWatchingDevice(busid);
+                    RegistryWatcher.StopWatchingDevice(busId);
+                    DeviceChangeWatcher.StopWatchingDevice(busId);
                     RegistryUtils.SetDeviceAsDetached(exportedDevice);
 
-                    Logger.LogInformation(LogEvents.ClientDetach, $"Client {ClientContext.TcpClient.Client.RemoteEndPoint} released device at {exportedDevice.BusId} ({exportedDevice.Path}).");
+                    Logger.LogInformation(LogEvents.ClientDetach, $"Client {ClientContext.ClientAddress} released device at {exportedDevice.BusId} ({exportedDevice.Path}).");
                 }
             }
             catch (Exception ex)

@@ -308,7 +308,7 @@ namespace UsbIpServer
             }
         }
 
-        public static void GetBusId(SafeDeviceInfoSetHandle deviceInfoSet, in SP_DEVINFO_DATA devInfoData, out ushort hubNum, out ushort connectionIndex)
+        public static void GetBusId(SafeDeviceInfoSetHandle deviceInfoSet, in SP_DEVINFO_DATA devInfoData, out BusId busId)
         {
             var locationInfo = GetDevicePropertyString(deviceInfoSet, devInfoData, in Constants.DEVPKEY_Device_LocationInfo);
             var match = Regex.Match(locationInfo, "^Port_#([0-9]{4}).Hub_#([0-9]{4})$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
@@ -316,16 +316,11 @@ namespace UsbIpServer
             {
                 throw new NotSupportedException($"DEVPKEY_Device_LocationInfo returned '{locationInfo}', expected form 'Port_#0123.Hub_#4567'");
             }
-            hubNum = ushort.Parse(match.Groups[2].Value, CultureInfo.InvariantCulture);
-            connectionIndex = ushort.Parse(match.Groups[1].Value, CultureInfo.InvariantCulture);
-            if (hubNum == 0)
+            busId = new()
             {
-                throw new NotSupportedException($"DEVPKEY_Device_LocationInfo returned unexpected {nameof(hubNum)} 0");
-            }
-            if (connectionIndex == 0)
-            {
-                throw new NotSupportedException($"DEVPKEY_Device_LocationInfo returned unexpected {nameof(connectionIndex)} 0");
-            }
+                Bus = ushort.Parse(match.Groups[2].Value, CultureInfo.InvariantCulture),
+                Port = ushort.Parse(match.Groups[1].Value, CultureInfo.InvariantCulture),
+            };
         }
 
         /// <summary>

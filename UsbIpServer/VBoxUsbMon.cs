@@ -40,7 +40,7 @@ namespace UsbIpServer
             filter.SetMatch(UsbFilterIdx.DEVICE_CLASS, UsbFilterMatch.NUM_EXACT, device.DeviceClass);
             filter.SetMatch(UsbFilterIdx.DEVICE_SUB_CLASS, UsbFilterMatch.NUM_EXACT, device.DeviceSubClass);
             filter.SetMatch(UsbFilterIdx.DEVICE_PROTOCOL, UsbFilterMatch.NUM_EXACT, device.DeviceProtocol);
-            filter.SetMatch(UsbFilterIdx.PORT, UsbFilterMatch.NUM_EXACT, (ushort)device.DevNum);
+            filter.SetMatch(UsbFilterIdx.PORT, UsbFilterMatch.NUM_EXACT, device.BusId.Port);
 
             var output = new byte[Marshal.SizeOf<UsbSupFltAddOut>()];
             await UsbMonitor.IoControlAsync(VBoxUsb.IoControl.SUPUSBFLT_IOCTL_ADD_FILTER, StructToBytes(filter), output);
@@ -61,8 +61,8 @@ namespace UsbIpServer
             using var deviceInfoSet = SetupDiGetClassDevs(GUID_CLASS_VBOXUSB, null, default, Constants.DIGCF_DEVICEINTERFACE | Constants.DIGCF_PRESENT);
             foreach (var (infoData, interfaceData) in EnumDeviceInterfaces(deviceInfoSet, GUID_CLASS_VBOXUSB))
             {
-                GetBusId(deviceInfoSet, infoData, out var hubNum, out var connectionIndex);
-                if ((hubNum != device.BusNum) || (connectionIndex != device.DevNum))
+                GetBusId(deviceInfoSet, infoData, out var busId);
+                if (busId != device.BusId)
                 {
                     continue;
                 }

@@ -7,7 +7,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Reflection;
@@ -21,7 +20,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Hosting.WindowsServices;
 using Microsoft.Extensions.Logging;
-using static UsbIpServer.NativeWslApi;
+using Windows.Win32;
+using Windows.Win32.System.Com;
 
 [assembly: CLSCompliant(true)]
 [assembly: SupportedOSPlatform("windows8.0")]
@@ -32,8 +32,9 @@ namespace UsbIpServer
     {
         const string InstallWslUrl = "https://aka.ms/installwsl";
 
-        static string Product => Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyProductAttribute>()!.Product;
-        static string Copyright => Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyCopyrightAttribute>()!.Copyright;
+        static readonly string Product = Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyProductAttribute>()!.Product;
+        static readonly string Copyright = Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyCopyrightAttribute>()!.Copyright;
+        static readonly string ApplicationName = Path.GetFileName(Process.GetCurrentProcess().ProcessName);
 
         static void ShowCopyright()
         {
@@ -54,32 +55,155 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ");
         }
 
-        public static string Truncate(this string value, int maxChars)
+        static string Truncate(this string value, int maxChars)
         {
             return value.Length <= maxChars ? value : string.Concat(value.AsSpan(0, maxChars - 3), "...");
+        }
+
+        /// <summary>
+        /// <para><see cref="CommandLineApplication"/> is rather old and uses the "old style" errors without a terminating period.</para>
+        /// <para>Some WinAPI errors (originating from FormatMessage) have a terminating newline.</para>
+        /// This function normalizes all errors to
+        /// <list type="bullet">
+        /// <item>end with a period (.)</item>
+        /// <item>not end with a newline</item>
+        /// </list>
+        /// </summary>
+        static string EnforceFinalPeriod(this string s)
+        {
+            s = s.TrimEnd();
+            return s.EndsWith('.') ? s : s + '.';
+        }
+
+        static void ReportText(TextWriter textWriter, string level, string text) =>
+            textWriter.WriteLine($"{ApplicationName}: {level}: {EnforceFinalPeriod(text)}");
+
+        static void ReportError(string text) =>
+            ReportText(Console.Error, "error", text);
+
+        static void ReportWarning(string text) =>
+            ReportText(Console.Error, "warning", text);
+
+        static void ReportInfo(string text) =>
+            ReportText(Console.Out, "info", text);
+
+        /// <summary>
+        /// Helper to warn users that the service is not running.
+        /// For commands that may lead the user to believe that everything is fine when in fact it is not.
+        /// For example: 'list' succeeds and shows 'Shared', but attaching from the client will fail.
+        /// For example: 'bind' succeeds, but attaching from the client will fail.
+        /// </summary>
+        static void ReportServerRunning()
+        {
+            if (!Server.IsServerRunning())
+            {
+                ReportWarning("Server is currently not running.");
+            }
+        }
+
+        static string InvalidValueText(CommandOption option) =>
+            $"Invalid value '{option.Value()}' for option '--{option.LongName}'.";
+
+        static bool CheckBusId(CommandOption option)
+        {
+            if (!option.HasValue())
+            {
+                // Assume the option is optional.
+                return true;
+            }
+            if (!BusId.TryParse(option.Value(), out _))
+            {
+                ReportError(InvalidValueText(option));
+                return false;
+            }
+            return true;
+        }
+
+        static bool CheckGuid(CommandOption option)
+        {
+            if (!option.HasValue())
+            {
+                // Assume the option is optional.
+                return true;
+            }
+            if (!Guid.TryParse(option.Value(), out _))
+            {
+                ReportError(InvalidValueText(option));
+                return false;
+            }
+            return true;
+        }
+
+        static string OneOfRequiredText(params CommandOption[] options)
+        {
+            Debug.Assert(options.Length >= 1);
+
+            var names = options.Select((o) => $"'--{o.LongName}'").ToArray();
+            switch (options.Length)
+            {
+                case 1:
+                    // '--a'
+                    return $"The option {names[0]} is required.";
+                case 2:
+                    // '--a' or '--b'
+                    return $"Exactly one of the options {names[0]} or {names[1]} is required.";
+                default:
+                    // '--a', '--b', '--c', or '--d'
+                    var list = string.Join(", ", names[0..(names.Length - 1)]) + ", or " + names[^1];
+                    return $"Exactly one of the options {list} is required.";
+            }
+        }
+
+        static bool CheckOneOf(params CommandOption[] options)
+        {
+            if (options.Count((o) => o.HasValue()) != 1)
+            {
+                ReportError(OneOfRequiredText(options));
+                return false;
+            }
+            return true;
+        }
+
+        static bool CheckWriteAccess()
+        {
+            if (!RegistryUtils.HasWriteAccess())
+            {
+                ReportError("Access denied.");
+                return false;
+            }
+            return true;
         }
 
         static int Main(string[] args)
         {
             var app = new CommandLineApplication()
             {
-                Name = Path.GetFileName(Process.GetCurrentProcess().ProcessName),
+                Name = ApplicationName,
             };
+            app.HelpOption("-h|--help");
             app.VersionOption("-v|--version", GitVersionInformation.MajorMinorPatch, GitVersionInformation.InformationalVersion);
+            app.ExtendedHelpText = @"
+Shares locally connected USB devices to other machines, including Hyper-V
+guests and WSL 2.
+";
+            app.OptionVersion.Description = app.OptionVersion.Description.EnforceFinalPeriod();
 
             void DefaultCmdLine(CommandLineApplication cmd)
             {
                 // all commands (as well as the top-level executable) have these
                 cmd.FullName = Product;
                 cmd.ShortVersionGetter = app.ShortVersionGetter;
-                cmd.HelpOption("-h|--help").ShowInHelpText = false;
+                cmd.OptionHelp.Description = cmd.OptionHelp.Description.EnforceFinalPeriod();
             }
 
             DefaultCmdLine(app);
-            app.OptionHelp.ShowInHelpText = true;
             app.Command("license", (cmd) =>
             {
-                cmd.Description = "Display license information";
+                cmd.Description = "Display license information.";
+                cmd.HelpOption("-h|--help");
+                cmd.ExtendedHelpText = @"
+Displays license information.
+";
                 DefaultCmdLine(cmd);
                 cmd.OnExecute(() =>
                 {
@@ -90,7 +214,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
             app.Command("list", (cmd) =>
             {
-                cmd.Description = "List connected USB devices.";
+                cmd.Description = "List compatible USB devices.";
+                cmd.HelpOption("-h|--help");
+                cmd.ExtendedHelpText = @"
+Displays a list of compatible USB devices.
+";
                 DefaultCmdLine(cmd);
                 cmd.OnExecute(async () =>
                 {
@@ -98,128 +226,222 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                     var persistedDevices = RegistryUtils.GetPersistedDevices(connectedDevices);
                     var deviceChecker = new DeviceInfoChecker();
                     Console.WriteLine("Present:");
-                    Console.WriteLine($"{"BUS-ID",-8}{"Device",-60}{"Status",-5}");
+                    Console.WriteLine($"{"BusId",-5}  {"Device",-60}  State");
                     foreach (var device in connectedDevices)
                     {
-                        Console.WriteLine($"{device.BusId, -8}{Truncate(deviceChecker.GetDeviceName(device), 60),-60}{ (RegistryUtils.IsDeviceShared(device)? RegistryUtils.IsDeviceAttached(device)? "Attached" : "Shared" : "Not-Shared"), -5}");
+                        // NOTE: Strictly speaking, both Bus and Port can be > 99. If you have one of those, you win a prize!
+                        Console.WriteLine($@"{device.BusId, -5}  {Truncate(deviceChecker.GetDeviceDescription(device),60),-60}  {
+                            (RegistryUtils.IsDeviceShared(device) ? RegistryUtils.IsDeviceAttached(device) ? "Attached" : "Shared" : "Not shared")}");
                     }
-                    Console.Write("\n");
+                    Console.WriteLine();
                     Console.WriteLine("Persisted:");
-                    Console.WriteLine($"{"GUID",-38}{"BUS-ID",-8}{"Device",-60}");
+                    Console.WriteLine($"{"Guid",-38}  {"BusId",-5}  Device");
                     foreach (var device in persistedDevices)
                     {
-                        Console.WriteLine($"{device.Guid,-38}{device.BusId, -8}{Truncate(device.Name, 60),-60}");
+                        Console.WriteLine($"{device.Guid,-38:B}  {device.BusId,-5}  {Truncate(device.Description,60),-60}");
                     }
+                    Console.WriteLine();
 
-                    if (!Server.IsServerRunning())
-                    {
-                        Console.WriteLine("\nWARNING: Server is currently not running.");
-                    }
-
+                    ReportServerRunning();
                     return 0;
                 });
             });
 
             app.Command("bind", (cmd) =>
             {
-                cmd.Description = "Bind device";
-                var busId = cmd.Option("-b|--busid=<busid>", "Share device having <busid>", CommandOptionType.SingleValue);
+                cmd.Description = "Bind device.";
                 var bindAll = cmd.Option("-a|--all", "Share all devices.", CommandOptionType.NoValue);
+                var busId = cmd.Option("-b|--busid <busid>", "Share device having <busid>.", CommandOptionType.SingleValue);
+                cmd.HelpOption("-h|--help");
+                cmd.ExtendedHelpText = $@"
+Registers one (or all) compatible USB devices for sharing, so they can be
+attached by other machines. Bound devices remain available to the local
+machine until they are attached by another machine, at which time they
+become unavailable to the local machine.
+
+{OneOfRequiredText(bindAll,busId)}
+";
                 DefaultCmdLine(cmd);
-                cmd.OnExecute(() => BindDeviceAsync(bindAll.HasValue(), busId.Value(), CancellationToken.None));
+                cmd.OnExecute(async () =>
+                {
+                    if (!CheckOneOf(bindAll, busId) || !CheckBusId(busId) || !CheckWriteAccess())
+                    {
+                        return 1;
+                    }
+
+                    int ret;
+                    if (bindAll.HasValue())
+                    {
+                        ret = await BindAllAsync(CancellationToken.None);
+                    }
+                    else
+                    {
+                        ret = await BindDeviceAsync(BusId.Parse(busId.Value()), CancellationToken.None);
+                    }
+                    ReportServerRunning();
+                    return ret;
+                });
             });
 
             app.Command("unbind", (cmd) =>
             {
-                cmd.Description = "Unbind device";
-                var busId = cmd.Option("-b|--busid=<busid>", "Stop sharing device having <busid>", CommandOptionType.SingleValue);
-                var guid = cmd.Option("-g|--guid=<guid>", "Stop sharing persisted device having <guid>", CommandOptionType.SingleValue);
+                cmd.Description = "Unbind device.";
                 var unbindAll = cmd.Option("-a|--all", "Stop sharing all devices.", CommandOptionType.NoValue);
+                var busId = cmd.Option("-b|--busid <busid>", "Stop sharing device having <busid>.", CommandOptionType.SingleValue);
+                var guid = cmd.Option("-g|--guid <guid>", "Stop sharing persisted device having <guid>.", CommandOptionType.SingleValue);
+                cmd.HelpOption("-h|--help");
+                cmd.ExtendedHelpText = $@"
+Unregisters one (or all) USB devices for sharing. If the device is currently
+attached, it will immediately be detached and it becomes available to the
+machine again; the remote machine will see this as a surprise removal event.
+
+{OneOfRequiredText(unbindAll,busId,guid)}
+";
                 DefaultCmdLine(cmd);
-                cmd.OnExecute(() => UnbindDeviceAsync(unbindAll.HasValue(), busId.HasValue() ? busId.Value() : null, guid.HasValue() ? guid.Value() : null, CancellationToken.None));
+                cmd.OnExecute(async () =>
+                {
+                    if (!CheckOneOf(unbindAll, busId, guid) || !CheckBusId(busId) || !CheckGuid(guid) || !CheckWriteAccess())
+                    {
+                        return 1;
+                    }
+
+                    if (unbindAll.HasValue())
+                    {
+                        RegistryUtils.StopSharingAllDevices();
+                        return 0;
+                    }
+                    else if (busId.HasValue())
+                    {
+                        return await UnbindDeviceAsync(BusId.Parse(busId.Value()), CancellationToken.None);
+                    }
+                    else
+                    {
+                        var deviceGuid = Guid.Parse(guid.Value());
+                        if (!RegistryUtils.GetPersistedDeviceGuids().Contains(deviceGuid))
+                        {
+                            // Not an error, just let the user know they just executed a no-op.
+                            ReportInfo($"There is no persisted device with guid '{deviceGuid:B}'.");
+                            return 0;
+                        }
+                        RegistryUtils.StopSharingDevice(deviceGuid);
+                        return 0;
+                    }
+                });
             });
 
             app.Command("server", (cmd) =>
             {
-                cmd.Description = "Run the server stand-alone on the console";
+                cmd.Description = "Run the server stand-alone on the console.";
+                cmd.HelpOption("-h|--help");
+                cmd.ExtendedHelpText = @"
+Upon installation, the server is running as a background service.
+This command is intended for troubleshooting and debugging purposes.
+";
                 DefaultCmdLine(cmd);
-                cmd.Argument("key=value", ".NET configuration override", true);
+                cmd.Argument("key=value", ".NET configuration override.", true);
                 cmd.OnExecute(() => ExecuteServer(cmd.Arguments.Single().Values.ToArray()));
             });
 
             app.Command("wsl", (metacmd) =>
             {
-                metacmd.Description = "Convenience commands for attaching devices to Windows Subsystem for Linux (WSL).";
+                metacmd.Description = "Convenience commands for attaching devices to WSL.";
+                metacmd.HelpOption("-h|--help");
+                metacmd.ExtendedHelpText = @"
+Convenience commands for attaching devices to Windows Subsystem for Linux.
+";
                 DefaultCmdLine(metacmd);
 
-                Task<int> CheckWslInstalledAsync(Func<Task<int>> continuation)
+                bool CheckWslInstalled()
                 {
                     if (!WslDistributions.IsWslInstalled())
                     {
-                        Console.Error.WriteLine($"Windows Subsystem for Linux is not installed. See {InstallWslUrl}");
-                        return Task.FromResult(1);
+                        ReportError($"Windows Subsystem for Linux is not installed. See {InstallWslUrl}.");
+                        return false;
                     }
-
-                    return continuation();
+                    return true;
                 }
 
                 metacmd.Command("list", (cmd) =>
                 {
-                    cmd.Description = "Lists all USB devices that are available for being attached into WSL.";
+                    cmd.Description = "List all compatible USB devices.";
+                    cmd.HelpOption("-h|--help");
+                    cmd.ExtendedHelpText = @"
+Lists all USB devices that are available for being attached into WSL.
+";
                     DefaultCmdLine(cmd);
-                    cmd.OnExecute(() => CheckWslInstalledAsync(async () =>
+                    cmd.OnExecute(async () =>
                     {
+                        if (!CheckWslInstalled())
+                        {
+                            return 1;
+                        }
+
                         var distros = await WslDistributions.CreateAsync(CancellationToken.None);
                         var connectedDevices = await ExportedDevice.GetAll(CancellationToken.None);
                         var deviceChecker = new DeviceInfoChecker();
 
+                        Console.WriteLine($"BusId  {"Device",-60}  State");
                         Console.WriteLine($"{"ID",-6}{"NAME",-43}{"STATE",-30}");
                         foreach (var device in connectedDevices)
                         {
                             var isAttached = RegistryUtils.IsDeviceAttached(device);
                             var address = RegistryUtils.GetDeviceAddress(device);
+                            var distro = address is not null ? distros.LookupByIPAddress(address)?.Name : null;
+                            var state = isAttached ? ("Attached" + (distro is not null ? $" - {distro}" : string.Empty)) : "Not attached";
+                            var description = Truncate(deviceChecker.GetDeviceDescription(device), 60);
 
-                            // The WSL virtual switch is IPv4, but we persist IPv6 in the registry.
-                            if (address?.IsIPv4MappedToIPv6 ?? false)
-                            {
-                                address = address.MapToIPv4();
-                            }
-
-                            var distro = address != null ? distros.LookupByIPAddress(address)?.Name : null;
-                            var state = isAttached ? ("Attached" + (distro != null ? $" - {distro}" : string.Empty)) : "Not attached";
-                            var name = Truncate(deviceChecker.GetDeviceName(device), 42);
-
-                            Console.WriteLine($"{device.BusId,-6}{name,-43}{state,-30}");
+                            Console.WriteLine($"{device.BusId,-5}  {description,-60}  {state}");
                         }
 
+                        ReportServerRunning();
                         return 0;
-                    }));
+                    });
                 });
 
                 metacmd.Command("attach", (cmd) =>
                 {
-                    cmd.Description = "Attaches a USB device to a WSL instance.";
-                    var busId = cmd.Argument("id", "Share device with this ID.");
-                    var distro = cmd.Option("--distribution", "Name of a specific WSL distribution to attach to (optional).", CommandOptionType.SingleValue);
-                    var usbipPath = cmd.Option("--usbippath", "Path in the WSL instance to the usbip client tools (optional).", CommandOptionType.SingleValue);
+                    cmd.Description = "Attach a compatible USB device to a WSL instance.";
+                    var busId = cmd.Option("-b|--busid <busid>", "Attach device having <busid>.", CommandOptionType.SingleValue);
+                    var distro = cmd.Option("-d|--distribution <name>", "Name of a specific WSL distribution to attach to.", CommandOptionType.SingleValue);
+                    cmd.HelpOption("-h|--help");
+                    var usbipPath = cmd.Option("-u|--usbip-path <path>", "Path in the WSL instance to the 'usbip' client tool.", CommandOptionType.SingleValue);
+                    cmd.ExtendedHelpText = $@"
+Attaches a compatible USB devices to a WSL instance.
+
+The 'wsl attach' command is equivalent to the 'bind' command, followed by
+a 'usbip attach' command on the Linux side.
+
+{OneOfRequiredText(busId)}
+";
                     DefaultCmdLine(cmd);
 
-                    cmd.OnExecute(() => CheckWslInstalledAsync(async () =>
+                    cmd.OnExecute(async () =>
                     {
+                        if (!CheckOneOf(busId) || !CheckBusId(busId) || !CheckWslInstalled() || !CheckWriteAccess())
+                        {
+                            return 1;
+                        }
+
                         var address = NetworkInterface.GetAllNetworkInterfaces()
                             .FirstOrDefault(nic => nic.Name.Contains("WSL", StringComparison.OrdinalIgnoreCase))?.GetIPProperties().UnicastAddresses
                             .FirstOrDefault(ip => ip.Address.AddressFamily == AddressFamily.InterNetwork)
                             ?.Address;
 
-                        if (address == null)
+                        if (address is null)
                         {
-                            Console.Error.WriteLine("The local IP address for the WSL virtual switch could not be found.");
+                            ReportError("The local IP address for the WSL virtual switch could not be found.");
                             return 1;
                         }
 
                         // Initialize security attributes to allow communication with the WSL API
-                        Marshal.ThrowExceptionForHR(CoInitializeSecurity(IntPtr.Zero, -1, IntPtr.Zero, IntPtr.Zero,
-                            RpcAuthnLevel.Default, RpcImpLevel.Impersonate, IntPtr.Zero, EoAuthnCap.StaticCloaking, IntPtr.Zero));
+                        unsafe
+                        {
+                            Marshal.ThrowExceptionForHR(PInvoke.CoInitializeSecurity(
+                                cAuthSvc: -1,
+                                dwAuthnLevel: RPC_C_AUTHN_LEVEL.RPC_C_AUTHN_LEVEL_DEFAULT,
+                                dwImpLevel: RPC_C_IMP_LEVEL.RPC_C_IMP_LEVEL_IMPERSONATE,
+                                dwCapabilities: EOLE_AUTHENTICATION_CAPABILITIES.EOAC_STATIC_CLOAKING));
+                        }
 
                         var distros = await WslDistributions.CreateAsync(CancellationToken.None);
 
@@ -227,31 +449,31 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                         // starting on the fly when wsl.exe is invoked, that will cause confusing behavior
                         // where we might attach a USB device to WSL, then immediately detach it when the
                         // WSL VM is shutdown shortly afterwards.
-                        WslDistributions.Distribution? distroData = distro.HasValue() ? distros.LookupByName(distro.Value()) : distros.DefaultDistribution;
+                        var distroData = distro.HasValue() ? distros.LookupByName(distro.Value()) : distros.DefaultDistribution;
 
-                        if (distroData == null)
+                        if (distroData is null)
                         {
                             if (distro.HasValue())
                             {
-                                Console.Error.WriteLine($"The WSL distribution {distro.Value()} is not running or does exist.");
+                                ReportError($"The WSL distribution '{distro.Value()}' is not running or does exist.");
                                 return 1;
                             }
                             else if (!distro.HasValue())
                             {
-                                Console.Error.WriteLine($"The default WSL distribution is not running.");
+                                ReportError("The default WSL distribution is not running.");
                                 return 1;
                             }
                         }
                         else if ((distroData?.Version ?? 1) < 2)
                         {
-                            Console.Error.WriteLine($"The specified WSL distribution is running WSL 1, but WSL 2 is required. Learn how to upgrade at {InstallWslUrl}");
+                            ReportError($"The specified WSL distribution is running WSL 1, but WSL 2 is required. Learn how to upgrade at {InstallWslUrl}.");
                             return 1;
                         }
 
-                        var bindResult = await BindDeviceAsync(bindAll: false, busId.Value, CancellationToken.None);
+                        var bindResult = await BindDeviceAsync(BusId.Parse(busId.Value()), CancellationToken.None);
                         if (bindResult != 0)
                         {
-                            Console.Error.WriteLine($"Failed to bind device with ID \"{busId.Value}\".");
+                            ReportError($"Failed to bind device with ID '{busId.Value()}'.");
                             return 1;
                         }
 
@@ -259,32 +481,55 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                         var wslResult = await ProcessUtils.RunUncapturedProcessAsync(
                             WslDistributions.WslPath,
                             (distro.HasValue() ? new[] { "--distribution", distro.Value() } : Enumerable.Empty<string>()).Concat(
-                                new[] { "--", "sudo", path, "attach", $"--remote={address}", $"--busid={busId.Value}" }),
+                                new[] { "--", "sudo", path, "attach", $"--remote={address}", $"--busid={busId.Value()}" }),
                             CancellationToken.None);
                         if (wslResult != 0)
                         {
-                            Console.Error.WriteLine($"Failed to attach device with ID \"{busId.Value}\".");
+                            ReportError($"Failed to attach device with ID '{busId.Value()}'.");
                             return 1;
                         }
 
                         return 0;
-                    }));
+                    });
                 });
 
                 metacmd.Command("detach", (cmd) =>
                 {
-                    cmd.Description = "Detaches a USB device from a WSL instance and makes it available again in Windows.";
-                    var busId = cmd.Argument("id", "Stop sharing device with this ID.");
-                    var detachAll = cmd.Option("--all", "Stop sharing all devices.", CommandOptionType.NoValue);
-                    DefaultCmdLine(cmd);
+                    cmd.Description = "Detaches a USB device from a WSL instance.";
+                    var detachAll = cmd.Option("-a|--all", "Detach all devices.", CommandOptionType.NoValue);
+                    var busId = cmd.Option("-b|--busid <busid>", "Detach device having <busid>.", CommandOptionType.SingleValue);
+                    cmd.HelpOption("-h|--help");
+                    cmd.ExtendedHelpText = $@"
+Detaches one (or all) USB devices. The WSL instance sees this as a surprise
+removal event. A detached device becomes available again in Windows.
 
-                    // This command only exists for convenience. There's no extra work to do in the WSL instance.
-                    // Terminating the connection on Windows will also cause WSL to detach.
-                    cmd.OnExecute(() => CheckWslInstalledAsync(() => UnbindDeviceAsync(detachAll.HasValue(), busId.Value, guid: null, CancellationToken.None)));
+The 'wsl detach' command is equivalent to the 'unbind' command.
+
+{OneOfRequiredText(detachAll,busId)}
+";
+                    DefaultCmdLine(cmd);
+                    cmd.OnExecute(async () =>
+                    {
+                        if (!CheckOneOf(detachAll, busId) || !CheckBusId(busId) || !CheckWriteAccess())
+                        {
+                            return 1;
+                        }
+
+                        if (detachAll.HasValue())
+                        {
+                            RegistryUtils.StopSharingAllDevices();
+                            return 0;
+                        }
+                        else
+                        {
+                            return await UnbindDeviceAsync(BusId.Parse(busId.Value()), CancellationToken.None);
+                        }
+                    });
                 });
 
                 metacmd.OnExecute(() =>
                 {
+                    // 'wsl' always expects a subcommand. Without a subcommand, just act as if '--help' was provided.
                     app.ShowHelp("wsl");
                     return 0;
                 });
@@ -292,8 +537,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
             app.OnExecute(() =>
             {
-                app.ShowRootCommandFullNameAndVersion();
-                app.ShowHint();
+                // main executable always expects a subcommand. Without a subcommand, just act as if '--help' was provided.
+                app.ShowHelp();
                 return 0;
             });
 
@@ -303,13 +548,29 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
             }
             catch (CommandParsingException ex)
             {
-                Console.Error.WriteLine(ex.Message);
+                ReportError(ex.Message);
                 return 1;
             }
         }
 
         static int ExecuteServer(string[] args)
         {
+            // Pre-conditions that may fail due to user mistakes. Fail gracefully...
+
+            if (!CheckWriteAccess())
+            {
+                return 1;
+            }
+
+            using var mutex = new Mutex(true, Server.SingletonMutexName, out var createdNew);
+            if (!createdNew)
+            {
+                ReportError("Another instance is already running.");
+                return 1;
+            }
+
+            // From here on, the server should run without error. Any further errors (exceptions) are probably bugs...
+
             Host.CreateDefaultBuilder()
                 .UseWindowsService()
                 .ConfigureAppConfiguration((context, builder) =>
@@ -354,80 +615,65 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
             return 0;
         }
 
-        static async Task<int> BindDeviceAsync(bool bindAll, string busId, CancellationToken cancellationToken)
+        /// <summary>
+        /// Worker for <code>usbipd bind --all</code>.
+        /// </summary>
+        static async Task<int> BindAllAsync(CancellationToken cancellationToken)
         {
             var connectedDevices = await ExportedDevice.GetAll(cancellationToken);
-            if (bindAll)
+            foreach (var device in connectedDevices)
             {
-                foreach (var device in connectedDevices)
+                if (!RegistryUtils.IsDeviceShared(device))
                 {
                     var checker = new DeviceInfoChecker();
-                    RegistryUtils.ShareDevice(device, checker.GetDeviceName(device));
+                    RegistryUtils.ShareDevice(device, checker.GetDeviceDescription(device));
                 }
-
-                return 0;
             }
-
-            try
-            {
-                var targetDevice = connectedDevices.Where(x => x.BusId == busId).First();
-                if (targetDevice != null && !RegistryUtils.IsDeviceShared(targetDevice))
-                {
-                    var checker = new DeviceInfoChecker();
-                    RegistryUtils.ShareDevice(targetDevice, checker.GetDeviceName(targetDevice));
-                }
-
-                return 0;
-            }
-            catch (InvalidOperationException)
-            {
-                Console.Error.WriteLine("There's no device with the specified BUS-ID.");
-                return 1;
-            }
+            return 0;
         }
 
-        static async Task<int> UnbindDeviceAsync(bool unbindAll, string? busId, string? guid, CancellationToken cancellationToken)
+        /// <summary>
+        /// Worker for <code>usbipd bind --busid <paramref name="busId"/></code>.
+        /// </summary>
+        static async Task<int> BindDeviceAsync(BusId busId, CancellationToken cancellationToken)
         {
-            if (unbindAll)
+            var connectedDevices = await ExportedDevice.GetAll(cancellationToken);
+            var device = connectedDevices.Where(x => x.BusId == busId).SingleOrDefault();
+            if (device is null)
             {
-                RegistryUtils.StopSharingAllDevices();
+                ReportError($"There is no compatible device with busid '{busId}'.");
+                return 1;
+            }
+            if (RegistryUtils.IsDeviceShared(device))
+            {
+                // Not an error, just let the user know they just executed a no-op.
+                ReportInfo($"Connected device with busid '{busId}' was already shared.");
                 return 0;
             }
+            var checker = new DeviceInfoChecker();
+            RegistryUtils.ShareDevice(device, checker.GetDeviceDescription(device));
+            return 0;
+        }
 
-            if (busId != null)
+        /// <summary>
+        /// Worker for <code>usbipd unbind --busid <paramref name="busId"/></code>.
+        /// </summary>
+        static async Task<int> UnbindDeviceAsync(BusId busId, CancellationToken cancellationToken)
+        {
+            var connectedDevices = await ExportedDevice.GetAll(cancellationToken);
+            var device = connectedDevices.Where(x => x.BusId == busId).SingleOrDefault();
+            if (device is null)
             {
-                try
-                {
-                    var connectedDevices = await ExportedDevice.GetAll(cancellationToken);
-                    var targetDevice = connectedDevices.Where(x => x.BusId == busId).First();
-                    if (targetDevice != null && RegistryUtils.IsDeviceShared(targetDevice))
-                    {
-                        RegistryUtils.StopSharingDevice(targetDevice);
-                    }
-
-                    return 0;
-                }
-                catch (InvalidOperationException)
-                {
-                    Console.Error.WriteLine("There's no device with the specified BUS-ID.");
-                    return 1;
-                }
+                ReportError($"There is no compatible device with busid '{busId}'.");
+                return 1;
             }
-
-            if (guid != null)
+            if (!RegistryUtils.IsDeviceShared(device))
             {
-                try
-                {
-                    RegistryUtils.StopSharingDevice(guid);
-                    return 0;
-                }
-                catch (ArgumentException)
-                {
-                    Console.Error.WriteLine("There's no device with the specified GUID.");
-                    return 1;
-                }
+                // Not an error, just let the user know they just executed a no-op.
+                ReportInfo($"Connected device with busid '{busId}' was already not shared.");
+                return 0;
             }
-
+            RegistryUtils.StopSharingDevice(device);
             return 0;
         }
     }

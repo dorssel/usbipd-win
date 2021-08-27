@@ -23,19 +23,21 @@ namespace UsbIpServer
 {
     sealed class ExportedDevice
     {
-        public string Path { get; set; } = string.Empty;
-        public string BusId => $"{BusNum}-{DevNum}";
-        public uint BusNum { get; set; }
-        public uint DevNum { get; set; }
-        public Linux.UsbDeviceSpeed Speed { get; set; }
-        public ushort VendorId { get; set; }
-        public ushort ProductId { get; set; }
-        public ushort BcdDevice { get; set; }
-        public byte DeviceClass { get; set; }
-        public byte DeviceSubClass { get; set; }
-        public byte DeviceProtocol { get; set; }
-        public byte ConfigurationValue { get; set; }
-        public byte NumConfigurations { get; set; }
+        private ExportedDevice()
+        {
+        }
+
+        public string Path { get; private set; } = string.Empty;
+        public BusId BusId { get; private init; }
+        public Linux.UsbDeviceSpeed Speed { get; private init; }
+        public ushort VendorId { get; private init; }
+        public ushort ProductId { get; private init; }
+        public ushort BcdDevice { get; private init; }
+        public byte DeviceClass { get; private init; }
+        public byte DeviceSubClass { get; private init; }
+        public byte DeviceProtocol { get; private init; }
+        public byte ConfigurationValue { get; private init; }
+        public byte NumConfigurations { get; private init; }
 
         public UsbConfigurationDescriptors ConfigurationDescriptors { get; private set; } = new UsbConfigurationDescriptors();
 
@@ -72,9 +74,9 @@ namespace UsbIpServer
         public void Serialize(Stream stream, bool includeInterfaces)
         {
             Serialize(stream, Path, SYSFS_PATH_MAX);
-            Serialize(stream, BusId, SYSFS_BUS_ID_SIZE);
-            Serialize(stream, BusNum);
-            Serialize(stream, DevNum);
+            Serialize(stream, BusId.ToString(), SYSFS_BUS_ID_SIZE);
+            Serialize(stream, (uint)BusId.Bus);
+            Serialize(stream, (uint)BusId.Port);
             Serialize(stream, (uint)Speed);
             Serialize(stream, VendorId);
             Serialize(stream, ProductId);
@@ -137,7 +139,7 @@ namespace UsbIpServer
 
         public static async Task<ExportedDevice[]> GetAll(CancellationToken cancellationToken)
         {
-            var exportedDevices = new SortedDictionary<string, ExportedDevice>();
+            var exportedDevices = new SortedDictionary<BusId, ExportedDevice>();
 
             using var deviceInfoSet = SetupDiGetClassDevs(null, "USB", default, Constants.DIGCF_ALLCLASSES | Constants.DIGCF_PRESENT);
             foreach (var devInfoData in EnumDeviceInfo(deviceInfoSet))
@@ -159,12 +161,12 @@ namespace UsbIpServer
 
                 // OK, so the device is directly connected to a hub, but is not a hub itself ... this looks promising
 
-                GetBusId(deviceInfoSet, devInfoData, out var hubNum, out var connectionIndex);
+                GetBusId(deviceInfoSet, devInfoData, out var busId);
 
                 var address = GetDevicePropertyUInt32(deviceInfoSet, devInfoData, in Constants.DEVPKEY_Device_Address);
-                if (connectionIndex != address)
+                if (busId.Port != address)
                 {
-                    throw new NotSupportedException($"DEVPKEY_Device_Address ({address}) does not match DEVPKEY_Device_LocationInfo ({connectionIndex})");
+                    throw new NotSupportedException($"DEVPKEY_Device_Address ({address}) does not match DEVPKEY_Device_LocationInfo ({busId.Port})");
                 }
 
                 // now query the parent USB hub for device details
@@ -181,7 +183,7 @@ namespace UsbIpServer
                 using var hubFile = new DeviceFile(hubPath);
                 using var cancellationTokenRegistration = cancellationToken.Register(() => hubFile.Dispose());
 
-                var data = new UsbNodeConnectionInformationEx() { ConnectionIndex = connectionIndex };
+                var data = new UsbNodeConnectionInformationEx() { ConnectionIndex = busId.Port };
                 var buf = StructToBytes(data);
                 await hubFile.IoControlAsync(IoControl.IOCTL_USB_GET_NODE_CONNECTION_INFORMATION_EX, buf, buf);
                 BytesToStruct(buf, out data);
@@ -190,7 +192,7 @@ namespace UsbIpServer
 
                 var data2 = new UsbNodeConnectionInformationExV2()
                 {
-                    ConnectionIndex = connectionIndex,
+                    ConnectionIndex = busId.Port,
                     Length = (uint)Marshal.SizeOf<UsbNodeConnectionInformationExV2>(),
                     SupportedUsbProtocols = UsbProtocols.Usb110 | UsbProtocols.Usb200 | UsbProtocols.Usb300,
                 };
@@ -213,8 +215,7 @@ namespace UsbIpServer
                 var exportedDevice = new ExportedDevice()
                 {
                     Path = instanceId,
-                    BusNum = hubNum,
-                    DevNum = connectionIndex,
+                    BusId = busId,
                     Speed = speed,
                     VendorId = data.DeviceDescriptor.idVendor,
                     ProductId = data.DeviceDescriptor.idProduct,
@@ -224,8 +225,14 @@ namespace UsbIpServer
                     DeviceProtocol = data.DeviceDescriptor.bDeviceProtocol,
                     ConfigurationValue = data.CurrentConfigurationValue,
                     NumConfigurations = data.DeviceDescriptor.bNumConfigurations,
-                    ConfigurationDescriptors = await GetConfigurationDescriptor(hubFile, connectionIndex, data.DeviceDescriptor.bNumConfigurations),
+                    ConfigurationDescriptors = await GetConfigurationDescriptor(hubFile, busId.Port, data.DeviceDescriptor.bNumConfigurations),
                 };
+
+                if (RegistryUtils.GetOriginalInstanceId(exportedDevice) is string originalInstanceId)
+                {
+                    // If the device is currently attached, then VBoxMon will have overriden the path.
+                    exportedDevice.Path = originalInstanceId;
+                }
 
                 exportedDevices.Add(exportedDevice.BusId, exportedDevice);
             }

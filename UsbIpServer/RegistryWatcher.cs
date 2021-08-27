@@ -4,29 +4,28 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Management;
 using System.Threading;
-using System.Diagnostics.CodeAnalysis;
 
 namespace UsbIpServer
 {
     [SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes", Justification = "Instantiated by DI")]
     sealed class RegistryWatcher : IDisposable
     {
-        readonly ManagementEventWatcher? watcher;
+        readonly ManagementEventWatcher watcher;
 
-        readonly Dictionary<string, Action> devices = new Dictionary<string, Action>();
+        readonly Dictionary<BusId, Action> devices = new();
 
         public RegistryWatcher()
         {
             var query = @"SELECT * FROM RegistryTreeChangeEvent " +
                 @"WHERE Hive='HKEY_LOCAL_MACHINE' " +
-                @"AND RootPath='SOFTWARE'";
+                @$"AND RootPath='{RegistryUtils.DevicesRegistryPath.Replace(@"\", @"\\",StringComparison.InvariantCulture)}'";
 
             watcher = new ManagementEventWatcher(query);
-            watcher.EventArrived +=
-                new EventArrivedEventHandler(HandleEvent);
+            watcher.EventArrived += HandleEvent;
             watcher.Start();
         }
 
@@ -45,19 +44,25 @@ namespace UsbIpServer
             }
         }
 
-        public void WatchDevice(string busId, Action cancellationAction)
+        public void WatchDevice(BusId busId, Action cancellationAction)
         {
             devices[busId] = cancellationAction;
         }
 
-        public void StopWatchingDevice(string busId)
+        public void StopWatchingDevice(BusId busId)
         {
             devices.Remove(busId);
         }
 
+        bool IsDisposed;
         public void Dispose()
         {
-            watcher?.Dispose();
+            if (!IsDisposed)
+            {
+                watcher.EventArrived -= HandleEvent;
+                watcher.Dispose();
+                IsDisposed = true;
+            }
         }
     }
 }

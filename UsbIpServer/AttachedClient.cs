@@ -31,8 +31,8 @@ namespace UsbIpServer
             var tcpClient = clientContext.TcpClient;
             Stream = tcpClient.GetStream();
 
-            Device = clientContext.AttachedDevice ?? throw new ArgumentException($"{nameof(ClientContext.AttachedDevice)} == null");
-            ConfigurationDescriptors = clientContext.ConfigurationDescriptors ?? throw new ArgumentException($"{nameof(ClientContext.ConfigurationDescriptors)} == null");
+            Device = clientContext.AttachedDevice ?? throw new ArgumentException($"{nameof(ClientContext.AttachedDevice)} is null");
+            ConfigurationDescriptors = clientContext.ConfigurationDescriptors ?? throw new ArgumentException($"{nameof(ClientContext.ConfigurationDescriptors)} is null");
 
             tcpClient.NoDelay = true;
         }

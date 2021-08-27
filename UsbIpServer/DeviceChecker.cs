@@ -2,51 +2,49 @@
 //
 // SPDX-License-Identifier: GPL-2.0-only
 
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Management;
 
 namespace UsbIpServer
 {
     sealed class DeviceInfoChecker
     {
-        List<DeviceInfo> devices = new List<DeviceInfo>();
+        readonly Dictionary<string, string> DeviceDescriptions = new();
 
         public DeviceInfoChecker()
         {
-            devices = new List<DeviceInfo>();
-
-            ManagementObjectCollection collection;
-            using (var searcher = new ManagementObjectSearcher(@"Select * From Win32_PnPEntity"))
-                collection = searcher.Get();
+            using var searcher = new ManagementObjectSearcher(@"Select * From Win32_PnPEntity");
+            using var collection = searcher.Get();
 
             foreach (ManagementObject device in collection)
             {
-                devices.Add(new DeviceInfo(
-                    (string)device.GetPropertyValue("DeviceID"),
-                    (string)device.GetPropertyValue("PNPDeviceID"),
-                    (string)device.GetPropertyValue("Description")
-                ));
+                if (device.GetPropertyValue("DeviceID") is not string deviceId || !deviceId.StartsWith(@"USB\", StringComparison.InvariantCulture))
+                {
+                    // filter out everything not USB
+                    continue;
+                }
+                if (device.GetPropertyValue("CompatibleID") is string[] compatibleIds && compatibleIds.Contains(@"USB\COMPOSITE"))
+                {
+                    // filter out "USB Composite Device" (in an i18n-safe way)
+                    continue;
+                }
+                DeviceDescriptions.TryAdd((string)device.GetPropertyValue("DeviceID"), (string)device.GetPropertyValue("Description"));
             }
-
-            collection.Dispose();
         }
 
-        public string GetDeviceName(ExportedDevice device)
+        public string GetDeviceDescription(ExportedDevice device)
         {
-            // first try to get name from registry
-            var registryKey = RegistryUtils.GetRegistryKey(device);
-            if (registryKey != null)
+            // first try to get it from registry (cache)
+            if (RegistryUtils.GetDeviceDescription(device) is string description)
             {
-                var name = (string?)registryKey.GetValue("Name");
-                if (name != null)
-                {
-                    return name;
-                }
+                return description;
             }
 
             var path = device.Path;
-            var possibleDeviceNames = new SortedSet<string>();
-            foreach (var usbDevice in devices)
+            var descriptions = new SortedSet<string>();
+            foreach (var (deviceId, deviceDescription) in DeviceDescriptions)
             {
                 // Example Path: USB\VID_046D&PID_C539\7&674AA44&0&3
                 // The first part is device type, second is vid and pid and third is specific to the device,
@@ -55,28 +53,12 @@ namespace UsbIpServer
                 var parts = path.Split(@"\");
                 var type = parts[0];
                 var vid_pid = parts[1];
-                if (usbDevice.DeviceID.StartsWith($@"{type}\{vid_pid}", System.StringComparison.OrdinalIgnoreCase))
+                if (deviceId.StartsWith($@"{type}\{vid_pid}", System.StringComparison.OrdinalIgnoreCase))
                 {
-                    possibleDeviceNames.Add(usbDevice.Description);
+                    descriptions.Add(deviceDescription);
                 }
             }
-
-            possibleDeviceNames.RemoveWhere(x => x == "USB Composite Device");
-            return string.Join(", ", possibleDeviceNames);
+            return string.Join(", ", descriptions);
         }
-    }
-
-    sealed class DeviceInfo
-    {
-        public DeviceInfo(string deviceID, string pnpDeviceID, string description)
-        {
-            DeviceID = deviceID;
-            PnpDeviceID = pnpDeviceID;
-            Description = description;
-        }
-
-        public string DeviceID { get; private set; }
-        public string PnpDeviceID { get; private set; }
-        public string Description { get; private set; }
     }
 }

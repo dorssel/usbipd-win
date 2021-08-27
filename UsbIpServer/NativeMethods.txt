@@ -64,3 +64,8 @@ METHOD_BUFFERED
 
 FILE_ANY_ACCESS
 FILE_WRITE_ACCESS
+
+CoInitializeSecurity
+WslGetDistributionConfiguration
+
+S_OK

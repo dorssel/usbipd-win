@@ -12,19 +12,19 @@ devices are attached to.
 
 ```pwsh
 > usbipd wsl list
-ID    NAME                                       STATE
-1-7   USB Input Device                           Not attached
-4-4   STMicroelectronics STLink dongle, STMic... Not attached
-5-2   Surface Ethernet Adapter                   Not attached
+BusId  Device                                      State
+1-7    USB Input Device                            Not attached
+4-4    STMicroelectronics STLink dongle, STMic...  Not attached
+5-2    Surface Ethernet Adapter                    Not attached
 
-> usbipd wsl attach 4-4
+> usbipd wsl attach --busid 4-4
 [sudo] password for user:
 
 > usbipd wsl list
-ID    NAME                                       STATE
-1-7   USB Input Device                           Not attached
-4-4   STMicroelectronics STLink dongle, STMic... Attached - Ubuntu
-5-2   Surface Ethernet Adapter                   Not attached
+BusId  Device                                      State
+1-7    USB Input Device                            Not attached
+4-4    STMicroelectronics STLink dongle, STMic...  Attached - Ubuntu
+5-2    Surface Ethernet Adapter                    Not attached
 ```
 
 Now the device is available in WSL.
@@ -40,13 +40,13 @@ Bus 001 Device 001: ID 1d6b:0002 Linux Foundation 2.0 root hub
 automatically stop sharing if it is unplugged or the computer is restarted.
 
 ```pwsh
-> usbipd wsl detach 4-4
+> usbipd wsl detach --busid 4-4
 
 > usbipd wsl list
-ID    NAME                                       STATE
-1-7   USB Input Device                           Not attached
-4-4   STMicroelectronics STLink dongle, STMic... Not attached
-5-2   Surface Ethernet Adapter                   Not attached
+BusId  Device                                      State
+1-7    USB Input Device                            Not attached
+4-4    STMicroelectronics STLink dongle, STMic...  Not attached
+5-2    Surface Ethernet Adapter                    Not attached
 ```
 
 Use the `--help` to learn more about these convenience commands. In particular,

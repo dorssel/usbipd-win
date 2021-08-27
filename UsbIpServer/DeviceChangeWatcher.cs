@@ -7,22 +7,20 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Management;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace UsbIpServer
 {
-
     [SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes", Justification = "Instantiated by DI")]
     sealed class DeviceChangeWatcher : IDisposable
     {
         readonly ManagementEventWatcher watcher;
 
-        HashSet<string>? lastKnownBusIds;
+        SortedSet<BusId>? lastKnownBusIds;
 
         // Mapping of bus IDs to actions to take on device removal.
-        readonly Dictionary<string, Action> removalActions = new Dictionary<string, Action>();
+        readonly Dictionary<BusId, Action> removalActions = new();
 
         public DeviceChangeWatcher()
         {
@@ -56,35 +54,40 @@ namespace UsbIpServer
             }
         }
 
-        public void WatchForDeviceRemoval(string busId, Action removalAction)
+        public void WatchForDeviceRemoval(BusId busId, Action removalAction)
         {
             removalActions[busId] = removalAction;
         }
 
-        public void StopWatchingDevice(string busId)
+        public void StopWatchingDevice(BusId busId)
         {
             removalActions.Remove(busId);
         }
 
+        bool IsDisposed;
         public void Dispose()
         {
-            watcher.EventArrived -= HandleEvent;
-            watcher.Dispose();
+            if (!IsDisposed)
+            {
+                watcher.EventArrived -= HandleEvent;
+                watcher.Dispose();
+                IsDisposed = true;
+            }
         }
 
-        private async Task<HashSet<string>> GetRemovedDevicesAsync(CancellationToken cancellationToken)
+        private async Task<SortedSet<BusId>> GetRemovedDevicesAsync(CancellationToken cancellationToken)
         {
             var newBusIds = await GetAllBusIdsAsync(cancellationToken);
             lastKnownBusIds?.ExceptWith(newBusIds);
 
             var removedDevices = lastKnownBusIds;
             lastKnownBusIds = newBusIds;
-            return removedDevices ?? new HashSet<string>();
+            return removedDevices ?? new();
         }
 
-        private static async Task<HashSet<string>> GetAllBusIdsAsync(CancellationToken cancellationToken)
+        private static async Task<SortedSet<BusId>> GetAllBusIdsAsync(CancellationToken cancellationToken)
         {
-            return (await ExportedDevice.GetAll(cancellationToken)).Select(device => device.BusId).ToHashSet();
+            return new((await ExportedDevice.GetAll(cancellationToken)).Select(device => device.BusId));
         }
     }
 }

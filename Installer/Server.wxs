@@ -7,18 +7,14 @@ SPDX-License-Identifier: GPL-2.0-only
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
      xmlns:fw="http://schemas.microsoft.com/wix/FirewallExtension">
     <Fragment>
-        <DirectoryRef Id="APPLICATIONFOLDER">
+        <DirectoryRef Id="APPLICATIONFOLDER" FileSource="$(var.PublishDir)">
             <!--
             The product name is 'usbipd-win', but our users are well aware they are
             running a Windows operating system. Hence, the executable, service name,
             and firewall rule do not use the '-win' postfix.
             -->
             <Component Id="usbipd.exe">
-                <!--
-                The assemblyname is called UsbIpServer for historic reasons,
-                'usbipd.exe' is the canonical executable name.
-                -->
-                <File Source="$(var.PublishDir)\UsbIpServer.exe" Name="usbipd.exe">
+                <File Id="usbipd.exe">
                     <fw:FirewallException
                         Id="usbipd"
                         Name="usbipd"
@@ -55,12 +51,14 @@ SPDX-License-Identifier: GPL-2.0-only
                 <!--
                 The registry uses the full product name by convention.
                 -->
-                <RegistryKey
-                    Root="HKLM"
-                    Key="SOFTWARE\usbipd-win"
-                    ForceCreateOnInstall="yes"
-                    ForceDeleteOnUninstall="yes"
+                <RegistryKey Root="HKLM" Key="SOFTWARE\usbipd-win" ForceDeleteOnUninstall="yes">
+                    <RegistryValue Name="APPLICATIONFOLDER" Type="string" Value="[APPLICATIONFOLDER]" />
+                    <RegistryValue Name="Version" Type="string" Value="$(var.GitVersion_MajorMinorPatch)" />
+                    <RegistryKey
+                        Key="Devices"
+                        ForceCreateOnInstall="yes"
                     />
+                </RegistryKey>
                 <Environment
                     Id="PATH"
                     Name="PATH"

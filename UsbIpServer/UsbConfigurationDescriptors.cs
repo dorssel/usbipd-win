@@ -88,7 +88,7 @@ namespace UsbIpServer
                 switch ((uint)common.bDescriptorType)
                 {
                     case Constants.USB_CONFIGURATION_DESCRIPTOR_TYPE:
-                        if (configuration != null)
+                        if (configuration is not null)
                         {
                             throw new ArgumentException("duplicate USB_CONFIGURATION_DESCRIPTOR_TYPE");
                         }
@@ -97,7 +97,7 @@ namespace UsbIpServer
                         Configurations.Add(config.bConfigurationValue, configuration);
                         break;
                     case Constants.USB_INTERFACE_DESCRIPTOR_TYPE:
-                        if (configuration == null)
+                        if (configuration is null)
                         {
                             throw new ArgumentException("expected USB_CONFIGURATION_DESCRIPTOR_TYPE");
                         }
@@ -110,7 +110,7 @@ namespace UsbIpServer
                         configuration.Interfaces[iface.bInterfaceNumber].Alternates[iface.bAlternateSetting] = alternateInterface;
                         break;
                     case Constants.USB_ENDPOINT_DESCRIPTOR_TYPE:
-                        if (alternateInterface == null)
+                        if (alternateInterface is null)
                         {
                             throw new ArgumentException("expected USB_INTERFACE_DESCRIPTOR_TYPE");
                         }

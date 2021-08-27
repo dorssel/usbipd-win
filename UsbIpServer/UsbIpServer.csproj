@@ -36,6 +36,9 @@ SPDX-License-Identifier: GPL-2.0-only
     <GenerateAssemblyInformationalVersionAttribute>false</GenerateAssemblyInformationalVersionAttribute>
 
     <PublishProfile>Properties\PublishProfiles\InputForInstaller.pubxml</PublishProfile>
+
+    <AssemblyName>usbipd</AssemblyName>
+    <InvariantGlobalization>true</InvariantGlobalization>
   </PropertyGroup>
 
   <ItemGroup>

@@ -6,10 +6,12 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Management;
 using System.Net;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Windows.Win32;
 
 namespace UsbIpServer
 {
@@ -17,21 +19,33 @@ namespace UsbIpServer
     {
         public static readonly string WslPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "wsl.exe");
 
-        public record Distribution(string Name, IPAddress IPAddress, ulong? Version);
+        public record Distribution(string Name, IPAddress IPAddress, uint? Version);
 
-        public static bool IsWslInstalled() => File.Exists(WslPath);
+        public static bool IsWslInstalled()
+        {
+            if (!File.Exists(WslPath))
+            {
+                // Definitely not installed.
+                return false;
+            }
+            // On recent Windows 10, wsl.exe will be available even if the WSL feature is not installed.
+            // In fact, 'wsl.exe --install' can be used to install the feature...
+            using var searcher = new ManagementObjectSearcher(@"SELECT * FROM Win32_OptionalFeature WHERE Name = 'Microsoft-Windows-Subsystem-Linux' AND InstallState = 1");
+            using var collection = searcher.Get();
+            return collection.Count == 1;
+        }
 
-        readonly string? defaultDistro;
+        readonly string? DefaultDistro;
 
         WslDistributions(List<Distribution> distributions, string? defaultDistro)
         {
-            this.Distributions = distributions;
-            this.defaultDistro = defaultDistro;
+            Distributions = distributions;
+            DefaultDistro = defaultDistro;
         }
 
         public IReadOnlyCollection<Distribution> Distributions { get; }
 
-        public Distribution? DefaultDistribution => defaultDistro != null ? LookupByName(defaultDistro) : null;
+        public Distribution? DefaultDistribution => DefaultDistro is not null ? LookupByName(DefaultDistro) : null;
 
         public static async Task<WslDistributions> CreateAsync(CancellationToken cancellationToken)
         {
@@ -49,7 +63,7 @@ namespace UsbIpServer
             // https://github.com/microsoft/terminal/blob/9e83655b0870f7964789a7a17ccfd232cab4945a/src/cascadia/TerminalSettingsModel/WslDistroGenerator.cpp#L120
             var defaultDistro = allDistrosResult.StandardOutput.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries)
                 .Skip(1).FirstOrDefault(d => d.Contains('(', StringComparison.Ordinal));
-            if (defaultDistro != null)
+            if (defaultDistro is not null)
             {
                 var firstNonNameChar = defaultDistro.IndexOf('(', StringComparison.Ordinal);
                 if (firstNonNameChar != -1)
@@ -81,12 +95,15 @@ namespace UsbIpServer
                     continue;
                 }
 
-                ulong? version = null;
+                uint? version = null;
                 try
                 {
-                    if (NativeWslApi.WslGetDistributionConfiguration(distroName, out ulong knownVersion, out ulong _, out NativeWslApi.WSL_DISTRIBUTION_FLAGS _, out IntPtr _, out ulong _) == 0)
+                    unsafe
                     {
-                        version = knownVersion;
+                        if (PInvoke.WslGetDistributionConfiguration(distroName, out var knownVersion, out _, out _, out _, out _) == Constants.S_OK)
+                        {
+                            version = knownVersion;
+                        }
                     }
                 }
                 catch (DllNotFoundException)
@@ -100,7 +117,7 @@ namespace UsbIpServer
                 // WSL virtual switch, just take the first one and hope it's correct.
                 var firstAddress = ipResult.StandardOutput.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).FirstOrDefault();
 
-                if (firstAddress == null || !IPAddress.TryParse(firstAddress, out IPAddress? address))
+                if (firstAddress is null || !IPAddress.TryParse(firstAddress, out var address))
                 {
                     // Ignore this distro if the IP address coudn't be parsed.
                     continue;
@@ -112,8 +129,8 @@ namespace UsbIpServer
             return new WslDistributions(distros, defaultDistro);
         }
 
-        public Distribution? LookupByName(string name) => this.Distributions.FirstOrDefault(distro => distro.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+        public Distribution? LookupByName(string name) => Distributions.FirstOrDefault(distro => distro.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
 
-        public Distribution? LookupByIPAddress(IPAddress address) => this.Distributions.FirstOrDefault(distro => distro.IPAddress.Equals(address));
+        public Distribution? LookupByIPAddress(IPAddress address) => Distributions.FirstOrDefault(distro => distro.IPAddress.Equals(address));
     }
 }

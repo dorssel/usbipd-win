@@ -45,7 +45,7 @@ namespace UsbIpServer
         {
             using var process = Process.Start(CreateCommonProcessStartInfo(filename, arguments));
 
-            if (process == null)
+            if (process is null)
             {
                 throw new UnexpectedResultException(FormatStartFailedMessage(filename, arguments));
             }
@@ -62,7 +62,7 @@ namespace UsbIpServer
                 UseShellExecute = false,
             };
 
-            foreach (string argument in arguments)
+            foreach (var argument in arguments)
             {
                 startInfo.ArgumentList.Add(argument);
             }

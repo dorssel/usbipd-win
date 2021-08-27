@@ -18,9 +18,9 @@ SPDX-License-Identifier: GPL-2.0-only
         </xsl:copy>
     </xsl:template>
 
-    <!-- but remove UsbIpServer.exe -->
-    <xsl:template match= "//wix:Component[wix:File/@Source = '$(var.PublishDir)\UsbIpServer.exe']" />
-    <xsl:key name="ComponentsToSuppress" match="wix:Component[wix:File/@Source = '$(var.PublishDir)\UsbIpServer.exe']" use="@Id" />
+    <!-- but remove usbipd.exe -->
+    <xsl:template match= "//wix:Component[wix:File/@Source = '$(var.PublishDir)\usbipd.exe']" />
+    <xsl:key name="ComponentsToSuppress" match="wix:Component[wix:File/@Source = '$(var.PublishDir)\usbipd.exe']" use="@Id" />
     <xsl:template match="wix:ComponentRef[key('ComponentsToSuppress', @Id)]" />
 
 </xsl:stylesheet>
