@@ -64,31 +64,36 @@ wsl --update
 List your distributions.
 
 ```pwsh
-wsl list
+wsl --list --vebose
 ```
+
+Verify that your target distribution is version 2;
+see [WSL documentation](https://docs.microsoft.com/en-us/windows/wsl/install-win10#set-your-distribution-version-to-wsl-1-or-wsl-2)
+for instructions on how to set the WSL version.
 
 Export current distribution to be able to fall back if something goes wrong.
 
 ```pwsh
-wsl --export Ubuntu-20.04 <temporary-distro-path>\Ubuntu-usbip.tar
+wsl --export <current-distro> <temporary-path>\wsl2-usbip.tar
 ```
 
 Import new distribution with current distribution as base.
 
 ```pwsh
-wsl --import Ubuntu-usbip <temporary-distro-path>\Ubuntu-usbip.tar <temporary-distro-path>\Ubuntu.tar
+wsl --import wsl2-usbip <install-path> <temporary-path>\wsl2-usbip.tar
 ```
 
 Run new distribution.
 
 ```pwsh
-wsl --distribution Ubuntu-usbip --user <user>
+wsl --distribution wsl2-usbip --user <user>
 ```
 
-Update resources.
+Update resources (assuming `apt`, you may need to use `yum` or another package manager).
 
 ```bash
 sudo apt update
+sudo apt upgrade
 ```
 
 Install prerequisites.

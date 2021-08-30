@@ -115,7 +115,7 @@ namespace UsbIpServer
 
         public static void StopSharingDevice(Guid guid)
         {
-            using var devicesKey = GetDevicesKey(false);
+            using var devicesKey = GetDevicesKey(true);
             devicesKey.DeleteSubKeyTree(guid.ToString("B"), false);
         }
 

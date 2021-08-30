@@ -7,8 +7,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Net.NetworkInformation;
-using System.Net.Sockets;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
@@ -21,7 +19,6 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Hosting.WindowsServices;
 using Microsoft.Extensions.Logging;
 using Windows.Win32;
-using Windows.Win32.System.Com;
 
 [assembly: CLSCompliant(true)]
 [assembly: SupportedOSPlatform("windows8.0")]
@@ -75,17 +72,21 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
             return s.EndsWith('.') ? s : s + '.';
         }
 
-        static void ReportText(TextWriter textWriter, string level, string text) =>
-            textWriter.WriteLine($"{ApplicationName}: {level}: {EnforceFinalPeriod(text)}");
+        /// <summary>
+        /// All "console logging" reports go to <see cref="Console.Error"/>, so they can be easily
+        /// separated from expected output, e.g. from 'list', which goes to <see cref="Console.Out"/>.
+        /// </summary>
+        static void ReportText(string level, string text) =>
+            Console.Error.WriteLine($"{ApplicationName}: {level}: {EnforceFinalPeriod(text)}");
 
         static void ReportError(string text) =>
-            ReportText(Console.Error, "error", text);
+            ReportText("error", text);
 
         static void ReportWarning(string text) =>
-            ReportText(Console.Error, "warning", text);
+            ReportText("warning", text);
 
         static void ReportInfo(string text) =>
-            ReportText(Console.Out, "info", text);
+            ReportText("info", text);
 
         /// <summary>
         /// Helper to warn users that the service is not running.
@@ -174,6 +175,16 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
             return true;
         }
 
+        static bool CheckServerRunning()
+        {
+            if (!Server.IsServerRunning())
+            {
+                ReportError("Server is currently not running.");
+                return false;
+            }
+            return true;
+        }
+
         static int Main(string[] args)
         {
             var app = new CommandLineApplication()
@@ -226,7 +237,7 @@ Displays a list of compatible USB devices.
                     var persistedDevices = RegistryUtils.GetPersistedDevices(connectedDevices);
                     var deviceChecker = new DeviceInfoChecker();
                     Console.WriteLine("Present:");
-                    Console.WriteLine($"{"BusId",-5}  {"Device",-60}  State");
+                    Console.WriteLine($"{"BUSID",-5}  {"DEVICE",-60}  STATE");
                     foreach (var device in connectedDevices)
                     {
                         // NOTE: Strictly speaking, both Bus and Port can be > 99. If you have one of those, you win a prize!
@@ -235,13 +246,11 @@ Displays a list of compatible USB devices.
                     }
                     Console.WriteLine();
                     Console.WriteLine("Persisted:");
-                    Console.WriteLine($"{"Guid",-38}  {"BusId",-5}  Device");
+                    Console.WriteLine($"{"GUID",-38}  {"BUSID",-5}  DEVICE");
                     foreach (var device in persistedDevices)
                     {
                         Console.WriteLine($"{device.Guid,-38:B}  {device.BusId,-5}  {Truncate(device.Description,60),-60}");
                     }
-                    Console.WriteLine();
-
                     ReportServerRunning();
                     return 0;
                 });
@@ -251,7 +260,7 @@ Displays a list of compatible USB devices.
             {
                 cmd.Description = "Bind device.";
                 var bindAll = cmd.Option("-a|--all", "Share all devices.", CommandOptionType.NoValue);
-                var busId = cmd.Option("-b|--busid <busid>", "Share device having <busid>.", CommandOptionType.SingleValue);
+                var busId = cmd.Option("-b|--busid <BUSID>", "Share device having <BUSID>.", CommandOptionType.SingleValue);
                 cmd.HelpOption("-h|--help");
                 cmd.ExtendedHelpText = $@"
 Registers one (or all) compatible USB devices for sharing, so they can be
@@ -276,7 +285,7 @@ become unavailable to the local machine.
                     }
                     else
                     {
-                        ret = await BindDeviceAsync(BusId.Parse(busId.Value()), CancellationToken.None);
+                        ret = await BindDeviceAsync(BusId.Parse(busId.Value()), false, CancellationToken.None);
                     }
                     ReportServerRunning();
                     return ret;
@@ -287,8 +296,8 @@ become unavailable to the local machine.
             {
                 cmd.Description = "Unbind device.";
                 var unbindAll = cmd.Option("-a|--all", "Stop sharing all devices.", CommandOptionType.NoValue);
-                var busId = cmd.Option("-b|--busid <busid>", "Stop sharing device having <busid>.", CommandOptionType.SingleValue);
-                var guid = cmd.Option("-g|--guid <guid>", "Stop sharing persisted device having <guid>.", CommandOptionType.SingleValue);
+                var busId = cmd.Option("-b|--busid <BUSID>", "Stop sharing device having <BUSID>.", CommandOptionType.SingleValue);
+                var guid = cmd.Option("-g|--guid <GUID>", "Stop sharing persisted device having <GUID>.", CommandOptionType.SingleValue);
                 cmd.HelpOption("-h|--help");
                 cmd.ExtendedHelpText = $@"
 Unregisters one (or all) USB devices for sharing. If the device is currently
@@ -353,9 +362,9 @@ Convenience commands for attaching devices to Windows Subsystem for Linux.
 
                 bool CheckWslInstalled()
                 {
-                    if (!WslDistributions.IsWslInstalled())
+                    if (!WslDistributions.IsWsl2Installed())
                     {
-                        ReportError($"Windows Subsystem for Linux is not installed. See {InstallWslUrl}.");
+                        ReportError($"Windows Subsystem for Linux version 2 is not available. See {InstallWslUrl}.");
                         return false;
                     }
                     return true;
@@ -380,8 +389,7 @@ Lists all USB devices that are available for being attached into WSL.
                         var connectedDevices = await ExportedDevice.GetAll(CancellationToken.None);
                         var deviceChecker = new DeviceInfoChecker();
 
-                        Console.WriteLine($"BusId  {"Device",-60}  State");
-                        Console.WriteLine($"{"ID",-6}{"NAME",-43}{"STATE",-30}");
+                        Console.WriteLine($"{"BUSID",-5}  {"DEVICE",-60}  STATE");
                         foreach (var device in connectedDevices)
                         {
                             var isAttached = RegistryUtils.IsDeviceAttached(device);
@@ -392,7 +400,6 @@ Lists all USB devices that are available for being attached into WSL.
 
                             Console.WriteLine($"{device.BusId,-5}  {description,-60}  {state}");
                         }
-
                         ReportServerRunning();
                         return 0;
                     });
@@ -401,10 +408,10 @@ Lists all USB devices that are available for being attached into WSL.
                 metacmd.Command("attach", (cmd) =>
                 {
                     cmd.Description = "Attach a compatible USB device to a WSL instance.";
-                    var busId = cmd.Option("-b|--busid <busid>", "Attach device having <busid>.", CommandOptionType.SingleValue);
-                    var distro = cmd.Option("-d|--distribution <name>", "Name of a specific WSL distribution to attach to.", CommandOptionType.SingleValue);
+                    var busId = cmd.Option("-b|--busid <BUSID>", "Attach device having <BUSID>.", CommandOptionType.SingleValue);
+                    var distro = cmd.Option("-d|--distribution <NAME>", "Name of a specific WSL distribution to attach to.", CommandOptionType.SingleValue);
                     cmd.HelpOption("-h|--help");
-                    var usbipPath = cmd.Option("-u|--usbip-path <path>", "Path in the WSL instance to the 'usbip' client tool.", CommandOptionType.SingleValue);
+                    var usbipPath = cmd.Option("-u|--usbip-path <PATH>", "Path in the WSL instance to the 'usbip' client tool.", CommandOptionType.SingleValue);
                     cmd.ExtendedHelpText = $@"
 Attaches a compatible USB devices to a WSL instance.
 
@@ -417,33 +424,18 @@ a 'usbip attach' command on the Linux side.
 
                     cmd.OnExecute(async () =>
                     {
-                        if (!CheckOneOf(busId) || !CheckBusId(busId) || !CheckWslInstalled() || !CheckWriteAccess())
+                        if (!CheckOneOf(busId) || !CheckBusId(busId) || !CheckWslInstalled() || !CheckWriteAccess() || !CheckServerRunning())
                         {
                             return 1;
                         }
 
-                        var address = NetworkInterface.GetAllNetworkInterfaces()
-                            .FirstOrDefault(nic => nic.Name.Contains("WSL", StringComparison.OrdinalIgnoreCase))?.GetIPProperties().UnicastAddresses
-                            .FirstOrDefault(ip => ip.Address.AddressFamily == AddressFamily.InterNetwork)
-                            ?.Address;
+                        var distros = await WslDistributions.CreateAsync(CancellationToken.None);
 
-                        if (address is null)
+                        if (distros.HostAddress is null)
                         {
                             ReportError("The local IP address for the WSL virtual switch could not be found.");
                             return 1;
                         }
-
-                        // Initialize security attributes to allow communication with the WSL API
-                        unsafe
-                        {
-                            Marshal.ThrowExceptionForHR(PInvoke.CoInitializeSecurity(
-                                cAuthSvc: -1,
-                                dwAuthnLevel: RPC_C_AUTHN_LEVEL.RPC_C_AUTHN_LEVEL_DEFAULT,
-                                dwImpLevel: RPC_C_IMP_LEVEL.RPC_C_IMP_LEVEL_IMPERSONATE,
-                                dwCapabilities: EOLE_AUTHENTICATION_CAPABILITIES.EOAC_STATIC_CLOAKING));
-                        }
-
-                        var distros = await WslDistributions.CreateAsync(CancellationToken.None);
 
                         // Make sure the distro is running before we attach. While WSL is capable of
                         // starting on the fly when wsl.exe is invoked, that will cause confusing behavior
@@ -455,22 +447,40 @@ a 'usbip attach' command on the Linux side.
                         {
                             if (distro.HasValue())
                             {
-                                ReportError($"The WSL distribution '{distro.Value()}' is not running or does exist.");
+                                ReportError($"The WSL distribution '{distro.Value()}' does not exist.");
                                 return 1;
                             }
-                            else if (!distro.HasValue())
+                            else
                             {
-                                ReportError("The default WSL distribution is not running.");
+                                ReportError("No default WSL distribution exists.");
                                 return 1;
                             }
                         }
-                        else if ((distroData?.Version ?? 1) < 2)
+
+                        if (distroData.Version == 1)
                         {
-                            ReportError($"The specified WSL distribution is running WSL 1, but WSL 2 is required. Learn how to upgrade at {InstallWslUrl}.");
+                            ReportError($"The specified WSL distribution is using WSL 1, but WSL 2 is required. Learn how to upgrade at {InstallWslUrl}.");
+                            return 1;
+                        }
+                        else if (distroData.Version != 2)
+                        {
+                            ReportError($"The specified WSL distribution is using unsupported WSL {distroData.Version}, but WSL 2 is required.");
                             return 1;
                         }
 
-                        var bindResult = await BindDeviceAsync(BusId.Parse(busId.Value()), CancellationToken.None);
+                        if (!distroData.IsRunning)
+                        {
+                            ReportError($"The specified WSL distribution is not running.");
+                            return 1;
+                        }
+
+                        if (distroData.IPAddress is null)
+                        {
+                            ReportError($"The specified WSL distribution cannot be reached via the WSL virtual switch; try restarting the WSL distribution.");
+                            return 1;
+                        }
+
+                        var bindResult = await BindDeviceAsync(BusId.Parse(busId.Value()), true, CancellationToken.None);
                         if (bindResult != 0)
                         {
                             ReportError($"Failed to bind device with ID '{busId.Value()}'.");
@@ -481,7 +491,7 @@ a 'usbip attach' command on the Linux side.
                         var wslResult = await ProcessUtils.RunUncapturedProcessAsync(
                             WslDistributions.WslPath,
                             (distro.HasValue() ? new[] { "--distribution", distro.Value() } : Enumerable.Empty<string>()).Concat(
-                                new[] { "--", "sudo", path, "attach", $"--remote={address}", $"--busid={busId.Value()}" }),
+                                new[] { "--", "sudo", path, "attach", $"--remote={distros.HostAddress}", $"--busid={busId.Value()}" }),
                             CancellationToken.None);
                         if (wslResult != 0)
                         {
@@ -497,7 +507,7 @@ a 'usbip attach' command on the Linux side.
                 {
                     cmd.Description = "Detaches a USB device from a WSL instance.";
                     var detachAll = cmd.Option("-a|--all", "Detach all devices.", CommandOptionType.NoValue);
-                    var busId = cmd.Option("-b|--busid <busid>", "Detach device having <busid>.", CommandOptionType.SingleValue);
+                    var busId = cmd.Option("-b|--busid <BUSID>", "Detach device having <BUSID>.", CommandOptionType.SingleValue);
                     cmd.HelpOption("-h|--help");
                     cmd.ExtendedHelpText = $@"
 Detaches one (or all) USB devices. The WSL instance sees this as a surprise
@@ -510,7 +520,7 @@ The 'wsl detach' command is equivalent to the 'unbind' command.
                     DefaultCmdLine(cmd);
                     cmd.OnExecute(async () =>
                     {
-                        if (!CheckOneOf(detachAll, busId) || !CheckBusId(busId) || !CheckWriteAccess())
+                        if (!CheckOneOf(detachAll, busId) || !CheckBusId(busId) || !CheckWslInstalled() || !CheckWriteAccess())
                         {
                             return 1;
                         }
@@ -635,7 +645,7 @@ The 'wsl detach' command is equivalent to the 'unbind' command.
         /// <summary>
         /// Worker for <code>usbipd bind --busid <paramref name="busId"/></code>.
         /// </summary>
-        static async Task<int> BindDeviceAsync(BusId busId, CancellationToken cancellationToken)
+        static async Task<int> BindDeviceAsync(BusId busId, bool quiet, CancellationToken cancellationToken)
         {
             var connectedDevices = await ExportedDevice.GetAll(cancellationToken);
             var device = connectedDevices.Where(x => x.BusId == busId).SingleOrDefault();
@@ -647,7 +657,10 @@ The 'wsl detach' command is equivalent to the 'unbind' command.
             if (RegistryUtils.IsDeviceShared(device))
             {
                 // Not an error, just let the user know they just executed a no-op.
-                ReportInfo($"Connected device with busid '{busId}' was already shared.");
+                if (!quiet)
+                {
+                    ReportInfo($"Connected device with busid '{busId}' was already shared.");
+                }
                 return 0;
             }
             var checker = new DeviceInfoChecker();
