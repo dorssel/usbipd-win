@@ -17,6 +17,7 @@ namespace UsbIpServer
     {
         readonly ManagementEventWatcher watcher;
 
+        SemaphoreSlim deviceLock = new SemaphoreSlim(1);
         SortedSet<BusId>? lastKnownBusIds;
 
         // Mapping of bus IDs to actions to take on device removal.
@@ -32,7 +33,16 @@ namespace UsbIpServer
             Task.Run(async () =>
             {
                 var busIds = await GetAllBusIdsAsync(CancellationToken.None);
-                Interlocked.CompareExchange(ref lastKnownBusIds, busIds, null);
+
+                await deviceLock.WaitAsync();
+                try
+                {
+                    lastKnownBusIds ??= busIds;
+                }
+                finally
+                {
+                    deviceLock.Release();
+                }
             });
 
             watcher = new ManagementEventWatcher(query);
@@ -42,26 +52,56 @@ namespace UsbIpServer
 
         async void HandleEvent(object sender, EventArrivedEventArgs e)
         {
-            var removedDevices = await GetRemovedDevicesAsync(CancellationToken.None);
-
-            foreach (var device in removedDevices)
+            var actions = new List<Action>();
+            await deviceLock.WaitAsync();
+            try
             {
-                if (removalActions.ContainsKey(device))
+                var removedDevices = await GetRemovedDevicesAsync(CancellationToken.None);
+
+                foreach (var device in removedDevices)
                 {
-                    removalActions[device]();
-                    StopWatchingDevice(device);
+                    if (removalActions.ContainsKey(device))
+                    {
+                        actions.Add(removalActions[device]);
+                        StopWatchingDevice(device);
+                    }
                 }
+            }
+            finally
+            {
+                deviceLock.Release();
+            }
+
+            foreach (var action in actions)
+            {
+                action.Invoke();
             }
         }
 
         public void WatchForDeviceRemoval(BusId busId, Action removalAction)
         {
-            removalActions[busId] = removalAction;
+            deviceLock.Wait();
+            try
+            {
+                removalActions[busId] = removalAction;
+            }
+            finally
+            {
+                deviceLock.Release();
+            }
         }
 
         public void StopWatchingDevice(BusId busId)
         {
-            removalActions.Remove(busId);
+            deviceLock.Wait();
+            try
+            {
+                removalActions.Remove(busId);
+            }
+            finally
+            {
+                deviceLock.Release();
+            }
         }
 
         bool IsDisposed;
@@ -71,6 +111,7 @@ namespace UsbIpServer
             {
                 watcher.EventArrived -= HandleEvent;
                 watcher.Dispose();
+                deviceLock.Dispose();
                 IsDisposed = true;
             }
         }

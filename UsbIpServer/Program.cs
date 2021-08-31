@@ -433,7 +433,7 @@ a 'usbip attach' command on the Linux side.
 
                         if (distros.HostAddress is null)
                         {
-                            ReportError("The local IP address for the WSL virtual switch could not be found.");
+                            ReportError("The local IP address for the WSL virtual switch could not be found. Ensure WSL is running.");
                             return 1;
                         }
 
