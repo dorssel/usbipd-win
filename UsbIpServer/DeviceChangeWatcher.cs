@@ -51,29 +51,37 @@ namespace UsbIpServer
 
         async void HandleEvent(object sender, EventArrivedEventArgs e)
         {
-            var actions = new List<Action>();
-            await deviceLock.WaitAsync();
             try
             {
-                var removedDevices = await GetRemovedDevicesAsync(CancellationToken.None);
-
-                foreach (var device in removedDevices)
+                var actions = new List<Action>();
+                await deviceLock.WaitAsync();
+                try
                 {
-                    if (removalActions.ContainsKey(device))
+                    var removedDevices = await GetRemovedDevicesAsync(CancellationToken.None);
+
+                    foreach (var device in removedDevices)
                     {
-                        actions.Add(removalActions[device]);
-                        removalActions.Remove(device);
+                        if (removalActions.ContainsKey(device))
+                        {
+                            actions.Add(removalActions[device]);
+                            removalActions.Remove(device);
+                        }
                     }
                 }
-            }
-            finally
-            {
-                deviceLock.Release();
-            }
+                finally
+                {
+                    deviceLock.Release();
+                }
 
-            foreach (var action in actions)
+                foreach (var action in actions)
+                {
+                    action.Invoke();
+                }
+            }
+            catch (ObjectDisposedException)
             {
-                action.Invoke();
+                // When stopping the server, which disposes this object including deviceLock,
+                // events may have already been queued. We just ignore that we lost the race.
             }
         }
 
@@ -108,6 +116,7 @@ namespace UsbIpServer
         {
             if (!IsDisposed)
             {
+                // NOTE: Our handler may still be in a queue, so it can still be called after Dispose()
                 watcher.EventArrived -= HandleEvent;
                 watcher.Dispose();
                 deviceLock.Dispose();
