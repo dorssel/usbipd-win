@@ -16,8 +16,7 @@ namespace UsbIpServer
     sealed class DeviceChangeWatcher : IDisposable
     {
         readonly ManagementEventWatcher watcher;
-
-        SemaphoreSlim deviceLock = new SemaphoreSlim(1);
+        readonly SemaphoreSlim deviceLock = new(1);
         SortedSet<BusId>? lastKnownBusIds;
 
         // Mapping of bus IDs to actions to take on device removal.
@@ -63,7 +62,7 @@ namespace UsbIpServer
                     if (removalActions.ContainsKey(device))
                     {
                         actions.Add(removalActions[device]);
-                        StopWatchingDevice(device);
+                        removalActions.Remove(device);
                     }
                 }
             }
