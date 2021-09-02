@@ -32,6 +32,8 @@ namespace UsbIpServer.Interop
             /// <summary>linux: errno.h</summary>
             EILSEQ = 84,
             /// <summary>linux: errno.h</summary>
+            ECONNRESET = 104,
+            /// <summary>linux: errno.h</summary>
             EREMOTEIO = 121,
         }
     }
