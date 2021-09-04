@@ -5,6 +5,7 @@
 using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -12,7 +13,9 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Windows.Win32;
+using Windows.Win32.Devices.DeviceAndDriverInstallation;
 using Windows.Win32.Devices.Usb;
+using Windows.Win32.System.Diagnostics.Debug;
 
 using UsbIpServer.Interop;
 using static UsbIpServer.Interop.UsbIp;
@@ -137,6 +140,97 @@ namespace UsbIpServer
             return result;
         }
 
+        static async Task<ExportedDevice?> GetDevice(SafeDeviceInfoSetHandle deviceInfoSet, SP_DEVINFO_DATA devInfoData, CancellationToken cancellationToken)
+        {
+            var instanceId = GetDevicePropertyString(deviceInfoSet, devInfoData, in Constants.DEVPKEY_Device_InstanceId);
+            if (IsUsbHub(instanceId))
+            {
+                // device is itself a USB hub, which is not supported
+                return null;
+            }
+            var parentId = GetDevicePropertyString(deviceInfoSet, devInfoData, in Constants.DEVPKEY_Device_Parent);
+            if (!IsUsbHub(parentId))
+            {
+                // parent is not a USB hub (which it must be for this device to be supported)
+                return null;
+            }
+
+            // OK, so the device is directly connected to a hub, but is not a hub itself ... this looks promising
+
+            GetBusId(deviceInfoSet, devInfoData, out var busId);
+
+            var address = GetDevicePropertyUInt32(deviceInfoSet, devInfoData, in Constants.DEVPKEY_Device_Address);
+            if (busId.Port != address)
+            {
+                throw new NotSupportedException($"DEVPKEY_Device_Address ({address}) does not match DEVPKEY_Device_LocationInfo ({busId.Port})");
+            }
+
+            // now query the parent USB hub for device details
+
+            cancellationToken.ThrowIfCancellationRequested();
+
+            using var hubs = SetupDiGetClassDevs(Constants.GUID_DEVINTERFACE_USB_HUB, parentId, default, Constants.DIGCF_DEVICEINTERFACE | Constants.DIGCF_PRESENT);
+            var (_, interfaceData) = EnumDeviceInterfaces(hubs, Constants.GUID_DEVINTERFACE_USB_HUB).Single();
+            var hubPath = GetDeviceInterfaceDetail(hubs, interfaceData);
+
+            cancellationToken.ThrowIfCancellationRequested();
+            using var hubFile = new DeviceFile(hubPath);
+            using var cancellationTokenRegistration = cancellationToken.Register(() => hubFile.Dispose());
+
+            var data = new UsbNodeConnectionInformationEx() { ConnectionIndex = busId.Port };
+            var buf = StructToBytes(data);
+            await hubFile.IoControlAsync(IoControl.IOCTL_USB_GET_NODE_CONNECTION_INFORMATION_EX, buf, buf);
+            BytesToStruct(buf, out data);
+
+            var speed = MapWindowsSpeedToLinuxSpeed((USB_DEVICE_SPEED)data.Speed);
+
+            var data2 = new UsbNodeConnectionInformationExV2()
+            {
+                ConnectionIndex = busId.Port,
+                Length = (uint)Marshal.SizeOf<UsbNodeConnectionInformationExV2>(),
+                SupportedUsbProtocols = UsbProtocols.Usb110 | UsbProtocols.Usb200 | UsbProtocols.Usb300,
+            };
+            var buf2 = StructToBytes(data2);
+            await hubFile.IoControlAsync(IoControl.IOCTL_USB_GET_NODE_CONNECTION_INFORMATION_EX_V2, buf2, buf2);
+            BytesToStruct(buf2, out data2);
+
+            if ((data2.SupportedUsbProtocols & UsbProtocols.Usb300) != 0)
+            {
+                if ((data2.Flags & UsbNodeConnectionInformationExV2Flags.DeviceIsOperatingAtSuperSpeedPlusOrHigher) != 0)
+                {
+                    speed = Linux.UsbDeviceSpeed.USB_SPEED_SUPER_PLUS;
+                }
+                else if ((data2.Flags & UsbNodeConnectionInformationExV2Flags.DeviceIsOperatingAtSuperSpeedOrHigher) != 0)
+                {
+                    speed = Linux.UsbDeviceSpeed.USB_SPEED_SUPER;
+                }
+            }
+
+            var exportedDevice = new ExportedDevice()
+            {
+                Path = instanceId,
+                BusId = busId,
+                Speed = speed,
+                VendorId = data.DeviceDescriptor.idVendor,
+                ProductId = data.DeviceDescriptor.idProduct,
+                BcdDevice = data.DeviceDescriptor.bcdDevice,
+                DeviceClass = data.DeviceDescriptor.bDeviceClass,
+                DeviceSubClass = data.DeviceDescriptor.bDeviceSubClass,
+                DeviceProtocol = data.DeviceDescriptor.bDeviceProtocol,
+                ConfigurationValue = data.CurrentConfigurationValue,
+                NumConfigurations = data.DeviceDescriptor.bNumConfigurations,
+                ConfigurationDescriptors = await GetConfigurationDescriptor(hubFile, busId.Port, data.DeviceDescriptor.bNumConfigurations),
+            };
+
+            if (RegistryUtils.GetOriginalInstanceId(exportedDevice) is string originalInstanceId)
+            {
+                // If the device is currently attached, then VBoxMon will have overriden the path.
+                exportedDevice.Path = originalInstanceId;
+            }
+
+            return exportedDevice;
+        }
+
         public static async Task<ExportedDevice[]> GetAll(CancellationToken cancellationToken)
         {
             var exportedDevices = new SortedDictionary<BusId, ExportedDevice>();
@@ -146,95 +240,20 @@ namespace UsbIpServer
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                var instanceId = GetDevicePropertyString(deviceInfoSet, devInfoData, in Constants.DEVPKEY_Device_InstanceId);
-                if (IsUsbHub(instanceId))
+                try
                 {
-                    // device is itself a USB hub, which is not supported
-                    continue;
-                }
-                var parentId = GetDevicePropertyString(deviceInfoSet, devInfoData, in Constants.DEVPKEY_Device_Parent);
-                if (!IsUsbHub(parentId))
-                {
-                    // parent is not a USB hub (which it must be for this device to be supported)
-                    continue;
-                }
-
-                // OK, so the device is directly connected to a hub, but is not a hub itself ... this looks promising
-
-                GetBusId(deviceInfoSet, devInfoData, out var busId);
-
-                var address = GetDevicePropertyUInt32(deviceInfoSet, devInfoData, in Constants.DEVPKEY_Device_Address);
-                if (busId.Port != address)
-                {
-                    throw new NotSupportedException($"DEVPKEY_Device_Address ({address}) does not match DEVPKEY_Device_LocationInfo ({busId.Port})");
-                }
-
-                // now query the parent USB hub for device details
-
-                cancellationToken.ThrowIfCancellationRequested();
-
-#pragma warning disable CA2000 // Dispose objects before losing scope (false possitive)
-                using var hubs = SetupDiGetClassDevs(Constants.GUID_DEVINTERFACE_USB_HUB, parentId, default, Constants.DIGCF_DEVICEINTERFACE | Constants.DIGCF_PRESENT);
-#pragma warning restore CA2000 // Dispose objects before losing scope
-                var (_, interfaceData) = EnumDeviceInterfaces(hubs, Constants.GUID_DEVINTERFACE_USB_HUB).Single();
-                var hubPath = GetDeviceInterfaceDetail(hubs, interfaceData);
-
-                cancellationToken.ThrowIfCancellationRequested();
-                using var hubFile = new DeviceFile(hubPath);
-                using var cancellationTokenRegistration = cancellationToken.Register(() => hubFile.Dispose());
-
-                var data = new UsbNodeConnectionInformationEx() { ConnectionIndex = busId.Port };
-                var buf = StructToBytes(data);
-                await hubFile.IoControlAsync(IoControl.IOCTL_USB_GET_NODE_CONNECTION_INFORMATION_EX, buf, buf);
-                BytesToStruct(buf, out data);
-
-                var speed = MapWindowsSpeedToLinuxSpeed((USB_DEVICE_SPEED)data.Speed);
-
-                var data2 = new UsbNodeConnectionInformationExV2()
-                {
-                    ConnectionIndex = busId.Port,
-                    Length = (uint)Marshal.SizeOf<UsbNodeConnectionInformationExV2>(),
-                    SupportedUsbProtocols = UsbProtocols.Usb110 | UsbProtocols.Usb200 | UsbProtocols.Usb300,
-                };
-                var buf2 = StructToBytes(data2);
-                await hubFile.IoControlAsync(IoControl.IOCTL_USB_GET_NODE_CONNECTION_INFORMATION_EX_V2, buf2, buf2);
-                BytesToStruct(buf2, out data2);
-
-                if ((data2.SupportedUsbProtocols & UsbProtocols.Usb300) != 0)
-                {
-                    if ((data2.Flags & UsbNodeConnectionInformationExV2Flags.DeviceIsOperatingAtSuperSpeedPlusOrHigher) != 0)
+                    if (await GetDevice(deviceInfoSet, devInfoData, cancellationToken) is ExportedDevice exportedDevice)
                     {
-                        speed = Linux.UsbDeviceSpeed.USB_SPEED_SUPER_PLUS;
-                    }
-                    else if ((data2.Flags & UsbNodeConnectionInformationExV2Flags.DeviceIsOperatingAtSuperSpeedOrHigher) != 0)
-                    {
-                        speed = Linux.UsbDeviceSpeed.USB_SPEED_SUPER;
+                        exportedDevices.Add(exportedDevice.BusId, exportedDevice);
                     }
                 }
-
-                var exportedDevice = new ExportedDevice()
+                catch (Win32Exception)
                 {
-                    Path = instanceId,
-                    BusId = busId,
-                    Speed = speed,
-                    VendorId = data.DeviceDescriptor.idVendor,
-                    ProductId = data.DeviceDescriptor.idProduct,
-                    BcdDevice = data.DeviceDescriptor.bcdDevice,
-                    DeviceClass = data.DeviceDescriptor.bDeviceClass,
-                    DeviceSubClass = data.DeviceDescriptor.bDeviceSubClass,
-                    DeviceProtocol = data.DeviceDescriptor.bDeviceProtocol,
-                    ConfigurationValue = data.CurrentConfigurationValue,
-                    NumConfigurations = data.DeviceDescriptor.bNumConfigurations,
-                    ConfigurationDescriptors = await GetConfigurationDescriptor(hubFile, busId.Port, data.DeviceDescriptor.bNumConfigurations),
-                };
-
-                if (RegistryUtils.GetOriginalInstanceId(exportedDevice) is string originalInstanceId)
-                {
-                    // If the device is currently attached, then VBoxMon will have overriden the path.
-                    exportedDevice.Path = originalInstanceId;
+                    // This can happen after standby/hibernation, or when racing against unplugging the device.
+                    // Simply do not report the device as present, which will force a surprise removal if the device was attached.
+                    // Common errors: ERROR_NO_SUCH_DEVICE, ERROR_GEN_FAILURE, and possibly many more
+                    continue;
                 }
-
-                exportedDevices.Add(exportedDevice.BusId, exportedDevice);
             }
 
             return exportedDevices.Values.ToArray();

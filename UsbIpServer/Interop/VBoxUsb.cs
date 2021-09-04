@@ -157,39 +157,30 @@ namespace UsbIpServer.Interop
         /// <summary>VBoxUsb: usblib-win.h</summary>
         public static readonly Guid GUID_CLASS_VBOXUSB = new(0x873fdf, 0xCAFE, 0x80EE, 0xaa, 0x5e, 0x0, 0xc0, 0x4f, 0xb1, 0x72, 0xb);
 
-        public enum IoControl : uint
+        /// <summary>VBoxUsb: usblib-win.h</summary>
+        public enum SUPUSBFLT_IOCTL : uint
         {
-            /// <summary>VBoxUsb: usblib-win.h</summary>
-            SUPUSBFLT_IOCTL_GET_VERSION = (Constants.FILE_DEVICE_UNKNOWN << 16) | (Constants.FILE_WRITE_ACCESS << 14) | (0x610 << 2) | (Constants.METHOD_BUFFERED),
-            /// <summary>VBoxUsb: usblib-win.h</summary>
-            SUPUSBFLT_IOCTL_ADD_FILTER = (Constants.FILE_DEVICE_UNKNOWN << 16) | (Constants.FILE_WRITE_ACCESS << 14) | (0x611 << 2) | (Constants.METHOD_BUFFERED),
-            /// <summary>VBoxUsb: usblib-win.h</summary>
-            SUPUSBFLT_IOCTL_REMOVE_FILTER = (Constants.FILE_DEVICE_UNKNOWN << 16) | (Constants.FILE_WRITE_ACCESS << 14) | (0x612 << 2) | (Constants.METHOD_BUFFERED),
-            /// <summary>VBoxUsb: usblib-win.h</summary>
-            SUPUSBFLT_IOCTL_RUN_FILTERS = (Constants.FILE_DEVICE_UNKNOWN << 16) | (Constants.FILE_WRITE_ACCESS << 14) | (0x615 << 2) | (Constants.METHOD_BUFFERED),
-            /// <summary>VBoxUsb: usblib-win.h</summary>
-            SUPUSBFLT_IOCTL_GET_DEVICE = (Constants.FILE_DEVICE_UNKNOWN << 16) | (Constants.FILE_WRITE_ACCESS << 14) | (0x617 << 2) | (Constants.METHOD_BUFFERED),
+            GET_VERSION = (Constants.FILE_DEVICE_UNKNOWN << 16) | (Constants.FILE_WRITE_ACCESS << 14) | (0x610 << 2) | (Constants.METHOD_BUFFERED),
+            ADD_FILTER = (Constants.FILE_DEVICE_UNKNOWN << 16) | (Constants.FILE_WRITE_ACCESS << 14) | (0x611 << 2) | (Constants.METHOD_BUFFERED),
+            REMOVE_FILTER = (Constants.FILE_DEVICE_UNKNOWN << 16) | (Constants.FILE_WRITE_ACCESS << 14) | (0x612 << 2) | (Constants.METHOD_BUFFERED),
+            RUN_FILTERS = (Constants.FILE_DEVICE_UNKNOWN << 16) | (Constants.FILE_WRITE_ACCESS << 14) | (0x615 << 2) | (Constants.METHOD_BUFFERED),
+            GET_DEVICE = (Constants.FILE_DEVICE_UNKNOWN << 16) | (Constants.FILE_WRITE_ACCESS << 14) | (0x617 << 2) | (Constants.METHOD_BUFFERED),
+        }
 
-            /// <summary>VBoxUsb: usblib-win.h</summary>
-            SUPUSB_IOCTL_GET_DEVICE = (Constants.FILE_DEVICE_UNKNOWN << 16) | (Constants.FILE_WRITE_ACCESS << 14) | (0x603 << 2) | (Constants.METHOD_BUFFERED),
-            /// <summary>VBoxUsb: usblib-win.h</summary>
-            SUPUSB_IOCTL_SEND_URB = (Constants.FILE_DEVICE_UNKNOWN << 16) | (Constants.FILE_WRITE_ACCESS << 14) | (0x607 << 2) | (Constants.METHOD_BUFFERED),
-            /// <summary>VBoxUsb: usblib-win.h</summary>
-            SUPUSB_IOCTL_USB_RESET = (Constants.FILE_DEVICE_UNKNOWN << 16) | (Constants.FILE_WRITE_ACCESS << 14) | (0x608 << 2) | (Constants.METHOD_BUFFERED),
-            /// <summary>VBoxUsb: usblib-win.h</summary>
-            SUPUSB_IOCTL_USB_SELECT_INTERFACE = (Constants.FILE_DEVICE_UNKNOWN << 16) | (Constants.FILE_WRITE_ACCESS << 14) | (0x609 << 2) | (Constants.METHOD_BUFFERED),
-            /// <summary>VBoxUsb: usblib-win.h</summary>
-            SUPUSB_IOCTL_USB_SET_CONFIG = (Constants.FILE_DEVICE_UNKNOWN << 16) | (Constants.FILE_WRITE_ACCESS << 14) | (0x60a << 2) | (Constants.METHOD_BUFFERED),
-            /// <summary>VBoxUsb: usblib-win.h</summary>
-            SUPUSB_IOCTL_USB_CLAIM_DEVICE = (Constants.FILE_DEVICE_UNKNOWN << 16) | (Constants.FILE_WRITE_ACCESS << 14) | (0x60b << 2) | (Constants.METHOD_BUFFERED),
-            /// <summary>VBoxUsb: usblib-win.h</summary>
-            SUPUSB_IOCTL_USB_RELEASE_DEVICE = (Constants.FILE_DEVICE_UNKNOWN << 16) | (Constants.FILE_WRITE_ACCESS << 14) | (0x60c << 2) | (Constants.METHOD_BUFFERED),
-            /// <summary>VBoxUsb: usblib-win.h</summary>
-            SUPUSB_IOCTL_IS_OPERATIONAL = (Constants.FILE_DEVICE_UNKNOWN << 16) | (Constants.FILE_WRITE_ACCESS << 14) | (0x60d << 2) | (Constants.METHOD_BUFFERED),
-            /// <summary>VBoxUsb: usblib-win.h</summary>
-            SUPUSB_IOCTL_USB_CLEAR_ENDPOINT = (Constants.FILE_DEVICE_UNKNOWN << 16) | (Constants.FILE_WRITE_ACCESS << 14) | (0x60e << 2) | (Constants.METHOD_BUFFERED),
-            /// <summary>VBoxUsb: usblib-win.h</summary>
-            SUPUSB_IOCTL_GET_VERSION = (Constants.FILE_DEVICE_UNKNOWN << 16) | (Constants.FILE_WRITE_ACCESS << 14) | (0x60f << 2) | (Constants.METHOD_BUFFERED),
+        /// <summary>VBoxUsb: usblib-win.h</summary>
+        public enum SUPUSB_IOCTL : uint
+        {
+            GET_DEVICE = (Constants.FILE_DEVICE_UNKNOWN << 16) | (Constants.FILE_WRITE_ACCESS << 14) | (0x603 << 2) | (Constants.METHOD_BUFFERED),
+            SEND_URB = (Constants.FILE_DEVICE_UNKNOWN << 16) | (Constants.FILE_WRITE_ACCESS << 14) | (0x607 << 2) | (Constants.METHOD_BUFFERED),
+            USB_RESET = (Constants.FILE_DEVICE_UNKNOWN << 16) | (Constants.FILE_WRITE_ACCESS << 14) | (0x608 << 2) | (Constants.METHOD_BUFFERED),
+            USB_SELECT_INTERFACE = (Constants.FILE_DEVICE_UNKNOWN << 16) | (Constants.FILE_WRITE_ACCESS << 14) | (0x609 << 2) | (Constants.METHOD_BUFFERED),
+            USB_SET_CONFIG = (Constants.FILE_DEVICE_UNKNOWN << 16) | (Constants.FILE_WRITE_ACCESS << 14) | (0x60a << 2) | (Constants.METHOD_BUFFERED),
+            USB_CLAIM_DEVICE = (Constants.FILE_DEVICE_UNKNOWN << 16) | (Constants.FILE_WRITE_ACCESS << 14) | (0x60b << 2) | (Constants.METHOD_BUFFERED),
+            USB_RELEASE_DEVICE = (Constants.FILE_DEVICE_UNKNOWN << 16) | (Constants.FILE_WRITE_ACCESS << 14) | (0x60c << 2) | (Constants.METHOD_BUFFERED),
+            IS_OPERATIONAL = (Constants.FILE_DEVICE_UNKNOWN << 16) | (Constants.FILE_WRITE_ACCESS << 14) | (0x60d << 2) | (Constants.METHOD_BUFFERED),
+            USB_CLEAR_ENDPOINT = (Constants.FILE_DEVICE_UNKNOWN << 16) | (Constants.FILE_WRITE_ACCESS << 14) | (0x60e << 2) | (Constants.METHOD_BUFFERED),
+            GET_VERSION = (Constants.FILE_DEVICE_UNKNOWN << 16) | (Constants.FILE_WRITE_ACCESS << 14) | (0x60f << 2) | (Constants.METHOD_BUFFERED),
+            USB_ABORT_ENDPOINT = (Constants.FILE_DEVICE_UNKNOWN << 16) | (Constants.FILE_WRITE_ACCESS << 14) | (0x610 << 2) | (Constants.METHOD_BUFFERED),
         }
 
         /// <summary>VBoxUsb: usblib-win.h</summary>
