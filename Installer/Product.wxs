@@ -37,6 +37,8 @@ SPDX-License-Identifier: GPL-2.0-only
         <Property Id="ARPURLUPDATEINFO">https://github.com/dorssel/usbipd-win/releases</Property>
         <Property Id="ARPHELPLINK">https://github.com/dorssel/usbipd-win/issues</Property>
 
+        <Property Id="MSIDEPLOYMENTCOMPLIANT" Value="1" />
+
         <Feature
             Id="Server"
             Level="1"

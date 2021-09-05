@@ -3,3 +3,4 @@
 # SPDX-License-Identifier: GPL-2.0-only
 
 assembly-file-versioning-format: '{Major}.{Minor}.{Patch}.{env:GITHUB_RUN_NUMBER ?? 0}'
+next-version: 1.0.0
