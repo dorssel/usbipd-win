@@ -6,7 +6,6 @@ SPDX-License-Identifier: GPL-2.0-only
 -->
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
     <Fragment>
-        <WixVariable Id="WixUILicenseRtf" Value="COPYING.rtf" />
         <UI Id="UserInterface">
             <UIRef Id="UI_Minimal" />
         </UI>
@@ -14,35 +13,512 @@ SPDX-License-Identifier: GPL-2.0-only
 
     <Fragment>
         <UI Id="UI_Minimal">
-            <UIRef Id="WixUI_Minimal" />
-        </UI>
-    </Fragment>
+            <?define WizardTitle="[ProductName] Setup" ?>
+            <?define WizardW="370" ?>
+            <?define WizardH="270" ?>
 
-    <Fragment>
-        <WixVariable Id="WixUISupportPerUser" Value="0" />
-        <Property Id="WixAppFolder" Value="WixPerMachineFolder" />
-        <Property Id="ApplicationFolderName" Value="usbipd-win" />
+            <?define WizardLineY="234" ?>
+            <?define WizardLineW="372" ?>
+            <?define WizardButtonX1="159" ?>
+            <?define WizardButtonX2="224" ?>
+            <?define WizardButtonX3="297" ?>
+            <?define WizardButtonY="243" ?>
+            <?define ButtonW="65" ?>
+            <?define ButtonH="20" ?>
 
-        <!--
-        WixUI_Advanced defaults to "[ProgramFilesFolder][ApplicationFolderName]", which is wrong for x64 applications.
-        Fix the path with an override. https://github.com/wixtoolset/issues/issues/5908
-        <CustomAction Id="WixSetDefaultPerMachineFolder64" Property="WixPerMachineFolder" Value="[ProgramFiles64Folder][ApplicationFolderName]" Execute="immediate"/>
+            <?define ButtonBackText="{\Caption}&Back" ?>
+            <?define ButtonNextText="{\Caption}&Next" ?>
+            <?define ButtonCancelText="{\Caption}&Cancel" ?>
+            <?define ButtonInstallText="{\Caption}&Install" ?>
+            <?define ButtonUpdateText="{\Caption}&Update" ?>
+            <?define ButtonResumeText="{\Caption}&Resume" ?>
+            <?define ButtonCloseText="{\Caption}&Close" ?>
+            <?define ButtonRetryText="{\Caption}&Retry" ?>
+            <?define ButtonIgnoreText="{\Caption}&Ignore" ?>
 
-        <InstallExecuteSequence>
-            <Custom Action="WixSetDefaultPerMachineFolder64" Before="CostInitialize" />
-        </InstallExecuteSequence>
-        <InstallUISequence>
-            <Custom Action="WixSetDefaultPerMachineFolder64" Before="CostInitialize" />
-        </InstallUISequence>
-        -->
+            <?define BannerBitmapX="238" ?>
+            <?define BannerBitmapY="0" ?>
+            <?define BannerBitmapW="132" ?>
+            <?define BannerBitmapH="44" ?>
 
-        <!--
-        BUG: Cost calculation is wrong for x64 installs (also for WixUI_FeatureTree). There is no known workaround.
-        -->
+            <?define TitleX="30" ?>
+            <?define TitleY="44" ?>
+            <?define TitleW="310" ?>
+            <?define TitleH="24" ?>
 
-        <UI Id="UI_Advanced">
-            <UIRef Id="WixUI_Advanced" />
+            <?define ContentX="30" ?>
+            <?define ContentY="80" ?>
+            <?define ContentW="310" ?>
+
+            <InstallUISequence>
+                <!-- these must always exist -->
+                <Show Dialog="_Exit" OnExit="success" />
+                <Show Dialog="_UserExit" OnExit="cancel">ConfirmCancel</Show>
+                <Show Dialog="_FatalError" OnExit="error" />
+
+                <!-- different states of the installer at start -->
+                <Show Dialog="Install" Before="Progress">NOT Installed AND NOT (PATCH OR WIX_UPGRADE_DETECTED)</Show>
+                <Show Dialog="Update" Before="Progress">(PATCH OR WIX_UPGRADE_DETECTED) AND NOT (Installed AND (RESUME OR Preselected))</Show>
+                <Show Dialog="Resume" Before="Progress">Installed AND (RESUME OR Preselected)</Show>
+                <Show Dialog="Maintenance" Before="Progress">Installed AND NOT (PATCH OR WIX_UPGRADE_DETECTED) AND NOT (RESUME OR Preselected)</Show>
+
+                <Show Dialog="Progress" Before="ExecuteAction"></Show>
+            </InstallUISequence>
+
+            <AdminUISequence>
+                <!-- these must always exist -->
+                <Show Dialog="_Exit" OnExit="success" />
+                <Show Dialog="_UserExit" OnExit="cancel">ConfirmCancel</Show>
+                <Show Dialog="_FatalError" OnExit="error" />
+            </AdminUISequence>
+
+            <Property Id="ARPNOMODIFY" Value="1" />
+            <Property Id="DefaultUIFont" Value="Body" />
+            <Property Id="ErrorDialog" Value="Error" />
+
+            <!--
+            Transparent controls do not play well with accessibility features of Windows.
+            Besides that, transparency also messes up HyperLink controls and display order.
+            So, the default for WiX (and for other installers) of a full-size background bitmap is a
+            bad idea.
+            We only use a "banner" in the top right, both for "full screen" (intro, finish, error)
+            and "dialog type" (repair/remove, progress) dialogs.
+            The banner height is 44 dialog units (== 58 pixels), and the width is an exact multiple (3x) of the height.
+            Furthermore, the actual PNG is 5 times as big, to have full resolution when Windows is set
+            to its maximum scaling of 500%.
+            -->
+            <Binary Id="banner.png" SourceFile="banner.png" />
+
+            <!--
+            These are the nearest to FluentUI as recommended by https://docs.microsoft.com/en-us/windows/uwp/design/style/typography.
+            -->
+            <TextStyle Id="Header" FaceName="Segoe UI Light" Size="34" />
+            <TextStyle Id="SubHeader" FaceName="Segoe UI Light" Size="25" />
+            <TextStyle Id="Title" FaceName="Segoe UI Semilight" Size="18" />
+            <TextStyle Id="SubTitle" FaceName="Segoe UI" Size="15" />
+            <TextStyle Id="Base" FaceName="Segoe UI Semibold" Size="10" />
+            <TextStyle Id="Body" FaceName="Segoe UI" Size="10" />
+            <TextStyle Id="Caption" FaceName="Segoe UI" Size="9" />
+
+            <!--
+            ActionText and Error tables.
+            -->
             <UIRef Id="WixUI_ErrorProgressText" />
+    
+            <Dialog Id="_Exit" Width="$(var.WizardW)" Height="$(var.WizardH)" Title="$(var.WizardTitle)">
+                <!-- dialog -->
+                <Control Id="BannerBitmap" Type="Bitmap" X="$(var.BannerBitmapX)" Y="$(var.BannerBitmapY)" Width="$(var.BannerBitmapW)" Height="$(var.BannerBitmapH)" TabSkip="yes" Text="banner.png" />
+
+                <!-- wizard -->
+                <Control Id="BottomLine" Type="Line" X="0" Y="$(var.WizardLineY)" Width="$(var.WizardLineW)" Height="0" />
+                <Control Id="Back" Type="PushButton" X="$(var.WizardButtonX1)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
+                         Disabled="yes"
+                         Text="$(var.ButtonBackText)" />
+                <Control Id="Close" Type="PushButton" X="$(var.WizardButtonX2)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
+                         Cancel="yes"
+                         Default="yes"
+                         Text="$(var.ButtonCloseText)">
+                    <Publish Event="EndDialog" Value="Exit">1</Publish>
+                </Control>
+                <Control Id="Cancel" Type="PushButton" X="$(var.WizardButtonX3)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
+                         Disabled="yes"
+                         Text="$(var.ButtonCancelText)">
+                </Control>
+
+                <!-- content -->
+                <Control Id="Title" Type="Text" X="$(var.TitleX)" Y="$(var.TitleY)" Width="$(var.TitleW)" Height="$(var.TitleH)" NoPrefix="yes" TabSkip="yes"
+                         Text="{\Title}Completed" />
+
+                <Control Id="InstallContent" Type="Text" X="$(var.ContentX)" Y="$(var.ContentY)" Width="$(var.ContentW)" Height="52" NoPrefix="yes" TabSkip="yes" Hidden="yes"
+                         Text="{\Body}[ProductName] was installed successfully.">
+                    <Condition Action="show">InstallMode = "" OR InstallMode = "Install" OR InstallMode = "Resume"</Condition>
+                </Control>
+                <Control Id="UpdateContent" Type="Text" X="$(var.ContentX)" Y="$(var.ContentY)" Width="$(var.ContentW)" Height="52" NoPrefix="yes" TabSkip="yes" Hidden="yes"
+                         Text="{\Body}[ProductName] was updated successfully.">
+                    <Condition Action="show">InstallMode = "Update"</Condition>
+                </Control>
+                <Control Id="RepairContent" Type="Text" X="$(var.ContentX)" Y="$(var.ContentY)" Width="$(var.ContentW)" Height="52" NoPrefix="yes" TabSkip="yes" Hidden="yes"
+                         Text="{\Body}[ProductName] was repaired successfully.">
+                    <Condition Action="show">InstallMode = "Repair"</Condition>
+                </Control>
+                <Control Id="RemoveContent" Type="Text" X="$(var.ContentX)" Y="$(var.ContentY)" Width="$(var.ContentW)" Height="52" NoPrefix="yes" TabSkip="yes" Hidden="yes"
+                         Text="{\Body}[ProductName] was removed successfully.">
+                    <Condition Action="show">InstallMode = "Remove"</Condition>
+                </Control>
+            </Dialog>
+
+            <Dialog Id="_UserExit" Width="$(var.WizardW)" Height="$(var.WizardH)" Title="$(var.WizardTitle)">
+                <!-- dialog -->
+                <Control Id="BannerBitmap" Type="Bitmap" X="$(var.BannerBitmapX)" Y="$(var.BannerBitmapY)" Width="$(var.BannerBitmapW)" Height="$(var.BannerBitmapH)" TabSkip="yes" Text="banner.png" />
+
+                <!-- wizard -->
+                <Control Id="BottomLine" Type="Line" X="0" Y="$(var.WizardLineY)" Width="$(var.WizardLineW)" Height="0" />
+                <Control Id="Back" Type="PushButton" X="$(var.WizardButtonX1)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
+                         Disabled="yes"
+                         Text="$(var.ButtonBackText)" />
+                <Control Id="Close" Type="PushButton" X="$(var.WizardButtonX2)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
+                         Cancel="yes"
+                         Default="yes"
+                         Text="$(var.ButtonCloseText)">
+                    <Publish Event="EndDialog" Value="Exit">1</Publish>
+                </Control>
+                <Control Id="Cancel" Type="PushButton" X="$(var.WizardButtonX3)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
+                         Disabled="yes"
+                         Text="$(var.ButtonCancelText)">
+                </Control>
+
+                <!-- content -->
+                <Control Id="Title" Type="Text" X="$(var.TitleX)" Y="$(var.TitleY)" Width="$(var.TitleW)" Height="$(var.TitleH)" NoPrefix="yes" TabSkip="yes"
+                         Text="{\Title}Canceled" />
+
+                <Control Id="Content" Type="Text" X="$(var.ContentX)" Y="$(var.ContentY)" Width="$(var.ContentW)" Height="52" TabSkip="yes"
+                         Text="{\Body}Your computer was not modified." NoPrefix="yes" />
+            </Dialog>
+
+            <Dialog Id="_FatalError" Width="$(var.WizardW)" Height="$(var.WizardH)" Title="$(var.WizardTitle)">
+                <!-- dialog -->
+                <Control Id="BannerBitmap" Type="Bitmap" X="$(var.BannerBitmapX)" Y="$(var.BannerBitmapY)" Width="$(var.BannerBitmapW)" Height="$(var.BannerBitmapH)" TabSkip="yes" Text="banner.png" />
+
+                <!-- wizard -->
+                <Control Id="BottomLine" Type="Line" X="0" Y="$(var.WizardLineY)" Width="$(var.WizardLineW)" Height="0" />
+                <Control Id="Back" Type="PushButton" X="$(var.WizardButtonX1)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
+                         Disabled="yes"
+                         Text="$(var.ButtonBackText)" />
+                <Control Id="Close" Type="PushButton" X="$(var.WizardButtonX2)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
+                         Cancel="yes"
+                         Default="yes"
+                         Text="$(var.ButtonCloseText)">
+                    <Publish Event="EndDialog" Value="Exit">1</Publish>
+                </Control>
+                <Control Id="Cancel" Type="PushButton" X="$(var.WizardButtonX3)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
+                         Disabled="yes"
+                         Text="$(var.ButtonCancelText)">
+                </Control>
+
+                <!-- content -->
+                <Control Id="Title" Type="Text" X="$(var.TitleX)" Y="$(var.TitleY)" Width="$(var.TitleW)" Height="$(var.TitleH)" NoPrefix="yes" TabSkip="yes"
+                         Text="{\Title}Unsuccessful" />
+
+                <Control Id="Content" Type="Text" X="$(var.ContentX)" Y="$(var.ContentY)" Width="$(var.ContentW)" Height="52" TabSkip="yes"
+                         Text="{\Body}The operation ended prematurely because of an error. Your computer was not modified." NoPrefix="yes" />
+            </Dialog>
+
+            <Dialog Id="Install" Width="$(var.WizardW)" Height="$(var.WizardH)" Title="$(var.WizardTitle)">
+                <!-- dialog -->
+                <Control Id="BannerBitmap" Type="Bitmap" X="$(var.BannerBitmapX)" Y="$(var.BannerBitmapY)" Width="$(var.BannerBitmapW)" Height="$(var.BannerBitmapH)" TabSkip="yes" Text="banner.png" />
+
+                <!-- wizard -->
+                <Control Id="BottomLine" Type="Line" X="0" Y="$(var.WizardLineY)" Width="$(var.WizardLineW)" Height="0" />
+                <Control Id="Back" Type="PushButton" X="$(var.WizardButtonX1)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
+                         Disabled="yes"
+                         Text="$(var.ButtonBackText)" />
+                <Control Id="Install" Type="PushButton" X="$(var.WizardButtonX2)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
+                         ElevationShield="yes"
+                         Default="yes"
+                         Text="$(var.ButtonInstallText)">
+                    <Publish Property="InstallMode" Value="Install">1</Publish>
+                    <Publish Event="EndDialog" Value="Return">1</Publish>
+                </Control>
+                <Control Id="Cancel" Type="PushButton" X="$(var.WizardButtonX3)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
+                         Cancel="yes"
+                         Text="$(var.ButtonCancelText)">
+                    <Publish Event="EndDialog" Value="Exit">1</Publish>
+                </Control>
+
+                <!-- content -->
+                <Control Id="Title" Type="Text" X="$(var.TitleX)" Y="$(var.TitleY)" Width="$(var.TitleW)" Height="$(var.TitleH)" TabSkip="yes"
+                         Text="{\Title}Install [ProductName]" NoPrefix="yes" />
+
+                <Control Id="Content" Type="Text" X="$(var.ContentX)" Y="$(var.ContentY)" Width="$(var.ContentW)" Height="52" TabSkip="yes"
+                         Text="{\Body}This wizard will install [ProductName] on this computer." NoPrefix="yes" />
+
+                <Control Id="License" Type="Hyperlink" X="30" Y="202" Width="310" Height="24"
+                         ToolTip ="Open the license in your browser"
+                         Text="{\Caption}Copyright © $(var.Year)
+Published under the terms of the &lt;a href=&quot;https://www.gnu.org/licenses/gpl-2.0.html&quot;>GNU General Public License, version 2&lt;/a>." />
+            </Dialog>
+
+            <Dialog Id="Update" Width="$(var.WizardW)" Height="$(var.WizardH)" Title="$(var.WizardTitle)">
+                <!-- dialog -->
+                <Control Id="BannerBitmap" Type="Bitmap" X="$(var.BannerBitmapX)" Y="$(var.BannerBitmapY)" Width="$(var.BannerBitmapW)" Height="$(var.BannerBitmapH)" TabSkip="yes" Text="banner.png" />
+
+                <!-- wizard -->
+                <Control Id="BottomLine" Type="Line" X="0" Y="$(var.WizardLineY)" Width="$(var.WizardLineW)" Height="0" />
+                <Control Id="Back" Type="PushButton" X="$(var.WizardButtonX1)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
+                         Disabled="yes"
+                         Text="$(var.ButtonBackText)" />
+                <Control Id="Update" Type="PushButton" X="$(var.WizardButtonX2)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
+                         ElevationShield="yes"
+                         Default="yes"
+                         Text="$(var.ButtonUpdateText)">
+                    <Publish Property="InstallMode" Value="Update">1</Publish>
+                    <Publish Event="EndDialog" Value="Return">1</Publish>
+                </Control>
+                <Control Id="Cancel" Type="PushButton" X="$(var.WizardButtonX3)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
+                         Cancel="yes"
+                         Text="$(var.ButtonCancelText)">
+                    <Publish Event="EndDialog" Value="Exit">1</Publish>
+                </Control>
+
+                <!-- content -->
+                <Control Id="Title" Type="Text" X="$(var.TitleX)" Y="$(var.TitleY)" Width="$(var.TitleW)" Height="$(var.TitleH)" TabSkip="yes"
+                         Text="{\Title}Update [ProductName]" NoPrefix="yes" />
+
+                <Control Id="Content" Type="Text" X="$(var.ContentX)" Y="$(var.ContentY)" Width="$(var.ContentW)" Height="52" TabSkip="yes"
+                         Text="{\Body}This wizard will update the current installation of [ProductName]." NoPrefix="yes" />
+            </Dialog>
+
+            <Dialog Id="Resume" Width="$(var.WizardW)" Height="$(var.WizardH)" Title="$(var.WizardTitle)">
+                <!-- dialog -->
+                <Control Id="BannerBitmap" Type="Bitmap" X="$(var.BannerBitmapX)" Y="$(var.BannerBitmapY)" Width="$(var.BannerBitmapW)" Height="$(var.BannerBitmapH)" TabSkip="yes" Text="banner.png" />
+
+                <!-- wizard -->
+                <Control Id="BottomLine" Type="Line" X="0" Y="$(var.WizardLineY)" Width="$(var.WizardLineW)" Height="0" />
+                <Control Id="Back" Type="PushButton" X="$(var.WizardButtonX1)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
+                         Disabled="yes"
+                         Text="$(var.ButtonBackText)" />
+                <Control Id="Resume" Type="PushButton" X="$(var.WizardButtonX2)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
+                         ElevationShield="yes"
+                         Default="yes"
+                         Text="$(var.ButtonResumeText)">
+                    <Publish Property="InstallMode" Value="Resume">1</Publish>
+                    <Publish Event="EndDialog" Value="Return">1</Publish>
+                </Control>
+                <Control Id="Cancel" Type="PushButton" X="$(var.WizardButtonX3)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
+                         Cancel="yes"
+                         Text="$(var.ButtonCancelText)">
+                    <Publish Property="ConfirmCancel" Value="1">1</Publish>
+                    <Publish Event="EndDialog" Value="Exit">1</Publish>
+                </Control>
+
+                <!-- content -->
+                <Control Id="Title" Type="Text" X="$(var.TitleX)" Y="$(var.TitleY)" Width="$(var.TitleW)" Height="$(var.TitleH)" TabSkip="yes"
+                         Text="{\Title}Resume installation" NoPrefix="yes" />
+                <Control Id="Content" Type="Text" X="$(var.ContentX)" Y="$(var.ContentY)" Width="$(var.ContentW)" Height="52" TabSkip="yes"
+                         Text="{\Body}This wizard will complete the installation of [ProductName]." NoPrefix="yes" />
+            </Dialog>
+
+            <Dialog Id="Maintenance" Width="$(var.WizardW)" Height="$(var.WizardH)" Title="$(var.WizardTitle)">
+                <!-- dialog -->
+                <Control Id="BannerBitmap" Type="Bitmap" X="$(var.BannerBitmapX)" Y="$(var.BannerBitmapY)" Width="$(var.BannerBitmapW)" Height="$(var.BannerBitmapH)" TabSkip="yes" Text="banner.png" />
+
+                <!-- wizard -->
+                <Control Id="BottomLine" Type="Line" X="0" Y="$(var.WizardLineY)" Width="$(var.WizardLineW)" Height="0" />
+                <Control Id="Back" Type="PushButton" X="$(var.WizardButtonX1)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
+                         Disabled="yes"
+                         Text="$(var.ButtonBackText)" />
+                <Control Id="Next" Type="PushButton" X="$(var.WizardButtonX2)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
+                         Disabled="yes"
+                         Text="$(var.ButtonNextText)" />
+                <Control Id="Cancel" Type="PushButton" X="$(var.WizardButtonX3)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
+                         Cancel="yes"
+                         Text="$(var.ButtonCancelText)">
+                    <Publish Event="EndDialog" Value="Exit">1</Publish>
+                </Control>
+
+                <!-- content -->
+                <Control Id="Title" Type="Text" X="$(var.TitleX)" Y="$(var.TitleY)" Width="$(var.TitleW)" Height="$(var.TitleH)" TabSkip="yes"
+                         Text="{\Title}Maintenance of [ProductName]" NoPrefix="yes" />
+
+                <Control Id="Content" Type="Text" X="$(var.ContentX)" Y="$(var.ContentY)" Width="$(var.ContentW)" Height="13" TabSkip="yes"
+                         Text="{\Body}These actions manage the current installation of [ProductName]." NoPrefix="yes" />
+
+                <Control Id="Repair" Type="PushButton" X="30" Y="110" Width="$(var.ButtonW)" Height="$(var.ButtonH)" Text="{\Caption}&amp;Repair">
+                    <Publish Property="InstallMode" Value="Repair">1</Publish>
+                    <Publish Event="ReinstallMode" Value="ecmus">1</Publish>
+                    <Publish Event="Reinstall" Value="All">1</Publish>
+                    <Publish Event="EndDialog" Value="Return">1</Publish>
+                </Control>
+                <Control Id="RepairText" Type="Text" X="30" Y="130" Width="310" Height="26" NoPrefix="yes" TabSkip="yes"
+                         Text="{\Body}Repairs errors by fixing missing and corrupt files, shortcuts, and registry entries." />
+
+                <Control Id="Remove" Type="PushButton" ElevationShield="yes" X="30" Y="179" Width="$(var.ButtonW)" Height="$(var.ButtonH)" Text="{\Caption}&amp;Uninstall">
+                    <Publish Property="InstallMode" Value="Remove">1</Publish>
+                    <Publish Event="Remove" Value="All">1</Publish>
+                    <Publish Event="EndDialog" Value="Return">1</Publish>
+                </Control>
+                <Control Id="RemoveText" Type="Text" X="30" Y="199" Width="310" Height="13" NoPrefix="yes" TabSkip="yes"
+                         Text="{\Body}Removes [ProductName] from your computer." />
+            </Dialog>
+
+            <Dialog Id="Progress" Width="$(var.WizardW)" Height="$(var.WizardH)" Title="$(var.WizardTitle)" Modeless="yes">
+                <!-- dialog -->
+                <Control Id="BannerBitmap" Type="Bitmap" X="$(var.BannerBitmapX)" Y="$(var.BannerBitmapY)" Width="$(var.BannerBitmapW)" Height="$(var.BannerBitmapH)" TabSkip="yes" Text="banner.png" />
+
+                <!-- wizard -->
+                <Control Id="BottomLine" Type="Line" X="0" Y="$(var.WizardLineY)" Width="$(var.WizardLineW)" Height="0" />
+                <Control Id="Back" Type="PushButton" X="$(var.WizardButtonX1)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
+                         Disabled="yes"
+                         Text="$(var.ButtonBackText)" />
+                <Control Id="Close" Type="PushButton" X="$(var.WizardButtonX2)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
+                         Disabled="yes"
+                         Text="$(var.ButtonNextText)">
+                </Control>
+                <Control Id="Cancel" Type="PushButton" X="$(var.WizardButtonX3)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
+                         Cancel="yes"
+                         Text="$(var.ButtonCancelText)">
+                    <Publish Property="ConfirmCancel" Value="1">1</Publish>
+                    <Publish Event="EndDialog" Value="Exit">1</Publish>
+                </Control>
+
+                <!-- content -->
+                <Control Id="InstallTitle" Type="Text" X="$(var.TitleX)" Y="$(var.TitleY)" Width="$(var.TitleW)" Height="$(var.TitleH)" NoPrefix="yes" Hidden="yes" TabSkip="yes"
+                         Text="{\Title}Installing [ProductName]">
+                    <Condition Action="show">InstallMode = "" OR InstallMode = "Install" OR InstallMode = "Resume"</Condition>
+                </Control>
+                <Control Id="InstallContent" Type="Text" X="$(var.ContentX)" Y="$(var.ContentY)" Width="$(var.ContentW)" Height="13" NoPrefix="yes" Hidden="yes" TabSkip="yes"
+                         Text="{\Body}Please wait while whis wizard installs [ProductName].">
+                    <Condition Action="show">InstallMode = "" OR InstallMode = "Install" OR InstallMode = "Resume"</Condition>
+                </Control>
+
+                <Control Id="UpdateTitle" Type="Text" X="$(var.TitleX)" Y="$(var.TitleY)" Width="$(var.TitleW)" Height="$(var.TitleH)" NoPrefix="yes" Hidden="yes" TabSkip="yes"
+                         Text="{\Title}Updating [ProductName]">
+                    <Condition Action="show">InstallMode = "Update"</Condition>
+                </Control>
+                <Control Id="UpdateContent" Type="Text" X="$(var.ContentX)" Y="$(var.ContentY)" Width="$(var.ContentW)" Height="13" NoPrefix="yes" Hidden="yes" TabSkip="yes"
+                         Text="{\Body}Please wait while whis wizard updates [ProductName].">
+                    <Condition Action="show">InstallMode = "Update"</Condition>
+                </Control>
+                
+                <Control Id="RepairTitle" Type="Text" X="$(var.TitleX)" Y="$(var.TitleY)" Width="$(var.TitleW)" Height="$(var.TitleH)" NoPrefix="yes" Hidden="yes" TabSkip="yes"
+                         Text="{\Title}Repairing [ProductName]">
+                    <Condition Action="show">InstallMode = "Repair"</Condition>
+                </Control>
+                <Control Id="RepairContent" Type="Text" X="$(var.ContentX)" Y="$(var.ContentY)" Width="$(var.ContentW)" Height="13" NoPrefix="yes" Hidden="yes" TabSkip="yes"
+                         Text="{\Body}Please wait while whis wizard repairs [ProductName].">
+                    <Condition Action="show">InstallMode = "Repair"</Condition>
+                </Control>
+
+                <Control Id="RemoveTitle" Type="Text" X="$(var.TitleX)" Y="$(var.TitleY)" Width="$(var.TitleW)" Height="$(var.TitleH)" NoPrefix="yes" Hidden="yes" TabSkip="yes"
+                         Text="{\Title}Removing [ProductName]">
+                    <Condition Action="show">InstallMode = "Remove"</Condition>
+                </Control>
+                <Control Id="RemoveContent" Type="Text" X="$(var.ContentX)" Y="$(var.ContentY)" Width="$(var.ContentW)" Height="13" NoPrefix="yes" Hidden="yes" TabSkip="yes"
+                         Text="{\Body}Please wait while whis wizard removes [ProductName].">
+                    <Condition Action="show">InstallMode = "Remove"</Condition>
+                </Control>
+
+                <Control Id="ProgressBar" Type="ProgressBar" X="30" Y="120" Width="310" Height="12" TabSkip="yes">
+                    <Subscribe Event="SetProgress" Attribute="Progress" />
+                </Control>
+
+                <Control Id="StatusLabel" Type="Text" X="30" Y="140" Width="50" Height="13" TabSkip="yes"
+                         Text="{\Body}Status:" NoPrefix="yes" />
+                <Control Id="ActionText" Type="Text" X="80" Y="140" Width="260" Height="13" NoPrefix="yes" NoWrap="yes" TabSkip="yes">
+                    <Subscribe Event="ActionText" Attribute="Text" />
+                </Control>
+            </Dialog>
+
+            <!--
+            This is the nearest match to WinAPI MessageBox().
+            -->
+            <Dialog Id="Error" Width="339" Height="109" Title="$(var.WizardTitle)" ErrorDialog="yes" NoMinimize="yes">
+                <!--
+                This control must come first.
+                -->
+                <Control Id="ErrorText" Type="Text" X="50" Y="20" Width="268" Height="60" TabSkip="no" NoPrefix="yes" />
+
+                <Control Id="A" Type="PushButton" X="269" Y="81" Width="66" Height="20" TabSkip="yes" Text="{\Caption}&amp;Abort">
+                    <Publish Event="EndDialog" Value="ErrorAbort">1</Publish>
+                </Control>
+                <Control Id="C" Type="PushButton" X="269" Y="81" Width="66" Height="20" TabSkip="yes" Text="{\Caption}&amp;Cancel">
+                    <Publish Event="EndDialog" Value="ErrorCancel">1</Publish>
+                </Control>
+                <Control Id="I" Type="PushButton" X="269" Y="81" Width="66" Height="20" TabSkip="yes" Text="{\Caption}&amp;Ignore">
+                    <Publish Event="EndDialog" Value="ErrorIgnore">1</Publish>
+                </Control>
+                <Control Id="N" Type="PushButton" X="269" Y="81" Width="66" Height="20" TabSkip="yes" Text="{\Caption}&amp;No">
+                    <Publish Event="EndDialog" Value="ErrorNo">1</Publish>
+                </Control>
+                <Control Id="O" Type="PushButton" X="269" Y="81" Width="66" Height="20" TabSkip="yes" Text="{\Caption}&amp;OK">
+                    <Publish Event="EndDialog" Value="ErrorOk">1</Publish>
+                </Control>
+                <Control Id="R" Type="PushButton" X="269" Y="81" Width="66" Height="20" TabSkip="yes" Text="{\Caption}&amp;Retry">
+                    <Publish Event="EndDialog" Value="ErrorRetry">1</Publish>
+                </Control>
+                <Control Id="Y" Type="PushButton" X="269" Y="81" Width="66" Height="20" TabSkip="yes" Text="{\Caption}&amp;Yes">
+                    <Publish Event="EndDialog" Value="ErrorYes">1</Publish>
+                </Control>
+
+                <!--
+                The image will be replaced by MSI.
+                -->
+                <Control Id="ErrorIcon" Type="Icon" X="19" Y="20" Width="24" Height="24" FixedSize="yes" IconSize="32" Text="banner.png" />
+            </Dialog>
+
+            <!--
+            This is the default "files in use" dialog.
+            -->
+            <Property Id="RMOption" Value="UseRM" />
+            <Dialog Id="MsiRMFilesInUse" Width="$(var.WizardW)" Height="$(var.WizardH)" Title="$(var.WizardTitle)" KeepModeless="yes">
+                <!-- dialog -->
+                <Control Id="BannerBitmap" Type="Bitmap" X="$(var.BannerBitmapX)" Y="$(var.BannerBitmapY)" Width="$(var.BannerBitmapW)" Height="$(var.BannerBitmapH)" TabSkip="yes" Text="banner.png" />
+
+                <!-- wizard -->
+                <Control Id="BottomLine" Type="Line" X="0" Y="$(var.WizardLineY)" Width="$(var.WizardLineW)" Height="0" />
+                <Control Id="Back" Type="PushButton" X="$(var.WizardButtonX1)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
+                         Disabled="yes"
+                         Text="$(var.ButtonBackText)" />
+                <Control Id="Next" Type="PushButton" X="$(var.WizardButtonX2)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
+                         Default="yes"
+                         Text="$(var.ButtonNextText)">
+                    <Publish Event="RMShutdownAndRestart" Value="0">RMOption = "UseRM"</Publish>
+                    <Publish Event="EndDialog" Value="Return">1</Publish>
+                </Control>
+                <Control Id="Cancel" Type="PushButton" X="$(var.WizardButtonX3)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
+                         Cancel="yes"
+                         Text="$(var.ButtonCancelText)">
+                    <Publish Property="ConfirmCancel" Value="1">1</Publish>
+                    <Publish Event="EndDialog" Value="Exit">1</Publish>
+                </Control>
+
+                <!-- content -->
+                <Control Id="Title" Type="Text" X="$(var.TitleX)" Y="$(var.TitleY)" Width="$(var.TitleW)" Height="$(var.TitleH)" TabSkip="yes"
+                         Text="{\Title}Files in use" NoPrefix="yes" />
+                <Control Id="Content" Type="Text" X="$(var.ContentX)" Y="$(var.ContentY)" Width="$(var.ContentW)" Height="13" TabSkip="yes"
+                         Text="{\Body}The following applications should be closed before continuing:" NoPrefix="yes" />
+                <Control Id="List" Type="ListBox" X="30" Y="100" Width="310" Height="80" Property="FileInUseProcess" Text="{\Caption}" />
+                <Control Id="ShutdownOption" Type="RadioButtonGroup" X="30" Y="180" Width="310" Height="36" Property="RMOption">
+                    <RadioButtonGroup Property="RMOption">
+                        <RadioButton Value="UseRM" X="0" Y="0" Width="310" Height="16" Text="{\Caption}&amp;Automatically close applications and restart them." />
+                        <RadioButton Value="DontUseRM" X="0" Y="20" Width="310" Height="16" Text="{\Caption}&amp;Do not close applications. (A reboot will be required.)" />
+                    </RadioButtonGroup>
+                </Control>
+            </Dialog>
+
+            <!--
+            This is the "files in use" dialog when MSIRESTARTMANAGERCONTROL is set to disabled.
+            -->
+            <Dialog Id="FilesInUse" Width="$(var.WizardW)" Height="$(var.WizardH)" Title="$(var.WizardTitle)" KeepModeless="yes">
+                <!-- dialog -->
+                <Control Id="BannerBitmap" Type="Bitmap" X="$(var.BannerBitmapX)" Y="$(var.BannerBitmapY)" Width="$(var.BannerBitmapW)" Height="$(var.BannerBitmapH)" TabSkip="yes" Text="banner.png" />
+
+                <!-- wizard -->
+                <Control Id="BottomLine" Type="Line" X="0" Y="$(var.WizardLineY)" Width="$(var.WizardLineW)" Height="0" />
+                <Control Id="Retry" Type="PushButton" X="$(var.WizardButtonX1)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
+                         Default="yes"
+                         Text="$(var.ButtonRetryText)">
+                    <Publish Event="EndDialog" Value="Retry">1</Publish>
+                </Control>
+                <Control Id="Ignore" Type="PushButton" X="$(var.WizardButtonX2)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
+                         Default="yes"
+                         Text="$(var.ButtonIgnoreText)">
+                    <Publish Event="EndDialog" Value="Ignore">1</Publish>
+                </Control>
+                <Control Id="Cancel" Type="PushButton" X="$(var.WizardButtonX3)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
+                         Cancel="yes"
+                         Text="$(var.ButtonCancelText)">
+                    <Publish Property="ConfirmCancel" Value="1">1</Publish>
+                    <Publish Event="EndDialog" Value="Exit">1</Publish>
+                </Control>
+
+                <!-- content -->
+                <Control Id="Title" Type="Text" X="$(var.TitleX)" Y="$(var.TitleY)" Width="$(var.TitleW)" Height="$(var.TitleH)" TabSkip="yes"
+                         Text="{\Title}Files in use" NoPrefix="yes" />
+                <Control Id="Content" Type="Text" X="$(var.ContentX)" Y="$(var.ContentY)" Width="$(var.ContentW)" Height="13" TabSkip="yes"
+                         Text="{\Body}The following applications should be closed before continuing:" NoPrefix="yes" />
+                <Control Id="List" Type="ListBox" X="30" Y="100" Width="310" Height="116" Property="FileInUseProcess" Text="{\Caption}" />
+            </Dialog>
         </UI>
     </Fragment>
 </Wix>

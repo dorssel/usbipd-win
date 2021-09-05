@@ -28,14 +28,14 @@ SPDX-License-Identifier: GPL-2.0-only
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x64' ">
     <OutputPath>bin\$(Configuration)\</OutputPath>
-    <DefineConstants>Debug;PublishDir=$(PublishDir);DriversDir=$(ProjectDir)..\Drivers</DefineConstants>
+    <DefineConstants>Debug;PublishDir=$(PublishDir);DriversDir=$(ProjectDir)..\Drivers;Year=$([System.DateTime]::UtcNow.ToString("yyyy"))</DefineConstants>
     <Cultures>en-US</Cultures>
     <SuppressAllWarnings>False</SuppressAllWarnings>
     <Pedantic>True</Pedantic>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x64' ">
     <OutputPath>bin\$(Configuration)\</OutputPath>
-    <DefineConstants>PublishDir=$(PublishDir);DriversDir=$(ProjectDir)..\Drivers</DefineConstants>
+    <DefineConstants>PublishDir=$(PublishDir);DriversDir=$(ProjectDir)..\Drivers;Year=$([System.DateTime]::UtcNow.ToString("yyyy"))</DefineConstants>
     <Cultures>en-US</Cultures>
     <SuppressAllWarnings>False</SuppressAllWarnings>
     <Pedantic>True</Pedantic>
@@ -45,7 +45,6 @@ SPDX-License-Identifier: GPL-2.0-only
     <Compile Include="Server.wxs" />
     <Compile Include="Product.wxs" />
     <Compile Include="UserInterface.wxs" />
-    <Content Include="COPYING.rtf" />
     <Content Include="HarvestTransform.xslt" />
     <HarvestDirectory Include="$(PublishDir)" Visible="false">
       <DirectoryRefId>APPLICATIONFOLDER</DirectoryRefId>
