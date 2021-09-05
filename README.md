@@ -87,6 +87,6 @@ Instructions on how to setup a Linux usbip client can be found [here](WSL_USBIP.
 
 ## Limitations
 
-- For now, only USB devices with so called *bulk* endpoints work (USB flash drives, FTDI USB-to-serial, etc.).
+- For now, *isochronous* USB devices are not supported, such as audio and video devices.
 
 More information can be found on the [wiki](https://github.com/dorssel/usbipd-win/wiki).

@@ -4,6 +4,7 @@
 
 using System;
 using System.Buffers.Binary;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Net.Sockets;
@@ -42,9 +43,17 @@ namespace UsbIpServer
         readonly NetworkStream Stream;
         readonly DeviceFile Device;
         readonly UsbConfigurationDescriptors ConfigurationDescriptors;
+        readonly SemaphoreSlim WriteMutex = new(1);
+        readonly object PendingSubmitsLock = new();
+        /// <summary>
+        /// Mapping from USBIP seqnum to raw USB endpoint number.
+        /// </summary>
+        readonly SortedDictionary<uint, byte> PendingSubmits = new();
 
         async Task HandleSubmitAsync(UsbIpHeaderBasic basic, UsbIpHeaderCmdSubmit submit, CancellationToken cancellationToken)
         {
+            // We are synchronous with the receiver.
+
             var transferType = ConfigurationDescriptors.GetEndpointType(basic.ep, basic.direction == UsbIpDir.USBIP_DIR_IN);
 
             var urb = new UsbSupUrb()
@@ -73,10 +82,8 @@ namespace UsbIpServer
                     urb.type = UsbSupTransferType.USBSUP_TRANSFER_TYPE_BULK;
                     break;
                 case Constants.USB_ENDPOINT_TYPE_INTERRUPT:
-                    // TODO: requires queuing reuests and handling USBIP_CMD_UNLINK
-                    // urb.type = UsbSupTransferType.USBSUP_TRANSFER_TYPE_INTR;
-                    // break;
-                    throw new NotImplementedException("USB_ENDPOINT_TYPE_INTERRUPT");
+                    urb.type = UsbSupTransferType.USBSUP_TRANSFER_TYPE_INTR;
+                    break;
                 case Constants.USB_ENDPOINT_TYPE_ISOCHRONOUS:
                     throw new NotImplementedException("USB_ENDPOINT_TYPE_ISOCHRONOUS");
                 default:
@@ -102,6 +109,18 @@ namespace UsbIpServer
                 throw new NotImplementedException("ISO transfers");
             }
 
+            // We now have received the entire SUBMIT request:
+            // - If the request is "special" (reconfig, clear), then we will handle it immediately and await the result.
+            //   This means no further requests will be read until the special request has completed.
+            // - Otherwise, we will start a new task so that the receiver can continue.
+            //   This means multiple URBs can be outstanding awaiting completion.
+            //   The pending URBs can be completed out of order, but the replies must be sent atomically.
+
+            Task ioctl;
+            // Boxed into a class, so we can use Interlocked with null.
+            object? gcHandle = null;
+            var pending = false;
+
             if ((basic.ep == 0)
                 && (submit.setup.bmRequestType.B == Constants.BMREQUEST_TO_DEVICE)
                 && (submit.setup.bRequest == Constants.USB_REQUEST_SET_CONFIGURATION))
@@ -112,7 +131,8 @@ namespace UsbIpServer
                     bConfigurationValue = submit.setup.wValue.Anonymous.LowByte,
                 };
                 Logger.LogDebug($"Trapped SET_CONFIGURATION: {setConfig.bConfigurationValue}");
-                await Device.IoControlAsync(IoControl.SUPUSB_IOCTL_USB_SET_CONFIG, StructToBytes(setConfig), null);
+                await Device.IoControlAsync(SUPUSB_IOCTL.USB_SET_CONFIG, StructToBytes(setConfig), null);
+                ioctl = Task.CompletedTask;
                 ConfigurationDescriptors.SetConfiguration(setConfig.bConfigurationValue);
             }
             else if ((basic.ep == 0)
@@ -126,7 +146,8 @@ namespace UsbIpServer
                     bAlternateSetting = submit.setup.wValue.Anonymous.LowByte,
                 };
                 Logger.LogDebug($"Trapped SET_INTERFACE: {selectInterface.bInterfaceNumber} -> {selectInterface.bAlternateSetting}");
-                await Device.IoControlAsync(IoControl.SUPUSB_IOCTL_USB_SELECT_INTERFACE, StructToBytes(selectInterface), null);
+                await Device.IoControlAsync(SUPUSB_IOCTL.USB_SELECT_INTERFACE, StructToBytes(selectInterface), null);
+                ioctl = Task.CompletedTask;
                 ConfigurationDescriptors.SetInterface(selectInterface.bInterfaceNumber, selectInterface.bAlternateSetting);
             }
             else if ((basic.ep == 0)
@@ -140,65 +161,157 @@ namespace UsbIpServer
                     bEndpoint = submit.setup.wIndex.Anonymous.LowByte,
                 };
                 Logger.LogDebug($"Trapped CLEAR_FEATURE: {clearEndpoint.bEndpoint}");
-                await Device.IoControlAsync(IoControl.SUPUSB_IOCTL_USB_CLEAR_ENDPOINT, StructToBytes(clearEndpoint), null);
+                await Device.IoControlAsync(SUPUSB_IOCTL.USB_CLEAR_ENDPOINT, StructToBytes(clearEndpoint), null);
+                ioctl = Task.CompletedTask;
             }
             else
             {
                 if (transferType == Constants.USB_ENDPOINT_TYPE_CONTROL)
                 {
-                    Logger.LogTrace($"{submit.setup.bmRequestType} {submit.setup.bRequest} {submit.setup.wValue} {submit.setup.wIndex} {submit.setup.wLength}");
+                    Logger.LogTrace($"{submit.setup.bmRequestType.B} {submit.setup.bRequest} {submit.setup.wValue.W} {submit.setup.wIndex.W} {submit.setup.wLength}");
                 }
-                var gc = GCHandle.Alloc(buf, GCHandleType.Pinned);
+                lock (PendingSubmitsLock)
+                {
+                    // To support UNLINK, we must be able to abort the pipe that is used for this URB.
+                    // We need the raw USB endpoint number, i.e. including the high bit for input pipes.
+                    if (!PendingSubmits.TryAdd(basic.seqnum, (byte)(basic.ep | (basic.direction == UsbIpDir.USBIP_DIR_IN ? 0x80u : 0x00u))))
+                    {
+                        throw new ProtocolViolationException($"duplicate sequence number {basic.seqnum}");
+                    }
+                    Logger.LogTrace($"Scheduled seqnum={basic.seqnum}, pending count = {PendingSubmits.Count}");
+                }
+                pending = true;
+                // We need to keep the pinning alive until after the ioctl completes, but we must
+                // also free it whatever happens.
+                Interlocked.Exchange(ref gcHandle, GCHandle.Alloc(buf, GCHandleType.Pinned));
                 try
                 {
-                    urb.buf = gc.AddrOfPinnedObject();
+                    urb.buf = ((GCHandle?)gcHandle)!.Value.AddrOfPinnedObject();
                     StructToBytes(urb, bytes);
-                    await Device.IoControlAsync(IoControl.SUPUSB_IOCTL_SEND_URB, bytes, bytes);
+                    ioctl = Device.IoControlAsync(SUPUSB_IOCTL.SEND_URB, bytes, bytes);
+                    _ = ioctl.ContinueWith((task) =>
+                    {
+                        // This acts as a "finally" clause *after* the ioctl completes.
+                        ((GCHandle?)Interlocked.Exchange(ref gcHandle, null))?.Free();
+                        return Task.CompletedTask;
+                    }, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+                }
+                catch
+                {
+#pragma warning disable CA1508 // Avoid dead conditional code (false positive)
+                    ((GCHandle?)Interlocked.Exchange(ref gcHandle, null))?.Free();
+#pragma warning restore CA1508 // Avoid dead conditional code
+                    throw;
+                }
+            }
+
+            // At this point we have initiated the ioctl (and possibly awaited it for special cases).
+            // Now we schedule a continuation to write the reponse once the ioctl completes.
+            // This is fire-and-forget; we'll return to the caller so it can already receive the next request.
+
+            _ = ioctl.ContinueWith(async (task, state) =>
+            {
+                using var writeLock = await Lock.CreateAsync(WriteMutex, cancellationToken);
+
+                // Now we are synchronous with the sender.
+
+                if (pending)
+                {
+                    lock (PendingSubmitsLock)
+                    {
+                        // We are racing with possible UNLINK commands.
+                        if (!PendingSubmits.Remove(basic.seqnum))
+                        {
+                            // Apparently, the client has already UNLINK-ed (canceled) the request; we're done.
+                            Logger.LogTrace($"Completed seqnum={basic.seqnum} after UNLINK, pending count = {PendingSubmits.Count}");
+                            return;
+                        }
+                    }
                     BytesToStruct(bytes, out urb);
                 }
-                finally
+
+                var retSubmit = new UsbIpHeaderRetSubmit()
                 {
-                    gc.Free();
+                    status = -(int)ConvertError(urb.error),
+                    actual_length = (int)urb.len,
+                    start_frame = submit.start_frame,
+                    number_of_packets = (int)urb.numIsoPkts,
+                    error_count = 0,
+                };
+
+                if (transferType == Constants.USB_ENDPOINT_TYPE_CONTROL)
+                {
+                    retSubmit.actual_length = (retSubmit.actual_length > payloadOffset) ? (retSubmit.actual_length - payloadOffset) : 0;
                 }
+
+                if (urb.error != UsbSupError.USBSUP_XFER_OK)
+                {
+                    Logger.LogDebug($"{urb.error} -> {ConvertError(urb.error)} -> {retSubmit.status}");
+                }
+                Logger.LogTrace($"actual: {retSubmit.actual_length}, requested: {requestLength}");
+
+                var retBuf = new byte[48 /* sizeof(usbip_header) */];
+                BinaryPrimitives.WriteUInt32BigEndian(retBuf.AsSpan(0), (uint)UsbIpCmd.USBIP_RET_SUBMIT);
+                BinaryPrimitives.WriteUInt32BigEndian(retBuf.AsSpan(4), basic.seqnum);
+                BinaryPrimitives.WriteUInt32BigEndian(retBuf.AsSpan(8), 0);
+                BinaryPrimitives.WriteUInt32BigEndian(retBuf.AsSpan(12), 0);
+                BinaryPrimitives.WriteUInt32BigEndian(retBuf.AsSpan(16), 0);
+                BinaryPrimitives.WriteInt32BigEndian(retBuf.AsSpan(20), retSubmit.status);
+                BinaryPrimitives.WriteInt32BigEndian(retBuf.AsSpan(24), retSubmit.actual_length);
+                BinaryPrimitives.WriteInt32BigEndian(retBuf.AsSpan(28), retSubmit.start_frame);
+                BinaryPrimitives.WriteInt32BigEndian(retBuf.AsSpan(32), retSubmit.number_of_packets);
+                BinaryPrimitives.WriteInt32BigEndian(retBuf.AsSpan(36), retSubmit.error_count);
+                await Stream.WriteAsync(retBuf, cancellationToken);
+                if (basic.direction == UsbIpDir.USBIP_DIR_IN)
+                {
+                    await Stream.WriteAsync(buf.AsMemory(payloadOffset, retSubmit.actual_length), cancellationToken);
+                }
+            }, cancellationToken, TaskScheduler.Default);
+        }
+
+        async Task HandleUnlinkAsync(UsbIpHeaderBasic basic, UsbIpHeaderCmdUnlink unlink, CancellationToken cancellationToken)
+        {
+            // We are synchronous with the receiver.
+
+            var pending = false;
+            byte endpoint;
+
+            lock (PendingSubmitsLock)
+            {
+                pending = PendingSubmits.Remove(unlink.seqnum, out endpoint);
+                Logger.LogTrace($"Unlinking {unlink.seqnum}, pending = {pending}, pending count = {PendingSubmits.Count}");
             }
 
-            basic.command = UsbIpCmd.USBIP_RET_SUBMIT;
-            var retSubmit = new UsbIpHeaderRetSubmit()
+            if (pending)
             {
-                status = -(int)ConvertError(urb.error),
-                actual_length = (int)urb.len,
-                start_frame = submit.start_frame,
-                number_of_packets = (int)urb.numIsoPkts,
-                error_count = 0,
+                // VBoxUSB does not support canceling ioctls, so we will abort the pipe, which effectively cancels all URBs to that endpoint.
+                // This is OK, since Linux will normally unlink all URBs anyway in quick succession.
+                var clearEndpoint = new UsbSupClearEndpoint()
+                {
+                    bEndpoint = endpoint,
+                };
+                // Just like for CLEAR_FEATURE, we are going to wait until this finishes,
+                // in order to avoid races with subsequent SUBMIT to the same endpoint.
+                Logger.LogTrace($"Aborting endpoint {endpoint}");
+                await Device.IoControlAsync(SUPUSB_IOCTL.USB_ABORT_ENDPOINT, StructToBytes(clearEndpoint), null);
+            }
+
+            using var writeLock = await Lock.CreateAsync(WriteMutex, cancellationToken);
+
+            // Now we are synchronous with the sender.
+
+            var retUnlink = new UsbIpHeaderRetUnlink()
+            {
+                status = -(int)(pending ? Interop.Linux.Errno.ECONNRESET : Interop.Linux.Errno.SUCCESS),
             };
-
-            if (transferType == Constants.USB_ENDPOINT_TYPE_CONTROL)
-            {
-                retSubmit.actual_length = (retSubmit.actual_length > payloadOffset) ? (retSubmit.actual_length - payloadOffset) : 0;
-            }
-
-            if (urb.error != UsbSupError.USBSUP_XFER_OK)
-            {
-                Logger.LogDebug($"{urb.error} -> {ConvertError(urb.error)} -> {retSubmit.status}");
-            }
-            Logger.LogTrace($"actual: {retSubmit.actual_length}, requested: {requestLength}");
-
             var retBuf = new byte[48 /* sizeof(usbip_header) */];
-            BinaryPrimitives.WriteUInt32BigEndian(retBuf.AsSpan(0), (uint)basic.command);
+            BinaryPrimitives.WriteUInt32BigEndian(retBuf.AsSpan(0), (uint)UsbIpCmd.USBIP_RET_UNLINK);
             BinaryPrimitives.WriteUInt32BigEndian(retBuf.AsSpan(4), basic.seqnum);
-            BinaryPrimitives.WriteUInt32BigEndian(retBuf.AsSpan(8), basic.devid);
-            BinaryPrimitives.WriteUInt32BigEndian(retBuf.AsSpan(12), (uint)basic.direction);
-            BinaryPrimitives.WriteUInt32BigEndian(retBuf.AsSpan(16), basic.ep);
-            BinaryPrimitives.WriteInt32BigEndian(retBuf.AsSpan(20), retSubmit.status);
-            BinaryPrimitives.WriteInt32BigEndian(retBuf.AsSpan(24), retSubmit.actual_length);
-            BinaryPrimitives.WriteInt32BigEndian(retBuf.AsSpan(28), retSubmit.start_frame);
-            BinaryPrimitives.WriteInt32BigEndian(retBuf.AsSpan(32), retSubmit.number_of_packets);
-            BinaryPrimitives.WriteInt32BigEndian(retBuf.AsSpan(36), retSubmit.error_count);
-            await Stream.WriteAsync(retBuf, cancellationToken);
-            if (basic.direction == UsbIpDir.USBIP_DIR_IN)
-            {
-                await Stream.WriteAsync(buf.AsMemory(payloadOffset, retSubmit.actual_length), cancellationToken);
-            }
+            BinaryPrimitives.WriteUInt32BigEndian(retBuf.AsSpan(8), 0);
+            BinaryPrimitives.WriteUInt32BigEndian(retBuf.AsSpan(12), 0);
+            BinaryPrimitives.WriteUInt32BigEndian(retBuf.AsSpan(16), 0);
+            BinaryPrimitives.WriteInt32BigEndian(retBuf.AsSpan(20), retUnlink.status);
+            await Stream.WriteAsync(retBuf.AsMemory(), cancellationToken);
         }
 
         public async Task RunAsync(CancellationToken cancellationToken)
@@ -232,30 +345,13 @@ namespace UsbIpServer
                         await HandleSubmitAsync(basic, submit, cancellationToken);
                         break;
                     case UsbIpCmd.USBIP_CMD_UNLINK:
-#if true
-                        throw new NotImplementedException();
-#else
-                        Logger.LogTrace($"USBIP_CMD_UNLINK, {basic.seqnum}");
-                        var cmdUnlink = new UsbIpHeaderCmdUnlink
+                        var unlink = new UsbIpHeaderCmdUnlink
                         {
                             seqnum = BinaryPrimitives.ReadUInt32BigEndian(buf.AsSpan(20)),
                         };
-                        // just return success, TODO
-                        basic.command = UsbIpCmd.USBIP_RET_UNLINK;
-                        var retUnlink = new UsbIpHeaderRetUnlink
-                        {
-                            status = 0,
-                        };
-                        var retBuf = new byte[48 /* sizeof(usbip_header) */];
-                        BinaryPrimitives.WriteUInt32BigEndian(retBuf.AsSpan(0), (uint)basic.command);
-                        BinaryPrimitives.WriteUInt32BigEndian(retBuf.AsSpan(4), basic.seqnum);
-                        BinaryPrimitives.WriteUInt32BigEndian(retBuf.AsSpan(8), basic.devid);
-                        BinaryPrimitives.WriteUInt32BigEndian(retBuf.AsSpan(12), (uint)basic.direction);
-                        BinaryPrimitives.WriteUInt32BigEndian(retBuf.AsSpan(16), basic.ep);
-                        BinaryPrimitives.WriteInt32BigEndian(retBuf.AsSpan(20), retUnlink.status);
-                        await Stream.WriteAsync(retBuf.AsMemory(), cancellationToken);
+                        Logger.LogTrace($"USBIP_CMD_UNLINK, seqnum={basic.seqnum}, unlink_seqnum={unlink.seqnum}");
+                        await HandleUnlinkAsync(basic, unlink, cancellationToken);
                         break;
-#endif
                     default:
                         throw new ProtocolViolationException($"unknown UsbIpCmd {basic.command}");
                 }

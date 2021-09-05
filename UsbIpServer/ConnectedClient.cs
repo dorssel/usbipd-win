@@ -15,8 +15,8 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-using UsbIpServer.Interop;
 using static UsbIpServer.Interop.UsbIp;
+using static UsbIpServer.Interop.VBoxUsb;
 using static UsbIpServer.Tools;
 
 namespace UsbIpServer
@@ -137,7 +137,7 @@ namespace UsbIpServer
 
                     status = Status.ST_DEV_ERR;
                     var cfg = new byte[1] { 0 };
-                    await ClientContext.AttachedDevice.IoControlAsync(VBoxUsb.IoControl.SUPUSB_IOCTL_USB_SET_CONFIG, cfg, null);
+                    await ClientContext.AttachedDevice.IoControlAsync(SUPUSB_IOCTL.USB_SET_CONFIG, cfg, null);
 
                     status = Status.ST_OK;
                     await SendOpCodeAsync(OpCode.OP_REP_IMPORT, Status.ST_OK);
