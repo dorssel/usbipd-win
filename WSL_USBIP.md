@@ -136,7 +136,7 @@ sudo make menuconfig
 
 These are the necessary additional features in munconfig.  
 Device Drivers -> USB Support  
-Device Drivers -> USB Support -> USB announce new devices
+Device Drivers -> USB Support -> USB announce new devices  
 Device Drivers -> USB Support -> USB Modem (CDC ACM) support   
 Device Drivers -> USB Support -> USB/IP  
 Device Drivers -> USB Support -> USB/IP -> VHCI HCD  
