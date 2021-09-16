@@ -110,43 +110,53 @@ uname -r
 
 The kernel can be found at: <https://github.com/microsoft/WSL2-Linux-Kernel>
 
-After finding the branch/tag that matches the version, clone that branch/tag.
+Clone the kernel repo, then checkout the branch/tag that matches your kernel version; run `uname -r` to find the kernel version.
 
 ```bash
-sudo git clone https://github.com/microsoft/WSL2-Linux-Kernel.git /usr/src/5.4.72-microsoft-standard-WSL2 
-cd /usr/src/5.4.72-microsoft-standard-WSL2  
-git checkout linux-msft-5.4.72
+git clone https://github.com/microsoft/WSL2-Linux-Kernel.git 
+cd WSL2-Linux-Kernel  
+git checkout linux-msft-wsl-5.10.43.3
 ```
 
 Copy current configuration file.
 
 ```bash
-/usr/src/4.19.43-microsoft-standard$ sudo cp /proc/config.gz config.gz
-/usr/src/4.19.43-microsoft-standard$ sudo gunzip config.gz
-/usr/src/4.19.43-microsoft-standard$ sudo mv config .config
+cp /proc/config.gz config.gz
+gunzip config.gz
+mv config .config
 ```
 
-Run menuconfig to select kernel features to add. The number 4 is the number of cores I have.
+You may need to set CONFIG_USB=y in .config prior to running menuconfig to get all options enabled for selection.
+
+Run menuconfig to select kernel features to add.
 
 ```bash
 sudo make menuconfig
 ```
 
-Select desired features. In my case I selected USB/IP, VHCI HCD, Debug messages for USB/IP, USB Serial Converter Support.
-In the following command the number '8' is the number of cores I will be using.
+These are the necessary additional features in munconfig.  
+Device Drivers -> USB Support  
+Device Drivers -> USB Support -> USB announce new devices  
+Device Drivers -> USB Support -> USB Modem (CDC ACM) support   
+Device Drivers -> USB Support -> USB/IP  
+Device Drivers -> USB Support -> USB/IP -> VHCI HCD  
+Device Drivers -> USB Support -> USB/IP -> Debug messages for USB/IP  
+Device Drivers -> USB Serial Converter Support  
+Device Drivers -> USB Serial Converter Support -> USB FTDI Single port Serial Driver
+
+In the following command the number '8' is the number of cores to use; run `getconf _NPROCESSORS_ONLN` to find the number of cores. 
 
 ```bash
 sudo make -j 8 && sudo make modules_install -j 8 && sudo make install -j 8
-cp arch/x86/boot/bzImage /mnt/c/Users/<user>/usbip-bzImage
 ```
 
 Build USBIP tools.
 
 ```bash
-/usr/src/5.4.72-microsoft-standard$ cd tools/usb/usbip
-/usr/src/5.4.72-microsoft-standard/tools/usb/usbip$ sudo ./autogen.sh
-/usr/src/5.4.72-microsoft-standard/tools/usb/usbip$ sudo ./configure
-/usr/src/5.4.72-microsoft-standard/tools/usb/usbip$ sudo make install -j 12
+cd tools/usb/usbip
+sudo ./autogen.sh
+sudo ./configure
+sudo make install -j 8
 ```
 
 Copy tools libraries location so usbip tools can get them.
@@ -158,10 +168,10 @@ sudo cp libsrc/.libs/libusbip.so.0 /lib/libusbip.so.0
 Install usb.ids so you have names displayed for usb devices.
 
 ```bash
-sudo apt-get instal hwdata
+sudo apt-get install hwdata
 ```
 
-Copy image.
+From the root of the repo, copy the image.
 
 ```bash
 cp arch/x86/boot/bzImage /mnt/c/Users/<user>/usbip-bzImage
@@ -171,7 +181,7 @@ Create a `.wslconfig` file on `/mnt/c/Users/<user>/` and add a reference to the 
 
 ```ini
 [wsl2]
-kernel=c:\\users\\t-nelsont\\configurations\\wsl-new
+kernel=c:\\users\\<user>\\usbip-bzImage
 ```
 
 Your WSL distro is now ready to use!
