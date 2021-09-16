@@ -144,7 +144,7 @@ Device Drivers -> USB Support -> USB/IP -> Debug messages for USB/IP
 Device Drivers -> USB Serial Converter Support  
 Device Drivers -> USB Serial Converter Support -> USB FTDI Single port Serial Driver
 
-In the following command the number '8' is the number of cores I will be using.
+In the following command the number '8' is the number of cores to use; run `getconf _NPROCESSORS_ONLN` to find the number of cores. 
 
 ```bash
 sudo make -j 8 && sudo make modules_install -j 8 && sudo make install -j 8
