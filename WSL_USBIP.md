@@ -110,7 +110,7 @@ uname -r
 
 The kernel can be found at: <https://github.com/microsoft/WSL2-Linux-Kernel>
 
-Clone the kernel repo, then checkout the branch/tag that matches your kernel version.
+Clone the kernel repo, then checkout the branch/tag that matches your kernel version; run `uname -r` to find the kernel version.
 
 ```bash
 git clone https://github.com/microsoft/WSL2-Linux-Kernel.git 
