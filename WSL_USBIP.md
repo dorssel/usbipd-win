@@ -113,8 +113,8 @@ The kernel can be found at: <https://github.com/microsoft/WSL2-Linux-Kernel>
 Clone the kernel repo, then checkout the branch/tag that matches your kernel version; run `uname -r` to find the kernel version.
 
 ```bash
-git clone https://github.com/microsoft/WSL2-Linux-Kernel.git 
-cd WSL2-Linux-Kernel  
+git clone https://github.com/microsoft/WSL2-Linux-Kernel.git
+cd WSL2-Linux-Kernel
 git checkout linux-msft-wsl-5.10.43.3
 ```
 
@@ -134,17 +134,17 @@ Run menuconfig to select kernel features to add.
 sudo make menuconfig
 ```
 
-These are the necessary additional features in munconfig.  
-Device Drivers -> USB Support  
-Device Drivers -> USB Support -> USB announce new devices  
-Device Drivers -> USB Support -> USB Modem (CDC ACM) support   
-Device Drivers -> USB Support -> USB/IP  
-Device Drivers -> USB Support -> USB/IP -> VHCI HCD  
-Device Drivers -> USB Support -> USB/IP -> Debug messages for USB/IP  
-Device Drivers -> USB Serial Converter Support  
+These are the necessary additional features in menuconfig.\
+Device Drivers -> USB Support\
+Device Drivers -> USB Support -> USB announce new devices\
+Device Drivers -> USB Support -> USB Modem (CDC ACM) support\
+Device Drivers -> USB Support -> USB/IP\
+Device Drivers -> USB Support -> USB/IP -> VHCI HCD\
+Device Drivers -> USB Support -> USB/IP -> Debug messages for USB/IP\
+Device Drivers -> USB Serial Converter Support\
 Device Drivers -> USB Serial Converter Support -> USB FTDI Single port Serial Driver
 
-In the following command the number '8' is the number of cores to use; run `getconf _NPROCESSORS_ONLN` to find the number of cores. 
+In the following command the number '8' is the number of cores to use; run `getconf _NPROCESSORS_ONLN` to find the number of cores.
 
 ```bash
 sudo make -j 8 && sudo make modules_install -j 8 && sudo make install -j 8

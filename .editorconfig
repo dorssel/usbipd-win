@@ -6,6 +6,7 @@
 ###############################
 # Core EditorConfig Options   #
 ###############################
+root = true
 # All files
 [*]
 indent_style = space
@@ -20,6 +21,11 @@ indent_size = 4
 insert_final_newline = true
 trim_trailing_whitespace = true
 charset = utf-8-bom
+# Markdown
+# => use '\', *not* double-white-space ('  ') at end of line for line break.
+[*.md]
+insert_final_newline = true
+trim_trailing_whitespace = true
 ###############################
 # .NET Coding Conventions     #
 ###############################
