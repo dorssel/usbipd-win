@@ -31,6 +31,10 @@ namespace UsbIpServer.Interop
             /// <summary>WinSDK: usbioctl.h</summary>
             IOCTL_USB_GET_NODE_CONNECTION_INFORMATION_EX_V2 = (FILE_DEVICE_USB << 16) | (Constants.FILE_ANY_ACCESS << 14)
                 | (Constants.USB_GET_NODE_CONNECTION_INFORMATION_EX_V2 << 2) | (Constants.METHOD_BUFFERED),
+
+            /// <summary>WinSDK: usbioctl.h</summary>
+            IOCTL_USB_HUB_CYCLE_PORT = (FILE_DEVICE_USB << 16) | (Constants.FILE_ANY_ACCESS << 14)
+                | (Constants.USB_HUB_CYCLE_PORT << 2) | (Constants.METHOD_BUFFERED),
         }
 
         /// <summary>WinSDK: usbioctl.h: USB_DESCRIPTOR_REQUEST</summary>
@@ -95,6 +99,14 @@ namespace UsbIpServer.Interop
             public uint Length;
             public UsbProtocols SupportedUsbProtocols;
             public UsbNodeConnectionInformationExV2Flags Flags;
+        }
+
+        /// <summary>WinSDK: usbioctl.h: USB_CYCLE_PORT_PARAMS</summary>
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        public struct UsbCyclePortParams
+        {
+            public uint ConnectionIndex;
+            public uint StatusReturned;
         }
     }
 }
