@@ -15,7 +15,6 @@ using System.Threading.Tasks;
 using Windows.Win32;
 using Windows.Win32.Devices.DeviceAndDriverInstallation;
 using Windows.Win32.Devices.Usb;
-using Windows.Win32.System.Diagnostics.Debug;
 
 using UsbIpServer.Interop;
 using static UsbIpServer.Interop.UsbIp;
@@ -31,6 +30,7 @@ namespace UsbIpServer
         }
 
         public string Path { get; private set; } = string.Empty;
+        public string HubPath { get; private init; } = string.Empty;
         public BusId BusId { get; private init; }
         public Linux.UsbDeviceSpeed Speed { get; private init; }
         public ushort VendorId { get; private init; }
@@ -209,6 +209,7 @@ namespace UsbIpServer
             var exportedDevice = new ExportedDevice()
             {
                 Path = instanceId,
+                HubPath = hubPath,
                 BusId = busId,
                 Speed = speed,
                 VendorId = data.DeviceDescriptor.idVendor,
