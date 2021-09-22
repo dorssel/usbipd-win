@@ -22,6 +22,7 @@ using Windows.Win32.System.PropertiesSystem;
 using Windows.Win32.System.SystemServices;
 
 using UsbIpServer.Interop;
+using System.Text;
 
 namespace Windows.Win32.System.SystemServices
 {
@@ -198,6 +199,39 @@ namespace UsbIpServer
             using var deviceInfoSet = SetupDiGetClassDevs(null, deviceInstanceId, default, Constants.DIGCF_DEVICEINTERFACE | Constants.DIGCF_ALLCLASSES | Constants.DIGCF_PRESENT);
             var devinfoData = EnumDeviceInfo(deviceInfoSet).Single();
             return GetDevicePropertyString(deviceInfoSet, devinfoData, in devPropKey);
+        }
+
+        public static void SetDevicePropertyString(SafeDeviceInfoSetHandle deviceInfoSet, in SP_DEVINFO_DATA devInfoData, in PROPERTYKEY propertyKey, string? value)
+        {
+            unsafe
+            {
+                if (value is null)
+                {
+                    // This will delete the property
+                    if (!PInvoke.SetupDiSetDeviceProperty(deviceInfoSet.PInvokeHandle, in devInfoData, in DEVPROPKEY.From(in propertyKey), Constants.DEVPROP_TYPE_EMPTY, null, 0u, 0u))
+                    {
+                        throw new Win32Exception("SetupDiSetDeviceProperty");
+                    }
+                }
+                else
+                {
+                    // Must include terminating NUL character
+                    var buf = Encoding.Unicode.GetBytes(value + '\0');
+                    fixed (SP_DEVINFO_DATA* pInfoData = &devInfoData)
+                    {
+                        fixed (PROPERTYKEY* pPropKey = &propertyKey)
+                        {
+                            fixed (byte* pBuf = buf)
+                            {
+                                if (!PInvoke.SetupDiSetDeviceProperty(deviceInfoSet.PInvokeHandle, pInfoData, (DEVPROPKEY*)pPropKey, Constants.DEVPROP_TYPE_STRING, pBuf, (uint)buf.Length, 0u))
+                                {
+                                    throw new Win32Exception("SetupDiSetDeviceProperty");
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         public static Linux.UsbDeviceSpeed MapWindowsSpeedToLinuxSpeed(USB_DEVICE_SPEED w)

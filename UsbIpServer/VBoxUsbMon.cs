@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 using System;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
@@ -119,6 +120,18 @@ namespace UsbIpServer
                         await UsbMonitor.IoControlAsync(SUPUSBFLT_IOCTL.GET_DEVICE, StructToBytes(getDev), output);
                         var getDevMon = BytesToStruct<UsbSupGetDevMon>(output);
                     }
+
+                    try
+                    {
+                        // We act as a "class installer" for USBIP devices. Override the FriendlyName so
+                        // Windows device manager shows a nice descriptive name instead of the confusing
+                        // "VBoxUSB".
+
+                        // Best effort, not really a problem if this fails.
+                        SetDevicePropertyString(deviceInfoSet, in infoData, in Constants.DEVPKEY_Device_FriendlyName, $"USBIP Shared Device {device.BusId}");
+                    }
+                    catch (Win32Exception) { }
+
                     var result = dev;
                     dev = null!;
                     return result;
