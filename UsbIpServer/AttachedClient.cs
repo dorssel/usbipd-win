@@ -136,7 +136,7 @@ namespace UsbIpServer
                 ConfigurationDescriptors.SetConfiguration(setConfig.bConfigurationValue);
             }
             else if ((basic.ep == 0)
-                && (submit.setup.bmRequestType.B == Constants.BMREQUEST_TO_DEVICE)
+                && (submit.setup.bmRequestType.B == Constants.BMREQUEST_TO_INTERFACE)
                 && (submit.setup.bRequest == Constants.USB_REQUEST_SET_INTERFACE))
             {
                 // VBoxUsb needs this to get the endpoint handles
