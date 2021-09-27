@@ -54,8 +54,8 @@ usbip list --remote=<host>
 sudo usbip attach --remote=<host> --busid=<bus-port>
 ```
 
-If you find that your device does not work, first read *limitations* below.
-Please file an issue if you think your device should work with the current release.
+A list of tested devices can be found on the [wiki](https://github.com/dorssel/usbipd-win/wiki).
+Please file an issue if you your device is not working.
 
 ## How to remove
 
@@ -84,9 +84,3 @@ this firewall rule can be tweaked to fine tune access control.
 
 Currently, WSL 2 does not support USB devices by default. A workaround to this limitation is to use usbip.
 Instructions on how to setup a Linux usbip client can be found [here](WSL_USBIP.md).
-
-## Limitations
-
-- For now, *isochronous* USB devices are not supported, such as audio and video devices.
-
-More information can be found on the [wiki](https://github.com/dorssel/usbipd-win/wiki).
