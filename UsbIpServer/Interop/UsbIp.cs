@@ -124,5 +124,15 @@ namespace UsbIpServer.Interop
         {
             public int status;
         }
+
+        /// <summary>UsbIp: drivers/usbip_common.h: usbip_iso_packet_descriptor</summary>
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        public struct UsbIpIsoPacketDescriptor
+        {
+            public uint offset;
+            public uint length;
+            public uint actual_length;
+            public uint status;
+        }
     }
 }
