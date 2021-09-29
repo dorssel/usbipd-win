@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 using System;
-using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -57,21 +56,10 @@ namespace UsbIpServer
             var buf = new byte[submit.transfer_buffer_length];
             if (basic.direction == UsbIpDir.USBIP_DIR_OUT)
             {
-                await RecvExactSizeAsync(Stream, buf, cancellationToken);
+                await Stream.ReadExactlyAsync(buf, cancellationToken);
             }
 
-            var isoPacketDescriptorSizeItemSize = Marshal.SizeOf<UsbIpIsoPacketDescriptor>();
-            var isoBuf = new byte[submit.number_of_packets * isoPacketDescriptorSizeItemSize];
-            await RecvExactSizeAsync(Stream, isoBuf, cancellationToken);
-            var packetDescriptors = new UsbIpIsoPacketDescriptor[submit.number_of_packets];
-            for (var i = 0; i < packetDescriptors.Length; ++i)
-            {
-                packetDescriptors[i].offset = BinaryPrimitives.ReadUInt32BigEndian(isoBuf.AsSpan(i * isoPacketDescriptorSizeItemSize));
-                packetDescriptors[i].length = BinaryPrimitives.ReadUInt32BigEndian(isoBuf.AsSpan(i * isoPacketDescriptorSizeItemSize + 4));
-                packetDescriptors[i].actual_length = BinaryPrimitives.ReadUInt32BigEndian(isoBuf.AsSpan(i * isoPacketDescriptorSizeItemSize + 8));
-                packetDescriptors[i].status = BinaryPrimitives.ReadUInt32BigEndian(isoBuf.AsSpan(i * isoPacketDescriptorSizeItemSize + 12));
-            }
-
+            var packetDescriptors = await Stream.ReadUsbIpIsoPacketDescriptorsAsync(submit.number_of_packets, cancellationToken);
             if (packetDescriptors.Any((d) => d.length > ushort.MaxValue))
             {
                 // VBoxUSB uses ushort for length, and that is fine as none of the current
@@ -172,62 +160,46 @@ namespace UsbIpServer
                         }
                     }
 
-                    var retSubmit = new UsbIpHeaderRetSubmit()
+                    var header = new UsbIpHeader
                     {
-                        status = -(int)Errno.SUCCESS,
-                        actual_length = (int)packetDescriptors.Sum((pd) => pd.actual_length),
-                        start_frame = submit.start_frame,
-                        number_of_packets = submit.number_of_packets,
-                        error_count = 0,
+                        basic = new UsbIpHeaderBasic
+                        {
+                            command = UsbIpCmd.USBIP_RET_SUBMIT,
+                            seqnum = basic.seqnum,
+                        },
+                        ret_submit = new UsbIpHeaderRetSubmit()
+                        {
+                            status = -(int)Errno.SUCCESS,
+                            actual_length = (int)packetDescriptors.Sum((pd) => pd.actual_length),
+                            start_frame = submit.start_frame,
+                            number_of_packets = submit.number_of_packets,
+                            error_count = packetDescriptors.Count((d) => d.status != -(int)Errno.SUCCESS),
+                        },
                     };
 
-                    Logger.LogTrace($"ISO: error_count: {retSubmit.error_count}, actual_length: {retSubmit.actual_length}");
+                    Logger.LogTrace($"ISO: error_count: {header.ret_submit.error_count}, actual_length: {header.ret_submit.actual_length}");
 
-                    var retTransfer = buf;
-                    if ((basic.direction == UsbIpDir.USBIP_DIR_IN) && (retSubmit.actual_length != submit.transfer_buffer_length))
+                    var retBuf = buf;
+                    if ((basic.direction == UsbIpDir.USBIP_DIR_IN) && (header.ret_submit.actual_length != submit.transfer_buffer_length))
                     {
                         // USBIP requires us to transfer the actual data without padding.
-                        // So, in case we have a short read  we need to copy the data to a new "byte-stuffed" buffer.
-                        retTransfer = new byte[retSubmit.actual_length];
-                        var expectedOffset = 0;
-                        var retOffset = 0;
-                        for (var i = 0; i < packetDescriptors.Length; ++i)
+                        retBuf = new byte[header.ret_submit.actual_length];
+                        var sourceOffset = 0;
+                        var destinationOffset = 0;
+                        foreach (var pd in packetDescriptors)
                         {
-                            if ((int)packetDescriptors[i].status != -(int)Errno.SUCCESS)
-                            {
-                                retSubmit.error_count++;
-                            }
-                            buf.AsSpan(expectedOffset, (int)packetDescriptors[i].actual_length).CopyTo(retTransfer.AsSpan(retOffset, (int)packetDescriptors[i].actual_length));
-                            expectedOffset += (int)packetDescriptors[i].length;
-                            retOffset += (int)packetDescriptors[i].actual_length;
+                            buf.AsSpan(sourceOffset, (int)pd.actual_length).CopyTo(retBuf.AsSpan(destinationOffset));
+                            sourceOffset += (int)pd.length;
+                            destinationOffset += (int)pd.actual_length;
                         }
                     }
 
-                    var retBuf = new byte[48 /* sizeof(usbip_header) */];
-                    BinaryPrimitives.WriteUInt32BigEndian(retBuf.AsSpan(0), (uint)UsbIpCmd.USBIP_RET_SUBMIT);
-                    BinaryPrimitives.WriteUInt32BigEndian(retBuf.AsSpan(4), basic.seqnum);
-                    BinaryPrimitives.WriteUInt32BigEndian(retBuf.AsSpan(8), 0);
-                    BinaryPrimitives.WriteUInt32BigEndian(retBuf.AsSpan(12), 0);
-                    BinaryPrimitives.WriteUInt32BigEndian(retBuf.AsSpan(16), 0);
-                    BinaryPrimitives.WriteInt32BigEndian(retBuf.AsSpan(20), retSubmit.status);
-                    BinaryPrimitives.WriteInt32BigEndian(retBuf.AsSpan(24), retSubmit.actual_length);
-                    BinaryPrimitives.WriteInt32BigEndian(retBuf.AsSpan(28), retSubmit.start_frame);
-                    BinaryPrimitives.WriteInt32BigEndian(retBuf.AsSpan(32), retSubmit.number_of_packets);
-                    BinaryPrimitives.WriteInt32BigEndian(retBuf.AsSpan(36), retSubmit.error_count);
-                    for (var i = 0; i < packetDescriptors.Length; ++i)
-                    {
-                        BinaryPrimitives.WriteUInt32BigEndian(isoBuf.AsSpan(i * isoPacketDescriptorSizeItemSize), packetDescriptors[i].offset);
-                        BinaryPrimitives.WriteUInt32BigEndian(isoBuf.AsSpan(i * isoPacketDescriptorSizeItemSize + 4), packetDescriptors[i].length);
-                        BinaryPrimitives.WriteUInt32BigEndian(isoBuf.AsSpan(i * isoPacketDescriptorSizeItemSize + 8), packetDescriptors[i].actual_length);
-                        BinaryPrimitives.WriteUInt32BigEndian(isoBuf.AsSpan(i * isoPacketDescriptorSizeItemSize + 12), packetDescriptors[i].status);
-                    }
-
-                    await Stream.WriteAsync(retBuf, cancellationToken);
+                    await Stream.WriteAsync(header.ToBytes(), cancellationToken);
                     if (basic.direction == UsbIpDir.USBIP_DIR_IN)
                     {
-                        await Stream.WriteAsync(retTransfer, cancellationToken);
+                        await Stream.WriteAsync(retBuf, cancellationToken);
                     }
-                    await Stream.WriteAsync(isoBuf, cancellationToken);
+                    await Stream.WriteAsync(packetDescriptors.ToBytes(), cancellationToken);
                 }, cancellationToken, TaskScheduler.Default);
             }
             finally
@@ -292,7 +264,7 @@ namespace UsbIpServer
 
             if (basic.direction == UsbIpDir.USBIP_DIR_OUT)
             {
-                await RecvExactSizeAsync(Stream, buf.AsMemory()[payloadOffset..], cancellationToken);
+                await Stream.ReadExactlyAsync(buf.AsMemory()[payloadOffset..], cancellationToken);
             }
 
             // We now have received the entire SUBMIT request:
@@ -303,8 +275,6 @@ namespace UsbIpServer
             //   The pending URBs can be completed out of order, but the replies must be sent atomically.
 
             Task ioctl;
-            // Boxed into a class, so we can use Interlocked with null.
-            object? gcHandle = null;
             var pending = false;
 
             if ((basic.ep == 0)
@@ -367,28 +337,23 @@ namespace UsbIpServer
                     Logger.LogTrace($"Scheduled seqnum={basic.seqnum}, pending count = {PendingSubmits.Count}");
                 }
                 pending = true;
-                // We need to keep the pinning alive until after the ioctl completes, but we must
-                // also free it whatever happens.
-                Interlocked.Exchange(ref gcHandle, GCHandle.Alloc(buf, GCHandleType.Pinned));
+                // Input or output, exceptions or not, this buffer must be locked until after the ioctl has completed.
+                var gcHandle = GCHandle.Alloc(buf, GCHandleType.Pinned);
                 try
                 {
-                    urb.buf = ((GCHandle?)gcHandle)!.Value.AddrOfPinnedObject();
+                    urb.buf = gcHandle.AddrOfPinnedObject();
                     StructToBytes(urb, bytes);
                     ioctl = Device.IoControlAsync(SUPUSB_IOCTL.SEND_URB, bytes, bytes);
-                    _ = ioctl.ContinueWith((task) =>
-                    {
-                        // This acts as a "finally" clause *after* the ioctl completes.
-                        ((GCHandle?)Interlocked.Exchange(ref gcHandle, null))?.Free();
-                        return Task.CompletedTask;
-                    }, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
                 }
                 catch
                 {
-#pragma warning disable CA1508 // Avoid dead conditional code (false positive)
-                    ((GCHandle?)Interlocked.Exchange(ref gcHandle, null))?.Free();
-#pragma warning restore CA1508 // Avoid dead conditional code
+                    gcHandle.Free();
                     throw;
                 }
+                _ = ioctl.ContinueWith((task) =>
+                {
+                    gcHandle.Free();
+                }, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
             }
 
             // At this point we have initiated the ioctl (and possibly awaited it for special cases).
@@ -416,41 +381,38 @@ namespace UsbIpServer
                     BytesToStruct(bytes, out urb);
                 }
 
-                var retSubmit = new UsbIpHeaderRetSubmit()
+                var header = new UsbIpHeader
                 {
-                    status = -(int)ConvertError(urb.error),
-                    actual_length = (int)urb.len,
-                    start_frame = submit.start_frame,
-                    number_of_packets = (int)urb.numIsoPkts,
-                    error_count = 0,
+                    basic = new UsbIpHeaderBasic
+                    {
+                        command = UsbIpCmd.USBIP_RET_SUBMIT,
+                        seqnum = basic.seqnum,
+                    },
+                    ret_submit = new UsbIpHeaderRetSubmit()
+                    {
+                        status = -(int)Errno.SUCCESS,
+                        actual_length = (int)urb.len,
+                        start_frame = submit.start_frame,
+                        number_of_packets = (int)urb.numIsoPkts,
+                        error_count = 0,
+                    },
                 };
 
                 if (transferType == Constants.USB_ENDPOINT_TYPE_CONTROL)
                 {
-                    retSubmit.actual_length = (retSubmit.actual_length > payloadOffset) ? (retSubmit.actual_length - payloadOffset) : 0;
+                    header.ret_submit.actual_length = (header.ret_submit.actual_length > payloadOffset) ? (header.ret_submit.actual_length - payloadOffset) : 0;
                 }
 
                 if (urb.error != UsbSupError.USBSUP_XFER_OK)
                 {
-                    Logger.LogDebug($"{urb.error} -> {ConvertError(urb.error)} -> {retSubmit.status}");
+                    Logger.LogDebug($"{urb.error} -> {ConvertError(urb.error)} -> {header.ret_submit.status}");
                 }
-                Logger.LogTrace($"actual: {retSubmit.actual_length}, requested: {requestLength}");
+                Logger.LogTrace($"actual: {header.ret_submit.actual_length}, requested: {requestLength}");
 
-                var retBuf = new byte[48 /* sizeof(usbip_header) */];
-                BinaryPrimitives.WriteUInt32BigEndian(retBuf.AsSpan(0), (uint)UsbIpCmd.USBIP_RET_SUBMIT);
-                BinaryPrimitives.WriteUInt32BigEndian(retBuf.AsSpan(4), basic.seqnum);
-                BinaryPrimitives.WriteUInt32BigEndian(retBuf.AsSpan(8), 0);
-                BinaryPrimitives.WriteUInt32BigEndian(retBuf.AsSpan(12), 0);
-                BinaryPrimitives.WriteUInt32BigEndian(retBuf.AsSpan(16), 0);
-                BinaryPrimitives.WriteInt32BigEndian(retBuf.AsSpan(20), retSubmit.status);
-                BinaryPrimitives.WriteInt32BigEndian(retBuf.AsSpan(24), retSubmit.actual_length);
-                BinaryPrimitives.WriteInt32BigEndian(retBuf.AsSpan(28), retSubmit.start_frame);
-                BinaryPrimitives.WriteInt32BigEndian(retBuf.AsSpan(32), retSubmit.number_of_packets);
-                BinaryPrimitives.WriteInt32BigEndian(retBuf.AsSpan(36), retSubmit.error_count);
-                await Stream.WriteAsync(retBuf, cancellationToken);
+                await Stream.WriteAsync(header.ToBytes(), cancellationToken);
                 if (basic.direction == UsbIpDir.USBIP_DIR_IN)
                 {
-                    await Stream.WriteAsync(buf.AsMemory(payloadOffset, retSubmit.actual_length), cancellationToken);
+                    await Stream.WriteAsync(buf.AsMemory(payloadOffset, header.ret_submit.actual_length), cancellationToken);
                 }
             }, cancellationToken, TaskScheduler.Default);
         }
@@ -486,60 +448,40 @@ namespace UsbIpServer
 
             // Now we are synchronous with the sender.
 
-            var retUnlink = new UsbIpHeaderRetUnlink()
+            var header = new UsbIpHeader
             {
-                status = -(int)(pending ? Interop.Linux.Errno.ECONNRESET : Interop.Linux.Errno.SUCCESS),
+                basic = new UsbIpHeaderBasic
+                {
+                    command = UsbIpCmd.USBIP_RET_UNLINK,
+                    seqnum = basic.seqnum,
+                },
+                ret_submit = new UsbIpHeaderRetSubmit()
+                {
+                    status = -(int)(pending ? Errno.ECONNRESET : Errno.SUCCESS),
+                },
             };
-            var retBuf = new byte[48 /* sizeof(usbip_header) */];
-            BinaryPrimitives.WriteUInt32BigEndian(retBuf.AsSpan(0), (uint)UsbIpCmd.USBIP_RET_UNLINK);
-            BinaryPrimitives.WriteUInt32BigEndian(retBuf.AsSpan(4), basic.seqnum);
-            BinaryPrimitives.WriteUInt32BigEndian(retBuf.AsSpan(8), 0);
-            BinaryPrimitives.WriteUInt32BigEndian(retBuf.AsSpan(12), 0);
-            BinaryPrimitives.WriteUInt32BigEndian(retBuf.AsSpan(16), 0);
-            BinaryPrimitives.WriteInt32BigEndian(retBuf.AsSpan(20), retUnlink.status);
-            await Stream.WriteAsync(retBuf.AsMemory(), cancellationToken);
+
+            await Stream.WriteAsync(header.ToBytes(), cancellationToken);
         }
 
         public async Task RunAsync(CancellationToken cancellationToken)
         {
             while (true)
             {
-                var buf = new byte[48 /* sizeof(usbip_header) */];
-                await RecvExactSizeAsync(Stream, buf, cancellationToken);
-                var basic = new UsbIpHeaderBasic
-                {
-                    command = (UsbIpCmd)BinaryPrimitives.ReadUInt32BigEndian(buf),
-                    seqnum = BinaryPrimitives.ReadUInt32BigEndian(buf.AsSpan(4)),
-                    devid = BinaryPrimitives.ReadUInt32BigEndian(buf.AsSpan(8)),
-                    direction = (UsbIpDir)BinaryPrimitives.ReadUInt32BigEndian(buf.AsSpan(12)),
-                    ep = BinaryPrimitives.ReadUInt32BigEndian(buf.AsSpan(16)),
-                };
-
-                switch (basic.command)
+                var header = await Stream.ReadUsbIpHeaderAsync(cancellationToken);
+                switch (header.basic.command)
                 {
                     case UsbIpCmd.USBIP_CMD_SUBMIT:
-                        var submit = new UsbIpHeaderCmdSubmit
-                        {
-                            transfer_flags = BinaryPrimitives.ReadUInt32BigEndian(buf.AsSpan(20)),
-                            transfer_buffer_length = BinaryPrimitives.ReadUInt32BigEndian(buf.AsSpan(24)),
-                            start_frame = BinaryPrimitives.ReadInt32BigEndian(buf.AsSpan(28)),
-                            number_of_packets = BinaryPrimitives.ReadInt32BigEndian(buf.AsSpan(32)),
-                            interval = BinaryPrimitives.ReadInt32BigEndian(buf.AsSpan(36)),
-                            setup = BytesToStruct<USB_DEFAULT_PIPE_SETUP_PACKET>(buf.AsSpan(40)),
-                        };
-                        Logger.LogTrace($"USBIP_CMD_SUBMIT, seqnum={basic.seqnum}, flags={submit.transfer_flags}, length={submit.transfer_buffer_length}, ep={basic.ep}");
-                        await HandleSubmitAsync(basic, submit, cancellationToken);
+                        Logger.LogTrace($"USBIP_CMD_SUBMIT, seqnum={header.basic.seqnum}, flags={header.cmd_submit.transfer_flags}, " +
+                                $"length={header.cmd_submit.transfer_buffer_length}, ep={header.basic.ep}");
+                        await HandleSubmitAsync(header.basic, header.cmd_submit, cancellationToken);
                         break;
                     case UsbIpCmd.USBIP_CMD_UNLINK:
-                        var unlink = new UsbIpHeaderCmdUnlink
-                        {
-                            seqnum = BinaryPrimitives.ReadUInt32BigEndian(buf.AsSpan(20)),
-                        };
-                        Logger.LogTrace($"USBIP_CMD_UNLINK, seqnum={basic.seqnum}, unlink_seqnum={unlink.seqnum}");
-                        await HandleUnlinkAsync(basic, unlink, cancellationToken);
+                        Logger.LogTrace($"USBIP_CMD_UNLINK, seqnum={header.basic.seqnum}, unlink_seqnum={header.cmd_unlink.seqnum}");
+                        await HandleUnlinkAsync(header.basic, header.cmd_unlink, cancellationToken);
                         break;
                     default:
-                        throw new ProtocolViolationException($"unknown UsbIpCmd {basic.command}");
+                        throw new ProtocolViolationException($"unknown UsbIpCmd {header.basic.command}");
                 }
             }
         }

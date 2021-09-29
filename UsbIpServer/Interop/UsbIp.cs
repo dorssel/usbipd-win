@@ -2,7 +2,13 @@
 //
 // SPDX-License-Identifier: GPL-2.0-only
 
+using System;
+using System.Buffers.Binary;
+using System.IO;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Threading;
+using System.Threading.Tasks;
 using Windows.Win32.Devices.Usb;
 
 namespace UsbIpServer.Interop
@@ -125,6 +131,23 @@ namespace UsbIpServer.Interop
             public int status;
         }
 
+        /// <summary>UsbIp: drivers/usbip_common.h: usbip_header</summary>
+        [StructLayout(LayoutKind.Explicit, Pack = 1)]
+        public struct UsbIpHeader
+        {
+            [FieldOffset(0)]
+            public UsbIpHeaderBasic basic; // renamed, 'base' is a keyword in C#
+
+            [FieldOffset(20)]
+            public UsbIpHeaderCmdSubmit cmd_submit;
+            [FieldOffset(20)]
+            public UsbIpHeaderRetSubmit ret_submit;
+            [FieldOffset(20)]
+            public UsbIpHeaderCmdUnlink cmd_unlink;
+            [FieldOffset(20)]
+            public UsbIpHeaderRetUnlink ret_unlink;
+        }
+
         /// <summary>UsbIp: drivers/usbip_common.h: usbip_iso_packet_descriptor</summary>
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
         public struct UsbIpIsoPacketDescriptor
@@ -133,6 +156,63 @@ namespace UsbIpServer.Interop
             public uint length;
             public uint actual_length;
             public uint status;
+        }
+
+        static void ReverseEndianness(this Span<int> values)
+        {
+            foreach (ref var i in values)
+            {
+                i = BinaryPrimitives.ReverseEndianness(i);
+            }
+        }
+
+        static void ReverseEndianness(this ref UsbIpHeader header)
+        {
+            // The first 40 bytes of UsbIpHeader are always 10 4-byte integers.
+            MemoryMarshal.Cast<UsbIpHeader, int>(MemoryMarshal.CreateSpan(ref header, 1))[0..10].ReverseEndianness();
+        }
+
+        /// <summary>
+        /// Read a native header from a big endian stream.
+        /// </summary>
+        public static async Task<UsbIpHeader> ReadUsbIpHeaderAsync(this Stream stream, CancellationToken cancellationToken)
+        {
+            var bytes = new byte[Unsafe.SizeOf<UsbIpHeader>()];
+            await stream.ReadExactlyAsync(bytes, cancellationToken);
+            MemoryMarshal.AsRef<UsbIpHeader>(bytes).ReverseEndianness();
+            return MemoryMarshal.AsRef<UsbIpHeader>(bytes);
+        }
+
+        /// <summary>
+        /// Read native descriptors from a big endian stream.
+        /// </summary>
+        public static async Task<UsbIpIsoPacketDescriptor[]> ReadUsbIpIsoPacketDescriptorsAsync(this Stream stream, int count, CancellationToken cancellationToken)
+        {
+            var bytes = new byte[count * Unsafe.SizeOf<UsbIpIsoPacketDescriptor>()];
+            await stream.ReadExactlyAsync(bytes, cancellationToken);
+            MemoryMarshal.Cast<byte, int>(bytes).ReverseEndianness();
+            return MemoryMarshal.Cast<byte, UsbIpIsoPacketDescriptor>(bytes).ToArray();
+        }
+
+        /// <summary>
+        /// Marshal the native header to a big endian byte array.
+        /// </summary>
+        public static byte[] ToBytes(this in UsbIpHeader header)
+        {
+            var bytes = new byte[Unsafe.SizeOf<UsbIpHeader>()];
+            MemoryMarshal.Write(bytes, ref Unsafe.AsRef(in header));
+            MemoryMarshal.AsRef<UsbIpHeader>(bytes).ReverseEndianness();
+            return bytes;
+        }
+
+        /// <summary>
+        /// Marshal the native descriptors to a big endian byte array.
+        /// </summary>
+        public static byte[] ToBytes(this UsbIpIsoPacketDescriptor[] descriptors)
+        {
+            var bytes = MemoryMarshal.Cast<UsbIpIsoPacketDescriptor, byte>(descriptors).ToArray();
+            MemoryMarshal.Cast<byte, int>(bytes).ReverseEndianness();
+            return bytes;
         }
     }
 }

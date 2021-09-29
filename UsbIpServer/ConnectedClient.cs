@@ -101,7 +101,7 @@ namespace UsbIpServer
             BusId busId;
             {
                 var buf = new byte[SYSFS_BUS_ID_SIZE];
-                await RecvExactSizeAsync(Stream, buf, cancellationToken);
+                await Stream.ReadExactlyAsync(buf, cancellationToken);
                 if (!BusId.TryParse(Encoding.UTF8.GetString(buf).TrimEnd('\0'), out busId))
                 {
                     await SendOpCodeAsync(OpCode.OP_REP_IMPORT, Status.ST_NODEV);
@@ -212,7 +212,7 @@ namespace UsbIpServer
         async Task<OpCode> RecvOpCodeAsync(CancellationToken cancellationToken)
         {
             var buf = new byte[8];
-            await RecvExactSizeAsync(Stream, buf, cancellationToken);
+            await Stream.ReadExactlyAsync(buf, cancellationToken);
 
             // unmarshal and validate
             var version = BinaryPrimitives.ReadUInt16BigEndian(buf.AsSpan(0));

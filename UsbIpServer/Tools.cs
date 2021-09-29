@@ -10,6 +10,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -22,7 +23,6 @@ using Windows.Win32.System.PropertiesSystem;
 using Windows.Win32.System.SystemServices;
 
 using UsbIpServer.Interop;
-using System.Text;
 
 namespace Windows.Win32.System.SystemServices
 {
@@ -45,7 +45,7 @@ namespace UsbIpServer
 {
     static class Tools
     {
-        public static async Task RecvExactSizeAsync(Stream stream, Memory<byte> buf, CancellationToken cancellationToken)
+        public static async Task ReadExactlyAsync(this Stream stream, Memory<byte> buf, CancellationToken cancellationToken)
         {
             var remain = buf.Length;
             while (remain > 0)

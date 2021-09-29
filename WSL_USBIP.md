@@ -12,7 +12,7 @@ devices are attached to.
 
 ```pwsh
 > usbipd wsl list
-BusId  Device                                      State
+BUSID  DEVICE                                      STATE
 1-7    USB Input Device                            Not attached
 4-4    STMicroelectronics STLink dongle, STMic...  Not attached
 5-2    Surface Ethernet Adapter                    Not attached
@@ -21,7 +21,7 @@ BusId  Device                                      State
 [sudo] password for user:
 
 > usbipd wsl list
-BusId  Device                                      State
+BUSID  DEVICE                                      STATE
 1-7    USB Input Device                            Not attached
 4-4    STMicroelectronics STLink dongle, STMic...  Attached - Ubuntu
 5-2    Surface Ethernet Adapter                    Not attached
@@ -43,7 +43,7 @@ automatically stop sharing if it is unplugged or the computer is restarted.
 > usbipd wsl detach --busid 4-4
 
 > usbipd wsl list
-BusId  Device                                      State
+BUSID  DEVICE                                      STATE
 1-7    USB Input Device                            Not attached
 4-4    STMicroelectronics STLink dongle, STMic...  Not attached
 5-2    Surface Ethernet Adapter                    Not attached
