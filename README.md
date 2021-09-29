@@ -55,7 +55,7 @@ sudo usbip attach --remote=<host> --busid=<bus-port>
 ```
 
 A list of tested devices can be found on the [wiki](https://github.com/dorssel/usbipd-win/wiki).
-Please file an issue if you your device is not working.
+Please file an issue if your device is not working.
 
 ## How to remove
 
