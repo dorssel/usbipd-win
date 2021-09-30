@@ -142,13 +142,13 @@ namespace UsbIpServer
 
         static async Task<ExportedDevice?> GetDevice(SafeDeviceInfoSetHandle deviceInfoSet, SP_DEVINFO_DATA devInfoData, CancellationToken cancellationToken)
         {
-            var instanceId = GetDevicePropertyString(deviceInfoSet, devInfoData, in Constants.DEVPKEY_Device_InstanceId);
+            var instanceId = GetDevicePropertyString(deviceInfoSet, devInfoData, Constants.DEVPKEY_Device_InstanceId);
             if (IsUsbHub(instanceId))
             {
                 // device is itself a USB hub, which is not supported
                 return null;
             }
-            var parentId = GetDevicePropertyString(deviceInfoSet, devInfoData, in Constants.DEVPKEY_Device_Parent);
+            var parentId = GetDevicePropertyString(deviceInfoSet, devInfoData, Constants.DEVPKEY_Device_Parent);
             if (!IsUsbHub(parentId))
             {
                 // parent is not a USB hub (which it must be for this device to be supported)
@@ -159,7 +159,7 @@ namespace UsbIpServer
 
             GetBusId(deviceInfoSet, devInfoData, out var busId);
 
-            var address = GetDevicePropertyUInt32(deviceInfoSet, devInfoData, in Constants.DEVPKEY_Device_Address);
+            var address = GetDevicePropertyUInt32(deviceInfoSet, devInfoData, Constants.DEVPKEY_Device_Address);
             if (busId.Port != address)
             {
                 throw new NotSupportedException($"DEVPKEY_Device_Address ({address}) does not match DEVPKEY_Device_LocationInfo ({busId.Port})");

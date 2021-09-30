@@ -14,7 +14,7 @@ SPDX-License-Identifier: GPL-2.0-only
     <PackageVersion Include="Microsoft.Extensions.Hosting.WindowsServices" Version="5.0.1" />
     <PackageVersion Include="Microsoft.Win32.Registry" Version="5.0.0" />
     <PackageVersion Include="System.Management" Version="5.0.0" />
-    <PackageVersion Include="Microsoft.Windows.CsWin32" Version="0.1.506-beta" />
+    <PackageVersion Include="Microsoft.Windows.CsWin32" Version="0.1.588-beta" />
 
     <!-- Installer -->
     <PackageVersion Include="WiX" Version="3.11.2" />

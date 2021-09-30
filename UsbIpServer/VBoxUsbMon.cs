@@ -128,7 +128,7 @@ namespace UsbIpServer
                         // "VBoxUSB".
 
                         // Best effort, not really a problem if this fails.
-                        SetDevicePropertyString(deviceInfoSet, in infoData, in Constants.DEVPKEY_Device_FriendlyName, $"USBIP Shared Device {device.BusId}");
+                        SetDevicePropertyString(deviceInfoSet, infoData, Constants.DEVPKEY_Device_FriendlyName, $"USBIP Shared Device {device.BusId}");
                     }
                     catch (Win32Exception) { }
 
