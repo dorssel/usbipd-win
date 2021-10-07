@@ -83,4 +83,4 @@ this firewall rule can be tweaked to fine tune access control.
 ## USBIP on WSL 2
 
 Currently, WSL 2 does not support USB devices by default. A workaround to this limitation is to use usbip.
-Instructions on how to setup a Linux usbip client can be found [here](WSL_USBIP.md).
+Instructions on how to setup a Linux usbip client can be found [here](https://github.com/dorssel/usbipd-win/wiki/WSL-support).
