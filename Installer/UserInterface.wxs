@@ -367,7 +367,7 @@ Published under the terms of the &lt;a href=&quot;https://www.gnu.org/licenses/g
                     <Condition Action="show">InstallMode = "" OR InstallMode = "Install" OR InstallMode = "Resume"</Condition>
                 </Control>
                 <Control Id="InstallContent" Type="Text" X="$(var.ContentX)" Y="$(var.ContentY)" Width="$(var.ContentW)" Height="13" NoPrefix="yes" Hidden="yes" TabSkip="yes"
-                         Text="{\Body}Please wait while whis wizard installs [ProductName].">
+                         Text="{\Body}Please wait while this wizard installs [ProductName].">
                     <Condition Action="show">InstallMode = "" OR InstallMode = "Install" OR InstallMode = "Resume"</Condition>
                 </Control>
 
@@ -376,7 +376,7 @@ Published under the terms of the &lt;a href=&quot;https://www.gnu.org/licenses/g
                     <Condition Action="show">InstallMode = "Update"</Condition>
                 </Control>
                 <Control Id="UpdateContent" Type="Text" X="$(var.ContentX)" Y="$(var.ContentY)" Width="$(var.ContentW)" Height="13" NoPrefix="yes" Hidden="yes" TabSkip="yes"
-                         Text="{\Body}Please wait while whis wizard updates [ProductName].">
+                         Text="{\Body}Please wait while this wizard updates [ProductName].">
                     <Condition Action="show">InstallMode = "Update"</Condition>
                 </Control>
                 
@@ -385,7 +385,7 @@ Published under the terms of the &lt;a href=&quot;https://www.gnu.org/licenses/g
                     <Condition Action="show">InstallMode = "Repair"</Condition>
                 </Control>
                 <Control Id="RepairContent" Type="Text" X="$(var.ContentX)" Y="$(var.ContentY)" Width="$(var.ContentW)" Height="13" NoPrefix="yes" Hidden="yes" TabSkip="yes"
-                         Text="{\Body}Please wait while whis wizard repairs [ProductName].">
+                         Text="{\Body}Please wait while this wizard repairs [ProductName].">
                     <Condition Action="show">InstallMode = "Repair"</Condition>
                 </Control>
 
@@ -394,7 +394,7 @@ Published under the terms of the &lt;a href=&quot;https://www.gnu.org/licenses/g
                     <Condition Action="show">InstallMode = "Remove"</Condition>
                 </Control>
                 <Control Id="RemoveContent" Type="Text" X="$(var.ContentX)" Y="$(var.ContentY)" Width="$(var.ContentW)" Height="13" NoPrefix="yes" Hidden="yes" TabSkip="yes"
-                         Text="{\Body}Please wait while whis wizard removes [ProductName].">
+                         Text="{\Body}Please wait while this wizard removes [ProductName].">
                     <Condition Action="show">InstallMode = "Remove"</Condition>
                 </Control>
 
