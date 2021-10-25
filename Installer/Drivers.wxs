@@ -17,14 +17,35 @@ SPDX-License-Identifier: GPL-2.0-only
                 <File Id="README.md" />
             </Component>
             <Component>
-                <File Id="Oracle.cer" />
+                <!--
+                NOTE: Oracle got their .cat signature wrong!
+                Oracle's .cat file has 3 signatures:
+                1) a SHA-1 signature, which is OK
+                2) a SHA-256 signature, but it is invalid!
+                   (probably they got the signtool.exe command for adding a dual-signature wrong)
+                3) a Microsoft Attestation signature, which in fact is not required for the .cat (only for the .sys), but it is OK.
+                   (it is a bit weird that Microsoft added an attestation signature on a catalog that has an invalid signature...)
+
+                For silent install (winget), we need to install a valid signing certificate of the .cat to the trusted publisher list (any will do).
+                However:
+                - we no longer want that to be the SHA-1 signature (deprecated!), we did this up to version 1.1.0
+                - the Oracle SHA-256 signature is invalid, so it cannot be used
+                - if we would use the Microsoft certificate then suddenly *all* attestation signed catalogs would be silently accepted
+                  (this is pretty much every modern driver) -> way too much.
+
+                Solution:
+                Sign the .cat with our own certificate (the one that we also use to sign the .msi).
+                In the future we may even supply our own, improved .inf (and recreate the catalog, of course).
+                All we really need is the .sys, which fortunately is correctly signed.
+                -->
+                <File Id="Publisher.cer" />
             </Component>
         </DirectoryRef>
 
         <CustomAction
             Id="DriverSilentInstall"
             Directory="TARGETDIR"
-            ExeCommand="[System64Folder]certutil.exe –addstore –f TrustedPublisher &quot;[#Oracle.cer]&quot;"
+            ExeCommand="[System64Folder]certutil.exe –addstore –f TrustedPublisher &quot;[#Publisher.cer]&quot;"
             Execute="deferred"
             Impersonate="no"
             Return="ignore"
@@ -70,7 +91,7 @@ SPDX-License-Identifier: GPL-2.0-only
     <Fragment>
         <ComponentGroup Id="VBoxUSB">
             <ComponentRef Id="README.md" />
-            <ComponentRef Id="Oracle.cer" />
+            <ComponentRef Id="Publisher.cer" />
             <ComponentRef Id="VBoxUSB.cat" />
             <ComponentRef Id="VBoxUSB.sys" />
             <ComponentRef Id="VBoxUSB.inf" />
@@ -79,6 +100,7 @@ SPDX-License-Identifier: GPL-2.0-only
     <Fragment>
         <ComponentGroup Id="VBoxUSBMon">
             <ComponentRef Id="README.md" />
+            <ComponentRef Id="Publisher.cer" />
             <ComponentRef Id="VBoxUSBMon.cat" />
             <ComponentRef Id="VBoxUSBMon.sys" />
             <ComponentRef Id="VBoxUSBMon.inf" />
