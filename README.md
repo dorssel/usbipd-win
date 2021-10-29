@@ -13,36 +13,41 @@ SPDX-License-Identifier: GPL-2.0-only
 
 Windows software for sharing locally connected USB devices to other machines, including Hyper-V guests and WSL 2.
 
-## How to use
+## How to install
 
 This software requires Microsoft Windows 8 / Microsoft Windows Server 2012 or newer;
 it does not depend on any other software.
-
-### Installation
 
 Run the installer (.msi) from the [latest release](https://github.com/dorssel/usbipd-win/releases/latest)
 on the Windows machine where your USB device is connected.
 
 Alternatively, use the Windows Package Manager:
 
-```pwsh
-winget install usbipd
+```powershell
+winget install --exact dorssel.usbipd-win
 ```
 
-This will install and run a service called `usbipd` (display name: USBIP Device Host).
-You can check the status of this service using the Services app from Windows.
-Additionally, it will add the command line tool `usbipd` in your path.
+This will install:
 
-### Lookup and Enable Devices
+- A service called `usbipd` (display name: USBIP Device Host).\
+  You can check the status of this service using the Services app from Windows.
+- A command line tool `usbipd`.\
+  The location of this tool will be added to the `PATH` environment variable.
+- A firewall rule called `usbipd` to allow all local subnets to connect to the service.\
+  You can modify this firewall rule to fine tune access control.
 
-By default devices are not shared with usbip clients.
+## How to use
+
+### Share Devices
+
+By default devices are not shared with USBIP clients.
 To lookup and share devices, open a command prompt as an Administrator and use the `usbipd` tool.
 For example:
 
-```pwsh
+```powershell
 usbipd --help
 usbipd list
-usbipd bind --busid=<bus-port>
+usbipd bind --busid=<BUSID>
 ```
 
 ### Connecting Devices
@@ -50,12 +55,27 @@ usbipd bind --busid=<bus-port>
 From another (possibly virtual) machine running Linux, use `usbip` to claim the USB device:
 
 ```bash
-usbip list --remote=<host>
-sudo usbip attach --remote=<host> --busid=<bus-port>
+usbip list --remote=<HOST>
+sudo usbip attach --remote=<HOST> --busid=<BUSID>
 ```
 
 A list of tested devices can be found on the [wiki](https://github.com/dorssel/usbipd-win/wiki).
 Please file an issue if your device is not working.
+
+### WSL 2
+
+You can use the `usbipd wsl` subcommand to share and connect a device with a single command.
+For example, open a command prompt as an Administrator:
+
+```powershell
+usbipd wsl --help
+usbipd wsl list
+usbipd wsl attach --busid=<BUSID>
+```
+
+:information_source:\
+Currently, WSL 2 does not support USB devices by default.\
+As a workaround, instructions on how to setup a USBIP client for WSL 2 can be found on the [wiki](https://github.com/dorssel/usbipd-win/wiki/WSL-support).
 
 ## How to remove
 
@@ -63,24 +83,8 @@ Uninstall via Add/Remove Programs or via Settings/Apps.
 
 Alternatively, use the Windows Package Manager:
 
-```pwsh
+```powershell
 winget uninstall usbipd
 ```
 
-There should be no left-overs, but if you do find any: please file an issue.
-
-## How it works
-
-The software glues together the UsbIp network protocol (as implemented by the Linux kernel) and the USB drivers.
-The installer includes the USB drivers from VirtualBox, which are also licensed under GPL and are properly signed by Oracle.
-This *should* play nice with a coexisting full installation of VirtualBox, but that has not been tested extensively.
-
-The software itself consists of an auto-start background service.
-
-The installer also adds a firewall rule called `usbipd` to allow all local subnets to connect to the service;
-this firewall rule can be tweaked to fine tune access control.
-
-## USBIP on WSL 2
-
-Currently, WSL 2 does not support USB devices by default. A workaround to this limitation is to use usbip.
-Instructions on how to setup a Linux usbip client can be found [here](https://github.com/dorssel/usbipd-win/wiki/WSL-support).
+There should be no left-overs; please file an issue if you do find any.
