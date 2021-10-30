@@ -202,7 +202,7 @@ namespace UsbIpServer
                     {
                         continue;
                     }
-                    persistedDevices.Add(new PersistedDevice(guid, busId, description));
+                    persistedDevices.Add(new(guid, busId, description));
                 }
             }
             return persistedDevices;

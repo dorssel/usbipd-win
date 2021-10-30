@@ -35,14 +35,14 @@ namespace UsbIpServer
             /// <summary>
             /// The index includes the direction (high bit), which for control endpoints is always unset.
             /// </summary>
-            public SortedDictionary<byte, UsbEndpoint> Endpoints { get; } = new SortedDictionary<byte, UsbEndpoint>();
+            public SortedDictionary<byte, UsbEndpoint> Endpoints { get; } = new();
 
             public USB_INTERFACE_DESCRIPTOR Descriptor { get; }
         }
 
         sealed class UsbInterface
         {
-            public SortedDictionary<byte, UsbAlternateInterface> Alternates { get; } = new SortedDictionary<byte, UsbAlternateInterface>();
+            public SortedDictionary<byte, UsbAlternateInterface> Alternates { get; } = new();
 
             byte CurrentAlternate;
 
@@ -65,12 +65,12 @@ namespace UsbIpServer
                 Descriptor = descriptor;
             }
 
-            public SortedDictionary<byte, UsbInterface> Interfaces { get; } = new SortedDictionary<byte, UsbInterface>();
+            public SortedDictionary<byte, UsbInterface> Interfaces { get; } = new();
 
             public USB_CONFIGURATION_DESCRIPTOR Descriptor { get; }
         }
 
-        SortedDictionary<byte, UsbConfiguration> Configurations { get; set; } = new SortedDictionary<byte, UsbConfiguration>();
+        SortedDictionary<byte, UsbConfiguration> Configurations { get; set; } = new();
 
         /// <summary>
         /// special value: 0 -> low power mode, not an actual configuration
@@ -93,7 +93,7 @@ namespace UsbIpServer
                             throw new ArgumentException("duplicate USB_CONFIGURATION_DESCRIPTOR_TYPE");
                         }
                         BytesToStruct(descriptor[offset..], out USB_CONFIGURATION_DESCRIPTOR config);
-                        configuration = new UsbConfiguration(config);
+                        configuration = new(config);
                         Configurations.Add(config.bConfigurationValue, configuration);
                         break;
                     case Constants.USB_INTERFACE_DESCRIPTOR_TYPE:
@@ -104,9 +104,9 @@ namespace UsbIpServer
                         BytesToStruct(descriptor[offset..], out USB_INTERFACE_DESCRIPTOR iface);
                         if (iface.bAlternateSetting == 0)
                         {
-                            configuration.Interfaces[iface.bInterfaceNumber] = new UsbInterface();
+                            configuration.Interfaces[iface.bInterfaceNumber] = new();
                         }
-                        alternateInterface = new UsbAlternateInterface(iface);
+                        alternateInterface = new(iface);
                         configuration.Interfaces[iface.bInterfaceNumber].Alternates[iface.bAlternateSetting] = alternateInterface;
                         break;
                     case Constants.USB_ENDPOINT_DESCRIPTOR_TYPE:
@@ -155,12 +155,12 @@ namespace UsbIpServer
 
         public void SetInterface(byte interfaceNumber, byte alternateSetting)
         {
-            var configuation = Configurations[CurrentConfiguration];
-            if (!configuation.Interfaces.ContainsKey(interfaceNumber))
+            var configuration = Configurations[CurrentConfiguration];
+            if (!configuration.Interfaces.ContainsKey(interfaceNumber))
             {
                 throw new ArgumentOutOfRangeException(nameof(interfaceNumber));
             }
-            configuation.Interfaces[interfaceNumber].SetAlternate(alternateSetting);
+            configuration.Interfaces[interfaceNumber].SetAlternate(alternateSetting);
 
             RefreshEndpointCache();
         }
@@ -192,7 +192,7 @@ namespace UsbIpServer
             }
         }
 
-        SortedDictionary<byte, UsbEndpoint> EndpointCache { get; } = new SortedDictionary<byte, UsbEndpoint>();
+        SortedDictionary<byte, UsbEndpoint> EndpointCache { get; } = new();
 
         public uint GetEndpointType(uint endpoint, bool input)
         {

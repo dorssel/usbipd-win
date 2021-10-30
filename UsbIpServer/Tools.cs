@@ -50,12 +50,12 @@ namespace UsbIpServer
             var remain = buf.Length;
             while (remain > 0)
             {
-                var rlen = await stream.ReadAsync(buf[^remain..], cancellationToken);
-                if (rlen == 0)
+                var readCount = await stream.ReadAsync(buf[^remain..], cancellationToken);
+                if (readCount == 0)
                 {
                     throw new EndOfStreamException();
                 }
-                remain -= rlen;
+                remain -= readCount;
             }
         }
 
@@ -190,7 +190,7 @@ namespace UsbIpServer
                 {
                     throw new UnexpectedResultException($"SetupDiGetDeviceProperty returned non-NUL terminated string");
                 }
-                return new string(output, 0, (int)(requiredSize / 2 - 1));
+                return new(output, 0, (int)(requiredSize / 2 - 1));
             }
         }
 
@@ -338,7 +338,7 @@ namespace UsbIpServer
                 {
                     throw new UnexpectedResultException($"SetupDiGetDeviceInterfaceDetail returned inconsistent size {requiredSize2} != {requiredSize}");
                 }
-                return new string(&detailData->DevicePath._0);
+                return new(&detailData->DevicePath._0);
             }
         }
 

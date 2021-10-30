@@ -135,10 +135,10 @@ namespace UsbIpServer
                     }
                 }
 
-                distros.Add(new Distribution(name, isDefault, version, isRunning, address));
+                distros.Add(new(name, isDefault, version, isRunning, address));
             }
 
-            return new WslDistributions(distros, wslHost?.Address);
+            return new(distros, wslHost?.Address);
         }
 
         public Distribution? LookupByName(string name) => Distributions.FirstOrDefault(distro => distro.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
