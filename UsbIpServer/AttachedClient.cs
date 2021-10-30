@@ -162,12 +162,12 @@ namespace UsbIpServer
 
                     var header = new UsbIpHeader
                     {
-                        basic = new UsbIpHeaderBasic
+                        basic = new()
                         {
                             command = UsbIpCmd.USBIP_RET_SUBMIT,
                             seqnum = basic.seqnum,
                         },
-                        ret_submit = new UsbIpHeaderRetSubmit()
+                        ret_submit = new()
                         {
                             status = -(int)Errno.SUCCESS,
                             actual_length = (int)packetDescriptors.Sum((pd) => pd.actual_length),
@@ -357,7 +357,7 @@ namespace UsbIpServer
             }
 
             // At this point we have initiated the ioctl (and possibly awaited it for special cases).
-            // Now we schedule a continuation to write the reponse once the ioctl completes.
+            // Now we schedule a continuation to write the response once the ioctl completes.
             // This is fire-and-forget; we'll return to the caller so it can already receive the next request.
 
             _ = ioctl.ContinueWith(async (task, state) =>
@@ -383,12 +383,12 @@ namespace UsbIpServer
 
                 var header = new UsbIpHeader
                 {
-                    basic = new UsbIpHeaderBasic
+                    basic = new()
                     {
                         command = UsbIpCmd.USBIP_RET_SUBMIT,
                         seqnum = basic.seqnum,
                     },
-                    ret_submit = new UsbIpHeaderRetSubmit()
+                    ret_submit = new()
                     {
                         status = -(int)Errno.SUCCESS,
                         actual_length = (int)urb.len,
@@ -450,12 +450,12 @@ namespace UsbIpServer
 
             var header = new UsbIpHeader
             {
-                basic = new UsbIpHeaderBasic
+                basic = new()
                 {
                     command = UsbIpCmd.USBIP_RET_UNLINK,
                     seqnum = basic.seqnum,
                 },
-                ret_submit = new UsbIpHeaderRetSubmit()
+                ret_submit = new()
                 {
                     status = -(int)(pending ? Errno.ECONNRESET : Errno.SUCCESS),
                 },

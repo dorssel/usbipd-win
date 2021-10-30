@@ -42,7 +42,7 @@ namespace UsbIpServer
         public byte ConfigurationValue { get; private init; }
         public byte NumConfigurations { get; private init; }
 
-        public UsbConfigurationDescriptors ConfigurationDescriptors { get; private set; } = new UsbConfigurationDescriptors();
+        public UsbConfigurationDescriptors ConfigurationDescriptors { get; private set; } = new();
 
         public string Manufacturer { get; set; } = string.Empty;
         public string Product { get; set; } = string.Empty;
@@ -123,14 +123,7 @@ namespace UsbIpServer
                 await hub.IoControlAsync(IoControl.IOCTL_USB_GET_DESCRIPTOR_FROM_NODE_CONNECTION, buf, buf);
                 BytesToStruct(buf.AsSpan(Marshal.SizeOf<UsbDescriptorRequest>()), out USB_CONFIGURATION_DESCRIPTOR configuration);
                 buf = new byte[Marshal.SizeOf<UsbDescriptorRequest>() + configuration.wTotalLength];
-                request = new UsbDescriptorRequest()
-                {
-                    ConnectionIndex = connectionIndex,
-                    SetupPacket = {
-                        wLength = configuration.wTotalLength,
-                        wValue = (ushort)(((byte)Constants.USB_CONFIGURATION_DESCRIPTOR_TYPE << 8) | configIndex)
-                    }
-                };
+                request.SetupPacket.wLength = configuration.wTotalLength;
                 StructToBytes(request, buf);
                 await hub.IoControlAsync(IoControl.IOCTL_USB_GET_DESCRIPTOR_FROM_NODE_CONNECTION, buf, buf);
 
@@ -225,7 +218,7 @@ namespace UsbIpServer
 
             if (RegistryUtils.GetOriginalInstanceId(exportedDevice) is string originalInstanceId)
             {
-                // If the device is currently attached, then VBoxMon will have overriden the path.
+                // If the device is currently attached, then VBoxMon will have overridden the path.
                 exportedDevice.Path = originalInstanceId;
             }
 

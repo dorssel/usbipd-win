@@ -24,7 +24,7 @@ namespace UsbIpServer
                 @"WHERE Hive='HKEY_LOCAL_MACHINE' " +
                 @$"AND RootPath='{RegistryUtils.DevicesRegistryPath.Replace(@"\", @"\\",StringComparison.InvariantCulture)}'";
 
-            watcher = new ManagementEventWatcher(query);
+            watcher = new(query);
             watcher.EventArrived += HandleEvent;
             watcher.Start();
         }

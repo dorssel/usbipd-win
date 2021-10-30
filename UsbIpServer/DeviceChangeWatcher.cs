@@ -44,7 +44,7 @@ namespace UsbIpServer
                 }
             });
 
-            watcher = new ManagementEventWatcher(query);
+            watcher = new(query);
             watcher.EventArrived += HandleEvent;
             watcher.Start();
         }

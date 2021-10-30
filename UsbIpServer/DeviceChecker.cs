@@ -53,7 +53,7 @@ namespace UsbIpServer
                 var parts = path.Split(@"\");
                 var type = parts[0];
                 var vid_pid = parts[1];
-                if (deviceId.StartsWith($@"{type}\{vid_pid}", System.StringComparison.OrdinalIgnoreCase))
+                if (deviceId.StartsWith($@"{type}\{vid_pid}", StringComparison.OrdinalIgnoreCase))
                 {
                     descriptions.Add(deviceDescription);
                 }

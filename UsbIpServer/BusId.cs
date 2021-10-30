@@ -18,7 +18,7 @@ namespace UsbIpServer
 
         public static bool TryParse(string input, out BusId busId)
         {
-            // Must be 'x-y', where x and y are possitive integers without leading zeros.
+            // Must be 'x-y', where x and y are positive integers without leading zeros.
             var match = Regex.Match(input, "^([1-9][0-9]*)-([1-9][0-9]*)$");
             if (match.Success
                 && ushort.TryParse(match.Groups[1].Value, out var bus) && bus != 0

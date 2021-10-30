@@ -199,7 +199,7 @@ namespace UsbIpServer
                     Logger.LogError(LogEvents.ClientError, $"An exception occurred while communicating with the client: {ex}");
                 }
                 
-#pragma warning disable CA1508 // Avoid dead conditional code (false possitive)
+#pragma warning disable CA1508 // Avoid dead conditional code (false positive)
                 if (status != Status.ST_OK)
 #pragma warning restore CA1508 // Avoid dead conditional code
                 {
@@ -214,7 +214,7 @@ namespace UsbIpServer
             var buf = new byte[8];
             await Stream.ReadExactlyAsync(buf, cancellationToken);
 
-            // unmarshal and validate
+            // marshal and validate
             var version = BinaryPrimitives.ReadUInt16BigEndian(buf.AsSpan(0));
             if (version != USBIP_VERSION)
             {

@@ -38,7 +38,7 @@ namespace UsbIpServer
                 Task.Run(async () => { stderr = await process.StandardError.ReadToEndAsync(); }, cancellationToken),
                 process.WaitForExitAsync(cancellationToken));
 
-            return new ProcessResult(process.ExitCode, stdout, stderr);
+            return new(process.ExitCode, stdout, stderr);
         }
 
         public static async Task<int> RunUncapturedProcessAsync(string filename, IEnumerable<string> arguments, CancellationToken cancellationToken)
