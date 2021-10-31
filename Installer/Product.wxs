@@ -39,6 +39,38 @@ SPDX-License-Identifier: GPL-2.0-only
 
         <Property Id="MSIDEPLOYMENTCOMPLIANT" Value="1" />
 
+        <!--
+        MSI specifies that TARGETDIR overrides the default installation location, and winget relies on that.
+        WiX, however, uses APPLICATIONFOLDER.
+        So, if TARGETDIR is set and APPLICATIONFOLDER is not, then copy TARGETDIR to APPLICATIONFOLDER.
+        See:
+        https://docs.microsoft.com/en-us/windows/win32/msi/targetdir
+        https://docs.microsoft.com/en-us/windows/win32/msi/changing-the-target-location-for-a-directory
+        -->
+        <SetProperty Action="UseTARGETDIR" Id="APPLICATIONFOLDER" Value="[TARGETDIR]" Before="PreserveCurrentInstallationLocation" Sequence="first">TARGETDIR AND NOT APPLICATIONFOLDER</SetProperty>
+
+        <!--
+        Get the current installation location (if any).
+        -->
+        <Property Id="CURRENTINSTALLATIONLOCATION">
+            <RegistrySearch Id="APPLICATIONFOLDER"
+                            Root="HKLM"
+                            Key="SOFTWARE\usbipd-win"
+                            Name="APPLICATIONFOLDER"
+                            Type="directory"
+                            />
+        </Property>
+
+        <!--
+        If the product is currently installed and the APPLICATIONFOLDER has not been set yet, then preserve the current installation directory.
+        This allows users to:
+        a) specify a non-default installation location on first install, which is then preserved when updating using defaults.
+        b) specify APPLICATIONFOLDER (or TARGETDIR) when updating, which will change the installation directory.
+        -->
+        <SetProperty Action="PreserveCurrentInstallationLocation" Id="APPLICATIONFOLDER" Value="[CURRENTINSTALLATIONLOCATION]" Before="CostInitialize" Sequence="first">CURRENTINSTALLATIONLOCATION AND NOT APPLICATIONFOLDER</SetProperty>
+
+        <SetProperty Id="ARPINSTALLLOCATION" Value="[APPLICATIONFOLDER]" After="CostFinalize" />
+
         <Feature
             Id="Server"
             Level="1"
