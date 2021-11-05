@@ -94,7 +94,10 @@ namespace UsbIpServer
                         }
                         BytesToStruct(descriptor[offset..], out USB_CONFIGURATION_DESCRIPTOR config);
                         configuration = new(config);
-                        Configurations.Add(config.bConfigurationValue, configuration);
+                        if (!Configurations.TryAdd(config.bConfigurationValue, configuration))
+                        {
+                            Console.Error.WriteLine($"WARNING: bConfigurationValue {config.bConfigurationValue} is duplicated. ignored.");
+                        }
                         break;
                     case Constants.USB_INTERFACE_DESCRIPTOR_TYPE:
                         if (configuration is null)
