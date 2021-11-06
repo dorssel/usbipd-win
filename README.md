@@ -24,8 +24,10 @@ on the Windows machine where your USB device is connected.
 Alternatively, use the Windows Package Manager:
 
 ```powershell
-winget install --exact dorssel.usbipd-win
+winget install --interactive --exact dorssel.usbipd-win
 ```
+
+If you leave out `--interactive`, winget may immediately restart your computer if that is required to install the drivers.
 
 This will install:
 
