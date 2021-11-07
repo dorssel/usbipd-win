@@ -309,7 +309,7 @@ namespace UsbIpServer
             else if ((basic.ep == 0)
                 && (submit.setup.bmRequestType.B == Constants.BMREQUEST_TO_ENDPOINT)
                 && (submit.setup.bRequest == Constants.USB_REQUEST_CLEAR_FEATURE)
-                && (submit.setup.wValue.W == 0))
+                && (submit.setup.wValue.W == Constants.USB_FEATURE_ENDPOINT_STALL))
             {
                 // VBoxUsb needs this to notify the host controller
                 var clearEndpoint = new UsbSupClearEndpoint()
@@ -390,7 +390,7 @@ namespace UsbIpServer
                     },
                     ret_submit = new()
                     {
-                        status = -(int)Errno.SUCCESS,
+                        status = -(int)ConvertError(urb.error),
                         actual_length = (int)urb.len,
                         start_frame = submit.start_frame,
                         number_of_packets = (int)urb.numIsoPkts,
