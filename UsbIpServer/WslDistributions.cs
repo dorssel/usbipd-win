@@ -7,7 +7,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Management;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
@@ -36,10 +35,11 @@ namespace UsbIpServer
                 return false;
             }
             // On recent Windows 10, wsl.exe will be available even if the WSL feature is not installed.
-            // In fact, 'wsl.exe --install' can be used to install the feature...
-            using var searcher = new ManagementObjectSearcher(@"SELECT * FROM Win32_OptionalFeature WHERE Name = 'Microsoft-Windows-Subsystem-Linux' AND InstallState = 1");
-            using var collection = searcher.Get();
-            return collection.Count == 1;
+            // Since the release of WSL in the Microsoft Store, the WSL feature does not necessarily have to be enabled.
+            // We will use the return value of 'wsl --status':
+            //   - it should be 0 if WSL is somehow installed (either as a feature or from the store)
+            //   - it should be != 0 if WSL isn't installed either way
+            return ProcessUtils.RunCapturedProcessAsync(WslPath, new[] { "--status"}, Encoding.Unicode, CancellationToken.None).Result.ExitCode == 0;
         }
 
         WslDistributions(List<Distribution> distributions, IPAddress? hostAddress)
@@ -75,6 +75,8 @@ namespace UsbIpServer
                 .FirstOrDefault(nic => nic.Name.Contains("WSL", StringComparison.OrdinalIgnoreCase))?.GetIPProperties().UnicastAddresses
                 .FirstOrDefault(ip => ip.Address.AddressFamily == AddressFamily.InterNetwork);
 
+            var distros = new List<Distribution>();
+
             // Get a list of details of available distros (in any state: Stopped, Running, Installing, etc.)
             // This contains all we need (default, name, state, version).
             // NOTE: WslGetDistributionConfiguration() is unreliable getting the version.
@@ -85,57 +87,58 @@ namespace UsbIpServer
             //   Debian             Stopped         2
             //   Custom-MyDistro    Running         2
             var detailsResult = await ProcessUtils.RunCapturedProcessAsync(WslPath, new[] { "--list", "--all", "--verbose" }, Encoding.Unicode, cancellationToken);
-            if (detailsResult.ExitCode != 0)
+            // This fails with non-zero exit code (and some help text) if there are no distributions installed.
+            // We have already checked 'wsl --status', so WSL itself *is* installed.
+            // Therefore, we just treat this as an empty distro-list, which is actually what it is.
+            if (detailsResult.ExitCode == 0)
             {
-                throw new UnexpectedResultException($"WSL failed to list distributions: {detailsResult.StandardError}");
-            }
-            var details = detailsResult.StandardOutput.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
+                var details = detailsResult.StandardOutput.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
 
-            // Sanity check
-            if (!Regex.IsMatch(details.FirstOrDefault() ?? string.Empty, "^  NAME +STATE +VERSION *$"))
-            {
-                throw new UnexpectedResultException($"WSL failed to parse distributions: {detailsResult.StandardOutput}");
-            }
-
-            var distros = new List<Distribution>();
-            foreach (var line in details.Skip(1))
-            {
-                var match = Regex.Match(line, @"^( |\*) (.+) +([a-zA-Z]+) +([0-9])+ *$");
-                if (!match.Success)
+                // Sanity check
+                if (!Regex.IsMatch(details.FirstOrDefault() ?? string.Empty, "^  NAME +STATE +VERSION *$"))
                 {
                     throw new UnexpectedResultException($"WSL failed to parse distributions: {detailsResult.StandardOutput}");
                 }
-                var isDefault = match.Groups[1].Value == "*";
-                var name = match.Groups[2].Value.TrimEnd();
-                var isRunning = match.Groups[3].Value == "Running";
-                var version = uint.Parse(match.Groups[4].Value, CultureInfo.InvariantCulture);
 
-                IPAddress? address = null;
-                if (wslHost is not null && isRunning && version == 2)
+                foreach (var line in details.Skip(1))
                 {
-                    // We'll do our best to get the instance address on the WSL virtual switch, but we don't fail if we can't.
-                    // 'hostname' is run on the WSL instance and returns a <space> separated list of addresses, both IPv4 and IPv6.
-                    var ipResult = await ProcessUtils.RunCapturedProcessAsync(WslPath, new[] { "--distribution", name, "--", "hostname", "--all-ip-addresses" }, Encoding.UTF8, cancellationToken);
-#pragma warning disable CA1508 // Avoid dead conditional code (false positive)
-                    if (ipResult.ExitCode == 0)
-#pragma warning restore CA1508 // Avoid dead conditional code
+                    var match = Regex.Match(line, @"^( |\*) (.+) +([a-zA-Z]+) +([0-9])+ *$");
+                    if (!match.Success)
                     {
-                        foreach (var a in ipResult.StandardOutput.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                        throw new UnexpectedResultException($"WSL failed to parse distributions: {detailsResult.StandardOutput}");
+                    }
+                    var isDefault = match.Groups[1].Value == "*";
+                    var name = match.Groups[2].Value.TrimEnd();
+                    var isRunning = match.Groups[3].Value == "Running";
+                    var version = uint.Parse(match.Groups[4].Value, CultureInfo.InvariantCulture);
+
+                    IPAddress? address = null;
+                    if (wslHost is not null && isRunning && version == 2)
+                    {
+                        // We'll do our best to get the instance address on the WSL virtual switch, but we don't fail if we can't.
+                        // 'hostname' is run on the WSL instance and returns a <space> separated list of addresses, both IPv4 and IPv6.
+                        var ipResult = await ProcessUtils.RunCapturedProcessAsync(WslPath, new[] { "--distribution", name, "--", "hostname", "--all-ip-addresses" }, Encoding.UTF8, cancellationToken);
+#pragma warning disable CA1508 // Avoid dead conditional code (false positive)
+                        if (ipResult.ExitCode == 0)
+#pragma warning restore CA1508 // Avoid dead conditional code
                         {
-                            if (!IPAddress.TryParse(a, out var wslInstance))
+                            foreach (var a in ipResult.StandardOutput.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
                             {
-                                continue;
-                            }
-                            if (IsOnSameIPv4Network(wslHost, wslInstance))
-                            {
-                                address = wslInstance;
-                                break;
+                                if (!IPAddress.TryParse(a, out var wslInstance))
+                                {
+                                    continue;
+                                }
+                                if (IsOnSameIPv4Network(wslHost, wslInstance))
+                                {
+                                    address = wslInstance;
+                                    break;
+                                }
                             }
                         }
                     }
-                }
 
-                distros.Add(new(name, isDefault, version, isRunning, address));
+                    distros.Add(new(name, isDefault, version, isRunning, address));
+                }
             }
 
             return new(distros, wslHost?.Address);
