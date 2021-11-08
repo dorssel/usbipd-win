@@ -94,10 +94,23 @@ namespace UsbIpServer
                         }
                         BytesToStruct(descriptor[offset..], out USB_CONFIGURATION_DESCRIPTOR config);
                         configuration = new(config);
-                        if (!Configurations.TryAdd(config.bConfigurationValue, configuration))
-                        {
-                            Console.Error.WriteLine($"WARNING: bConfigurationValue {config.bConfigurationValue} is duplicated. ignored.");
-                        }
+                        // There are multiple reasons why devices may report more than 1 configuration:
+                        // - They really have more than one selectable configuration. For example, one configuration
+                        //   for normal function and one for firmware updates.
+                        // - They have different configurations for different port speeds. USB standard says they
+                        //   should report 1 configuration, and the other one is retrievable as "other_speed".
+                        //
+                        // In the latter case, the "other_speed" configuration can never be selected, it is
+                        // for informational purposes only (and we don't need it).
+                        // Unfortunately, some devices report 2 configurations even in that latter case, where
+                        // they really should have reported 1 (the "other_speed" should not count according to USB specs).
+                        // Next problem: most devices report the same (single) configuration no matter
+                        // what index you ask for. So if you ask for number 2, they return number 1 again.
+                        //
+                        // To solve all this, we silently ignore repeated configurations.
+                        // Devices that really have 2 (or more) configurations, will report correctly.
+                        // Those that (wrongly) report the same configuration multiple times will be auto-corrected.
+                        Configurations.TryAdd(config.bConfigurationValue, configuration);
                         break;
                     case Constants.USB_INTERFACE_DESCRIPTOR_TYPE:
                         if (configuration is null)
