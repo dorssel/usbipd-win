@@ -116,15 +116,39 @@ namespace UsbIpServer
                     if (wslHost is not null && isRunning && version == 2)
                     {
                         // We'll do our best to get the instance address on the WSL virtual switch, but we don't fail if we can't.
-                        // 'hostname' is run on the WSL instance and returns a <space> separated list of addresses, both IPv4 and IPv6.
-                        var ipResult = await ProcessUtils.RunCapturedProcessAsync(WslPath, new[] { "--distribution", name, "--", "hostname", "--all-ip-addresses" }, Encoding.UTF8, cancellationToken);
+                        // We use 'cat /proc/net/fib_trie', where we assume 'cat' is available on all distributions and /proc/net/fib_trie is supported by the WSL kernel.
+                        var ipResult = await ProcessUtils.RunCapturedProcessAsync(WslPath, new[] { "--distribution", name, "--", "cat", "/proc/net/fib_trie" }, Encoding.UTF8, cancellationToken);
 #pragma warning disable CA1508 // Avoid dead conditional code (false positive)
                         if (ipResult.ExitCode == 0)
 #pragma warning restore CA1508 // Avoid dead conditional code
                         {
-                            foreach (var a in ipResult.StandardOutput.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                            // Example output:
+                            //
+                            // Main:
+                            //   +-- 0.0.0.0/0 3 0 5
+                            //      |-- 0.0.0.0
+                            //         /0 universe UNICAST
+                            //      +-- 127.0.0.0/8 2 0 2
+                            //         +-- 127.0.0.0/31 1 0 0
+                            //            |-- 127.0.0.0
+                            //               /32 link BROADCAST
+                            //               /8 host LOCAL
+                            //            |-- 127.0.0.1
+                            //               /32 host LOCAL
+                            //         |-- 127.255.255.255
+                            //            /32 link BROADCAST
+                            // ...
+                            //
+                            // We are interested in all entries like:
+                            // 
+                            //            |-- 127.0.0.1
+                            //               /32 host LOCAL
+                            //
+                            // These are the interface addresses.
+
+                            for (match = Regex.Match(ipResult.StandardOutput, @"\|--\s+(\S+)\s+/32 host LOCAL"); match.Success; match = match.NextMatch())
                             {
-                                if (!IPAddress.TryParse(a, out var wslInstance))
+                                if (!IPAddress.TryParse(match.Groups[1].Value, out var wslInstance))
                                 {
                                     continue;
                                 }
