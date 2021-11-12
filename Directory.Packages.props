@@ -11,9 +11,9 @@ SPDX-License-Identifier: GPL-2.0-only
 
     <!-- UsbIpServer -->
     <PackageVersion Include="Microsoft.Extensions.CommandLineUtils" Version="1.1.1" />
-    <PackageVersion Include="Microsoft.Extensions.Hosting.WindowsServices" Version="5.0.1" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting.WindowsServices" Version="6.0.0" />
     <PackageVersion Include="Microsoft.Win32.Registry" Version="5.0.0" />
-    <PackageVersion Include="System.Management" Version="5.0.0" />
+    <PackageVersion Include="System.Management" Version="6.0.0" />
     <PackageVersion Include="Microsoft.Windows.CsWin32" Version="0.1.588-beta" />
 
     <!-- Installer -->
