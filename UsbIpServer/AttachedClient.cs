@@ -82,7 +82,7 @@ namespace UsbIpServer
                 {
                     throw new ProtocolViolationException($"duplicate sequence number {basic.seqnum}");
                 }
-                Logger.LogTrace($"Scheduled seqnum={basic.seqnum}, pending count = {PendingSubmits.Count}");
+                Logger.Trace($"Scheduled seqnum={basic.seqnum}, pending count = {PendingSubmits.Count}");
             }
 
             // VBoxUSB only excepts up to 8 iso packets per ioctl, so we may have to split
@@ -155,7 +155,7 @@ namespace UsbIpServer
                         if (!PendingSubmits.Remove(basic.seqnum))
                         {
                             // Apparently, the client has already UNLINK-ed (canceled) the request; we're done.
-                            Logger.LogTrace($"Completed seqnum={basic.seqnum} after UNLINK, pending count = {PendingSubmits.Count}");
+                            Logger.Trace($"Completed seqnum={basic.seqnum} after UNLINK, pending count = {PendingSubmits.Count}");
                             return;
                         }
                     }
@@ -177,7 +177,7 @@ namespace UsbIpServer
                         },
                     };
 
-                    Logger.LogTrace($"ISO: error_count: {header.ret_submit.error_count}, actual_length: {header.ret_submit.actual_length}");
+                    Logger.Trace($"ISO: error_count: {header.ret_submit.error_count}, actual_length: {header.ret_submit.actual_length}");
 
                     var retBuf = buf;
                     if ((basic.direction == UsbIpDir.USBIP_DIR_IN) && (header.ret_submit.actual_length != submit.transfer_buffer_length))
@@ -286,7 +286,7 @@ namespace UsbIpServer
                 {
                     bConfigurationValue = submit.setup.wValue.Anonymous.LowByte,
                 };
-                Logger.LogDebug($"Trapped SET_CONFIGURATION: {setConfig.bConfigurationValue}");
+                Logger.Debug($"Trapped SET_CONFIGURATION: {setConfig.bConfigurationValue}");
                 await Device.IoControlAsync(SUPUSB_IOCTL.USB_SET_CONFIG, StructToBytes(setConfig), null);
                 ioctl = Task.CompletedTask;
                 ConfigurationDescriptors.SetConfiguration(setConfig.bConfigurationValue);
@@ -301,7 +301,7 @@ namespace UsbIpServer
                     bInterfaceNumber = submit.setup.wIndex.Anonymous.LowByte,
                     bAlternateSetting = submit.setup.wValue.Anonymous.LowByte,
                 };
-                Logger.LogDebug($"Trapped SET_INTERFACE: {selectInterface.bInterfaceNumber} -> {selectInterface.bAlternateSetting}");
+                Logger.Debug($"Trapped SET_INTERFACE: {selectInterface.bInterfaceNumber} -> {selectInterface.bAlternateSetting}");
                 await Device.IoControlAsync(SUPUSB_IOCTL.USB_SELECT_INTERFACE, StructToBytes(selectInterface), null);
                 ioctl = Task.CompletedTask;
                 ConfigurationDescriptors.SetInterface(selectInterface.bInterfaceNumber, selectInterface.bAlternateSetting);
@@ -316,7 +316,7 @@ namespace UsbIpServer
                 {
                     bEndpoint = submit.setup.wIndex.Anonymous.LowByte,
                 };
-                Logger.LogDebug($"Trapped CLEAR_FEATURE: {clearEndpoint.bEndpoint}");
+                Logger.Debug($"Trapped CLEAR_FEATURE: {clearEndpoint.bEndpoint}");
                 await Device.IoControlAsync(SUPUSB_IOCTL.USB_CLEAR_ENDPOINT, StructToBytes(clearEndpoint), null);
                 ioctl = Task.CompletedTask;
             }
@@ -324,7 +324,7 @@ namespace UsbIpServer
             {
                 if (transferType == Constants.USB_ENDPOINT_TYPE_CONTROL)
                 {
-                    Logger.LogTrace($"{submit.setup.bmRequestType.B} {submit.setup.bRequest} {submit.setup.wValue.W} {submit.setup.wIndex.W} {submit.setup.wLength}");
+                    Logger.Trace($"{submit.setup.bmRequestType.B} {submit.setup.bRequest} {submit.setup.wValue.W} {submit.setup.wIndex.W} {submit.setup.wLength}");
                 }
                 lock (PendingSubmitsLock)
                 {
@@ -334,7 +334,7 @@ namespace UsbIpServer
                     {
                         throw new ProtocolViolationException($"duplicate sequence number {basic.seqnum}");
                     }
-                    Logger.LogTrace($"Scheduled seqnum={basic.seqnum}, pending count = {PendingSubmits.Count}");
+                    Logger.Trace($"Scheduled seqnum={basic.seqnum}, pending count = {PendingSubmits.Count}");
                 }
                 pending = true;
                 // Input or output, exceptions or not, this buffer must be locked until after the ioctl has completed.
@@ -374,7 +374,7 @@ namespace UsbIpServer
                         if (!PendingSubmits.Remove(basic.seqnum))
                         {
                             // Apparently, the client has already UNLINK-ed (canceled) the request; we're done.
-                            Logger.LogTrace($"Completed seqnum={basic.seqnum} after UNLINK, pending count = {PendingSubmits.Count}");
+                            Logger.Trace($"Completed seqnum={basic.seqnum} after UNLINK, pending count = {PendingSubmits.Count}");
                             return;
                         }
                     }
@@ -405,9 +405,9 @@ namespace UsbIpServer
 
                 if (urb.error != UsbSupError.USBSUP_XFER_OK)
                 {
-                    Logger.LogDebug($"{urb.error} -> {ConvertError(urb.error)} -> {header.ret_submit.status}");
+                    Logger.Debug($"{urb.error} -> {ConvertError(urb.error)} -> {header.ret_submit.status}");
                 }
-                Logger.LogTrace($"actual: {header.ret_submit.actual_length}, requested: {requestLength}");
+                Logger.Trace($"actual: {header.ret_submit.actual_length}, requested: {requestLength}");
 
                 await Stream.WriteAsync(header.ToBytes(), cancellationToken);
                 if (basic.direction == UsbIpDir.USBIP_DIR_IN)
@@ -427,7 +427,7 @@ namespace UsbIpServer
             lock (PendingSubmitsLock)
             {
                 pending = PendingSubmits.Remove(unlink.seqnum, out endpoint);
-                Logger.LogTrace($"Unlinking {unlink.seqnum}, pending = {pending}, pending count = {PendingSubmits.Count}");
+                Logger.Trace($"Unlinking {unlink.seqnum}, pending = {pending}, pending count = {PendingSubmits.Count}");
             }
 
             if (pending)
@@ -440,7 +440,7 @@ namespace UsbIpServer
                 };
                 // Just like for CLEAR_FEATURE, we are going to wait until this finishes,
                 // in order to avoid races with subsequent SUBMIT to the same endpoint.
-                Logger.LogTrace($"Aborting endpoint {endpoint}");
+                Logger.Trace($"Aborting endpoint {endpoint}");
                 await Device.IoControlAsync(SUPUSB_IOCTL.USB_ABORT_ENDPOINT, StructToBytes(clearEndpoint), null);
             }
 
@@ -472,12 +472,12 @@ namespace UsbIpServer
                 switch (header.basic.command)
                 {
                     case UsbIpCmd.USBIP_CMD_SUBMIT:
-                        Logger.LogTrace($"USBIP_CMD_SUBMIT, seqnum={header.basic.seqnum}, flags={header.cmd_submit.transfer_flags}, " +
+                        Logger.Trace($"USBIP_CMD_SUBMIT, seqnum={header.basic.seqnum}, flags={header.cmd_submit.transfer_flags}, " +
                                 $"length={header.cmd_submit.transfer_buffer_length}, ep={header.basic.ep}");
                         await HandleSubmitAsync(header.basic, header.cmd_submit, cancellationToken);
                         break;
                     case UsbIpCmd.USBIP_CMD_UNLINK:
-                        Logger.LogTrace($"USBIP_CMD_UNLINK, seqnum={header.basic.seqnum}, unlink_seqnum={header.cmd_unlink.seqnum}");
+                        Logger.Trace($"USBIP_CMD_UNLINK, seqnum={header.basic.seqnum}, unlink_seqnum={header.cmd_unlink.seqnum}");
                         await HandleUnlinkAsync(header.basic, header.cmd_unlink, cancellationToken);
                         break;
                     default:

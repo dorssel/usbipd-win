@@ -1,4 +1,4 @@
-﻿// SPDX-FileCopyrightText: 2020 Frans van Dorsselaer
+// SPDX-FileCopyrightText: 2020 Frans van Dorsselaer
 //
 // SPDX-License-Identifier: GPL-2.0-only
 
@@ -77,7 +77,7 @@ namespace UsbIpServer
 
                 _ = Task.Run(async () =>
                 {
-                    Logger.LogDebug($"new connection from {clientAddress}");
+                    Logger.Debug($"new connection from {clientAddress}");
                     try
                     {
                         using var cancellationTokenRegistration = stoppingToken.Register(() => tcpClient.Close());
@@ -90,7 +90,7 @@ namespace UsbIpServer
                     }
                     finally
                     {
-                        Logger.LogDebug("connection closed");
+                        Logger.Debug("connection closed");
                     }
                 }, stoppingToken);
             }

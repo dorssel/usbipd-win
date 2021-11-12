@@ -53,7 +53,7 @@ namespace UsbIpServer
         public async Task RunAsync(CancellationToken cancellationToken)
         {
             var opCode = await RecvOpCodeAsync(cancellationToken);
-            Logger.LogDebug($"Received opcode: {opCode}");
+            Logger.Debug($"Received opcode: {opCode}");
             switch (opCode)
             {
                 case OpCode.OP_REQ_DEVLIST:
@@ -157,7 +157,7 @@ namespace UsbIpServer
                 }
                 ClientContext.AttachedDevice = await mon.ClaimDevice(exportedDevice);
 
-                Logger.LogInformation(LogEvents.ClientAttach, $"Client {ClientContext.ClientAddress} claimed device at {exportedDevice.BusId} ({exportedDevice.Path}).");
+                Logger.ClientAttach(ClientContext.ClientAddress, exportedDevice.BusId, exportedDevice.Path);
                 try
                 {
                     ClientContext.ConfigurationDescriptors = exportedDevice.ConfigurationDescriptors;
@@ -188,7 +188,7 @@ namespace UsbIpServer
                     DeviceChangeWatcher.StopWatchingDevice(busId);
                     RegistryUtils.SetDeviceAsDetached(exportedDevice);
 
-                    Logger.LogInformation(LogEvents.ClientDetach, $"Client {ClientContext.ClientAddress} released device at {exportedDevice.BusId} ({exportedDevice.Path}).");
+                    Logger.ClientDetach(ClientContext.ClientAddress, exportedDevice.BusId, exportedDevice.Path);
                 }
             }
             catch (Exception ex)
@@ -196,7 +196,7 @@ namespace UsbIpServer
                 // EndOfStream is client hang ups and OperationCanceled is detachments
                 if (!(ex is EndOfStreamException || ex is OperationCanceledException))
                 {
-                    Logger.LogError(LogEvents.ClientError, $"An exception occurred while communicating with the client: {ex}");
+                    Logger.ClientError(ex);
                 }
                 
 #pragma warning disable CA1508 // Avoid dead conditional code (false positive)
