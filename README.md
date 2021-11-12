@@ -36,7 +36,10 @@ This will install:
 - A command line tool `usbipd`.\
   The location of this tool will be added to the `PATH` environment variable.
 - A firewall rule called `usbipd` to allow all local subnets to connect to the service.\
-  You can modify this firewall rule to fine tune access control.
+  You can modify this firewall rule to fine tune access control.\
+  :information_source:\
+  If you are using a third-party firewall, you may have to reconfigure it to allow
+  incoming connections on TCP port 3240.
 
 ## How to use
 
