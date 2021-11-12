@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2020 Frans van Dorsselaer
+﻿// SPDX-FileCopyrightText: 2020 Frans van Dorsselaer
 //
 // SPDX-License-Identifier: GPL-2.0-only
 
@@ -64,11 +64,9 @@ namespace UsbIpServer
                 RegistryUtils.SetDeviceAsDetached(device);
             }
 
-            using var cancellationTokenRegistration = stoppingToken.Register(() => TcpListener.Stop());
-
             while (true)
             {
-                var tcpClient = await TcpListener.AcceptTcpClientAsync();
+                var tcpClient = await TcpListener.AcceptTcpClientAsync(stoppingToken);
                 var clientAddress = (tcpClient.Client.RemoteEndPoint as IPEndPoint)!.Address;
                 if (clientAddress.IsIPv4MappedToIPv6)
                 {
