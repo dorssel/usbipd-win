@@ -19,6 +19,9 @@ namespace UsbIpServer
         [LoggerMessage(EventId = 3, Level = LogLevel.Error, Message = "An exception occurred while communicating with the client:")]
         public static partial void ClientError(this ILogger logger, Exception ex);
 
+        [LoggerMessage(EventId = 4, Level = LogLevel.Error, Message = "An internal error occurred: {text}")]
+        public static partial void InternalError(this ILogger logger, string text, Exception? ex = null);
+
         [LoggerMessage(EventId = 1000, Level = LogLevel.Debug, Message = "{text}")]
         public static partial void Debug(this ILogger logger, string text);
 
