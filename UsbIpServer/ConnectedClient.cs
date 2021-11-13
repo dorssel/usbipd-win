@@ -102,7 +102,7 @@ namespace UsbIpServer
             {
                 var buf = new byte[SYSFS_BUS_ID_SIZE];
                 await Stream.ReadExactlyAsync(buf, cancellationToken);
-                if (!BusId.TryParse(Encoding.UTF8.GetString(buf).TrimEnd('\0'), out busId))
+                if (!BusId.TryParse(Encoding.UTF8.GetString(buf.TakeWhile(b => b != 0).ToArray()), out busId))
                 {
                     await SendOpCodeAsync(OpCode.OP_REP_IMPORT, Status.ST_NODEV);
                     return;
