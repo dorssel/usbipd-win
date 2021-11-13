@@ -15,7 +15,11 @@ namespace UsbIpServer
 
         public DeviceInfoChecker()
         {
-            using var searcher = new ManagementObjectSearcher(@"Select * From Win32_PnPEntity");
+            var query = new ObjectQuery(@"SELECT * FROM Win32_PnPEntity");
+            var scope = new ManagementScope();
+            scope.Options.Context.Add("__ProviderArchitecture", 64);
+            scope.Options.Context.Add("__RequiredArchitecture", true);
+            using var searcher = new ManagementObjectSearcher(scope, query);
             using var collection = searcher.Get();
 
             foreach (ManagementObject device in collection)
