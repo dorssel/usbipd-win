@@ -64,11 +64,9 @@ namespace UsbIpServer
                 RegistryUtils.SetDeviceAsDetached(device);
             }
 
-            using var cancellationTokenRegistration = stoppingToken.Register(() => TcpListener.Stop());
-
             while (true)
             {
-                var tcpClient = await TcpListener.AcceptTcpClientAsync();
+                var tcpClient = await TcpListener.AcceptTcpClientAsync(stoppingToken);
                 var clientAddress = (tcpClient.Client.RemoteEndPoint as IPEndPoint)!.Address;
                 if (clientAddress.IsIPv4MappedToIPv6)
                 {
@@ -77,7 +75,7 @@ namespace UsbIpServer
 
                 _ = Task.Run(async () =>
                 {
-                    Logger.LogDebug($"new connection from {clientAddress}");
+                    Logger.Debug($"new connection from {clientAddress}");
                     try
                     {
                         using var cancellationTokenRegistration = stoppingToken.Register(() => tcpClient.Close());
@@ -90,7 +88,7 @@ namespace UsbIpServer
                     }
                     finally
                     {
-                        Logger.LogDebug("connection closed");
+                        Logger.Debug("connection closed");
                     }
                 }, stoppingToken);
             }

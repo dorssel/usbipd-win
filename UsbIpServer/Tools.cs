@@ -23,6 +23,7 @@ using Windows.Win32.System.PropertiesSystem;
 using Windows.Win32.System.SystemServices;
 
 using UsbIpServer.Interop;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Windows.Win32.System.SystemServices
 {
@@ -82,7 +83,7 @@ namespace UsbIpServer
             return buf;
         }
 
-        public static void BytesToStruct<T>(ReadOnlySpan<byte> bytes, out T s) where T : struct
+        public static void BytesToStruct<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.NonPublicConstructors)] T>(ReadOnlySpan<byte> bytes, out T s) where T : struct
         {
             var required = Marshal.SizeOf<T>();
             if (bytes.Length < required)
@@ -98,7 +99,7 @@ namespace UsbIpServer
             }
         }
 
-        public static T BytesToStruct<T>(ReadOnlySpan<byte> bytes) where T : struct
+        public static T BytesToStruct<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.NonPublicConstructors)] T>(ReadOnlySpan<byte> bytes) where T : struct
         {
             BytesToStruct(bytes, out T result);
             return result;

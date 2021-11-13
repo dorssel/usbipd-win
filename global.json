@@ -4,6 +4,11 @@
  * SPDX-License-Identifier: GPL-2.0-only
  */
 {
+  "sdk": {
+    "version": "6.0.100",
+    "allowPrerelease": false,
+    "rollForward": "latestFeature"
+  },
   "msbuild-sdks": {
     "Microsoft.Build.NoTargets": "3.2.9"
   }
