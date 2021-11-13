@@ -8,6 +8,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Management;
 using System.Threading;
+using Microsoft.Extensions.Logging;
 
 namespace UsbIpServer
 {
@@ -15,18 +16,31 @@ namespace UsbIpServer
     sealed class RegistryWatcher : IDisposable
     {
         readonly ManagementEventWatcher watcher;
-
+        readonly ILogger Logger;
         readonly Dictionary<BusId, Action> devices = new();
 
-        public RegistryWatcher()
+        public RegistryWatcher(ILogger<RegistryWatcher> logger)
         {
-            var query = @"SELECT * FROM RegistryTreeChangeEvent " +
-                @"WHERE Hive='HKEY_LOCAL_MACHINE' " +
-                @$"AND RootPath='{RegistryUtils.DevicesRegistryPath.Replace(@"\", @"\\",StringComparison.InvariantCulture)}'";
+            Logger = logger;
 
-            watcher = new(query);
+            var query = new EventQuery(@"SELECT * FROM RegistryTreeChangeEvent " +
+                @"WHERE Hive='HKEY_LOCAL_MACHINE' " +
+                @$"AND RootPath='{RegistryUtils.DevicesRegistryPath.Replace(@"\", @"\\",StringComparison.InvariantCulture)}'");
+
+            var scope = new ManagementScope();
+            scope.Options.Context.Add("__ProviderArchitecture", 64);
+
+            watcher = new(scope, query);
             watcher.EventArrived += HandleEvent;
-            watcher.Start();
+            try
+            {
+                watcher.Start();
+            }
+            catch (Exception ex)
+            {
+                Logger.InternalError($"Failed to start {nameof(RegistryWatcher)}", ex);
+                throw;
+            }
         }
 
         async void HandleEvent(object sender, EventArrivedEventArgs e)
