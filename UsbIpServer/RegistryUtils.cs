@@ -19,8 +19,7 @@ namespace UsbIpServer
 
         static RegistryKey OpenBaseKey(bool writable)
         {
-            using var hiveKey = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64);
-            return hiveKey.OpenSubKey(DevicesRegistryPath, writable)
+            return Registry.LocalMachine.OpenSubKey(DevicesRegistryPath, writable)
                 ?? throw new UnexpectedResultException("Registry key not found; try reinstalling the software.");
         }
 

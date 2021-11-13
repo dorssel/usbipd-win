@@ -9,6 +9,7 @@ using System.Linq;
 using System.Management;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace UsbIpServer
 {
@@ -16,15 +17,16 @@ namespace UsbIpServer
     sealed class DeviceChangeWatcher : IDisposable
     {
         readonly ManagementEventWatcher watcher;
+        readonly ILogger Logger;
         readonly SemaphoreSlim deviceLock = new(1);
         SortedSet<BusId>? lastKnownBusIds;
 
         // Mapping of bus IDs to actions to take on device removal.
         readonly Dictionary<BusId, Action> removalActions = new();
 
-        public DeviceChangeWatcher()
+        public DeviceChangeWatcher(ILogger<RegistryWatcher> logger)
         {
-            var query = @"SELECT * FROM Win32_SystemConfigurationChangeEvent";
+            Logger = logger;
 
             // We're not in an async context here, so start a task to initialize the
             // list of known bus IDs and then forget about it. The task won't overwrite
@@ -44,9 +46,21 @@ namespace UsbIpServer
                 }
             });
 
+            var query = new EventQuery(@"SELECT * FROM Win32_SystemConfigurationChangeEvent");
+            var scope = new ManagementScope();
+            scope.Options.Context.Add("__ProviderArchitecture", 64);
+            scope.Options.Context.Add("__RequiredArchitecture", true);
             watcher = new(query);
             watcher.EventArrived += HandleEvent;
-            watcher.Start();
+            try
+            {
+                watcher.Start();
+            }
+            catch (Exception ex)
+            {
+                Logger.InternalError($"Failed to start {nameof(DeviceChangeWatcher)}", ex);
+                throw;
+            }
         }
 
         async void HandleEvent(object sender, EventArrivedEventArgs e)
