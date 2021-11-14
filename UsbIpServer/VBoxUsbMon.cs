@@ -8,10 +8,12 @@ using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Runtime.InteropServices;
+using System.Threading;
 using System.Threading.Tasks;
 using Windows.Win32;
 
 using static UsbIpServer.Interop.VBoxUsb;
+using static UsbIpServer.Interop.WinSDK;
 using static UsbIpServer.Tools;
 
 namespace UsbIpServer
@@ -144,10 +146,37 @@ namespace UsbIpServer
             throw new FileNotFoundException();
         }
 
+        private static async Task CyclePortAsync(ExportedDevice device, CancellationToken cancellationToken)
+        {
+            using var hubFile = new DeviceFile(device.HubPath);
+            using var cancellationTokenRegistration = cancellationToken.Register(() => hubFile.Dispose());
+
+            var data = new UsbCyclePortParams() { ConnectionIndex = device.BusId.Port };
+            var buf = StructToBytes(data);
+            try
+            {
+                await hubFile.IoControlAsync(IoControl.IOCTL_USB_HUB_CYCLE_PORT, buf, buf);
+            }
+            catch (Win32Exception) { }
+        }
+
         public async Task<DeviceFile> ClaimDevice(ExportedDevice device)
         {
+            uint portCycles = 0;
             var sw = new Stopwatch();
             sw.Start();
+
+            // For some reason, VBoxUsbMon is not able to stub some devices, even though it uses
+            // IOCTL_INTERNAL_USB_CYCLE_PORT (the kernel variant of IOCTL_USB_HUB_CYCLE_PORT).
+            // Experimentation learns that an extra port power cycle helps, especially on integrated
+            // devices that are marked "non-removable".
+
+            // Some devices need this all the time, and it can't hurt the other device either, so we always
+            // start with a port power cycle. If we fail to claim the device even after two seconds, we'll do
+            // another cycle for good measure before giving up.
+            await CyclePortAsync(device, CancellationToken.None);
+            ++portCycles;
+
             while (true)
             {
                 try
@@ -161,6 +190,13 @@ namespace UsbIpServer
                         throw;
                     }
                     await Task.Delay(100);
+                }
+                if ((portCycles < 2) && (sw.Elapsed > TimeSpan.FromSeconds(2)))
+                {
+                    // We have given VBoxUsbMon more than two seconds to stub the device, without success.
+                    // Let's do one additional power cycle on the port, for good measure.
+                    await CyclePortAsync(device, CancellationToken.None);
+                    ++portCycles;
                 }
             }
         }

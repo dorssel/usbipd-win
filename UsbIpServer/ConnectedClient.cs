@@ -4,7 +4,6 @@
 
 using System;
 using System.Buffers.Binary;
-using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
@@ -18,8 +17,6 @@ using Microsoft.Extensions.Logging;
 
 using static UsbIpServer.Interop.UsbIp;
 using static UsbIpServer.Interop.VBoxUsb;
-using static UsbIpServer.Interop.WinSDK;
-using static UsbIpServer.Tools;
 
 namespace UsbIpServer
 {
@@ -133,28 +130,6 @@ namespace UsbIpServer
                 await mon.CheckVersion();
                 await mon.AddFilter(exportedDevice);
                 await mon.RunFilters();
-                {
-                    // This enables exporting integrated USB devices (e.g. built-in webcams).
-                    // VBoxMon will try to unplug/plug the device, but integrated USB devices are usually
-                    // marked as not-removable. This means that Windows will not load the VBoxUSB driver.
-                    // As a workaround, we tell the hub to powercycle the port, which has the same effect:
-                    // Windows will re-enumerate the device and pick up the driver.
-                    // If VBoxMon *is* able to do its normal unplug/plug cycle, then the port cycle command
-                    // will probably fail due to a race condition. This is fine, as either way the VBoxUSB
-                    // driver will take effect.
-                    // We ignore any errors here; if both methods fail the error will be reported by
-                    // ClaimDevice();
-                    using var hubFile = new DeviceFile(exportedDevice.HubPath);
-                    using var cancellationTokenRegistration = cancellationToken.Register(() => hubFile.Dispose());
-
-                    var data = new UsbCyclePortParams() { ConnectionIndex = busId.Port };
-                    var buf = StructToBytes(data);
-                    try
-                    {
-                        await hubFile.IoControlAsync(IoControl.IOCTL_USB_HUB_CYCLE_PORT, buf, buf);
-                    }
-                    catch (Win32Exception) { }
-                }
                 ClientContext.AttachedDevice = await mon.ClaimDevice(exportedDevice);
 
                 Logger.ClientAttach(ClientContext.ClientAddress, exportedDevice.BusId, exportedDevice.Path);
