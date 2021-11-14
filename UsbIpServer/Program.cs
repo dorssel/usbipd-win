@@ -26,6 +26,7 @@ namespace UsbIpServer
     static class Program
     {
         const string InstallWslUrl = "https://aka.ms/installwsl";
+        const string SetWslVersionUrl = "https://docs.microsoft.com/en-us/windows/wsl/basic-commands#set-wsl-version-to-1-or-2";
 
         static readonly string Product = Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyProductAttribute>()!.Product;
         static readonly string Copyright = Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyCopyrightAttribute>()!.Copyright;
@@ -429,48 +430,61 @@ a 'usbip attach' command on the Linux side.
 
                         var distros = await WslDistributions.CreateAsync(CancellationToken.None);
 
-                        if (distros.HostAddress is null)
-                        {
-                            ReportError("The local IP address for the WSL virtual switch could not be found. Ensure WSL is running.");
-                            return 1;
-                        }
-
                         // Make sure the distro is running before we attach. While WSL is capable of
                         // starting on the fly when wsl.exe is invoked, that will cause confusing behavior
                         // where we might attach a USB device to WSL, then immediately detach it when the
                         // WSL VM is shutdown shortly afterwards.
                         var distroData = distro.HasValue() ? distros.LookupByName(distro.Value()) : distros.DefaultDistribution;
 
+                        // The order of the following checks is important, as later checks can only succeed if earlier checks already passed.
+
+                        // 1) Distro must exist
+
                         if (distroData is null)
                         {
-                            if (distro.HasValue())
-                            {
-                                ReportError($"The WSL distribution '{distro.Value()}' does not exist.");
-                                return 1;
-                            }
-                            else
-                            {
-                                ReportError("No default WSL distribution exists.");
-                                return 1;
-                            }
+                            ReportError(distro.HasValue()
+                                ? $"The WSL distribution '{distro.Value()}' does not exist."
+                                : "No default WSL distribution exists."
+                            );
+                            return 1;
                         }
 
-                        if (distroData.Version == 1)
+                        // 2) Distro must be correct WSL version
+
+                        switch (distroData.Version)
                         {
-                            ReportError($"The specified WSL distribution is using WSL 1, but WSL 2 is required. Learn how to upgrade at {InstallWslUrl}.");
-                            return 1;
+                            case 1:
+                                ReportError($"The specified WSL distribution is using WSL 1, but WSL 2 is required. Learn how to upgrade at {SetWslVersionUrl}.");
+                                return 1;
+                            case 2:
+                                // Supported
+                                break;
+                            default:
+                                ReportError($"The specified WSL distribution is using unsupported WSL {distroData.Version}, but WSL 2 is required.");
+                                return 1;
                         }
-                        else if (distroData.Version != 2)
-                        {
-                            ReportError($"The specified WSL distribution is using unsupported WSL {distroData.Version}, but WSL 2 is required.");
-                            return 1;
-                        }
+
+                        // 3) Distro must be running
 
                         if (!distroData.IsRunning)
                         {
                             ReportError($"The specified WSL distribution is not running.");
                             return 1;
                         }
+
+                        // 4) Host must be reachable.
+                        //    This check only makes sense if at least one WSL 2 distro is running, which is ensured by earlier checks.
+
+                        if (distros.HostAddress is null)
+                        {
+                            // This would be weird: we already know that a WSL 2 instance is running.
+                            // Maybe the virtual switch does not have 'WSL' in the name?
+                            ReportError("The local IP address for the WSL virtual switch could not be found.");
+                            return 1;
+                        }
+
+                        // 5) Distro must have connectivity.
+                        //    This check only makes sense if the host is reachable, which is ensured by earlier checks.
 
                         if (distroData.IPAddress is null)
                         {
