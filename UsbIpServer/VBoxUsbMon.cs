@@ -6,6 +6,8 @@ using System;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
+using System.Management;
 using System.Net;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -160,9 +162,24 @@ namespace UsbIpServer
             catch (Win32Exception) { }
         }
 
+        private static void CycleEnable(ExportedDevice device)
+        {
+            var query = new ObjectQuery($@"SELECT * FROM Win32_PnPEntity WHERE PNPDeviceId='{device.Path.Replace(@"\", @"\\", StringComparison.InvariantCulture)}'");
+            var scope = new ManagementScope();
+            scope.Options.Context.Add("__ProviderArchitecture", 64);
+            scope.Options.Context.Add("__RequiredArchitecture", true);
+            using var searcher = new ManagementObjectSearcher(scope, query);
+            using var collection = searcher.Get();
+
+            var managementObject = collection.OfType<ManagementObject>().Single();
+            uint rebootNeeded = 0;
+            _ = managementObject.InvokeMethod("Disable", new object[] { rebootNeeded });
+            _ = managementObject.InvokeMethod("Enable", new object[] { rebootNeeded });
+        }
+
         public async Task<DeviceFile> ClaimDevice(ExportedDevice device)
         {
-            uint portCycles = 0;
+            bool haveYouTriedTurningItOffAndOnAgain = false;
             var sw = new Stopwatch();
             sw.Start();
 
@@ -172,10 +189,9 @@ namespace UsbIpServer
             // devices that are marked "non-removable".
 
             // Some devices need this all the time, and it can't hurt the other device either, so we always
-            // start with a port power cycle. If we fail to claim the device even after two seconds, we'll do
-            // another cycle for good measure before giving up.
+            // start with a port power cycle. If we fail to claim the device even after two seconds, we'll
+            // try an even more drastic method.
             await CyclePortAsync(device, CancellationToken.None);
-            ++portCycles;
 
             while (true)
             {
@@ -185,18 +201,19 @@ namespace UsbIpServer
                 }
                 catch (FileNotFoundException)
                 {
-                    if (sw.Elapsed > TimeSpan.FromSeconds(5))
+                    if (sw.Elapsed > TimeSpan.FromSeconds(10))
                     {
                         throw;
                     }
                     await Task.Delay(100);
                 }
-                if ((portCycles < 2) && (sw.Elapsed > TimeSpan.FromSeconds(2)))
+                if (!haveYouTriedTurningItOffAndOnAgain && (sw.Elapsed > TimeSpan.FromSeconds(2)))
                 {
                     // We have given VBoxUsbMon more than two seconds to stub the device, without success.
-                    // Let's do one additional power cycle on the port, for good measure.
-                    await CyclePortAsync(device, CancellationToken.None);
-                    ++portCycles;
+                    // This time we are completely disabling/re-enabling the device.
+                    // NOTE: This one takes considerably longer!
+                    CycleEnable(device);
+                    haveYouTriedTurningItOffAndOnAgain = true;
                 }
             }
         }
