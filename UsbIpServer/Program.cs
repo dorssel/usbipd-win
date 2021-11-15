@@ -26,7 +26,7 @@ namespace UsbIpServer
     static class Program
     {
         const string InstallWslUrl = "https://aka.ms/installwsl";
-        const string SetWslVersionUrl = "https://docs.microsoft.com/en-us/windows/wsl/basic-commands#set-wsl-version-to-1-or-2";
+        const string SetWslVersionUrl = "https://docs.microsoft.com/windows/wsl/basic-commands#set-wsl-version-to-1-or-2";
 
         static readonly string Product = Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyProductAttribute>()!.Product;
         static readonly string Copyright = Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyCopyrightAttribute>()!.Copyright;
