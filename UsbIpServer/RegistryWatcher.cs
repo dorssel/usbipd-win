@@ -25,7 +25,7 @@ namespace UsbIpServer
 
             var query = new EventQuery(@"SELECT * FROM RegistryTreeChangeEvent " +
                 @"WHERE Hive='HKEY_LOCAL_MACHINE' " +
-                @$"AND RootPath='{RegistryUtils.DevicesRegistryPath.Replace(@"\", @"\\",StringComparison.InvariantCulture)}'");
+                @$"AND RootPath='{RegistryUtils.DevicesRegistryPath.Replace(@"\", @"\\", StringComparison.InvariantCulture)}'");
             var scope = new ManagementScope();
             scope.Options.Context.Add("__ProviderArchitecture", 64);
             scope.Options.Context.Add("__RequiredArchitecture", true);

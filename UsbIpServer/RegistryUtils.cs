@@ -195,7 +195,8 @@ namespace UsbIpServer
                 using var deviceKey = GetDeviceKey(guid, false);
                 if (deviceKey is not null && !connectedDevices.Any((connectedDevice) => IsDeviceMatch(deviceKey, connectedDevice)))
                 {
-                    if (!BusId.TryParse(deviceKey.GetValue(BusIdName) as string ?? "", out var busId)) {
+                    if (!BusId.TryParse(deviceKey.GetValue(BusIdName) as string ?? "", out var busId))
+                    {
                         continue;
                     }
                     if (deviceKey.GetValue(DescriptionName) is not string description)
