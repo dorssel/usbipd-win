@@ -172,7 +172,8 @@ namespace UsbIpServer
 
                     // setup token to free device
                     using var attachedClientTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-                    void cancelAction() {
+                    void cancelAction()
+                    {
                         attachedClientTokenSource.Cancel();
                     }
                     RegistryWatcher.WatchDevice(busId, cancelAction);
@@ -198,7 +199,7 @@ namespace UsbIpServer
                 {
                     Logger.ClientError(ex);
                 }
-                
+
 #pragma warning disable CA1508 // Avoid dead conditional code (false positive)
                 if (status != Status.ST_OK)
 #pragma warning restore CA1508 // Avoid dead conditional code

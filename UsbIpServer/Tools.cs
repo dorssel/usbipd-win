@@ -5,6 +5,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -14,18 +15,15 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using UsbIpServer.Interop;
 using Windows.Win32;
 using Windows.Win32.Devices.DeviceAndDriverInstallation;
+using Windows.Win32.Devices.Properties;
 using Windows.Win32.Devices.Usb;
 using Windows.Win32.Foundation;
-using Windows.Win32.System.Diagnostics.Debug;
-using Windows.Win32.System.PropertiesSystem;
-using Windows.Win32.System.SystemServices;
+using Windows.Win32.UI.Shell.PropertiesSystem;
 
-using UsbIpServer.Interop;
-using System.Diagnostics.CodeAnalysis;
-
-namespace Windows.Win32.System.SystemServices
+namespace Windows.Win32.Devices.Properties
 {
     partial struct DEVPROPKEY
     {
@@ -126,23 +124,23 @@ namespace UsbIpServer
 
         public static bool IsUsbHub(string deviceInstanceId)
         {
-            using var hubs = SetupDiGetClassDevs(Constants.GUID_DEVINTERFACE_USB_HUB, deviceInstanceId, default, Constants.DIGCF_DEVICEINTERFACE);
-            return EnumDeviceInterfaces(hubs, Constants.GUID_DEVINTERFACE_USB_HUB).Any();
+            using var hubs = SetupDiGetClassDevs(PInvoke.GUID_DEVINTERFACE_USB_HUB, deviceInstanceId, default, PInvoke.DIGCF_DEVICEINTERFACE);
+            return EnumDeviceInterfaces(hubs, PInvoke.GUID_DEVINTERFACE_USB_HUB).Any();
         }
 
-        public static uint GetDevicePropertyUInt32(SafeDeviceInfoSetHandle deviceInfoSet, in SP_DEVINFO_DATA devInfoData, in DEVPROPKEY devPropKey)
+        public static uint GetDevicePropertyUInt32(SafeDeviceInfoSetHandle deviceInfoSet, in SP_DEVINFO_DATA devInfoData, in PROPERTYKEY propertyKey)
         {
             unsafe
             {
                 uint value;
                 uint requiredSize;
-                if (!PInvoke.SetupDiGetDeviceProperty(deviceInfoSet.PInvokeHandle, devInfoData, devPropKey, out var devPropType, (byte*)&value, 4, &requiredSize, 0))
+                if (!PInvoke.SetupDiGetDeviceProperty(deviceInfoSet.PInvokeHandle, devInfoData, propertyKey, out var devPropType, (byte*)&value, 4, &requiredSize, 0))
                 {
                     throw new Win32Exception("SetupDiGetDeviceProperty");
                 }
-                if (devPropType != Constants.DEVPROP_TYPE_UINT32)
+                if (devPropType != PInvoke.DEVPROP_TYPE_UINT32)
                 {
-                    throw new UnexpectedResultException($"SetupDiGetDeviceProperty returned property type {devPropType}, expected {nameof(Constants.DEVPROP_TYPE_UINT32)}");
+                    throw new UnexpectedResultException($"SetupDiGetDeviceProperty returned property type {devPropType}, expected {nameof(PInvoke.DEVPROP_TYPE_UINT32)}");
                 }
                 if (requiredSize != 4)
                 {
@@ -152,12 +150,12 @@ namespace UsbIpServer
             }
         }
 
-        public static string GetDevicePropertyString(SafeDeviceInfoSetHandle deviceInfoSet, in SP_DEVINFO_DATA devInfoData, in DEVPROPKEY devPropKey)
+        public static string GetDevicePropertyString(SafeDeviceInfoSetHandle deviceInfoSet, in SP_DEVINFO_DATA devInfoData, in PROPERTYKEY propertyKey)
         {
             unsafe
             {
                 uint requiredSize;
-                if (PInvoke.SetupDiGetDeviceProperty(deviceInfoSet.PInvokeHandle, devInfoData, devPropKey, out var devPropType, null, 0, &requiredSize, 0))
+                if (PInvoke.SetupDiGetDeviceProperty(deviceInfoSet.PInvokeHandle, devInfoData, propertyKey, out var devPropType, null, 0, &requiredSize, 0))
                 {
                     throw new UnexpectedResultException($"SetupDiGetDeviceProperty succeeded, expected to fail with {WIN32_ERROR.ERROR_INSUFFICIENT_BUFFER}");
                 }
@@ -165,9 +163,9 @@ namespace UsbIpServer
                 {
                     throw new Win32Exception("SetupDiGetDeviceProperty");
                 }
-                if (devPropType != Constants.DEVPROP_TYPE_STRING)
+                if (devPropType != PInvoke.DEVPROP_TYPE_STRING)
                 {
-                    throw new UnexpectedResultException($"SetupDiGetDeviceProperty returned property type {devPropType}, expected {nameof(Constants.DEVPROP_TYPE_STRING)}");
+                    throw new UnexpectedResultException($"SetupDiGetDeviceProperty returned property type {devPropType}, expected {nameof(PInvoke.DEVPROP_TYPE_STRING)}");
                 }
                 if ((requiredSize < 2) || (requiredSize % 2 != 0))
                 {
@@ -175,13 +173,13 @@ namespace UsbIpServer
                 }
                 var output = stackalloc char[(int)requiredSize / 2];
                 uint requiredSize2;
-                if (!PInvoke.SetupDiGetDeviceProperty(deviceInfoSet.PInvokeHandle, devInfoData, devPropKey, out devPropType, (byte*)output, requiredSize, &requiredSize2, 0))
+                if (!PInvoke.SetupDiGetDeviceProperty(deviceInfoSet.PInvokeHandle, devInfoData, propertyKey, out devPropType, (byte*)output, requiredSize, &requiredSize2, 0))
                 {
                     throw new Win32Exception("SetupDiGetDeviceProperty");
                 }
-                if (devPropType != Constants.DEVPROP_TYPE_STRING)
+                if (devPropType != PInvoke.DEVPROP_TYPE_STRING)
                 {
-                    throw new UnexpectedResultException($"SetupDiGetDeviceProperty returned property type {devPropType}, expected {nameof(Constants.DEVPROP_TYPE_STRING)}");
+                    throw new UnexpectedResultException($"SetupDiGetDeviceProperty returned property type {devPropType}, expected {nameof(PInvoke.DEVPROP_TYPE_STRING)}");
                 }
                 if (requiredSize2 != requiredSize)
                 {
@@ -195,21 +193,21 @@ namespace UsbIpServer
             }
         }
 
-        public static string GetDevicePropertyString(string deviceInstanceId, in DEVPROPKEY devPropKey)
+        public static string GetDevicePropertyString(string deviceInstanceId, in PROPERTYKEY propertyKey)
         {
-            using var deviceInfoSet = SetupDiGetClassDevs(null, deviceInstanceId, default, Constants.DIGCF_DEVICEINTERFACE | Constants.DIGCF_ALLCLASSES | Constants.DIGCF_PRESENT);
+            using var deviceInfoSet = SetupDiGetClassDevs(null, deviceInstanceId, default, PInvoke.DIGCF_DEVICEINTERFACE | PInvoke.DIGCF_ALLCLASSES | PInvoke.DIGCF_PRESENT);
             var devinfoData = EnumDeviceInfo(deviceInfoSet).Single();
-            return GetDevicePropertyString(deviceInfoSet, devinfoData, devPropKey);
+            return GetDevicePropertyString(deviceInfoSet, devinfoData, propertyKey);
         }
 
-        public static void SetDevicePropertyString(SafeDeviceInfoSetHandle deviceInfoSet, in SP_DEVINFO_DATA devInfoData, in DEVPROPKEY devPropKey, string? value)
+        public static void SetDevicePropertyString(SafeDeviceInfoSetHandle deviceInfoSet, in SP_DEVINFO_DATA devInfoData, in PROPERTYKEY propertyKey, string? value)
         {
             unsafe
             {
                 if (value is null)
                 {
                     // This will delete the property
-                    if (!PInvoke.SetupDiSetDeviceProperty(deviceInfoSet.PInvokeHandle, devInfoData, devPropKey, Constants.DEVPROP_TYPE_EMPTY, null, 0u, 0u))
+                    if (!PInvoke.SetupDiSetDeviceProperty(deviceInfoSet.PInvokeHandle, devInfoData, propertyKey, PInvoke.DEVPROP_TYPE_EMPTY, null, 0u, 0u))
                     {
                         throw new Win32Exception("SetupDiSetDeviceProperty");
                     }
@@ -220,11 +218,11 @@ namespace UsbIpServer
                     var buf = Encoding.Unicode.GetBytes(value + '\0');
                     fixed (SP_DEVINFO_DATA* pInfoData = &devInfoData)
                     {
-                        fixed (DEVPROPKEY* pDevPropKey = &devPropKey)
+                        fixed (PROPERTYKEY* pPropertyKey = &propertyKey)
                         {
                             fixed (byte* pBuf = buf)
                             {
-                                if (!PInvoke.SetupDiSetDeviceProperty(deviceInfoSet.PInvokeHandle, pInfoData, pDevPropKey, Constants.DEVPROP_TYPE_STRING, pBuf, (uint)buf.Length, 0u))
+                                if (!PInvoke.SetupDiSetDeviceProperty(deviceInfoSet.PInvokeHandle, pInfoData, (DEVPROPKEY*)pPropertyKey, PInvoke.DEVPROP_TYPE_STRING, pBuf, (uint)buf.Length, 0u))
                                 {
                                     throw new Win32Exception("SetupDiSetDeviceProperty");
                                 }
@@ -252,8 +250,11 @@ namespace UsbIpServer
         {
             unsafe
             {
-                devInfoData.cbSize = (uint)Marshal.SizeOf<SP_DEVINFO_DATA>();
-                if (PInvoke.SetupDiEnumDeviceInfo(deviceInfoSet.PInvokeHandle, index, out devInfoData))
+                devInfoData = new()
+                {
+                    cbSize = (uint)Marshal.SizeOf<SP_DEVINFO_DATA>(),
+                };
+                if (PInvoke.SetupDiEnumDeviceInfo(deviceInfoSet.PInvokeHandle, index, ref devInfoData))
                 {
                     return true;
                 }
@@ -281,8 +282,11 @@ namespace UsbIpServer
         {
             unsafe
             {
-                interfaceData.cbSize = (uint)Marshal.SizeOf<SP_DEVICE_INTERFACE_DATA>();
-                if (PInvoke.SetupDiEnumDeviceInterfaces(deviceInfoSet.PInvokeHandle, devInfoData, interfaceClassGuid, index, out interfaceData))
+                interfaceData = new()
+                {
+                    cbSize = (uint)Marshal.SizeOf<SP_DEVICE_INTERFACE_DATA>(),
+                };
+                if (PInvoke.SetupDiEnumDeviceInterfaces(deviceInfoSet.PInvokeHandle, devInfoData, interfaceClassGuid, index, ref interfaceData))
                 {
                     return true;
                 }
@@ -345,7 +349,7 @@ namespace UsbIpServer
 
         public static void GetBusId(SafeDeviceInfoSetHandle deviceInfoSet, in SP_DEVINFO_DATA devInfoData, out BusId busId)
         {
-            var locationInfo = GetDevicePropertyString(deviceInfoSet, devInfoData, Constants.DEVPKEY_Device_LocationInfo);
+            var locationInfo = GetDevicePropertyString(deviceInfoSet, devInfoData, PInvoke.DEVPKEY_Device_LocationInfo);
             var match = Regex.Match(locationInfo, "^Port_#([0-9]{4}).Hub_#([0-9]{4})$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
             if (!match.Success)
             {

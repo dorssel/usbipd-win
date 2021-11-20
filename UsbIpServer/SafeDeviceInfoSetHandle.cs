@@ -15,7 +15,7 @@ namespace UsbIpServer
         {
         }
 
-        public unsafe SafeDeviceInfoSetHandle(void *handle)
+        public unsafe SafeDeviceInfoSetHandle(void* handle)
             : base(true)
         {
             this.handle = (IntPtr)handle;

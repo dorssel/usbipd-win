@@ -39,7 +39,7 @@ namespace UsbIpServer
             // We will use the return value of 'wsl --status':
             //   - it should be 0 if WSL is somehow installed (either as a feature or from the store)
             //   - it should be != 0 if WSL isn't installed either way
-            return ProcessUtils.RunCapturedProcessAsync(WslPath, new[] { "--status"}, Encoding.Unicode, CancellationToken.None).Result.ExitCode == 0;
+            return ProcessUtils.RunCapturedProcessAsync(WslPath, new[] { "--status" }, Encoding.Unicode, CancellationToken.None).Result.ExitCode == 0;
         }
 
         WslDistributions(List<Distribution> distributions, IPAddress? hostAddress)

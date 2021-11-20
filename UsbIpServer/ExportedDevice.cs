@@ -12,11 +12,10 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using UsbIpServer.Interop;
 using Windows.Win32;
 using Windows.Win32.Devices.DeviceAndDriverInstallation;
 using Windows.Win32.Devices.Usb;
-
-using UsbIpServer.Interop;
 using static UsbIpServer.Interop.UsbIp;
 using static UsbIpServer.Interop.WinSDK;
 using static UsbIpServer.Tools;
@@ -116,7 +115,7 @@ namespace UsbIpServer
                     ConnectionIndex = connectionIndex,
                     SetupPacket = {
                         wLength = (ushort)Marshal.SizeOf<USB_CONFIGURATION_DESCRIPTOR>(),
-                        wValue = (ushort)(((byte)Constants.USB_CONFIGURATION_DESCRIPTOR_TYPE << 8) | configIndex)
+                        wValue = (ushort)(((byte)PInvoke.USB_CONFIGURATION_DESCRIPTOR_TYPE << 8) | configIndex)
                     }
                 };
                 StructToBytes(request, buf);
@@ -135,13 +134,13 @@ namespace UsbIpServer
 
         static async Task<ExportedDevice?> GetDevice(SafeDeviceInfoSetHandle deviceInfoSet, SP_DEVINFO_DATA devInfoData, CancellationToken cancellationToken)
         {
-            var instanceId = GetDevicePropertyString(deviceInfoSet, devInfoData, Constants.DEVPKEY_Device_InstanceId);
+            var instanceId = GetDevicePropertyString(deviceInfoSet, devInfoData, PInvoke.DEVPKEY_Device_InstanceId);
             if (IsUsbHub(instanceId))
             {
                 // device is itself a USB hub, which is not supported
                 return null;
             }
-            var parentId = GetDevicePropertyString(deviceInfoSet, devInfoData, Constants.DEVPKEY_Device_Parent);
+            var parentId = GetDevicePropertyString(deviceInfoSet, devInfoData, PInvoke.DEVPKEY_Device_Parent);
             if (!IsUsbHub(parentId))
             {
                 // parent is not a USB hub (which it must be for this device to be supported)
@@ -152,7 +151,7 @@ namespace UsbIpServer
 
             GetBusId(deviceInfoSet, devInfoData, out var busId);
 
-            var address = GetDevicePropertyUInt32(deviceInfoSet, devInfoData, Constants.DEVPKEY_Device_Address);
+            var address = GetDevicePropertyUInt32(deviceInfoSet, devInfoData, PInvoke.DEVPKEY_Device_Address);
             if (busId.Port != address)
             {
                 throw new NotSupportedException($"DEVPKEY_Device_Address ({address}) does not match DEVPKEY_Device_LocationInfo ({busId.Port})");
@@ -162,8 +161,8 @@ namespace UsbIpServer
 
             cancellationToken.ThrowIfCancellationRequested();
 
-            using var hubs = SetupDiGetClassDevs(Constants.GUID_DEVINTERFACE_USB_HUB, parentId, default, Constants.DIGCF_DEVICEINTERFACE | Constants.DIGCF_PRESENT);
-            var (_, interfaceData) = EnumDeviceInterfaces(hubs, Constants.GUID_DEVINTERFACE_USB_HUB).Single();
+            using var hubs = SetupDiGetClassDevs(PInvoke.GUID_DEVINTERFACE_USB_HUB, parentId, default, PInvoke.DIGCF_DEVICEINTERFACE | PInvoke.DIGCF_PRESENT);
+            var (_, interfaceData) = EnumDeviceInterfaces(hubs, PInvoke.GUID_DEVINTERFACE_USB_HUB).Single();
             var hubPath = GetDeviceInterfaceDetail(hubs, interfaceData);
 
             cancellationToken.ThrowIfCancellationRequested();
@@ -229,7 +228,7 @@ namespace UsbIpServer
         {
             var exportedDevices = new SortedDictionary<BusId, ExportedDevice>();
 
-            using var deviceInfoSet = SetupDiGetClassDevs(null, "USB", default, Constants.DIGCF_ALLCLASSES | Constants.DIGCF_PRESENT);
+            using var deviceInfoSet = SetupDiGetClassDevs(null, "USB", default, PInvoke.DIGCF_ALLCLASSES | PInvoke.DIGCF_PRESENT);
             foreach (var devInfoData in EnumDeviceInfo(deviceInfoSet))
             {
                 cancellationToken.ThrowIfCancellationRequested();

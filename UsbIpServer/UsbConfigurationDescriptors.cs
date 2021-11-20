@@ -87,7 +87,7 @@ namespace UsbIpServer
                 BytesToStruct(descriptor[offset..], out USB_COMMON_DESCRIPTOR common);
                 switch ((uint)common.bDescriptorType)
                 {
-                    case Constants.USB_CONFIGURATION_DESCRIPTOR_TYPE:
+                    case PInvoke.USB_CONFIGURATION_DESCRIPTOR_TYPE:
                         if (configuration is not null)
                         {
                             throw new ArgumentException("duplicate USB_CONFIGURATION_DESCRIPTOR_TYPE");
@@ -112,7 +112,7 @@ namespace UsbIpServer
                         // Those that (wrongly) report the same configuration multiple times will be auto-corrected.
                         Configurations.TryAdd(config.bConfigurationValue, configuration);
                         break;
-                    case Constants.USB_INTERFACE_DESCRIPTOR_TYPE:
+                    case PInvoke.USB_INTERFACE_DESCRIPTOR_TYPE:
                         if (configuration is null)
                         {
                             throw new ArgumentException("expected USB_CONFIGURATION_DESCRIPTOR_TYPE");
@@ -125,7 +125,7 @@ namespace UsbIpServer
                         alternateInterface = new(iface);
                         configuration.Interfaces[iface.bInterfaceNumber].Alternates[iface.bAlternateSetting] = alternateInterface;
                         break;
-                    case Constants.USB_ENDPOINT_DESCRIPTOR_TYPE:
+                    case PInvoke.USB_ENDPOINT_DESCRIPTOR_TYPE:
                         if (alternateInterface is null)
                         {
                             throw new ArgumentException("expected USB_INTERFACE_DESCRIPTOR_TYPE");
@@ -134,7 +134,7 @@ namespace UsbIpServer
                         var endpoint = new UsbEndpoint(ep);
                         switch ((uint)endpoint.TransferType)
                         {
-                            case Constants.USB_ENDPOINT_TYPE_CONTROL:
+                            case PInvoke.USB_ENDPOINT_TYPE_CONTROL:
                                 alternateInterface.Endpoints.Add((byte)(ep.bEndpointAddress & 0x0f), endpoint);
                                 break;
                             default:
@@ -194,7 +194,7 @@ namespace UsbIpServer
                     {
                         switch ((uint)endpoint.TransferType)
                         {
-                            case Constants.USB_ENDPOINT_TYPE_CONTROL:
+                            case PInvoke.USB_ENDPOINT_TYPE_CONTROL:
                                 // for easy cache lookup, control endpoints are registered as both input and output
                                 EndpointCache[(byte)(endpoint.Descriptor.bEndpointAddress & 0x0f)] = endpoint;
                                 EndpointCache[(byte)((endpoint.Descriptor.bEndpointAddress & 0x0f) | 0x80)] = endpoint;
@@ -215,7 +215,7 @@ namespace UsbIpServer
             if (endpoint == 0)
             {
                 // every configuration (even low-power) always has an "endpoint 0" which is the default control pipe (input and output) 
-                return Constants.USB_ENDPOINT_TYPE_CONTROL;
+                return PInvoke.USB_ENDPOINT_TYPE_CONTROL;
             }
             else if (endpoint > 0x0f)
             {

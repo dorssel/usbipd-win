@@ -60,7 +60,8 @@ namespace UsbIpServer
 
             // To start, all devices should not be marked as attached.
             var devices = await ExportedDevice.GetAll(CancellationToken.None);
-            foreach (var device in devices) {
+            foreach (var device in devices)
+            {
                 RegistryUtils.SetDeviceAsDetached(device);
             }
 

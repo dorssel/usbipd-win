@@ -58,7 +58,7 @@ namespace UsbIpServer
 
         async Task<DeviceFile> ClaimDeviceOnce(ExportedDevice device)
         {
-            using var deviceInfoSet = SetupDiGetClassDevs(GUID_CLASS_VBOXUSB, null, default, Constants.DIGCF_DEVICEINTERFACE | Constants.DIGCF_PRESENT);
+            using var deviceInfoSet = SetupDiGetClassDevs(GUID_CLASS_VBOXUSB, null, default, PInvoke.DIGCF_DEVICEINTERFACE | PInvoke.DIGCF_PRESENT);
             foreach (var (infoData, interfaceData) in EnumDeviceInterfaces(deviceInfoSet, GUID_CLASS_VBOXUSB))
             {
                 GetBusId(deviceInfoSet, infoData, out var busId);
@@ -128,7 +128,7 @@ namespace UsbIpServer
                         // "VBoxUSB".
 
                         // Best effort, not really a problem if this fails.
-                        SetDevicePropertyString(deviceInfoSet, infoData, Constants.DEVPKEY_Device_FriendlyName, $"USBIP Shared Device {device.BusId}");
+                        SetDevicePropertyString(deviceInfoSet, infoData, PInvoke.DEVPKEY_Device_FriendlyName, $"USBIP Shared Device {device.BusId}");
                     }
                     catch (Win32Exception) { }
 

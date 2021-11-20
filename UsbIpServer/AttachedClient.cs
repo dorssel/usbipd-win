@@ -216,7 +216,7 @@ namespace UsbIpServer
             // We are synchronous with the receiver.
 
             var transferType = ConfigurationDescriptors.GetEndpointType(basic.ep, basic.direction == UsbIpDir.USBIP_DIR_IN);
-            if (transferType == Constants.USB_ENDPOINT_TYPE_ISOCHRONOUS)
+            if (transferType == PInvoke.USB_ENDPOINT_TYPE_ISOCHRONOUS)
             {
                 await HandleSubmitIsochronousAsync(basic, submit, cancellationToken);
                 return;
@@ -239,15 +239,15 @@ namespace UsbIpServer
             var payloadOffset = 0;
             switch (transferType)
             {
-                case Constants.USB_ENDPOINT_TYPE_CONTROL:
+                case PInvoke.USB_ENDPOINT_TYPE_CONTROL:
                     urb.type = UsbSupTransferType.USBSUP_TRANSFER_TYPE_MSG;
                     payloadOffset = Marshal.SizeOf<USB_DEFAULT_PIPE_SETUP_PACKET>();
                     urb.len += (uint)payloadOffset;
                     break;
-                case Constants.USB_ENDPOINT_TYPE_BULK:
+                case PInvoke.USB_ENDPOINT_TYPE_BULK:
                     urb.type = UsbSupTransferType.USBSUP_TRANSFER_TYPE_BULK;
                     break;
-                case Constants.USB_ENDPOINT_TYPE_INTERRUPT:
+                case PInvoke.USB_ENDPOINT_TYPE_INTERRUPT:
                     urb.type = UsbSupTransferType.USBSUP_TRANSFER_TYPE_INTR;
                     break;
                 default:
@@ -257,7 +257,7 @@ namespace UsbIpServer
             var bytes = new byte[Marshal.SizeOf<UsbSupUrb>()];
             var buf = new byte[urb.len];
 
-            if (transferType == Constants.USB_ENDPOINT_TYPE_CONTROL)
+            if (transferType == PInvoke.USB_ENDPOINT_TYPE_CONTROL)
             {
                 StructToBytes(submit.setup, buf);
             }
@@ -278,8 +278,8 @@ namespace UsbIpServer
             var pending = false;
 
             if ((basic.ep == 0)
-                && (submit.setup.bmRequestType.B == Constants.BMREQUEST_TO_DEVICE)
-                && (submit.setup.bRequest == Constants.USB_REQUEST_SET_CONFIGURATION))
+                && (submit.setup.bmRequestType.B == PInvoke.BMREQUEST_TO_DEVICE)
+                && (submit.setup.bRequest == PInvoke.USB_REQUEST_SET_CONFIGURATION))
             {
                 // VBoxUsb needs this to get the endpoint handles
                 var setConfig = new UsbSupSetConfig()
@@ -292,8 +292,8 @@ namespace UsbIpServer
                 ConfigurationDescriptors.SetConfiguration(setConfig.bConfigurationValue);
             }
             else if ((basic.ep == 0)
-                && (submit.setup.bmRequestType.B == Constants.BMREQUEST_TO_INTERFACE)
-                && (submit.setup.bRequest == Constants.USB_REQUEST_SET_INTERFACE))
+                && (submit.setup.bmRequestType.B == PInvoke.BMREQUEST_TO_INTERFACE)
+                && (submit.setup.bRequest == PInvoke.USB_REQUEST_SET_INTERFACE))
             {
                 // VBoxUsb needs this to get the endpoint handles
                 var selectInterface = new UsbSupSelectInterface()
@@ -307,9 +307,9 @@ namespace UsbIpServer
                 ConfigurationDescriptors.SetInterface(selectInterface.bInterfaceNumber, selectInterface.bAlternateSetting);
             }
             else if ((basic.ep == 0)
-                && (submit.setup.bmRequestType.B == Constants.BMREQUEST_TO_ENDPOINT)
-                && (submit.setup.bRequest == Constants.USB_REQUEST_CLEAR_FEATURE)
-                && (submit.setup.wValue.W == Constants.USB_FEATURE_ENDPOINT_STALL))
+                && (submit.setup.bmRequestType.B == PInvoke.BMREQUEST_TO_ENDPOINT)
+                && (submit.setup.bRequest == PInvoke.USB_REQUEST_CLEAR_FEATURE)
+                && (submit.setup.wValue.W == PInvoke.USB_FEATURE_ENDPOINT_STALL))
             {
                 // VBoxUsb needs this to notify the host controller
                 var clearEndpoint = new UsbSupClearEndpoint()
@@ -322,7 +322,7 @@ namespace UsbIpServer
             }
             else
             {
-                if (transferType == Constants.USB_ENDPOINT_TYPE_CONTROL)
+                if (transferType == PInvoke.USB_ENDPOINT_TYPE_CONTROL)
                 {
                     Logger.Trace($"{submit.setup.bmRequestType.B} {submit.setup.bRequest} {submit.setup.wValue.W} {submit.setup.wIndex.W} {submit.setup.wLength}");
                 }
@@ -398,7 +398,7 @@ namespace UsbIpServer
                     },
                 };
 
-                if (transferType == Constants.USB_ENDPOINT_TYPE_CONTROL)
+                if (transferType == PInvoke.USB_ENDPOINT_TYPE_CONTROL)
                 {
                     header.ret_submit.actual_length = (header.ret_submit.actual_length > payloadOffset) ? (header.ret_submit.actual_length - payloadOffset) : 0;
                 }
