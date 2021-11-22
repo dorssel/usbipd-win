@@ -355,10 +355,13 @@ namespace UsbIpServer
             {
                 throw new NotSupportedException($"DEVPKEY_Device_LocationInfo returned '{locationInfo}', expected form 'Port_#0123.Hub_#4567'");
             }
+            // HACK
+            // Use Address only, and ignore Port_#
+            var address = GetDevicePropertyUInt32(deviceInfoSet, devInfoData, PInvoke.DEVPKEY_Device_Address);
             busId = new()
             {
                 Bus = ushort.Parse(match.Groups[2].Value, CultureInfo.InvariantCulture),
-                Port = ushort.Parse(match.Groups[1].Value, CultureInfo.InvariantCulture),
+                Port = (ushort)address,
             };
         }
 
