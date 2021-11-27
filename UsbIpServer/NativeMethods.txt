@@ -16,7 +16,6 @@ DEVPROP_TYPE_EMPTY
 DEVPROP_TYPE_STRING
 DEVPROP_TYPE_UINT32
 
-DEVPKEY_Device_Address
 DEVPKEY_Device_FriendlyName
 DEVPKEY_Device_InstanceId
 DEVPKEY_Device_LocationInfo

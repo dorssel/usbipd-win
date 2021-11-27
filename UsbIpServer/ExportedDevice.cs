@@ -160,12 +160,6 @@ namespace UsbIpServer
 
             GetBusId(deviceInfoSet, devInfoData, out var busId);
 
-            var address = GetDevicePropertyUInt32(deviceInfoSet, devInfoData, PInvoke.DEVPKEY_Device_Address);
-            if (busId.Port != address)
-            {
-                throw new NotSupportedException($"DEVPKEY_Device_Address ({address}) does not match DEVPKEY_Device_LocationInfo ({busId.Port})");
-            }
-
             // now query the parent USB hub for device details
 
             cancellationToken.ThrowIfCancellationRequested();
