@@ -160,8 +160,6 @@ namespace UsbIpServer
                 Logger.ClientAttach(ClientContext.ClientAddress, exportedDevice.BusId, exportedDevice.Path);
                 try
                 {
-                    ClientContext.ConfigurationDescriptors = exportedDevice.ConfigurationDescriptors;
-
                     status = Status.ST_DEV_ERR;
                     var cfg = new byte[1] { 0 };
                     await ClientContext.AttachedDevice.IoControlAsync(SUPUSB_IOCTL.USB_SET_CONFIG, cfg, null);

@@ -18,7 +18,6 @@ namespace UsbIpServer
         /// </summary>
         public IPAddress ClientAddress { get; set; } = IPAddress.Any;
         public DeviceFile? AttachedDevice { get; set; }
-        public UsbConfigurationDescriptors? ConfigurationDescriptors { get; set; }
 
         void IDisposable.Dispose()
         {
