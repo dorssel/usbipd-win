@@ -14,7 +14,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using UsbIpServer.Interop;
 using Windows.Win32;
-using Windows.Win32.Devices.DeviceAndDriverInstallation;
 using Windows.Win32.Devices.Usb;
 using static UsbIpServer.Interop.UsbIp;
 using static UsbIpServer.Interop.WinSDK;
@@ -99,7 +98,7 @@ namespace UsbIpServer
             }
         }
 
-        static async Task<List<(byte,byte,byte)>> GetInterfacesAsync(DeviceFile hub, ushort connectionIndex)
+        static async Task<List<(byte, byte, byte)>> GetInterfacesAsync(DeviceFile hub, ushort connectionIndex)
         {
             var result = new List<(byte, byte, byte)>();
 

@@ -209,7 +209,7 @@ namespace UsbIpServer
 
             foreach (var childNode in EnumChildren(deviceNode))
             {
-                var name = ((string)Get_DevNode_Property(childNode, PInvoke. DEVPKEY_NAME)).Trim();
+                var name = ((string)Get_DevNode_Property(childNode, PInvoke.DEVPKEY_NAME)).Trim();
                 if (!string.IsNullOrEmpty(name) && descriptionSet.Add(name))
                 {
                     descriptionList.Add(name);

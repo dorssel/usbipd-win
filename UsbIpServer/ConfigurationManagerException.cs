@@ -6,6 +6,7 @@ using System;
 using System.ComponentModel;
 using Windows.Win32;
 using Windows.Win32.Devices.DeviceAndDriverInstallation;
+using Windows.Win32.Foundation;
 
 namespace UsbIpServer
 {
@@ -28,7 +29,7 @@ namespace UsbIpServer
         }
 
         internal ConfigurationManagerException(CONFIGRET configRet, string message)
-            : base((int)PInvoke.CM_MapCrToWin32Err(configRet, PInvoke.E_FAIL), message)
+            : base((int)PInvoke.CM_MapCrToWin32Err(configRet, (uint)WIN32_ERROR.ERROR_CAN_NOT_COMPLETE), message)
         {
             ConfigRet = configRet;
         }
