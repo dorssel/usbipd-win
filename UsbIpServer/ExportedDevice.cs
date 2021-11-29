@@ -43,9 +43,7 @@ namespace UsbIpServer
 
         public UsbConfigurationDescriptors ConfigurationDescriptors { get; private set; } = new();
 
-        public string Manufacturer { get; set; } = string.Empty;
-        public string Product { get; set; } = string.Empty;
-        public string SerialNumber { get; set; } = string.Empty;
+        public string Description { get; private set; } = string.Empty;
 
         static void Serialize(Stream stream, string value, uint size)
         {
@@ -132,44 +130,16 @@ namespace UsbIpServer
             return result;
         }
 
-        static async Task<ExportedDevice?> GetDevice(SafeDeviceInfoSetHandle deviceInfoSet, SP_DEVINFO_DATA devInfoData, CancellationToken cancellationToken)
+        static async Task<ExportedDevice?> GetExportedDevice(ConfigurationManager.UsbDevice device, CancellationToken cancellationToken)
         {
-            var instanceId = GetDevicePropertyString(deviceInfoSet, devInfoData, PInvoke.DEVPKEY_Device_InstanceId);
-            if (IsUsbHub(instanceId))
-            {
-                // device is itself a USB hub, which is not supported
-                return null;
-            }
-            var parentId = GetDevicePropertyString(deviceInfoSet, devInfoData, PInvoke.DEVPKEY_Device_Parent);
-            if (!IsUsbHub(parentId))
-            {
-                // parent is not a USB hub (which it must be for this device to be supported)
-                return null;
-            }
-
-            // OK, so the device is directly connected to a hub, but is not a hub itself ... this looks promising
-
-            GetBusId(deviceInfoSet, devInfoData, out var busId);
-
-            var address = GetDevicePropertyUInt32(deviceInfoSet, devInfoData, PInvoke.DEVPKEY_Device_Address);
-            if (busId.Port != address)
-            {
-                throw new NotSupportedException($"DEVPKEY_Device_Address ({address}) does not match DEVPKEY_Device_LocationInfo ({busId.Port})");
-            }
+            cancellationToken.ThrowIfCancellationRequested();
 
             // now query the parent USB hub for device details
 
-            cancellationToken.ThrowIfCancellationRequested();
-
-            using var hubs = SetupDiGetClassDevs(PInvoke.GUID_DEVINTERFACE_USB_HUB, parentId, default, PInvoke.DIGCF_DEVICEINTERFACE | PInvoke.DIGCF_PRESENT);
-            var (_, interfaceData) = EnumDeviceInterfaces(hubs, PInvoke.GUID_DEVINTERFACE_USB_HUB).Single();
-            var hubPath = GetDeviceInterfaceDetail(hubs, interfaceData);
-
-            cancellationToken.ThrowIfCancellationRequested();
-            using var hubFile = new DeviceFile(hubPath);
+            using var hubFile = new DeviceFile(device.HubInterface);
             using var cancellationTokenRegistration = cancellationToken.Register(() => hubFile.Dispose());
 
-            var data = new UsbNodeConnectionInformationEx() { ConnectionIndex = busId.Port };
+            var data = new UsbNodeConnectionInformationEx() { ConnectionIndex = device.BusId.Port };
             var buf = StructToBytes(data);
             await hubFile.IoControlAsync(IoControl.IOCTL_USB_GET_NODE_CONNECTION_INFORMATION_EX, buf, buf);
             BytesToStruct(buf, out data);
@@ -178,7 +148,7 @@ namespace UsbIpServer
 
             var data2 = new UsbNodeConnectionInformationExV2()
             {
-                ConnectionIndex = busId.Port,
+                ConnectionIndex = device.BusId.Port,
                 Length = (uint)Marshal.SizeOf<UsbNodeConnectionInformationExV2>(),
                 SupportedUsbProtocols = UsbProtocols.Usb110 | UsbProtocols.Usb200 | UsbProtocols.Usb300,
             };
@@ -200,9 +170,9 @@ namespace UsbIpServer
 
             var exportedDevice = new ExportedDevice()
             {
-                Path = instanceId,
-                HubPath = hubPath,
-                BusId = busId,
+                Path = device.DeviceId,
+                HubPath = device.HubInterface,
+                BusId = device.BusId,
                 Speed = speed,
                 VendorId = data.DeviceDescriptor.idVendor,
                 ProductId = data.DeviceDescriptor.idProduct,
@@ -212,7 +182,8 @@ namespace UsbIpServer
                 DeviceProtocol = data.DeviceDescriptor.bDeviceProtocol,
                 ConfigurationValue = data.CurrentConfigurationValue,
                 NumConfigurations = data.DeviceDescriptor.bNumConfigurations,
-                ConfigurationDescriptors = await GetConfigurationDescriptor(hubFile, busId.Port, data.DeviceDescriptor.bNumConfigurations),
+                ConfigurationDescriptors = await GetConfigurationDescriptor(hubFile, device.BusId.Port, data.DeviceDescriptor.bNumConfigurations),
+                Description = device.Description,
             };
 
             if (RegistryUtils.GetOriginalInstanceId(exportedDevice) is string originalInstanceId)
@@ -221,21 +192,24 @@ namespace UsbIpServer
                 exportedDevice.Path = originalInstanceId;
             }
 
+            if (RegistryUtils.GetDeviceDescription(exportedDevice) is string cachedDescription)
+            {
+                // If the device is currently attached, then we will have overridden the description.
+                exportedDevice.Description = cachedDescription;
+            }
+
             return exportedDevice;
         }
 
         public static async Task<ExportedDevice[]> GetAll(CancellationToken cancellationToken)
         {
             var exportedDevices = new SortedDictionary<BusId, ExportedDevice>();
-
-            using var deviceInfoSet = SetupDiGetClassDevs(null, "USB", default, PInvoke.DIGCF_ALLCLASSES | PInvoke.DIGCF_PRESENT);
-            foreach (var devInfoData in EnumDeviceInfo(deviceInfoSet))
+            foreach (var device in ConfigurationManager.GetUsbDevices(true))
             {
                 cancellationToken.ThrowIfCancellationRequested();
-
                 try
                 {
-                    if (await GetDevice(deviceInfoSet, devInfoData, cancellationToken) is ExportedDevice exportedDevice)
+                    if (await GetExportedDevice(device, cancellationToken) is ExportedDevice exportedDevice)
                     {
                         exportedDevices.Add(exportedDevice.BusId, exportedDevice);
                     }
@@ -248,7 +222,6 @@ namespace UsbIpServer
                     continue;
                 }
             }
-
             return exportedDevices.Values.ToArray();
         }
     }

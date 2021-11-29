@@ -2,33 +2,40 @@
 //
 // SPDX-License-Identifier: GPL-2.0-only
 
+CM_Get_Child
+CM_Get_Device_Interface_List
+CM_Get_Device_Interface_List_Size
+CM_Get_Device_Interface_Property
+CM_Get_DevNode_Property
+CM_Get_Sibling
+CM_Locate_DevNode
+CM_MapCrToWin32Err
+CM_Set_DevNode_Property
+
+CM_GET_DEVICE_INTERFACE_LIST_PRESENT
+CM_LOCATE_DEVNODE_NORMAL
+
 CreateFile
 DeviceIoControl
-SetupDiDestroyDeviceInfoList
-SetupDiEnumDeviceInfo
-SetupDiEnumDeviceInterfaces
-SetupDiGetClassDevs
-SetupDiGetDeviceInterfaceDetail
-SetupDiGetDeviceProperty
-SetupDiSetDeviceProperty
 
 DEVPROP_TYPE_EMPTY
 DEVPROP_TYPE_STRING
 DEVPROP_TYPE_UINT32
 
-DEVPKEY_Device_Address
+DEVPROP_TYPEMOD_LIST
+
+DEVPKEY_Device_Children
+DEVPKEY_Device_CompatibleIds
 DEVPKEY_Device_FriendlyName
 DEVPKEY_Device_InstanceId
 DEVPKEY_Device_LocationInfo
-DEVPKEY_Device_Parent
+DEVPKEY_NAME
 
 GUID_DEVINTERFACE_USB_HUB
 
-DIGCF_ALLCLASSES
-DIGCF_DEVICEINTERFACE
-DIGCF_PRESENT
-
 WIN32_ERROR
+
+E_FAIL
 
 USB_DEVICE_DESCRIPTOR
 
