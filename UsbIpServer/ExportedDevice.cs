@@ -191,7 +191,7 @@ namespace UsbIpServer
                 DeviceProtocol = data.DeviceDescriptor.bDeviceProtocol,
                 ConfigurationValue = data.CurrentConfigurationValue,
                 NumConfigurations = data.DeviceDescriptor.bNumConfigurations,
-                Interfaces = await GetInterfacesAsync(hubFile, busId.Port),
+                Interfaces = await GetInterfacesAsync(hubFile, device.BusId.Port),
                 Description = device.Description,
             };
 
