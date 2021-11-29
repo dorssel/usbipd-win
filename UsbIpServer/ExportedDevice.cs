@@ -40,8 +40,7 @@ namespace UsbIpServer
         public byte DeviceProtocol { get; private init; }
         public byte ConfigurationValue { get; private init; }
         public byte NumConfigurations { get; private init; }
-
-        public UsbConfigurationDescriptors ConfigurationDescriptors { get; private set; } = new();
+        public List<(byte, byte, byte)> Interfaces { get; private set; } = new();
 
         public string Manufacturer { get; set; } = string.Empty;
         public string Product { get; set; } = string.Empty;
@@ -89,11 +88,10 @@ namespace UsbIpServer
             Serialize(stream, ConfigurationValue);
             Serialize(stream, NumConfigurations);
 
-            var interfaces = ConfigurationDescriptors.GetUniqueInterfaces();
-            Serialize(stream, (byte)interfaces.Length);
+            Serialize(stream, (byte)Interfaces.Count);
             if (includeInterfaces)
             {
-                foreach (var (Class, SubClass, Protocol) in interfaces)
+                foreach (var (Class, SubClass, Protocol) in Interfaces)
                 {
                     Serialize(stream, Class);
                     Serialize(stream, SubClass);
@@ -103,32 +101,43 @@ namespace UsbIpServer
             }
         }
 
-        static async Task<UsbConfigurationDescriptors> GetConfigurationDescriptor(DeviceFile hub, ushort connectionIndex, byte numConfigurations)
+        static async Task<List<(byte,byte,byte)>> GetInterfacesAsync(DeviceFile hub, ushort connectionIndex)
         {
-            var result = new UsbConfigurationDescriptors();
+            var result = new List<(byte, byte, byte)>();
 
-            for (byte configIndex = 0; configIndex < numConfigurations; ++configIndex)
+            // IOCTL_USB_GET_DESCRIPTOR_FROM_NODE_CONNECTION will always get the current configuration, any index is not used.
+            // This is not a problem, the result is only used informatively.
+            var buf = new byte[Marshal.SizeOf<UsbDescriptorRequest>() + Marshal.SizeOf<USB_CONFIGURATION_DESCRIPTOR>()];
+            var request = new UsbDescriptorRequest()
             {
-                var buf = new byte[Marshal.SizeOf<UsbDescriptorRequest>() + Marshal.SizeOf<USB_CONFIGURATION_DESCRIPTOR>()];
-                var request = new UsbDescriptorRequest()
+                ConnectionIndex = connectionIndex,
+                SetupPacket = {
+                    wLength = (ushort)Marshal.SizeOf<USB_CONFIGURATION_DESCRIPTOR>(),
+                    wValue = (ushort)(PInvoke.USB_CONFIGURATION_DESCRIPTOR_TYPE << 8),
+                }
+            };
+            StructToBytes(request, buf);
+            await hub.IoControlAsync(IoControl.IOCTL_USB_GET_DESCRIPTOR_FROM_NODE_CONNECTION, buf, buf);
+            BytesToStruct(buf.AsSpan(Marshal.SizeOf<UsbDescriptorRequest>()), out USB_CONFIGURATION_DESCRIPTOR configuration);
+            buf = new byte[Marshal.SizeOf<UsbDescriptorRequest>() + configuration.wTotalLength];
+            request.SetupPacket.wLength = configuration.wTotalLength;
+            StructToBytes(request, buf);
+            await hub.IoControlAsync(IoControl.IOCTL_USB_GET_DESCRIPTOR_FROM_NODE_CONNECTION, buf, buf);
+
+            var offset = Marshal.SizeOf<UsbDescriptorRequest>();
+            while (offset < buf.Length)
+            {
+                BytesToStruct(buf.AsSpan(offset), out USB_COMMON_DESCRIPTOR common);
+                if (common.bDescriptorType == PInvoke.USB_INTERFACE_DESCRIPTOR_TYPE)
                 {
-                    ConnectionIndex = connectionIndex,
-                    SetupPacket = {
-                        wLength = (ushort)Marshal.SizeOf<USB_CONFIGURATION_DESCRIPTOR>(),
-                        wValue = (ushort)(((byte)PInvoke.USB_CONFIGURATION_DESCRIPTOR_TYPE << 8) | configIndex)
+                    BytesToStruct(buf.AsSpan(offset), out USB_INTERFACE_DESCRIPTOR iface);
+                    if (iface.bAlternateSetting == 0)
+                    {
+                        result.Add(new(iface.bInterfaceClass, iface.bInterfaceSubClass, iface.bInterfaceProtocol));
                     }
-                };
-                StructToBytes(request, buf);
-                await hub.IoControlAsync(IoControl.IOCTL_USB_GET_DESCRIPTOR_FROM_NODE_CONNECTION, buf, buf);
-                BytesToStruct(buf.AsSpan(Marshal.SizeOf<UsbDescriptorRequest>()), out USB_CONFIGURATION_DESCRIPTOR configuration);
-                buf = new byte[Marshal.SizeOf<UsbDescriptorRequest>() + configuration.wTotalLength];
-                request.SetupPacket.wLength = configuration.wTotalLength;
-                StructToBytes(request, buf);
-                await hub.IoControlAsync(IoControl.IOCTL_USB_GET_DESCRIPTOR_FROM_NODE_CONNECTION, buf, buf);
-
-                result.AddDescriptor(buf.AsSpan(Marshal.SizeOf<UsbDescriptorRequest>()));
+                }
+                offset += common.bLength;
             }
-
             return result;
         }
 
@@ -150,12 +159,6 @@ namespace UsbIpServer
             // OK, so the device is directly connected to a hub, but is not a hub itself ... this looks promising
 
             GetBusId(deviceInfoSet, devInfoData, out var busId);
-
-            var address = GetDevicePropertyUInt32(deviceInfoSet, devInfoData, PInvoke.DEVPKEY_Device_Address);
-            if (busId.Port != address)
-            {
-                throw new NotSupportedException($"DEVPKEY_Device_Address ({address}) does not match DEVPKEY_Device_LocationInfo ({busId.Port})");
-            }
 
             // now query the parent USB hub for device details
 
@@ -212,7 +215,7 @@ namespace UsbIpServer
                 DeviceProtocol = data.DeviceDescriptor.bDeviceProtocol,
                 ConfigurationValue = data.CurrentConfigurationValue,
                 NumConfigurations = data.DeviceDescriptor.bNumConfigurations,
-                ConfigurationDescriptors = await GetConfigurationDescriptor(hubFile, busId.Port, data.DeviceDescriptor.bNumConfigurations),
+                Interfaces = await GetInterfacesAsync(hubFile, busId.Port),
             };
 
             if (RegistryUtils.GetOriginalInstanceId(exportedDevice) is string originalInstanceId)

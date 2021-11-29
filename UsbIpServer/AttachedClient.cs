@@ -34,7 +34,6 @@ namespace UsbIpServer
             Stream = tcpClient.GetStream();
 
             Device = clientContext.AttachedDevice ?? throw new ArgumentException($"{nameof(ClientContext.AttachedDevice)} is null");
-            ConfigurationDescriptors = clientContext.ConfigurationDescriptors ?? throw new ArgumentException($"{nameof(ClientContext.ConfigurationDescriptors)} is null");
 
             tcpClient.NoDelay = true;
         }
@@ -43,7 +42,6 @@ namespace UsbIpServer
         readonly ClientContext ClientContext;
         readonly NetworkStream Stream;
         readonly DeviceFile Device;
-        readonly UsbConfigurationDescriptors ConfigurationDescriptors;
         readonly SemaphoreSlim WriteMutex = new(1);
         readonly object PendingSubmitsLock = new();
         /// <summary>
@@ -215,8 +213,7 @@ namespace UsbIpServer
         {
             // We are synchronous with the receiver.
 
-            var transferType = ConfigurationDescriptors.GetEndpointType(basic.ep, basic.direction == UsbIpDir.USBIP_DIR_IN);
-            if (transferType == PInvoke.USB_ENDPOINT_TYPE_ISOCHRONOUS)
+            if (submit.number_of_packets != 0)
             {
                 await HandleSubmitIsochronousAsync(basic, submit, cancellationToken);
                 return;
@@ -224,6 +221,7 @@ namespace UsbIpServer
 
             var urb = new UsbSupUrb()
             {
+                type = (basic.ep) == 0 ? UsbSupTransferType.USBSUP_TRANSFER_TYPE_MSG : UsbSupTransferType.USBSUP_TRANSFER_TYPE_BULK,
                 ep = basic.ep,
                 dir = (basic.direction == UsbIpDir.USBIP_DIR_IN) ? UsbSupDirection.USBSUP_DIRECTION_IN : UsbSupDirection.USBSUP_DIRECTION_OUT,
                 flags = (basic.direction == UsbIpDir.USBIP_DIR_IN)
@@ -237,27 +235,16 @@ namespace UsbIpServer
 
             var requestLength = submit.transfer_buffer_length;
             var payloadOffset = 0;
-            switch (transferType)
+            if (urb.type == UsbSupTransferType.USBSUP_TRANSFER_TYPE_MSG)
             {
-                case PInvoke.USB_ENDPOINT_TYPE_CONTROL:
-                    urb.type = UsbSupTransferType.USBSUP_TRANSFER_TYPE_MSG;
-                    payloadOffset = Marshal.SizeOf<USB_DEFAULT_PIPE_SETUP_PACKET>();
-                    urb.len += (uint)payloadOffset;
-                    break;
-                case PInvoke.USB_ENDPOINT_TYPE_BULK:
-                    urb.type = UsbSupTransferType.USBSUP_TRANSFER_TYPE_BULK;
-                    break;
-                case PInvoke.USB_ENDPOINT_TYPE_INTERRUPT:
-                    urb.type = UsbSupTransferType.USBSUP_TRANSFER_TYPE_INTR;
-                    break;
-                default:
-                    throw new UnexpectedResultException($"unknown endpoint type {transferType}");
+                payloadOffset = Marshal.SizeOf<USB_DEFAULT_PIPE_SETUP_PACKET>();
+                urb.len += (uint)payloadOffset;
             }
 
             var bytes = new byte[Marshal.SizeOf<UsbSupUrb>()];
             var buf = new byte[urb.len];
 
-            if (transferType == PInvoke.USB_ENDPOINT_TYPE_CONTROL)
+            if (urb.type == UsbSupTransferType.USBSUP_TRANSFER_TYPE_MSG)
             {
                 StructToBytes(submit.setup, buf);
             }
@@ -289,7 +276,6 @@ namespace UsbIpServer
                 Logger.Debug($"Trapped SET_CONFIGURATION: {setConfig.bConfigurationValue}");
                 await Device.IoControlAsync(SUPUSB_IOCTL.USB_SET_CONFIG, StructToBytes(setConfig), null);
                 ioctl = Task.CompletedTask;
-                ConfigurationDescriptors.SetConfiguration(setConfig.bConfigurationValue);
             }
             else if ((basic.ep == 0)
                 && (submit.setup.bmRequestType.B == PInvoke.BMREQUEST_TO_INTERFACE)
@@ -304,7 +290,6 @@ namespace UsbIpServer
                 Logger.Debug($"Trapped SET_INTERFACE: {selectInterface.bInterfaceNumber} -> {selectInterface.bAlternateSetting}");
                 await Device.IoControlAsync(SUPUSB_IOCTL.USB_SELECT_INTERFACE, StructToBytes(selectInterface), null);
                 ioctl = Task.CompletedTask;
-                ConfigurationDescriptors.SetInterface(selectInterface.bInterfaceNumber, selectInterface.bAlternateSetting);
             }
             else if ((basic.ep == 0)
                 && (submit.setup.bmRequestType.B == PInvoke.BMREQUEST_TO_ENDPOINT)
@@ -322,7 +307,7 @@ namespace UsbIpServer
             }
             else
             {
-                if (transferType == PInvoke.USB_ENDPOINT_TYPE_CONTROL)
+                if (urb.type == UsbSupTransferType.USBSUP_TRANSFER_TYPE_MSG)
                 {
                     Logger.Trace($"{submit.setup.bmRequestType.B} {submit.setup.bRequest} {submit.setup.wValue.W} {submit.setup.wIndex.W} {submit.setup.wLength}");
                 }
@@ -398,7 +383,7 @@ namespace UsbIpServer
                     },
                 };
 
-                if (transferType == PInvoke.USB_ENDPOINT_TYPE_CONTROL)
+                if (urb.type == UsbSupTransferType.USBSUP_TRANSFER_TYPE_MSG)
                 {
                     header.ret_submit.actual_length = (header.ret_submit.actual_length > payloadOffset) ? (header.ret_submit.actual_length - payloadOffset) : 0;
                 }
