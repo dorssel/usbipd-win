@@ -358,9 +358,10 @@ Convenience commands for attaching devices to Windows Subsystem for Linux.
 ";
                 DefaultCmdLine(metacmd);
 
-                bool CheckWslInstalled()
+                bool CheckWslInstalled(out WslDistributions distros)
                 {
-                    if (!WslDistributions.IsWsl2Installed())
+                    distros = WslDistributions.CreateAsync(CancellationToken.None).Result;
+                    if (!distros.IsWsl2Installed)
                     {
                         ReportError($"Windows Subsystem for Linux version 2 is not available. See {InstallWslUrl}.");
                         return false;
@@ -378,12 +379,11 @@ Lists all USB devices that are available for being attached into WSL.
                     DefaultCmdLine(cmd);
                     cmd.OnExecute(async () =>
                     {
-                        if (!CheckWslInstalled())
+                        if (!CheckWslInstalled(out var distros))
                         {
                             return 1;
                         }
 
-                        var distros = await WslDistributions.CreateAsync(CancellationToken.None);
                         var connectedDevices = await ExportedDevice.GetAll(CancellationToken.None);
 
                         Console.WriteLine($"{"BUSID",-5}  {"DEVICE",-60}  STATE");
@@ -421,12 +421,10 @@ a 'usbip attach' command on the Linux side.
 
                     cmd.OnExecute(async () =>
                     {
-                        if (!CheckOneOf(busId) || !CheckBusId(busId) || !CheckWslInstalled() || !CheckWriteAccess() || !CheckServerRunning())
+                        if (!CheckOneOf(busId) || !CheckBusId(busId) || !CheckWslInstalled(out var distros) || !CheckWriteAccess() || !CheckServerRunning())
                         {
                             return 1;
                         }
-
-                        var distros = await WslDistributions.CreateAsync(CancellationToken.None);
 
                         // Make sure the distro is running before we attach. While WSL is capable of
                         // starting on the fly when wsl.exe is invoked, that will cause confusing behavior
@@ -530,7 +528,7 @@ The 'wsl detach' command is equivalent to the 'unbind' command.
                     DefaultCmdLine(cmd);
                     cmd.OnExecute(async () =>
                     {
-                        if (!CheckOneOf(detachAll, busId) || !CheckBusId(busId) || !CheckWslInstalled() || !CheckWriteAccess())
+                        if (!CheckOneOf(detachAll, busId) || !CheckBusId(busId) || !CheckWslInstalled(out _) || !CheckWriteAccess())
                         {
                             return 1;
                         }
