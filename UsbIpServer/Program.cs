@@ -234,13 +234,12 @@ Displays a list of compatible USB devices.
                 {
                     var connectedDevices = await ExportedDevice.GetAll(CancellationToken.None);
                     var persistedDevices = RegistryUtils.GetPersistedDevices(connectedDevices);
-                    var deviceChecker = new DeviceInfoChecker();
                     Console.WriteLine("Present:");
                     Console.WriteLine($"{"BUSID",-5}  {"DEVICE",-60}  STATE");
                     foreach (var device in connectedDevices)
                     {
                         // NOTE: Strictly speaking, both Bus and Port can be > 99. If you have one of those, you win a prize!
-                        Console.WriteLine($@"{device.BusId, -5}  {Truncate(deviceChecker.GetDeviceDescription(device),60),-60}  {
+                        Console.WriteLine($@"{device.BusId,-5}  {Truncate(device.Description, 60),-60}  {
                             (RegistryUtils.IsDeviceShared(device) ? RegistryUtils.IsDeviceAttached(device) ? "Attached" : "Shared" : "Not shared")}");
                     }
                     Console.WriteLine();
@@ -248,7 +247,7 @@ Displays a list of compatible USB devices.
                     Console.WriteLine($"{"GUID",-38}  {"BUSID",-5}  DEVICE");
                     foreach (var device in persistedDevices)
                     {
-                        Console.WriteLine($"{device.Guid,-38:B}  {device.BusId,-5}  {Truncate(device.Description,60),-60}");
+                        Console.WriteLine($"{device.Guid,-38:B}  {device.BusId,-5}  {Truncate(device.Description, 60),-60}");
                     }
                     ReportServerRunning();
                     return 0;
@@ -267,7 +266,7 @@ attached by other machines. Bound devices remain available to the local
 machine until they are attached by another machine, at which time they
 become unavailable to the local machine.
 
-{OneOfRequiredText(bindAll,busId)}
+{OneOfRequiredText(bindAll, busId)}
 ";
                 DefaultCmdLine(cmd);
                 cmd.OnExecute(async () =>
@@ -303,7 +302,7 @@ Unregisters one (or all) USB devices for sharing. If the device is currently
 attached, it will immediately be detached and it becomes available to the
 machine again; the remote machine will see this as a surprise removal event.
 
-{OneOfRequiredText(unbindAll,busId,guid)}
+{OneOfRequiredText(unbindAll, busId, guid)}
 ";
                 DefaultCmdLine(cmd);
                 cmd.OnExecute(async () =>
@@ -386,7 +385,6 @@ Lists all USB devices that are available for being attached into WSL.
 
                         var distros = await WslDistributions.CreateAsync(CancellationToken.None);
                         var connectedDevices = await ExportedDevice.GetAll(CancellationToken.None);
-                        var deviceChecker = new DeviceInfoChecker();
 
                         Console.WriteLine($"{"BUSID",-5}  {"DEVICE",-60}  STATE");
                         foreach (var device in connectedDevices)
@@ -395,7 +393,7 @@ Lists all USB devices that are available for being attached into WSL.
                             var address = RegistryUtils.GetDeviceAddress(device);
                             var distro = address is not null ? distros.LookupByIPAddress(address)?.Name : null;
                             var state = isAttached ? ("Attached" + (distro is not null ? $" - {distro}" : string.Empty)) : "Not attached";
-                            var description = Truncate(deviceChecker.GetDeviceDescription(device), 60);
+                            var description = Truncate(device.Description, 60);
 
                             Console.WriteLine($"{device.BusId,-5}  {description,-60}  {state}");
                         }
@@ -527,7 +525,7 @@ removal event. A detached device becomes available again in Windows.
 
 The 'wsl detach' command is equivalent to the 'unbind' command.
 
-{OneOfRequiredText(detachAll,busId)}
+{OneOfRequiredText(detachAll, busId)}
 ";
                     DefaultCmdLine(cmd);
                     cmd.OnExecute(async () =>
@@ -647,8 +645,7 @@ The 'wsl detach' command is equivalent to the 'unbind' command.
             {
                 if (!RegistryUtils.IsDeviceShared(device))
                 {
-                    var checker = new DeviceInfoChecker();
-                    RegistryUtils.ShareDevice(device, checker.GetDeviceDescription(device));
+                    RegistryUtils.ShareDevice(device, device.Description);
                 }
             }
             return 0;
@@ -675,8 +672,7 @@ The 'wsl detach' command is equivalent to the 'unbind' command.
                 }
                 return 0;
             }
-            var checker = new DeviceInfoChecker();
-            RegistryUtils.ShareDevice(device, checker.GetDeviceDescription(device));
+            RegistryUtils.ShareDevice(device, device.Description);
             return 0;
         }
 

@@ -24,7 +24,7 @@ namespace UsbIpServer
         // Mapping of bus IDs to actions to take on device removal.
         readonly Dictionary<BusId, Action> removalActions = new();
 
-        public DeviceChangeWatcher(ILogger<RegistryWatcher> logger)
+        public DeviceChangeWatcher(ILogger<DeviceChangeWatcher> logger)
         {
             Logger = logger;
 
