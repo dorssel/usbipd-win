@@ -24,20 +24,11 @@ namespace UsbIpServer
 
         public record Distribution(string Name, bool IsDefault, uint Version, bool IsRunning, IPAddress? IPAddress);
 
-        WslDistributions()
-        {
-            IsWsl2Installed = false;
-            Distributions = Array.Empty<Distribution>();
-        }
-
         WslDistributions(List<Distribution> distributions, IPAddress? hostAddress)
         {
-            IsWsl2Installed = true;
             Distributions = distributions;
             HostAddress = hostAddress;
         }
-
-        public bool IsWsl2Installed { get; }
 
         public IReadOnlyCollection<Distribution> Distributions { get; }
 
@@ -60,7 +51,10 @@ namespace UsbIpServer
             return (rawHost & rawMask) == (rawInstance & rawMask);
         }
 
-        public static async Task<WslDistributions> CreateAsync(CancellationToken cancellationToken)
+        /// <summary>
+        /// Returns null if WSL 2 is not even installed.
+        /// </summary>
+        public static async Task<WslDistributions?> CreateAsync(CancellationToken cancellationToken)
         {
             if (!File.Exists(WslPath))
             {
@@ -69,7 +63,7 @@ namespace UsbIpServer
                 // Users with older (< 1903) Windows will simply get a report that WSL 2 is not available,
                 //    even if they have WSL (version 1) installed. It won't work for them anyway.
                 // We won't bother checking for the older wslconfig.exe that was used to manage WSL 1.
-                return new();
+                return null;
             }
 
             // The WSL switch only exists if at least one WSL 2 instance is running.
@@ -175,7 +169,7 @@ namespace UsbIpServer
 #pragma warning restore CA1508 // Avoid dead conditional code
                     {
                         // We conclude that WSL is indeed not installed at all.
-                        return new();
+                        return null;
                     }
 
                     // We conclude that WSL is installed after all.

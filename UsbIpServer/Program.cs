@@ -358,15 +358,14 @@ Convenience commands for attaching devices to Windows Subsystem for Linux.
 ";
                 DefaultCmdLine(metacmd);
 
-                bool CheckWslInstalled(out WslDistributions distros)
+                async Task<WslDistributions?> GetDistributionsAsync(CancellationToken cancellationToken)
                 {
-                    distros = WslDistributions.CreateAsync(CancellationToken.None).Result;
-                    if (!distros.IsWsl2Installed)
+                    var distributions = await WslDistributions.CreateAsync(cancellationToken);
+                    if (distributions is null)
                     {
                         ReportError($"Windows Subsystem for Linux version 2 is not available. See {InstallWslUrl}.");
-                        return false;
                     }
-                    return true;
+                    return distributions;
                 }
 
                 metacmd.Command("list", (cmd) =>
@@ -379,7 +378,7 @@ Lists all USB devices that are available for being attached into WSL.
                     DefaultCmdLine(cmd);
                     cmd.OnExecute(async () =>
                     {
-                        if (!CheckWslInstalled(out var distros))
+                        if (await GetDistributionsAsync(CancellationToken.None) is not WslDistributions distros)
                         {
                             return 1;
                         }
@@ -421,7 +420,9 @@ a 'usbip attach' command on the Linux side.
 
                     cmd.OnExecute(async () =>
                     {
-                        if (!CheckOneOf(busId) || !CheckBusId(busId) || !CheckWslInstalled(out var distros) || !CheckWriteAccess() || !CheckServerRunning())
+                        if (!CheckOneOf(busId) || !CheckBusId(busId)
+                            || (await GetDistributionsAsync(CancellationToken.None) is not WslDistributions distros)
+                            || !CheckWriteAccess() || !CheckServerRunning())
                         {
                             return 1;
                         }
@@ -528,7 +529,9 @@ The 'wsl detach' command is equivalent to the 'unbind' command.
                     DefaultCmdLine(cmd);
                     cmd.OnExecute(async () =>
                     {
-                        if (!CheckOneOf(detachAll, busId) || !CheckBusId(busId) || !CheckWslInstalled(out _) || !CheckWriteAccess())
+                        if (!CheckOneOf(detachAll, busId) || !CheckBusId(busId)
+                            || (await GetDistributionsAsync(CancellationToken.None) is null)
+                            || !CheckWriteAccess())
                         {
                             return 1;
                         }
