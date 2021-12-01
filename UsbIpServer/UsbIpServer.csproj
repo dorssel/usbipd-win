@@ -12,7 +12,7 @@ SPDX-License-Identifier: GPL-2.0-only
     <ApplicationManifest>app.manifest</ApplicationManifest>
 
     <!-- defaults (used by: dotnet build) -->
-    <TargetFramework>net6.0-windows</TargetFramework>
+    <TargetFramework>net6.0-windows8.0</TargetFramework>
     <Platform>x64</Platform>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
 

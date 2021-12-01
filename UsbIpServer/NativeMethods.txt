@@ -1,4 +1,4 @@
-﻿// SPDX-FileCopyrightText: 2021 Frans van Dorsselaer
+// SPDX-FileCopyrightText: 2021 Frans van Dorsselaer
 //
 // SPDX-License-Identifier: GPL-2.0-only
 
@@ -10,8 +10,11 @@ CM_Get_DevNode_Property
 CM_Get_Sibling
 CM_Locate_DevNode
 CM_MapCrToWin32Err
+CM_Register_Notification
 CM_Set_DevNode_Property
+CM_Unregister_Notification
 
+CM_DISABLE_UI_NOT_OK
 CM_GET_DEVICE_INTERFACE_LIST_PRESENT
 CM_LOCATE_DEVNODE_NORMAL
 
