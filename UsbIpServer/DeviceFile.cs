@@ -37,6 +37,8 @@ namespace UsbIpServer
 
         readonly SafeFileHandle handle;
 
+        public HANDLE DangerousGetHandle() => (HANDLE)handle.DangerousGetHandle();
+
         Task<uint> IoControlAsync(uint ioControlCode, byte[]? input, byte[]? output, bool exactOutput = true)
         {
             var taskCompletionSource = new TaskCompletionSource<uint>();

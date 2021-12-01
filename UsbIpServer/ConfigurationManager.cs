@@ -1,4 +1,4 @@
-﻿// SPDX-FileCopyrightText: 2021 Frans van Dorsselaer
+// SPDX-FileCopyrightText: 2021 Frans van Dorsselaer
 //
 // SPDX-License-Identifier: GPL-2.0-only
 
@@ -35,7 +35,7 @@ namespace UsbIpServer
 {
     static class ConfigurationManager
     {
-        static void ThrowOnError(CONFIGRET configRet, string function)
+        public static void ThrowOnError(this CONFIGRET configRet, string function)
         {
             if (configRet != CONFIGRET.CR_SUCCESS)
             {
@@ -50,8 +50,7 @@ namespace UsbIpServer
                 fixed (char* pInstanceId = instanceId)
                 {
                     uint deviceNode;
-                    var cr = PInvoke.CM_Locate_DevNode(&deviceNode, (ushort*)pInstanceId, PInvoke.CM_LOCATE_DEVNODE_NORMAL);
-                    ThrowOnError(cr, nameof(PInvoke.CM_Locate_DevNode));
+                    PInvoke.CM_Locate_DevNode(&deviceNode, (ushort*)pInstanceId, PInvoke.CM_LOCATE_DEVNODE_NORMAL).ThrowOnError(nameof(PInvoke.CM_Locate_DevNode));
                     return deviceNode;
                 }
             }
@@ -61,13 +60,11 @@ namespace UsbIpServer
         {
             unsafe
             {
-                var cr = PInvoke.CM_Get_Device_Interface_List_Size(out var bufferLen, interfaceClassGuid, null, flags);
-                ThrowOnError(cr, nameof(PInvoke.CM_Get_Device_Interface_List_Size));
+                PInvoke.CM_Get_Device_Interface_List_Size(out var bufferLen, interfaceClassGuid, null, flags).ThrowOnError(nameof(PInvoke.CM_Get_Device_Interface_List_Size));
                 var deviceInterfaceList = new string('\0', (int)bufferLen);
                 fixed (char* buffer = deviceInterfaceList)
                 {
-                    cr = PInvoke.CM_Get_Device_Interface_List(interfaceClassGuid, null, buffer, bufferLen, flags);
-                    ThrowOnError(cr, nameof(PInvoke.CM_Get_Device_Interface_List_Size));
+                    PInvoke.CM_Get_Device_Interface_List(interfaceClassGuid, null, buffer, bufferLen, flags).ThrowOnError(nameof(PInvoke.CM_Get_Device_Interface_List_Size));
                 }
                 return deviceInterfaceList.Split('\0', StringSplitOptions.RemoveEmptyEntries);
             }
@@ -96,8 +93,7 @@ namespace UsbIpServer
                 var buffer = new byte[propertyBufferSize];
                 fixed (byte* pBuffer = buffer)
                 {
-                    cr = PInvoke.CM_Get_Device_Interface_Property(deviceInterface, devPropKey, out propertyType, pBuffer, ref propertyBufferSize, 0);
-                    ThrowOnError(cr, nameof(PInvoke.CM_Get_Device_Interface_Property));
+                    PInvoke.CM_Get_Device_Interface_Property(deviceInterface, devPropKey, out propertyType, pBuffer, ref propertyBufferSize, 0).ThrowOnError(nameof(PInvoke.CM_Get_Device_Interface_Property));
                     return ConvertProperty(propertyType, pBuffer, (int)propertyBufferSize);
                 }
             }
@@ -116,8 +112,7 @@ namespace UsbIpServer
                 var buffer = new byte[propertyBufferSize];
                 fixed (byte* pBuffer = buffer)
                 {
-                    cr = PInvoke.CM_Get_DevNode_Property(deviceNode, devPropKey, out propertyType, pBuffer, ref propertyBufferSize, 0);
-                    ThrowOnError(cr, nameof(PInvoke.CM_Get_DevNode_Property));
+                    PInvoke.CM_Get_DevNode_Property(deviceNode, devPropKey, out propertyType, pBuffer, ref propertyBufferSize, 0).ThrowOnError(nameof(PInvoke.CM_Get_DevNode_Property));
                     return ConvertProperty(propertyType, pBuffer, (int)propertyBufferSize);
                 }
             }

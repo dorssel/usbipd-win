@@ -8,7 +8,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.Versioning;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.CommandLineUtils;
@@ -19,7 +18,6 @@ using Microsoft.Extensions.Hosting.WindowsServices;
 using Microsoft.Extensions.Logging;
 
 [assembly: CLSCompliant(true)]
-[assembly: SupportedOSPlatform("windows8.0")]
 
 namespace UsbIpServer
 {
@@ -628,7 +626,6 @@ The 'wsl detach' command is equivalent to the 'unbind' command.
                     services.AddScoped<ConnectedClient>();
                     services.AddScoped<AttachedClient>();
                     services.AddSingleton<RegistryWatcher>();
-                    services.AddSingleton<DeviceChangeWatcher>();
                 })
                 .Build()
                 .Run();

@@ -1,4 +1,4 @@
-﻿// SPDX-FileCopyrightText: 2020 Frans van Dorsselaer, Microsoft Corporation
+// SPDX-FileCopyrightText: 2020 Frans van Dorsselaer, Microsoft Corporation
 //
 // SPDX-License-Identifier: GPL-2.0-only
 
@@ -10,11 +10,15 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Windows.Win32;
+using Windows.Win32.Devices.DeviceAndDriverInstallation;
+using Windows.Win32.Foundation;
 
 using static UsbIpServer.Interop.UsbIp;
 using static UsbIpServer.Interop.VBoxUsb;
@@ -26,13 +30,12 @@ namespace UsbIpServer
     [SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes", Justification = "Instantiated by DI")]
     sealed class ConnectedClient
     {
-        public ConnectedClient(ILogger<ConnectedClient> logger, RegistryWatcher registryWatcher, DeviceChangeWatcher deviceChangeWatcher, ClientContext clientContext, IServiceProvider serviceProvider)
+        public ConnectedClient(ILogger<ConnectedClient> logger, RegistryWatcher registryWatcher, ClientContext clientContext, IServiceProvider serviceProvider)
         {
             Logger = logger;
             ClientContext = clientContext;
             ServiceProvider = serviceProvider;
             RegistryWatcher = registryWatcher;
-            DeviceChangeWatcher = deviceChangeWatcher;
 
             var client = clientContext.TcpClient;
             client.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
@@ -48,7 +51,6 @@ namespace UsbIpServer
         readonly IServiceProvider ServiceProvider;
         readonly NetworkStream Stream;
         readonly RegistryWatcher RegistryWatcher;
-        readonly DeviceChangeWatcher DeviceChangeWatcher;
 
         public async Task RunAsync(CancellationToken cancellationToken)
         {
@@ -157,6 +159,7 @@ namespace UsbIpServer
                 }
                 ClientContext.AttachedDevice = await mon.ClaimDevice(exportedDevice);
 
+                HCMNOTIFICATION notification = default;
                 Logger.ClientAttach(ClientContext.ClientAddress, exportedDevice.BusId, exportedDevice.Path);
                 try
                 {
@@ -175,7 +178,36 @@ namespace UsbIpServer
                         attachedClientTokenSource.Cancel();
                     }
                     RegistryWatcher.WatchDevice(busId, cancelAction);
-                    DeviceChangeWatcher.WatchForDeviceRemoval(busId, cancelAction);
+
+                    // Detect device removal.
+                    unsafe
+                    {
+                        CM_NOTIFY_FILTER filter = new()
+                        {
+                            cbSize = (uint)Marshal.SizeOf<CM_NOTIFY_FILTER>(),
+                            FilterType = CM_NOTIFY_FILTER_TYPE.CM_NOTIFY_FILTER_TYPE_DEVICEHANDLE,
+                            u = {
+                                DeviceHandle =
+                                {
+                                    hTarget = ClientContext.AttachedDevice.DangerousGetHandle(),
+                                },
+                            },
+                        };
+                        PInvoke.CM_Register_Notification(filter, null, (notify, context, action, eventData, eventDataSize) =>
+                        {
+                            switch (action)
+                            {
+                                case CM_NOTIFY_ACTION.CM_NOTIFY_ACTION_DEVICEREMOVEPENDING:
+                                case CM_NOTIFY_ACTION.CM_NOTIFY_ACTION_DEVICEREMOVECOMPLETE:
+                                    Logger.Debug("Device removal detected");
+                                    attachedClientTokenSource.Cancel();
+                                    break;
+                            }
+                            return (uint)WIN32_ERROR.ERROR_SUCCESS;
+                        }, out var nintNotification).ThrowOnError(nameof(PInvoke.CM_Register_Notification));
+                        notification = (HCMNOTIFICATION)nintNotification;
+                    }
+
                     var attachedClientToken = attachedClientTokenSource.Token;
                     RegistryUtils.SetDeviceAsAttached(exportedDevice, ClientContext.ClientAddress);
 
@@ -184,7 +216,10 @@ namespace UsbIpServer
                 finally
                 {
                     RegistryWatcher.StopWatchingDevice(busId);
-                    DeviceChangeWatcher.StopWatchingDevice(busId);
+                    if (notification != default)
+                    {
+                        PInvoke.CM_Unregister_Notification(notification);
+                    }
                     RegistryUtils.SetDeviceAsDetached(exportedDevice);
 
                     Logger.ClientDetach(ClientContext.ClientAddress, exportedDevice.BusId, exportedDevice.Path);
