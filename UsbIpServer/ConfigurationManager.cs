@@ -308,5 +308,12 @@ namespace UsbIpServer
                 }
             }
         }
+
+        public static void RestartDevice(string instanceId)
+        {
+            var deviceNode = Locate_DevNode(instanceId);
+            PInvoke.CM_Disable_DevNode(deviceNode, PInvoke.CM_DISABLE_UI_NOT_OK).ThrowOnError(nameof(PInvoke.CM_Disable_DevNode));
+            PInvoke.CM_Enable_DevNode(deviceNode, 0).ThrowOnError(nameof(PInvoke.CM_Enable_DevNode));
+        }
     }
 }

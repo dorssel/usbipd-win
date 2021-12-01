@@ -1,10 +1,9 @@
-// SPDX-FileCopyrightText: 2020 Frans van Dorsselaer, Microsoft Corporation
+﻿// SPDX-FileCopyrightText: 2020 Frans van Dorsselaer, Microsoft Corporation
 //
 // SPDX-License-Identifier: GPL-2.0-only
 
 using System;
 using System.Buffers.Binary;
-using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
@@ -22,8 +21,6 @@ using Windows.Win32.Foundation;
 
 using static UsbIpServer.Interop.UsbIp;
 using static UsbIpServer.Interop.VBoxUsb;
-using static UsbIpServer.Interop.WinSDK;
-using static UsbIpServer.Tools;
 
 namespace UsbIpServer
 {
@@ -135,28 +132,20 @@ namespace UsbIpServer
                 await mon.CheckVersion();
                 await mon.AddFilter(exportedDevice);
                 await mon.RunFilters();
+                try
                 {
                     // This enables exporting integrated USB devices (e.g. built-in webcams).
-                    // VBoxMon will try to unplug/plug the device, but integrated USB devices are usually
-                    // marked as not-removable. This means that Windows will not load the VBoxUSB driver.
-                    // As a workaround, we tell the hub to powercycle the port, which has the same effect:
-                    // Windows will re-enumerate the device and pick up the driver.
-                    // If VBoxMon *is* able to do its normal unplug/plug cycle, then the port cycle command
-                    // will probably fail due to a race condition. This is fine, as either way the VBoxUSB
+                    // VBoxMon will try to cycle the USB port, but sometimes this is not enough.
+                    // In such cases, Windows will not detect the device change and will not load the VBoxUsb driver.
+                    // As a workaround, we disable/enable the original device, which has the same effect:
+                    // Windows will re-enumerate the device and load the VBoxUsb the driver.
+                    // If VBoxUsbMon was able to do its normal port cycle command, this extra enable/disable
+                    // will fail as the original device is already gone. This is fine, as either way the VBoxUsb
                     // driver will take effect.
-                    // We ignore any errors here; if both methods fail the error will be reported by
-                    // ClaimDevice();
-                    using var hubFile = new DeviceFile(exportedDevice.HubPath);
-                    using var cancellationTokenRegistration = cancellationToken.Register(() => hubFile.Dispose());
-
-                    var data = new UsbCyclePortParams() { ConnectionIndex = busId.Port };
-                    var buf = StructToBytes(data);
-                    try
-                    {
-                        await hubFile.IoControlAsync(IoControl.IOCTL_USB_HUB_CYCLE_PORT, buf, buf);
-                    }
-                    catch (Win32Exception) { }
+                    // We ignore any errors here; if both methods fail the error will be reported by ClaimDevice().
+                    ConfigurationManager.RestartDevice(exportedDevice.Path);
                 }
+                catch (ConfigurationManagerException) { }
                 ClientContext.AttachedDevice = await mon.ClaimDevice(exportedDevice);
 
                 HCMNOTIFICATION notification = default;
