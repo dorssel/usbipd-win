@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2021 Frans van Dorsselaer
+﻿// SPDX-FileCopyrightText: 2021 Frans van Dorsselaer
 //
 // SPDX-License-Identifier: GPL-2.0-only
 
@@ -309,11 +309,35 @@ namespace UsbIpServer
             }
         }
 
-        public static void RestartDevice(string instanceId)
+        public sealed class TemporarilyDisabledDevice
+            : IDisposable
         {
-            var deviceNode = Locate_DevNode(instanceId);
-            PInvoke.CM_Disable_DevNode(deviceNode, PInvoke.CM_DISABLE_UI_NOT_OK).ThrowOnError(nameof(PInvoke.CM_Disable_DevNode));
-            PInvoke.CM_Enable_DevNode(deviceNode, 0).ThrowOnError(nameof(PInvoke.CM_Enable_DevNode));
+           public TemporarilyDisabledDevice(string instanceId)
+                : this(Locate_DevNode(instanceId))
+            {
+            }
+
+            public TemporarilyDisabledDevice(uint deviceNode)
+            {
+                DeviceNode = deviceNode;
+                PInvoke.CM_Disable_DevNode(DeviceNode, PInvoke.CM_DISABLE_UI_NOT_OK).ThrowOnError(nameof(PInvoke.CM_Disable_DevNode));
+            }
+
+            readonly uint DeviceNode;
+
+            public void Dispose()
+            {
+                try
+                {
+                    // We ignore errors for multiple reasons:
+                    // a) Dispose is not supposed to throw.
+                    // b) Race condition with physical device removal.
+                    // c) Race condition with the device node being enabled by something else and
+                    //    device enumeration already replaced the DevNode with its (non-)VBox counterpart.
+                    PInvoke.CM_Enable_DevNode(DeviceNode, 0).ThrowOnError(nameof(PInvoke.CM_Enable_DevNode));
+                }
+                catch (ConfigurationManagerException) { }
+            }
         }
     }
 }

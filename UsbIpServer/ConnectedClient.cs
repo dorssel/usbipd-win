@@ -130,23 +130,14 @@ namespace UsbIpServer
                 status = Status.ST_NA;
                 using var mon = new VBoxUsbMon();
                 await mon.CheckVersion();
-                await mon.AddFilter(exportedDevice);
-                await mon.RunFilters();
-                try
+                ulong filterId;
                 {
-                    // This enables exporting integrated USB devices (e.g. built-in webcams).
-                    // VBoxMon will try to cycle the USB port, but sometimes this is not enough.
-                    // In such cases, Windows will not detect the device change and will not load the VBoxUsb driver.
-                    // As a workaround, we disable/enable the original device, which has the same effect:
-                    // Windows will re-enumerate the device and load the VBoxUsb the driver.
-                    // If VBoxUsbMon was able to do its normal port cycle command, this extra enable/disable
-                    // will fail as the original device is already gone. This is fine, as either way the VBoxUsb
-                    // driver will take effect.
-                    // We ignore any errors here; if both methods fail the error will be reported by ClaimDevice().
-                    ConfigurationManager.RestartDevice(exportedDevice.Path);
+                    // VBoxUsbMon SUPUSBFLT_IOCTL_RUN_FILTERS is not potent enough as it only cycles the port.
+                    // Instead, we disable the device, add the filter, and then re-enable the device.
+                    using var temporarilyDisabledDevice = new ConfigurationManager.TemporarilyDisabledDevice(exportedDevice.Path);
+                    filterId = await mon.AddFilter(exportedDevice);
                 }
-                catch (ConfigurationManagerException) { }
-                ClientContext.AttachedDevice = await mon.ClaimDevice(exportedDevice);
+                (var vboxDevice, ClientContext.AttachedDevice) = await mon.ClaimDevice(exportedDevice);
 
                 HCMNOTIFICATION notification = default;
                 Logger.ClientAttach(ClientContext.ClientAddress, exportedDevice.BusId, exportedDevice.Path);
@@ -210,6 +201,17 @@ namespace UsbIpServer
                         PInvoke.CM_Unregister_Notification(notification);
                     }
                     RegistryUtils.SetDeviceAsDetached(exportedDevice);
+
+                    ClientContext.AttachedDevice.Dispose();
+
+                    try
+                    {
+                        // This solves the cases where VBoxUsbMon does not properly hand back the device to the host.
+                        // Instead, we disable the device, remove the filter, and then re-enable the device.
+                        using var temporarilyDisabledDevice = new ConfigurationManager.TemporarilyDisabledDevice(vboxDevice.DeviceNode);
+                        await mon.RemoveFilter(filterId);
+                    }
+                    catch (ConfigurationManagerException) { }
 
                     Logger.ClientDetach(ClientContext.ClientAddress, exportedDevice.BusId, exportedDevice.Path);
                 }
