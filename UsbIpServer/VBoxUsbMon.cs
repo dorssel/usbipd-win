@@ -31,7 +31,7 @@ namespace UsbIpServer
             }
         }
 
-        public async Task AddFilter(ExportedDevice device)
+        public async Task<ulong> AddFilter(ExportedDevice device)
         {
             var filter = UsbFilter.Create(UsbFilterType.CAPTURE);
             filter.SetMatch(UsbFilterIdx.VENDOR_ID, UsbFilterMatch.NUM_EXACT, device.VendorId);
@@ -49,14 +49,21 @@ namespace UsbIpServer
             {
                 throw new UnexpectedResultException($"SUPUSBFLT_IOCTL_ADD_FILTER failed with returnCode {fltAddOut.rc}");
             }
+            return fltAddOut.uId;
         }
 
-        public async Task RunFilters()
+        public async Task RemoveFilter(ulong filterId)
         {
-            await UsbMonitor.IoControlAsync(SUPUSBFLT_IOCTL.RUN_FILTERS, null, null);
+            var output = new byte[sizeof(int)];
+            await UsbMonitor.IoControlAsync(SUPUSBFLT_IOCTL.REMOVE_FILTER, BitConverter.GetBytes(filterId), output);
+            var rc = BitConverter.ToInt32(output);
+            if (rc != 0 /* VINF_SUCCESS */)
+            {
+                throw new UnexpectedResultException($"SUPUSBFLT_IOCTL_REMOVE_FILTER failed with returnCode {rc}");
+            }
         }
 
-        async Task<DeviceFile> ClaimDeviceOnce(ExportedDevice device)
+        async Task<(ConfigurationManager.VBoxDevice, DeviceFile)> ClaimDeviceOnce(ExportedDevice device)
         {
             var vboxDevice = ConfigurationManager.GetVBoxDevice(device.BusId);
             var dev = new DeviceFile(vboxDevice.InterfacePath);
@@ -124,7 +131,7 @@ namespace UsbIpServer
 
                 var result = dev;
                 dev = null!;
-                return result;
+                return (vboxDevice, result);
             }
             finally
             {
@@ -133,7 +140,7 @@ namespace UsbIpServer
             throw new FileNotFoundException();
         }
 
-        public async Task<DeviceFile> ClaimDevice(ExportedDevice device)
+        public async Task<(ConfigurationManager.VBoxDevice, DeviceFile)> ClaimDevice(ExportedDevice device)
         {
             var sw = new Stopwatch();
             sw.Start();

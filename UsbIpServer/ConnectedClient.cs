@@ -1,10 +1,9 @@
-// SPDX-FileCopyrightText: 2020 Frans van Dorsselaer, Microsoft Corporation
+﻿// SPDX-FileCopyrightText: 2020 Frans van Dorsselaer, Microsoft Corporation
 //
 // SPDX-License-Identifier: GPL-2.0-only
 
 using System;
 using System.Buffers.Binary;
-using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
@@ -22,8 +21,6 @@ using Windows.Win32.Foundation;
 
 using static UsbIpServer.Interop.UsbIp;
 using static UsbIpServer.Interop.VBoxUsb;
-using static UsbIpServer.Interop.WinSDK;
-using static UsbIpServer.Tools;
 
 namespace UsbIpServer
 {
@@ -133,31 +130,14 @@ namespace UsbIpServer
                 status = Status.ST_NA;
                 using var mon = new VBoxUsbMon();
                 await mon.CheckVersion();
-                await mon.AddFilter(exportedDevice);
-                await mon.RunFilters();
+                ulong filterId;
                 {
-                    // This enables exporting integrated USB devices (e.g. built-in webcams).
-                    // VBoxMon will try to unplug/plug the device, but integrated USB devices are usually
-                    // marked as not-removable. This means that Windows will not load the VBoxUSB driver.
-                    // As a workaround, we tell the hub to powercycle the port, which has the same effect:
-                    // Windows will re-enumerate the device and pick up the driver.
-                    // If VBoxMon *is* able to do its normal unplug/plug cycle, then the port cycle command
-                    // will probably fail due to a race condition. This is fine, as either way the VBoxUSB
-                    // driver will take effect.
-                    // We ignore any errors here; if both methods fail the error will be reported by
-                    // ClaimDevice();
-                    using var hubFile = new DeviceFile(exportedDevice.HubPath);
-                    using var cancellationTokenRegistration = cancellationToken.Register(() => hubFile.Dispose());
-
-                    var data = new UsbCyclePortParams() { ConnectionIndex = busId.Port };
-                    var buf = StructToBytes(data);
-                    try
-                    {
-                        await hubFile.IoControlAsync(IoControl.IOCTL_USB_HUB_CYCLE_PORT, buf, buf);
-                    }
-                    catch (Win32Exception) { }
+                    // VBoxUsbMon SUPUSBFLT_IOCTL_RUN_FILTERS is not potent enough as it only cycles the port.
+                    // Instead, we disable the device, add the filter, and then re-enable the device.
+                    using var temporarilyDisabledDevice = new ConfigurationManager.TemporarilyDisabledDevice(exportedDevice.Path);
+                    filterId = await mon.AddFilter(exportedDevice);
                 }
-                ClientContext.AttachedDevice = await mon.ClaimDevice(exportedDevice);
+                (var vboxDevice, ClientContext.AttachedDevice) = await mon.ClaimDevice(exportedDevice);
 
                 HCMNOTIFICATION notification = default;
                 Logger.ClientAttach(ClientContext.ClientAddress, exportedDevice.BusId, exportedDevice.Path);
@@ -221,6 +201,17 @@ namespace UsbIpServer
                         PInvoke.CM_Unregister_Notification(notification);
                     }
                     RegistryUtils.SetDeviceAsDetached(exportedDevice);
+
+                    ClientContext.AttachedDevice.Dispose();
+
+                    try
+                    {
+                        // This solves the cases where VBoxUsbMon does not properly hand back the device to the host.
+                        // Instead, we disable the device, remove the filter, and then re-enable the device.
+                        using var temporarilyDisabledDevice = new ConfigurationManager.TemporarilyDisabledDevice(vboxDevice.DeviceNode);
+                        await mon.RemoveFilter(filterId);
+                    }
+                    catch (ConfigurationManagerException) { }
 
                     Logger.ClientDetach(ClientContext.ClientAddress, exportedDevice.BusId, exportedDevice.Path);
                 }

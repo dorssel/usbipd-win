@@ -2,6 +2,8 @@
 //
 // SPDX-License-Identifier: GPL-2.0-only
 
+CM_Disable_DevNode
+CM_Enable_DevNode
 CM_Get_Child
 CM_Get_Device_Interface_List
 CM_Get_Device_Interface_List_Size
