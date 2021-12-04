@@ -22,6 +22,7 @@ CM_LOCATE_DEVNODE_NORMAL
 
 CreateFile
 DeviceIoControl
+RegNotifyChangeKeyValue
 
 DEVPROP_TYPE_STRING
 DEVPROP_TYPEMOD_LIST
