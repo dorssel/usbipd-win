@@ -7,14 +7,13 @@ using System.Text.RegularExpressions;
 
 namespace UsbIpServer
 {
-    struct BusId
-        : IEquatable<BusId>
-        , IComparable<BusId>
+    readonly record struct BusId
+        : IComparable<BusId>
     {
         public ushort Bus { get; init; }
         public ushort Port { get; init; }
 
-        public override string ToString() => $"{Bus}-{Port}";
+        public override readonly string ToString() => $"{Bus}-{Port}";
 
         public static bool TryParse(string input, out BusId busId)
         {
@@ -47,29 +46,9 @@ namespace UsbIpServer
             return busId;
         }
 
-        #region IEquatable<BusId>
-
-        public override int GetHashCode() =>
-            (Bus << 16) | Port;
-
-        public override bool Equals(object? obj) =>
-            obj is BusId other && Equals(other);
-
-        public bool Equals(BusId other) =>
-            Bus == other.Bus && Port == other.Port;
-
-        public static bool operator ==(BusId a, BusId b) =>
-            a.Equals(b);
-
-        public static bool operator !=(BusId a, BusId b) =>
-            !a.Equals(b);
-
-        #endregion
-
         #region IComparable<BusId>
 
-        public int CompareTo(BusId other) =>
-            (Bus != other.Bus) ? (Bus - other.Bus) : (Port != other.Port) ? (Port - other.Port) : 0;
+        public readonly int CompareTo(BusId other) => ((uint)Bus << 16 | Port).CompareTo((uint)other.Bus << 16 | other.Port);
 
         #endregion
     }
