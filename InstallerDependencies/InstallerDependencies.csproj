@@ -7,7 +7,7 @@ SPDX-License-Identifier: GPL-2.0-only
 <Project Sdk="Microsoft.Build.NoTargets">
 
   <PropertyGroup>
-    <TargetFrameworks>net6.0-windows</TargetFrameworks>
+    <TargetFrameworks>net6.0-windows8.0</TargetFrameworks>
     <Platforms>x64</Platforms>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <EnableNETAnalyzers>false</EnableNETAnalyzers>
