@@ -625,7 +625,6 @@ The 'wsl detach' command is equivalent to the 'unbind' command.
                     services.AddScoped<ClientContext>();
                     services.AddScoped<ConnectedClient>();
                     services.AddScoped<AttachedClient>();
-                    services.AddSingleton<RegistryWatcher>();
                 })
                 .Build()
                 .Run();

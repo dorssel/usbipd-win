@@ -4,6 +4,7 @@
 
 using System;
 using System.Buffers.Binary;
+using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
@@ -27,12 +28,11 @@ namespace UsbIpServer
     [SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes", Justification = "Instantiated by DI")]
     sealed class ConnectedClient
     {
-        public ConnectedClient(ILogger<ConnectedClient> logger, RegistryWatcher registryWatcher, ClientContext clientContext, IServiceProvider serviceProvider)
+        public ConnectedClient(ILogger<ConnectedClient> logger, ClientContext clientContext, IServiceProvider serviceProvider)
         {
             Logger = logger;
             ClientContext = clientContext;
             ServiceProvider = serviceProvider;
-            RegistryWatcher = registryWatcher;
 
             var client = clientContext.TcpClient;
             client.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
@@ -47,7 +47,6 @@ namespace UsbIpServer
         readonly ClientContext ClientContext;
         readonly IServiceProvider ServiceProvider;
         readonly NetworkStream Stream;
-        readonly RegistryWatcher RegistryWatcher;
 
         public async Task RunAsync(CancellationToken cancellationToken)
         {
@@ -153,11 +152,6 @@ namespace UsbIpServer
 
                     // setup token to free device
                     using var attachedClientTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-                    void cancelAction()
-                    {
-                        attachedClientTokenSource.Cancel();
-                    }
-                    RegistryWatcher.WatchDevice(busId, cancelAction);
 
                     // Detect device removal.
                     unsafe
@@ -180,7 +174,11 @@ namespace UsbIpServer
                                 case CM_NOTIFY_ACTION.CM_NOTIFY_ACTION_DEVICEREMOVEPENDING:
                                 case CM_NOTIFY_ACTION.CM_NOTIFY_ACTION_DEVICEREMOVECOMPLETE:
                                     Logger.Debug("Device removal detected");
-                                    attachedClientTokenSource.Cancel();
+                                    try
+                                    {
+                                        attachedClientTokenSource.Cancel();
+                                    }
+                                    catch (ObjectDisposedException) { }
                                     break;
                             }
                             return (uint)WIN32_ERROR.ERROR_SUCCESS;
@@ -188,14 +186,28 @@ namespace UsbIpServer
                         notification = (HCMNOTIFICATION)nintNotification;
                     }
 
-                    var attachedClientToken = attachedClientTokenSource.Token;
-                    RegistryUtils.SetDeviceAsAttached(exportedDevice, ClientContext.ClientAddress);
+                    // Detect unbind.
+                    using var attachedKey = RegistryUtils.SetDeviceAsAttached(exportedDevice, ClientContext.ClientAddress);
+                    using var registryEvent = new AutoResetEvent(false);
+                    ThreadPool.RegisterWaitForSingleObject(registryEvent, (state, timedOut) =>
+                    {
+                        Logger.Debug("Unbind while attached");
+                        try
+                        {
+                            attachedClientTokenSource.Cancel();
+                        }
+                        catch (ObjectDisposedException) { }
+                    }, null, Timeout.Infinite, true);
+                    var lresult = PInvoke.RegNotifyChangeKeyValue(attachedKey.Handle, false, Windows.Win32.System.Registry.REG_NOTIFY_FILTER.REG_NOTIFY_THREAD_AGNOSTIC, registryEvent.SafeWaitHandle, true);
+                    if (lresult != (int)WIN32_ERROR.ERROR_SUCCESS)
+                    {
+                        throw new Win32Exception(lresult, nameof(PInvoke.RegNotifyChangeKeyValue));
+                    }
 
-                    await ServiceProvider.GetRequiredService<AttachedClient>().RunAsync(attachedClientToken);
+                    await ServiceProvider.GetRequiredService<AttachedClient>().RunAsync(attachedClientTokenSource.Token);
                 }
                 finally
                 {
-                    RegistryWatcher.StopWatchingDevice(busId);
                     if (notification != default)
                     {
                         PInvoke.CM_Unregister_Notification(notification);

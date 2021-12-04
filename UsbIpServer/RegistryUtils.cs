@@ -159,12 +159,23 @@ namespace UsbIpServer
             return deviceKey is not null && deviceKey.GetSubKeyNames().Contains(AttachedName) && Server.IsServerRunning();
         }
 
-        public static void SetDeviceAsAttached(ExportedDevice device, IPAddress address)
+        public static RegistryKey SetDeviceAsAttached(ExportedDevice device, IPAddress address)
         {
-            using var key = GetDeviceKey(device, true);
-            using var attached = key?.CreateSubKey(AttachedName, true, RegistryOptions.Volatile);
-            attached?.SetValue(IPAddressName, address.ToString());
-            attached?.SetValue(OriginalInstanceIdName, device.Path);
+            using var key = GetDeviceKey(device, true)
+                ?? throw new UnexpectedResultException($"{nameof(SetDeviceAsAttached)}: Device key not found");
+            var attached = key.CreateSubKey(AttachedName, true, RegistryOptions.Volatile)
+                ?? throw new UnexpectedResultException($"{nameof(SetDeviceAsAttached)}: Unable to create ${AttachedName} subkey");
+            try
+            {
+                attached.SetValue(IPAddressName, address.ToString());
+                attached.SetValue(OriginalInstanceIdName, device.Path);
+                return attached;
+            }
+            catch
+            {
+                attached.Dispose();
+                throw;
+            }
         }
 
         public static void SetDeviceAsDetached(ExportedDevice device)
