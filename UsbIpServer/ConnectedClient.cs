@@ -133,13 +133,13 @@ namespace UsbIpServer
                 {
                     // VBoxUsbMon SUPUSBFLT_IOCTL_RUN_FILTERS is not potent enough as it only cycles the port.
                     // Instead, we disable the device, add the filter, and then re-enable the device.
-                    using var temporarilyDisabledDevice = new ConfigurationManager.TemporarilyDisabledDevice(exportedDevice.Path);
+                    using var temporarilyDisabledDevice = new ConfigurationManager.TemporarilyDisabledDevice(exportedDevice.InstanceId);
                     filterId = await mon.AddFilter(exportedDevice);
                 }
                 (var vboxDevice, ClientContext.AttachedDevice) = await mon.ClaimDevice(exportedDevice);
 
                 HCMNOTIFICATION notification = default;
-                Logger.ClientAttach(ClientContext.ClientAddress, exportedDevice.BusId, exportedDevice.Path);
+                Logger.ClientAttach(ClientContext.ClientAddress, exportedDevice.BusId, exportedDevice.InstanceId);
                 try
                 {
                     status = Status.ST_DEV_ERR;
@@ -225,7 +225,7 @@ namespace UsbIpServer
                     }
                     catch (ConfigurationManagerException) { }
 
-                    Logger.ClientDetach(ClientContext.ClientAddress, exportedDevice.BusId, exportedDevice.Path);
+                    Logger.ClientDetach(ClientContext.ClientAddress, exportedDevice.BusId, exportedDevice.InstanceId);
                 }
             }
             catch (Exception ex)
