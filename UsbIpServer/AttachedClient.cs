@@ -366,6 +366,27 @@ namespace UsbIpServer
                     BytesToStruct(bytes, out urb);
                 }
 
+                if ((basic.ep == 0)
+                    && (submit.setup.bmRequestType.B == (PInvoke.BMREQUEST_TO_DEVICE | (PInvoke.BMREQUEST_DEVICE_TO_HOST << 7)))
+                    && (submit.setup.bRequest == PInvoke.USB_REQUEST_GET_DESCRIPTOR)
+                    && (submit.setup.wValue.Anonymous.HiByte == PInvoke.USB_CONFIGURATION_DESCRIPTOR_TYPE))
+                {
+                    try
+                    {
+                        var configuration = BytesToStruct<USB_CONFIGURATION_DESCRIPTOR>(buf.AsSpan(payloadOffset));
+                        if ((configuration.bDescriptorType == PInvoke.USB_CONFIGURATION_DESCRIPTOR_TYPE)
+                            && ((configuration.bmAttributes & PInvoke.USB_CONFIG_REMOTE_WAKEUP) == PInvoke.USB_CONFIG_REMOTE_WAKEUP))
+                        {
+                            Logger.Debug("Masked USB_CONFIG_REMOTE_WAKEUP");
+                            configuration.bmAttributes &= unchecked((byte)~PInvoke.USB_CONFIG_REMOTE_WAKEUP);
+                            StructToBytes(configuration, buf.AsSpan(payloadOffset));
+                        }
+                    }
+#pragma warning disable CA1031 // Do not catch general exception types
+                    catch { }
+#pragma warning restore CA1031 // Do not catch general exception types
+                }
+
                 var header = new UsbIpHeader
                 {
                     basic = new()
