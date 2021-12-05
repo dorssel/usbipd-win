@@ -168,7 +168,7 @@ namespace UsbIpServer
             try
             {
                 attached.SetValue(IPAddressName, address.ToString());
-                attached.SetValue(OriginalInstanceIdName, device.Path);
+                attached.SetValue(OriginalInstanceIdName, device.InstanceId);
                 return attached;
             }
             catch

@@ -226,8 +226,8 @@ namespace UsbIpServer
             : IComparable<UsbDevice>
         {
             public BusId BusId { get; init; }
-            public string DeviceId { get; init; } = string.Empty;
-            public string HubInterface { get; init; } = string.Empty;
+            public string InstanceId { get; init; } = string.Empty;
+            public string HubInterfacePath { get; init; } = string.Empty;
             public string Description { get; init; } = string.Empty;
 
             public int CompareTo(UsbDevice? other) => (other is null) ? 1 : BusId.CompareTo(other.BusId);
@@ -251,8 +251,8 @@ namespace UsbIpServer
                             usbDevices.Add(new()
                             {
                                 BusId = GetBusId(deviceNode),
-                                DeviceId = (string)Get_DevNode_Property(deviceNode, PInvoke.DEVPKEY_Device_InstanceId),
-                                HubInterface = hub.Value,
+                                InstanceId = (string)Get_DevNode_Property(deviceNode, PInvoke.DEVPKEY_Device_InstanceId),
+                                HubInterfacePath = hub.Value,
                                 Description = includeDescriptions ? GetDescription(deviceNode) : string.Empty,
                             });
                         }
@@ -312,8 +312,8 @@ namespace UsbIpServer
         public sealed class TemporarilyDisabledDevice
             : IDisposable
         {
-           public TemporarilyDisabledDevice(string instanceId)
-                : this(Locate_DevNode(instanceId))
+            public TemporarilyDisabledDevice(string instanceId)
+                 : this(Locate_DevNode(instanceId))
             {
             }
 

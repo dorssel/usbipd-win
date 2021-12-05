@@ -27,8 +27,7 @@ namespace UsbIpServer
         {
         }
 
-        public string Path { get; private set; } = string.Empty;
-        public string HubPath { get; private init; } = string.Empty;
+        public string InstanceId { get; private set; } = string.Empty;
         public BusId BusId { get; private init; }
         public Linux.UsbDeviceSpeed Speed { get; private init; }
         public ushort VendorId { get; private init; }
@@ -71,7 +70,7 @@ namespace UsbIpServer
 
         public void Serialize(Stream stream, bool includeInterfaces)
         {
-            Serialize(stream, Path, SYSFS_PATH_MAX);
+            Serialize(stream, InstanceId, SYSFS_PATH_MAX);
             Serialize(stream, BusId.ToString(), SYSFS_BUS_ID_SIZE);
             Serialize(stream, (uint)BusId.Bus);
             Serialize(stream, (uint)BusId.Port);
@@ -144,7 +143,7 @@ namespace UsbIpServer
 
             // now query the parent USB hub for device details
 
-            using var hubFile = new DeviceFile(device.HubInterface);
+            using var hubFile = new DeviceFile(device.HubInterfacePath);
             using var cancellationTokenRegistration = cancellationToken.Register(() => hubFile.Dispose());
 
             var data = new UsbNodeConnectionInformationEx() { ConnectionIndex = device.BusId.Port };
@@ -178,8 +177,7 @@ namespace UsbIpServer
 
             var exportedDevice = new ExportedDevice()
             {
-                Path = device.DeviceId,
-                HubPath = device.HubInterface,
+                InstanceId = device.InstanceId,
                 BusId = device.BusId,
                 Speed = speed,
                 VendorId = data.DeviceDescriptor.idVendor,
@@ -196,8 +194,9 @@ namespace UsbIpServer
 
             if (RegistryUtils.GetOriginalInstanceId(exportedDevice) is string originalInstanceId)
             {
-                // If the device is currently attached, then VBoxMon will have overridden the path.
-                exportedDevice.Path = originalInstanceId;
+                // If the device is currently attached, then VBoxMon will have replaced it
+                // with a different device node that has a different instance ID.
+                exportedDevice.InstanceId = originalInstanceId;
             }
 
             if (RegistryUtils.GetDeviceDescription(exportedDevice) is string cachedDescription)
