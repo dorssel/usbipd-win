@@ -2,8 +2,6 @@
 //
 // SPDX-License-Identifier: GPL-2.0-only
 
-CM_Disable_DevNode
-CM_Enable_DevNode
 CM_Get_Child
 CM_Get_Device_Interface_List
 CM_Get_Device_Interface_List_Size
@@ -12,13 +10,19 @@ CM_Get_DevNode_Property
 CM_Get_Sibling
 CM_Locate_DevNode
 CM_MapCrToWin32Err
+CM_Query_And_Remove_SubTree
 CM_Register_Notification
 CM_Set_DevNode_Property
+CM_Setup_DevNode
 CM_Unregister_Notification
 
-CM_DISABLE_UI_NOT_OK
 CM_GET_DEVICE_INTERFACE_LIST_PRESENT
 CM_LOCATE_DEVNODE_NORMAL
+CM_REMOVE_NO_RESTART
+CM_REMOVE_UI_NOT_OK
+CM_SETUP_DEVNODE_READY
+
+MAX_PATH
 
 CreateFile
 DeviceIoControl
