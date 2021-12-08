@@ -184,6 +184,17 @@ namespace UsbIpServer
             deviceKey?.DeleteSubKeyTree(AttachedName, false);
         }
 
+        public static void SetAllDevicesAsDetached()
+        {
+            using var devicesKey = GetDevicesKey(true);
+            var deviceKeyNames = devicesKey?.GetSubKeyNames() ?? Array.Empty<string>();
+            foreach (var deviceKeyName in deviceKeyNames)
+            {
+                using var deviceKey = devicesKey?.OpenSubKey(deviceKeyName, true);
+                deviceKey?.DeleteSubKeyTree(AttachedName, false);
+            }
+        }
+
         public static IPAddress? GetDeviceAddress(ExportedDevice device)
         {
             using var deviceKey = GetDeviceKey(device, false);

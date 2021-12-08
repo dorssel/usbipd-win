@@ -27,6 +27,7 @@ MAX_PATH
 CreateFile
 DeviceIoControl
 RegNotifyChangeKeyValue
+SetEvent
 
 DEVPROP_TYPE_STRING
 DEVPROP_TYPEMOD_LIST

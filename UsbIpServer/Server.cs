@@ -58,12 +58,8 @@ namespace UsbIpServer
         {
             TcpListener.Start();
 
-            // To start, all devices should not be marked as attached.
-            var devices = await ExportedDevice.GetAll(CancellationToken.None);
-            foreach (var device in devices)
-            {
-                RegistryUtils.SetDeviceAsDetached(device);
-            }
+            // To start, all devices should not be marked as attached, even if they are not currently present.
+            RegistryUtils.SetAllDevicesAsDetached();
 
             while (true)
             {
