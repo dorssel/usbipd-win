@@ -175,6 +175,17 @@ namespace UsbIpServer
                 }
             }
 
+            var interfaces = new List<(byte,byte,byte)>();
+            try
+            {
+                // This may or may not fail if the device is disabled.
+                // Failure is not fatal, it just means that the export list will not contain
+                // the interface list, which only makes the identification of the 
+                // device by the user a little more difficult.
+                interfaces = await GetInterfacesAsync(hubFile, device.BusId.Port);
+            }
+            catch (Win32Exception) { }
+
             var exportedDevice = new ExportedDevice()
             {
                 InstanceId = device.InstanceId,
@@ -188,7 +199,7 @@ namespace UsbIpServer
                 DeviceProtocol = data.DeviceDescriptor.bDeviceProtocol,
                 ConfigurationValue = data.CurrentConfigurationValue,
                 NumConfigurations = data.DeviceDescriptor.bNumConfigurations,
-                Interfaces = await GetInterfacesAsync(hubFile, device.BusId.Port),
+                Interfaces = interfaces,
                 Description = device.Description,
             };
 
