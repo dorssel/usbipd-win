@@ -131,10 +131,19 @@ namespace UsbIpServer
                 await mon.CheckVersion();
                 ulong filterId;
                 {
-                    // VBoxUsbMon SUPUSBFLT_IOCTL_RUN_FILTERS is not potent enough as it only cycles the port.
-                    // Instead, we disable the device, add the filter, and then re-enable the device.
-                    using var temporarilyDisabledDevice = new ConfigurationManager.TemporarilyDisabledDevice(exportedDevice.InstanceId);
-                    filterId = await mon.AddFilter(exportedDevice);
+                    try
+                    {
+                        // VBoxUsbMon SUPUSBFLT_IOCTL_RUN_FILTERS is not potent enough as it only cycles the port.
+                        // Instead, we mark the device for removal, add the filter, and then mark the device ready again.
+                        using var restartingDevice = new ConfigurationManager.RestartingDevice(exportedDevice.InstanceId);
+                        filterId = await mon.AddFilter(exportedDevice);
+                    }
+                    catch (ConfigurationManagerException ex) when (ex.ConfigRet == CONFIGRET.CR_REMOVE_VETOED)
+                    {
+                        // The host is actively using the device.
+                        status = Status.ST_DEV_BUSY;
+                        throw;
+                    }
                 }
                 (var vboxDevice, ClientContext.AttachedDevice) = await mon.ClaimDevice(exportedDevice);
 
@@ -152,8 +161,18 @@ namespace UsbIpServer
 
                     // setup token to free device
                     using var attachedClientTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+                    using var cancelEvent = new AutoResetEvent(false);
+                    ThreadPool.RegisterWaitForSingleObject(cancelEvent, (state, timedOut) =>
+                    {
+                        Logger.Debug("Unbind or unplug while attached");
+                        try
+                        {
+                            attachedClientTokenSource.Cancel();
+                        }
+                        catch (ObjectDisposedException) { }
+                    }, null, Timeout.Infinite, true);
 
-                    // Detect device removal.
+                    // Detect unplug.
                     unsafe
                     {
                         CM_NOTIFY_FILTER filter = new()
@@ -167,18 +186,13 @@ namespace UsbIpServer
                                 },
                             },
                         };
-                        PInvoke.CM_Register_Notification(filter, null, (notify, context, action, eventData, eventDataSize) =>
+                        PInvoke.CM_Register_Notification(filter, (void*)cancelEvent.SafeWaitHandle.DangerousGetHandle(), static (notify, context, action, eventData, eventDataSize) =>
                         {
                             switch (action)
                             {
                                 case CM_NOTIFY_ACTION.CM_NOTIFY_ACTION_DEVICEREMOVEPENDING:
                                 case CM_NOTIFY_ACTION.CM_NOTIFY_ACTION_DEVICEREMOVECOMPLETE:
-                                    Logger.Debug("Device removal detected");
-                                    try
-                                    {
-                                        attachedClientTokenSource.Cancel();
-                                    }
-                                    catch (ObjectDisposedException) { }
+                                    PInvoke.SetEvent((HANDLE)(IntPtr)context);
                                     break;
                             }
                             return (uint)WIN32_ERROR.ERROR_SUCCESS;
@@ -188,17 +202,7 @@ namespace UsbIpServer
 
                     // Detect unbind.
                     using var attachedKey = RegistryUtils.SetDeviceAsAttached(exportedDevice, ClientContext.ClientAddress);
-                    using var registryEvent = new AutoResetEvent(false);
-                    ThreadPool.RegisterWaitForSingleObject(registryEvent, (state, timedOut) =>
-                    {
-                        Logger.Debug("Unbind while attached");
-                        try
-                        {
-                            attachedClientTokenSource.Cancel();
-                        }
-                        catch (ObjectDisposedException) { }
-                    }, null, Timeout.Infinite, true);
-                    var lresult = PInvoke.RegNotifyChangeKeyValue(attachedKey.Handle, false, Windows.Win32.System.Registry.REG_NOTIFY_FILTER.REG_NOTIFY_THREAD_AGNOSTIC, registryEvent.SafeWaitHandle, true);
+                    var lresult = PInvoke.RegNotifyChangeKeyValue(attachedKey.Handle, false, Windows.Win32.System.Registry.REG_NOTIFY_FILTER.REG_NOTIFY_THREAD_AGNOSTIC, cancelEvent.SafeWaitHandle, true);
                     if (lresult != (int)WIN32_ERROR.ERROR_SUCCESS)
                     {
                         throw new Win32Exception(lresult, nameof(PInvoke.RegNotifyChangeKeyValue));
@@ -219,8 +223,8 @@ namespace UsbIpServer
                     try
                     {
                         // This solves the cases where VBoxUsbMon does not properly hand back the device to the host.
-                        // Instead, we disable the device, remove the filter, and then re-enable the device.
-                        using var temporarilyDisabledDevice = new ConfigurationManager.TemporarilyDisabledDevice(vboxDevice.DeviceNode);
+                        // Instead, we mark the device for removal, add the filter, and then mark the device ready again.
+                        using var restartingDevice = new ConfigurationManager.RestartingDevice(vboxDevice.DeviceNode);
                         await mon.RemoveFilter(filterId);
                     }
                     catch (ConfigurationManagerException) { }

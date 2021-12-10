@@ -43,13 +43,8 @@ namespace UsbIpServer
 
         public static async Task<int> RunUncapturedProcessAsync(string filename, IEnumerable<string> arguments, CancellationToken cancellationToken)
         {
-            using var process = Process.Start(CreateCommonProcessStartInfo(filename, arguments));
-
-            if (process is null)
-            {
-                throw new UnexpectedResultException(FormatStartFailedMessage(filename, arguments));
-            }
-
+            using var process = Process.Start(CreateCommonProcessStartInfo(filename, arguments))
+                ?? throw new UnexpectedResultException(FormatStartFailedMessage(filename, arguments));
             await process.WaitForExitAsync(cancellationToken);
             return process.ExitCode;
         }

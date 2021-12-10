@@ -309,34 +309,47 @@ namespace UsbIpServer
             }
         }
 
-        public sealed class TemporarilyDisabledDevice
+        /// <summary>
+        /// See https://docs.microsoft.com/en-us/windows-hardware/drivers/install/porting-from-setupapi-to-cfgmgr32#restart-device
+        /// </summary>
+        public sealed class RestartingDevice
             : IDisposable
         {
-            public TemporarilyDisabledDevice(string instanceId)
+            public RestartingDevice(string instanceId)
                  : this(Locate_DevNode(instanceId))
             {
             }
 
-            public TemporarilyDisabledDevice(uint deviceNode)
+            public RestartingDevice(uint deviceNode)
             {
                 DeviceNode = deviceNode;
-                PInvoke.CM_Disable_DevNode(DeviceNode, PInvoke.CM_DISABLE_UI_NOT_OK).ThrowOnError(nameof(PInvoke.CM_Disable_DevNode));
+                unsafe
+                {
+                    PNP_VETO_TYPE vetoType;
+                    var vetoName = new string('\0', (int)PInvoke.MAX_PATH);
+                    fixed (char* pVetoName = vetoName)
+                    {
+                        var cr = PInvoke.CM_Query_And_Remove_SubTree(DeviceNode, &vetoType, pVetoName, PInvoke.MAX_PATH, PInvoke.CM_REMOVE_NO_RESTART | PInvoke.CM_REMOVE_UI_NOT_OK);
+                        if (cr == CONFIGRET.CR_REMOVE_VETOED)
+                        {
+                            vetoName = vetoName.TrimEnd('\0');
+                            throw new ConfigurationManagerException(cr, $"{nameof(PInvoke.CM_Query_And_Remove_SubTree)} returned {cr}: {vetoType}, {vetoName}");
+                        }
+                        ThrowOnError(cr, nameof(PInvoke.CM_Query_And_Remove_SubTree));
+                    }
+                }
             }
 
             readonly uint DeviceNode;
 
             public void Dispose()
             {
-                try
-                {
-                    // We ignore errors for multiple reasons:
-                    // a) Dispose is not supposed to throw.
-                    // b) Race condition with physical device removal.
-                    // c) Race condition with the device node being enabled by something else and
-                    //    device enumeration already replaced the DevNode with its (non-)VBox counterpart.
-                    PInvoke.CM_Enable_DevNode(DeviceNode, 0).ThrowOnError(nameof(PInvoke.CM_Enable_DevNode));
-                }
-                catch (ConfigurationManagerException) { }
+                // We ignore errors for multiple reasons:
+                // a) Dispose is not supposed to throw.
+                // b) Race condition with physical device removal.
+                // c) Race condition with the device node being marked ready by something else and
+                //    device enumeration already replaced the DevNode with its (non-)VBox counterpart.
+                PInvoke.CM_Setup_DevNode(DeviceNode, PInvoke.CM_SETUP_DEVNODE_READY);
             }
         }
     }
