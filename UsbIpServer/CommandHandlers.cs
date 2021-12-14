@@ -23,7 +23,7 @@ namespace UsbIpServer
 {
     interface ICommandHandlers
     {
-        public Task<ExitCode> Bind(BusId busId, IConsole console, CancellationToken cancellationToken);
+        public Task<ExitCode> Bind(BusId busId, bool force, IConsole console, CancellationToken cancellationToken);
         public Task<ExitCode> License(IConsole console, CancellationToken cancellationToken);
         public Task<ExitCode> List(IConsole console, CancellationToken cancellationToken);
         public Task<ExitCode> Server(string[] args, IConsole console, CancellationToken cancellationToken);
@@ -137,7 +137,7 @@ namespace UsbIpServer
             return ExitCode.Success;
         }
 
-        static async Task<ExitCode> Bind(BusId busId, bool wslAttach, IConsole console, CancellationToken cancellationToken)
+        static async Task<ExitCode> Bind(BusId busId, bool wslAttach, bool force, IConsole console, CancellationToken cancellationToken)
         {
             var connectedDevices = await ExportedDevice.GetAll(cancellationToken);
             var device = connectedDevices.Where(x => x.BusId == busId).SingleOrDefault();
@@ -146,7 +146,9 @@ namespace UsbIpServer
                 ReportError(console, $"There is no compatible device with busid '{busId}'.");
                 return ExitCode.Failure;
             }
-            if (RegistryUtils.IsDeviceShared(device))
+            var isShared = RegistryUtils.IsDeviceShared(device);
+            var isForced = ConfigurationManager.HasVBoxDriver(device.InstanceId);
+            if (isShared && (force == isForced))
             {
                 // Not an error, just let the user know they just executed a no-op.
                 if (!wslAttach)
@@ -159,15 +161,34 @@ namespace UsbIpServer
             {
                 return ExitCode.AccessDenied;
             }
-            RegistryUtils.ShareDevice(device, device.Description);
+            if (!isShared)
+            {
+                RegistryUtils.ShareDevice(device, device.Description);
+            }
+            if (force != isForced)
+            {
+                // TODO: report if reboot needed.
+                if (force)
+                {
+                    NewDev.ForceVBoxDriver(device.InstanceId);
+                }
+                else
+                {
+                    NewDev.UnforceVBoxDriver(device.InstanceId);
+                }
+            }
             ReportServerRunning(console);
-            ReportForceNeeded(console);
+            if (!force)
+            {
+                // Do not warn that force may be needed if the user is actually using --force.
+                ReportForceNeeded(console);
+            }
             return ExitCode.Success;
         }
 
-        Task<ExitCode> ICommandHandlers.Bind(BusId busId, IConsole console, CancellationToken cancellationToken)
+        Task<ExitCode> ICommandHandlers.Bind(BusId busId, bool force, IConsole console, CancellationToken cancellationToken)
         {
-            return Bind(busId, false, console, cancellationToken);
+            return Bind(busId, false, force, console, cancellationToken);
         }
 
         async Task<ExitCode> ICommandHandlers.Server(string[] args, IConsole console, CancellationToken cancellationToken)
@@ -251,6 +272,8 @@ namespace UsbIpServer
                 return ExitCode.AccessDenied;
             }
             RegistryUtils.StopSharingDevice(device);
+            // TODO: for completeness, report if reboot needed (but weird, as this device is currently not present).
+            NewDev.UnforceVBoxDriver(device.InstanceId);
             return ExitCode.Success;
         }
 
@@ -267,6 +290,8 @@ namespace UsbIpServer
                 return Task.FromResult(ExitCode.AccessDenied);
             }
             RegistryUtils.StopSharingDevice(guid);
+            // TODO: find device and then NewDev.UnforceVBoxDriver(device.InstanceId);
+            // TODO: report if reboot required
             return Task.FromResult(ExitCode.Success);
         }
 
@@ -277,6 +302,8 @@ namespace UsbIpServer
                 return Task.FromResult(ExitCode.AccessDenied);
             }
             RegistryUtils.StopSharingAllDevices();
+            // TODO: for all devices: NewDev.UnforceVBoxDriver(device.InstanceId);
+            // TODO: report if reboot required
             return Task.FromResult(ExitCode.Success);
         }
 
@@ -364,7 +391,7 @@ namespace UsbIpServer
                 return ExitCode.Failure;
             }
 
-            var bindResult = await Bind(busId, true, console, cancellationToken);
+            var bindResult = await Bind(busId, true, false, console, cancellationToken);
             if (bindResult != ExitCode.Success)
             {
                 ReportError(console, $"Failed to bind device with BUSID '{busId}'.");

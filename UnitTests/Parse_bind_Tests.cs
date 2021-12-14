@@ -24,17 +24,27 @@ namespace UnitTests
         public void Success()
         {
             var mock = CreateMock();
-            mock.Setup(m => m.Bind(It.Is<BusId>(busId => busId == TestBusId),
+            mock.Setup(m => m.Bind(It.Is<BusId>(busId => busId == TestBusId), false,
                 It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Success));
 
             Test(ExitCode.Success, mock, "bind", "--busid", TestBusId.ToString());
         }
 
         [TestMethod]
+        public void ForceSuccess()
+        {
+            var mock = CreateMock();
+            mock.Setup(m => m.Bind(It.Is<BusId>(busId => busId == TestBusId), true,
+                It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Success));
+
+            Test(ExitCode.Success, mock, "bind", "--busid", TestBusId.ToString(), "--force");
+        }
+
+        [TestMethod]
         public void Failure()
         {
             var mock = CreateMock();
-            mock.Setup(m => m.Bind(It.Is<BusId>(busId => busId == TestBusId),
+            mock.Setup(m => m.Bind(It.Is<BusId>(busId => busId == TestBusId), false,
                 It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Failure));
 
             Test(ExitCode.Failure, mock, "bind", "--busid", TestBusId.ToString());
@@ -44,7 +54,7 @@ namespace UnitTests
         public void Canceled()
         {
             var mock = CreateMock();
-            mock.Setup(m => m.Bind(It.Is<BusId>(busId => busId == TestBusId),
+            mock.Setup(m => m.Bind(It.Is<BusId>(busId => busId == TestBusId), false,
                 It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Throws<OperationCanceledException>();
 
             Test(ExitCode.Canceled, mock, "bind", "--busid", TestBusId.ToString());

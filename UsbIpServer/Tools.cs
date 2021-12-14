@@ -8,8 +8,10 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
-using UsbIpServer.Interop;
 using Windows.Win32.Devices.Usb;
+
+using static UsbIpServer.Interop.Linux;
+using static UsbIpServer.Interop.VBoxUsb;
 
 namespace UsbIpServer
 {
@@ -74,34 +76,34 @@ namespace UsbIpServer
             return result;
         }
 
-        public static Linux.UsbDeviceSpeed MapWindowsSpeedToLinuxSpeed(USB_DEVICE_SPEED w)
+        public static UsbDeviceSpeed MapWindowsSpeedToLinuxSpeed(USB_DEVICE_SPEED w)
         {
             // Windows and Linux each use a *different* enum for this
             return w switch
             {
-                USB_DEVICE_SPEED.UsbLowSpeed => Linux.UsbDeviceSpeed.USB_SPEED_LOW,
-                USB_DEVICE_SPEED.UsbFullSpeed => Linux.UsbDeviceSpeed.USB_SPEED_FULL,
-                USB_DEVICE_SPEED.UsbHighSpeed => Linux.UsbDeviceSpeed.USB_SPEED_HIGH,
-                USB_DEVICE_SPEED.UsbSuperSpeed => Linux.UsbDeviceSpeed.USB_SPEED_SUPER,
-                _ => Linux.UsbDeviceSpeed.USB_SPEED_UNKNOWN,
+                USB_DEVICE_SPEED.UsbLowSpeed => UsbDeviceSpeed.USB_SPEED_LOW,
+                USB_DEVICE_SPEED.UsbFullSpeed => UsbDeviceSpeed.USB_SPEED_FULL,
+                USB_DEVICE_SPEED.UsbHighSpeed => UsbDeviceSpeed.USB_SPEED_HIGH,
+                USB_DEVICE_SPEED.UsbSuperSpeed => UsbDeviceSpeed.USB_SPEED_SUPER,
+                _ => UsbDeviceSpeed.USB_SPEED_UNKNOWN,
             };
         }
 
         /// <summary>
         /// See <see href="https://www.kernel.org/doc/html/latest/driver-api/usb/error-codes.html"/>.
         /// </summary>
-        public static Linux.Errno ConvertError(VBoxUsb.UsbSupError usbSupError)
+        public static Errno ConvertError(UsbSupError usbSupError)
         {
             return usbSupError switch
             {
-                VBoxUsb.UsbSupError.USBSUP_XFER_OK => Linux.Errno.SUCCESS,
-                VBoxUsb.UsbSupError.USBSUP_XFER_STALL => Linux.Errno.EPIPE,
-                VBoxUsb.UsbSupError.USBSUP_XFER_DNR => Linux.Errno.ETIME,
-                VBoxUsb.UsbSupError.USBSUP_XFER_CRC => Linux.Errno.EILSEQ,
-                VBoxUsb.UsbSupError.USBSUP_XFER_NAC => Linux.Errno.EPROTO,
-                VBoxUsb.UsbSupError.USBSUP_XFER_UNDERRUN => Linux.Errno.EREMOTEIO,
-                VBoxUsb.UsbSupError.USBSUP_XFER_OVERRUN => Linux.Errno.EOVERFLOW,
-                _ => Linux.Errno.EPROTO,
+                UsbSupError.USBSUP_XFER_OK => Errno.SUCCESS,
+                UsbSupError.USBSUP_XFER_STALL => Errno.EPIPE,
+                UsbSupError.USBSUP_XFER_DNR => Errno.ETIME,
+                UsbSupError.USBSUP_XFER_CRC => Errno.EILSEQ,
+                UsbSupError.USBSUP_XFER_NAC => Errno.EPROTO,
+                UsbSupError.USBSUP_XFER_UNDERRUN => Errno.EREMOTEIO,
+                UsbSupError.USBSUP_XFER_OVERRUN => Errno.EOVERFLOW,
+                _ => Errno.EPROTO,
             };
         }
     }

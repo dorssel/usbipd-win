@@ -18,6 +18,7 @@ CM_Unregister_Notification
 
 CM_GET_DEVICE_INTERFACE_LIST_PRESENT
 CM_LOCATE_DEVNODE_NORMAL
+CM_LOCATE_DEVNODE_PHANTOM
 CM_REMOVE_NO_RESTART
 CM_REMOVE_UI_NOT_OK
 CM_SETUP_DEVNODE_READY
@@ -27,18 +28,32 @@ MAX_PATH
 AdjustTokenPrivileges
 CreateFile
 DeviceIoControl
+DiInstallDevice
 GetCurrentProcess
 LookupPrivilegeValue
 OpenProcessToken
 RegDeleteKey
 RegNotifyChangeKeyValue
 SetEvent
+SetupDiBuildDriverInfoList 
+SetupDiCreateDeviceInfoList
+SetupDiDestroyDeviceInfoList
+SetupDiEnumDriverInfo
+SetupDiGetDeviceInstallParams
+SetupDiOpenDeviceInfo
+SetupDiSetDeviceInstallParams
+
+DI_ENUMSINGLEINF
+DI_FLAGSEX_ALLOWEXCLUDEDDRVS
+INVALID_HANDLE_VALUE
+SP_DRVINFO_DATA_V2_W
 
 DEVPROP_TYPE_STRING
 DEVPROP_TYPEMOD_LIST
 
 DEVPKEY_Device_Children
 DEVPKEY_Device_CompatibleIds
+DEVPKEY_Device_DriverDesc
 DEVPKEY_Device_FriendlyName
 DEVPKEY_Device_InstanceId
 DEVPKEY_Device_LocationInfo

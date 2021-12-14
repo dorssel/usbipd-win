@@ -43,14 +43,14 @@ namespace UsbIpServer
             }
         }
 
-        static uint Locate_DevNode(string instanceId)
+        static uint Locate_DevNode(string instanceId, bool present)
         {
             unsafe
             {
                 fixed (char* pInstanceId = instanceId)
                 {
                     uint deviceNode;
-                    PInvoke.CM_Locate_DevNode(&deviceNode, (ushort*)pInstanceId, PInvoke.CM_LOCATE_DEVNODE_NORMAL).ThrowOnError(nameof(PInvoke.CM_Locate_DevNode));
+                    PInvoke.CM_Locate_DevNode(&deviceNode, (ushort*)pInstanceId, present ? PInvoke.CM_LOCATE_DEVNODE_NORMAL : PInvoke.CM_LOCATE_DEVNODE_PHANTOM).ThrowOnError(nameof(PInvoke.CM_Locate_DevNode));
                     return deviceNode;
                 }
             }
@@ -151,7 +151,7 @@ namespace UsbIpServer
                     // This may fail due to a race condition between a hub being removed and querying its details.
                     // In such cases, just skip the hub as if it was never there in the first place.
                     var hubId = (string)Get_Device_Interface_Property(hubInterface, PInvoke.DEVPKEY_Device_InstanceId);
-                    var hubNode = Locate_DevNode(hubId);
+                    var hubNode = Locate_DevNode(hubId, true);
                     hubs.Add(hubNode, hubInterface);
                 }
                 catch (ConfigurationManagerException) { }
@@ -269,7 +269,6 @@ namespace UsbIpServer
             public string InterfacePath { get; init; } = string.Empty;
         }
 
-
         public static VBoxDevice GetVBoxDevice(BusId busId)
         {
             var deviceInterfaces = Get_Device_Interface_List(Interop.VBoxUsb.GUID_CLASS_VBOXUSB, PInvoke.CM_GET_DEVICE_INTERFACE_LIST_PRESENT);
@@ -280,7 +279,7 @@ namespace UsbIpServer
                 try
                 {
                     var deviceId = (string)Get_Device_Interface_Property(deviceInterface, PInvoke.DEVPKEY_Device_InstanceId);
-                    var deviceNode = Locate_DevNode(deviceId);
+                    var deviceNode = Locate_DevNode(deviceId, true);
                     if (GetBusId(deviceNode) == busId)
                     {
                         return new()
@@ -295,16 +294,32 @@ namespace UsbIpServer
             throw new FileNotFoundException();
         }
 
-        public static void SetDeviceProperty(VBoxDevice vboxDevice, in DEVPROPKEY devPropKey, string value)
+        public static bool HasVBoxDriver(string instanceId)
+        {
+            try
+            {
+                var deviceNode = Locate_DevNode(instanceId, false);
+                var driverDesc = (string)Get_DevNode_Property(deviceNode, PInvoke.DEVPKEY_Device_DriverDesc);
+                return driverDesc == "VirtualBox USB";
+            }
+            catch (ConfigurationManagerException)
+            {
+                // Device is gone (uninstalled) or does not have a driver description.
+                // In any case, the device does not have the VBoxDriver.
+                return false;
+            }
+        }
+
+        public static void SetDeviceFriendlyName(uint deviceNode)
         {
             unsafe
             {
-                fixed (DEVPROPKEY* pDevPropKey = &devPropKey)
+                var busId = GetBusId(deviceNode);
+                var friendlyName = $"USBIP Shared Device {busId}";
+                fixed (char* pValue = friendlyName)
                 {
-                    fixed (char* pValue = value)
-                    {
-                        PInvoke.CM_Set_DevNode_Property(vboxDevice.DeviceNode, pDevPropKey, PInvoke.DEVPROP_TYPE_STRING, (byte*)pValue, (uint)(value.Length + 1) * sizeof(char), 0);
-                    }
+                    DEVPROPKEY devPropKey = PInvoke.DEVPKEY_Device_FriendlyName;
+                    PInvoke.CM_Set_DevNode_Property(deviceNode, &devPropKey, PInvoke.DEVPROP_TYPE_STRING, (byte*)pValue, (uint)(friendlyName.Length + 1) * sizeof(char), 0).ThrowOnError(nameof(PInvoke.CM_Set_DevNode_Property));
                 }
             }
         }
@@ -316,7 +331,7 @@ namespace UsbIpServer
             : IDisposable
         {
             public RestartingDevice(string instanceId)
-                 : this(Locate_DevNode(instanceId))
+                 : this(Locate_DevNode(instanceId, true))
             {
             }
 

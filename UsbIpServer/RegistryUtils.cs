@@ -12,7 +12,7 @@ using System.Security.Principal;
 using Microsoft.Win32;
 using Windows.Win32;
 
-using static UsbIpServer.Interop.VBoxUsb;
+using static UsbIpServer.Interop.VBoxUsbMon;
 
 namespace UsbIpServer
 {
