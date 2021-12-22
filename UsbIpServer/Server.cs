@@ -3,14 +3,18 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 using System;
+using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Windows.Win32;
+using Windows.Win32.Security;
 
 using static UsbIpServer.Interop.UsbIp;
 
@@ -31,11 +35,6 @@ namespace UsbIpServer
         readonly IServiceScopeFactory ServiceScopeFactory;
         readonly TcpListener TcpListener = TcpListener.Create(USBIP_PORT);
 
-        public Task Run(CancellationToken stoppingToken)
-        {
-            return ExecuteAsync(stoppingToken);
-        }
-
         public static bool IsServerRunning()
         {
             try
@@ -54,13 +53,49 @@ namespace UsbIpServer
             }
         }
 
+        static void EnablePrivilege(string name)
+        {
+            var tokenPrivileges = new TOKEN_PRIVILEGES
+            {
+                PrivilegeCount = 1,
+            };
+            if (!PInvoke.LookupPrivilegeValue(null, name, out tokenPrivileges.Privileges[0].Luid))
+            {
+                throw new Win32Exception(Marshal.GetLastWin32Error(), nameof(PInvoke.LookupPrivilegeValue));
+            }
+            tokenPrivileges.Privileges[0].Attributes = TOKEN_PRIVILEGES_ATTRIBUTES.SE_PRIVILEGE_ENABLED;
+
+            using var currentProcess = PInvoke.GetCurrentProcess_SafeHandle();
+            if (!PInvoke.OpenProcessToken(currentProcess, TOKEN_ACCESS_MASK.TOKEN_ADJUST_PRIVILEGES, out var token))
+            {
+                throw new Win32Exception(Marshal.GetLastWin32Error(), nameof(PInvoke.OpenProcessToken));
+            }
+            try
+            {
+                unsafe
+                {
+                    if (!PInvoke.AdjustTokenPrivileges(token, false, tokenPrivileges, 0, null, null))
+                    {
+                        throw new Win32Exception(Marshal.GetLastWin32Error(), nameof(PInvoke.AdjustTokenPrivileges));
+                    }
+                }
+            }
+            finally
+            {
+                token.Dispose();
+            }
+        }
+
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            TcpListener.Start();
-
-            // To start, all devices should not be marked as attached, even if they are not currently present.
+            // Cleanup any left-overs in case the previous instance crashed.
             RegistryUtils.SetAllDevicesAsDetached();
 
+            // Non-interactive services have this disabled by default.
+            // We require it so the ConfigurationManager can change the driver.
+            EnablePrivilege("SeLoadDriverPrivilege");
+
+            TcpListener.Start();
             while (true)
             {
                 var tcpClient = await TcpListener.AcceptTcpClientAsync(stoppingToken);
