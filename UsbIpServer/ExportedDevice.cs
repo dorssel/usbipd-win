@@ -175,7 +175,7 @@ namespace UsbIpServer
                 }
             }
 
-            var interfaces = new List<(byte,byte,byte)>();
+            var interfaces = new List<(byte, byte, byte)>();
             try
             {
                 // This may or may not fail if the device is disabled.
