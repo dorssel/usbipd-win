@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: GPL-2.0-only
 
+using System;
 using System.CommandLine;
 using System.Threading;
 using System.Threading.Tasks;
@@ -24,7 +25,7 @@ namespace UnitTests
         {
             var mock = CreateMock();
             mock.Setup(m => m.Bind(It.Is<BusId>(busId => busId == TestBusId),
-                It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(true));
+                It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Success));
 
             Test(ExitCode.Success, mock, "bind", "--bus-id", TestBusId.ToString());
         }
@@ -34,9 +35,19 @@ namespace UnitTests
         {
             var mock = CreateMock();
             mock.Setup(m => m.Bind(It.Is<BusId>(busId => busId == TestBusId),
-                It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(false));
+                It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Failure));
 
             Test(ExitCode.Failure, mock, "bind", "--bus-id", TestBusId.ToString());
+        }
+
+        [TestMethod]
+        public void Canceled()
+        {
+            var mock = CreateMock();
+            mock.Setup(m => m.Bind(It.Is<BusId>(busId => busId == TestBusId),
+                It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Throws<OperationCanceledException>();
+
+            Test(ExitCode.Canceled, mock, "bind", "--bus-id", TestBusId.ToString());
         }
 
         [TestMethod]

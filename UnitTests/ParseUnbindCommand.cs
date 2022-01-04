@@ -26,7 +26,7 @@ namespace UnitTests
         {
             var mock = CreateMock();
             mock.Setup(m => m.UnbindAll(
-                It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(true));
+                It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Success));
 
             Test(ExitCode.Success, mock, "unbind", "--all");
         }
@@ -36,9 +36,19 @@ namespace UnitTests
         {
             var mock = CreateMock();
             mock.Setup(m => m.UnbindAll(
-                It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(false));
+                It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Failure));
 
             Test(ExitCode.Failure, mock, "unbind", "--all");
+        }
+
+        [TestMethod]
+        public void AllCanceled()
+        {
+            var mock = CreateMock();
+            mock.Setup(m => m.UnbindAll(
+                It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Throws<OperationCanceledException>();
+
+            Test(ExitCode.Canceled, mock, "unbind", "--all");
         }
 
         [TestMethod]
@@ -46,7 +56,7 @@ namespace UnitTests
         {
             var mock = CreateMock();
             mock.Setup(m => m.Unbind(It.Is<BusId>(busId => busId == TestBusId),
-                It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(true));
+                It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Success));
 
             Test(ExitCode.Success, mock, "unbind", "--bus-id", TestBusId.ToString());
         }
@@ -56,9 +66,19 @@ namespace UnitTests
         {
             var mock = CreateMock();
             mock.Setup(m => m.Unbind(It.Is<BusId>(busId => busId == TestBusId),
-                It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(false));
+                It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Failure));
 
             Test(ExitCode.Failure, mock, "unbind", "--bus-id", TestBusId.ToString());
+        }
+
+        [TestMethod]
+        public void BusIdCanceled()
+        {
+            var mock = CreateMock();
+            mock.Setup(m => m.Unbind(It.Is<BusId>(busId => busId == TestBusId),
+                It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Throws<OperationCanceledException>();
+
+            Test(ExitCode.Canceled, mock, "unbind", "--bus-id", TestBusId.ToString());
         }
 
         [TestMethod]
@@ -66,7 +86,7 @@ namespace UnitTests
         {
             var mock = CreateMock();
             mock.Setup(m => m.Unbind(It.Is<Guid>(guid => guid == Guid.Parse("{E863A2AF-AE47-440B-A32B-FAB1C03017AB}")),
-                It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(true));
+                It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Success));
 
             Test(ExitCode.Success, mock, "unbind", "--guid", "{E863A2AF-AE47-440B-A32B-FAB1C03017AB}");
         }
@@ -76,9 +96,19 @@ namespace UnitTests
         {
             var mock = CreateMock();
             mock.Setup(m => m.Unbind(It.Is<Guid>(guid => guid == Guid.Parse("{E863A2AF-AE47-440B-A32B-FAB1C03017AB}")),
-                It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(false));
+                It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Failure));
 
             Test(ExitCode.Failure, mock, "unbind", "--guid", "{E863A2AF-AE47-440B-A32B-FAB1C03017AB}");
+        }
+
+        [TestMethod]
+        public void GuidCanceled()
+        {
+            var mock = CreateMock();
+            mock.Setup(m => m.Unbind(It.Is<Guid>(guid => guid == TestGuid),
+                It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Throws<OperationCanceledException>();
+
+            Test(ExitCode.Canceled, mock, "unbind", "--guid", TestGuid.ToString());
         }
 
         [TestMethod]

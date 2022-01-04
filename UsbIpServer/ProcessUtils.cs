@@ -1,4 +1,4 @@
-﻿// SPDX-FileCopyrightText: Copyright (c) Microsoft Corporation
+﻿// SPDX-FileCopyrightText: Microsoft Corporation
 //
 // SPDX-License-Identifier: GPL-2.0-only
 

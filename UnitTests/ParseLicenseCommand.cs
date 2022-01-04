@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: GPL-2.0-only
 
+using System;
 using System.CommandLine;
 using System.Threading;
 using System.Threading.Tasks;
@@ -22,19 +23,29 @@ namespace UnitTests
         {
             var mock = CreateMock();
             mock.Setup(m => m.License(
-                It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(true));
+                It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Success));
 
             Test(ExitCode.Success, mock, "license");
         }
 
         [TestMethod]
-        public void Failed()
+        public void Failure()
         {
             var mock = CreateMock();
             mock.Setup(m => m.License(
-                It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(false));
+                It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Failure));
 
             Test(ExitCode.Failure, mock, "license");
+        }
+
+        [TestMethod]
+        public void Canceled()
+        {
+            var mock = CreateMock();
+            mock.Setup(m => m.License(
+                It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Throws<OperationCanceledException>();
+
+            Test(ExitCode.Canceled, mock, "license");
         }
 
         [TestMethod]
