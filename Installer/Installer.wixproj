@@ -39,6 +39,7 @@ SPDX-License-Identifier: GPL-2.0-only
     <Cultures>en-US</Cultures>
     <SuppressAllWarnings>False</SuppressAllWarnings>
     <Pedantic>True</Pedantic>
+    <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Drivers.wxs" />
@@ -111,7 +112,8 @@ SPDX-License-Identifier: GPL-2.0-only
   <PropertyGroup>
     <PreBuildEvent>del /s /q "$(ProjectDir)..\UsbIpServer\bin\publish" &gt; NUL:
 rmdir /s /q "$(ProjectDir)..\UsbIpServer\bin\publish" &gt; NUL:
-dotnet publish --nologo --no-restore --no-build --configuration $(Configuration) $(ProjectDir)..\UsbIpServer</PreBuildEvent>
+dotnet publish --nologo --no-restore --no-build --configuration $(Configuration) $(ProjectDir)..\UsbIpServer
+del /s "$(ProjectDir)..\UsbIpServer\bin\publish\System.CommandLine.resources.dll"</PreBuildEvent>
   </PropertyGroup>
   <Import Project="..\InstallerDependencies\obj\InstallerDependencies.csproj.nuget.g.targets" Condition="Exists('..\InstallerDependencies\obj\InstallerDependencies.csproj.nuget.g.targets')" />
 </Project>
