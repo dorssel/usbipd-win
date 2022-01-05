@@ -14,7 +14,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Hosting.WindowsServices;
 using Microsoft.Extensions.Logging;
-
+using Microsoft.Win32;
 using static UsbIpServer.ConsoleTools;
 using ExitCode = UsbIpServer.Program.ExitCode;
 
@@ -50,10 +50,39 @@ namespace UsbIpServer
 
         static bool CheckServerRunning(IConsole console)
         {
-            if (!UsbIpServer.Server.IsServerRunning())
+            if (!Server.IsServerRunning())
             {
                 ReportError(console, "Server is currently not running.");
                 return false;
+            }
+            return true;
+        }
+
+        static readonly SortedSet<string> WhitelistUpperFilters = new();
+
+        static readonly SortedSet<string> BlacklistUpperFilters = new()
+        {
+            "TsUsbFlt",
+            "UsbDk",
+            "USBPcap",
+        };
+
+        const string UpperFiltersPath = @"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Class\{36fc9e60-c465-11cf-8056-444553540000}";
+        const string UpperFiltersName = @"UpperFilters";
+
+        static bool ReportForceNeeded(IConsole console)
+        {
+            var upperFilters = Registry.GetValue(UpperFiltersPath, UpperFiltersName, null) as string[] ?? Array.Empty<string>();
+            foreach (var filter in new SortedSet<string>(upperFilters.Where(f => !string.IsNullOrWhiteSpace(f)), StringComparer.InvariantCultureIgnoreCase))
+            {
+                if (BlacklistUpperFilters.Contains(filter, StringComparer.InvariantCultureIgnoreCase))
+                {
+                    ReportWarning(console, $"USB filter '{filter}' is known to be incompatible with this software; 'bind --force' will be required.");
+                }
+                else if (!WhitelistUpperFilters.Contains(filter, StringComparer.InvariantCultureIgnoreCase))
+                {
+                    ReportWarning(console, $"Unknown USB filter '{filter}' may be incompatible with this software; 'bind --force' may be required.");
+                }
             }
             return true;
         }
@@ -103,6 +132,7 @@ namespace UsbIpServer
                 console.WriteLine($"{device.Guid,-38:B}  {device.BusId,-5}  {device.Description.Truncate(60),-60}");
             }
             ReportServerRunning(console);
+            ReportForceNeeded(console);
             return ExitCode.Success;
         }
 
@@ -129,6 +159,8 @@ namespace UsbIpServer
                 return ExitCode.AccessDenied;
             }
             RegistryUtils.ShareDevice(device, device.Description);
+            ReportServerRunning(console);
+            ReportForceNeeded(console);
             return ExitCode.Success;
         }
 
@@ -384,6 +416,7 @@ namespace UsbIpServer
                 console.WriteLine($"{device.BusId,-5}  {description,-60}  {state}");
             }
             ReportServerRunning(console);
+            ReportForceNeeded(console);
             return ExitCode.Success;
         }
     }
