@@ -4,7 +4,10 @@
 
 using System;
 using System.Collections.Generic;
+using System.CommandLine;
 using System.Text;
+
+using static System.CommandLine.IO.StandardStreamWriter;
 
 namespace UsbIpServer
 {
@@ -80,17 +83,52 @@ namespace UsbIpServer
         /// All "console logging" reports go to <see cref="Console.Error"/>, so they can be easily
         /// separated from expected output, e.g. from 'list', which goes to <see cref="Console.Out"/>.
         /// </summary>
-        static void ReportText(string level, string text) =>
-            Console.Error.WriteLine($"{Program.ApplicationName}: {level}: {EnforceFinalPeriod(text)}");
+        static void ReportText(IConsole console, string level, string text)
+        {
+            console.Error.WriteLine($"{Program.ApplicationName}: {level}: {EnforceFinalPeriod(text)}");
+        }
 
-        public static void ReportError(string text) =>
-            ReportText("error", text);
+        sealed class TemporaryColor
+            : IDisposable
+        {
+            readonly bool NeedReset;
 
-        public static void ReportWarning(string text) =>
-            ReportText("warning", text);
+            public TemporaryColor(IConsole console, ConsoleColor color)
+            {
+                if (console.IsErrorRedirected)
+                {
+                    return;
+                }
+                Console.ForegroundColor = color;
+                NeedReset = true;
+            }
 
-        public static void ReportInfo(string text) =>
-            ReportText("info", text);
+            public void Dispose()
+            {
+                if (NeedReset)
+                {
+                    Console.ResetColor();
+                }
+            }
+        }
+
+        public static void ReportError(IConsole console, string text)
+        {
+            using var color = new TemporaryColor(console, ConsoleColor.Red);
+            ReportText(console, "error", text);
+        }
+
+        public static void ReportWarning(IConsole console, string text)
+        {
+            using var color = new TemporaryColor(console, ConsoleColor.Yellow);
+            ReportText(console, "warning", text);
+        }
+
+        public static void ReportInfo(IConsole console, string text)
+        {
+            using var color = new TemporaryColor(console, ConsoleColor.DarkGray);
+            ReportText(console, "info", text);
+        }
 
         /// <summary>
         /// Helper to warn users that the service is not running.
@@ -98,11 +136,11 @@ namespace UsbIpServer
         /// For example: 'list' succeeds and shows 'Shared', but attaching from the client will fail.
         /// For example: 'bind' succeeds, but attaching from the client will fail.
         /// </summary>
-        public static void ReportServerRunning()
+        public static void ReportServerRunning(IConsole console)
         {
             if (!Server.IsServerRunning())
             {
-                ReportWarning("Server is currently not running.");
+                ReportWarning(console, "Server is currently not running.");
             }
         }
     }
