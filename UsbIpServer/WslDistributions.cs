@@ -1,4 +1,4 @@
-﻿// SPDX-FileCopyrightText: Copyright (c) Microsoft Corporation
+﻿// SPDX-FileCopyrightText: Microsoft Corporation
 // SPDX-FileCopyrightText: 2021 Frans van Dorsselaer
 //
 // SPDX-License-Identifier: GPL-2.0-only
@@ -20,6 +20,9 @@ namespace UsbIpServer
 {
     class WslDistributions
     {
+        public const string InstallWslUrl = "https://aka.ms/installwsl";
+        public const string SetWslVersionUrl = "https://docs.microsoft.com/windows/wsl/basic-commands#set-wsl-version-to-1-or-2";
+
         public static readonly string WslPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "wsl.exe");
 
         public record Distribution(string Name, bool IsDefault, uint Version, bool IsRunning, IPAddress? IPAddress);
