@@ -385,14 +385,37 @@ namespace UsbIpServer
             return ExitCode.Success;
         }
 
-        Task<ExitCode> ICommandHandlers.WslDetach(BusId busId, IConsole console, CancellationToken cancellationToken)
+        async Task<ExitCode> ICommandHandlers.WslDetach(BusId busId, IConsole console, CancellationToken cancellationToken)
         {
-            return ((ICommandHandlers)this).Unbind(busId, console, cancellationToken);
+            var connectedDevices = await ExportedDevice.GetAll(cancellationToken);
+            var device = connectedDevices.Where(x => x.BusId == busId).SingleOrDefault();
+            if (device is null)
+            {
+                ReportError(console, $"There is no compatible device with busid '{busId}'.");
+                return ExitCode.Failure;
+            }
+            if (!RegistryUtils.IsDeviceAttached(device))
+            {
+                // Not an error, just let the user know they just executed a no-op.
+                ReportInfo(console, $"Connected device with busid '{busId}' was already not attached.");
+                return ExitCode.Success;
+            }
+            if (!RegistryUtils.SetDeviceAsDetached(device))
+            {
+                ReportError(console, $"Failed to detach device with BUSID '{busId}'.");
+                return ExitCode.Failure;
+            }
+            return ExitCode.Success;
         }
 
         Task<ExitCode> ICommandHandlers.WslDetachAll(IConsole console, CancellationToken cancellationToken)
         {
-            return ((ICommandHandlers)this).UnbindAll(console, cancellationToken);
+            if (!RegistryUtils.SetAllDevicesAsDetached())
+            {
+                ReportError(console, $"Failed to detach one or more devices.");
+                return Task.FromResult(ExitCode.Failure);
+            }
+            return Task.FromResult(ExitCode.Success);
         }
 
         async Task<ExitCode> ICommandHandlers.WslList(IConsole console, CancellationToken cancellationToken)

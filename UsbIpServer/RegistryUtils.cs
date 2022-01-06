@@ -7,7 +7,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Security;
+using System.Security.AccessControl;
+using System.Security.Principal;
 using Microsoft.Win32;
+using Windows.Win32;
 
 using static UsbIpServer.Interop.VBoxUsb;
 
@@ -165,6 +168,11 @@ namespace UsbIpServer
                 ?? throw new UnexpectedResultException($"{nameof(SetDeviceAsAttached)}: Device key not found");
             var attached = key.CreateSubKey(AttachedName, true, RegistryOptions.Volatile)
                 ?? throw new UnexpectedResultException($"{nameof(SetDeviceAsAttached)}: Unable to create ${AttachedName} subkey");
+            // Allow users that are logged in on the console to delete the key (detach).
+            var registrySecurity = attached.GetAccessControl(AccessControlSections.All);
+            registrySecurity.AddAccessRule(new RegistryAccessRule(new SecurityIdentifier(WellKnownSidType.WinConsoleLogonSid, null),
+                RegistryRights.Delete, AccessControlType.Allow));
+            attached.SetAccessControl(registrySecurity);
             try
             {
                 attached.SetValue(IPAddressName, address.ToString());
@@ -178,21 +186,44 @@ namespace UsbIpServer
             }
         }
 
-        public static void SetDeviceAsDetached(ExportedDevice device)
+        static bool RemoveAttachedSubKey(RegistryKey deviceKey)
         {
-            using var deviceKey = GetDeviceKey(device, true);
-            deviceKey?.DeleteSubKeyTree(AttachedName, false);
+            // .NET does not have this functionality: delete a key to which you have rights while
+            // you do not have rights to the containing key. So, we must use the API directly.
+            // Instead of checking the return value we will check if the Attached key is actually gone.
+            PInvoke.RegDeleteKey(deviceKey.Handle, AttachedName);
+            using var attached = deviceKey.OpenSubKey(AttachedName, false);
+            return attached is null;
         }
 
-        public static void SetAllDevicesAsDetached()
+        public static bool SetDeviceAsDetached(ExportedDevice device)
         {
-            using var devicesKey = GetDevicesKey(true);
+            using var deviceKey = GetDeviceKey(device, false);
+            if (deviceKey is null)
+            {
+                return true;
+            }
+            return RemoveAttachedSubKey(deviceKey);
+        }
+
+        public static bool SetAllDevicesAsDetached()
+        {
+            using var devicesKey = GetDevicesKey(false);
             var deviceKeyNames = devicesKey?.GetSubKeyNames() ?? Array.Empty<string>();
+            var failure = false;
             foreach (var deviceKeyName in deviceKeyNames)
             {
-                using var deviceKey = devicesKey?.OpenSubKey(deviceKeyName, true);
-                deviceKey?.DeleteSubKeyTree(AttachedName, false);
+                using var deviceKey = devicesKey?.OpenSubKey(deviceKeyName, false);
+                if (deviceKey is null)
+                {
+                    continue;
+                }
+                if (!RemoveAttachedSubKey(deviceKey))
+                {
+                    failure = true;
+                }
             }
+            return !failure;
         }
 
         public static IPAddress? GetDeviceAddress(ExportedDevice device)
