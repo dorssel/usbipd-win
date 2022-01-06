@@ -385,14 +385,29 @@ namespace UsbIpServer
             return ExitCode.Success;
         }
 
-        Task<ExitCode> ICommandHandlers.WslDetach(BusId busId, IConsole console, CancellationToken cancellationToken)
+        async Task<ExitCode> ICommandHandlers.WslDetach(BusId busId, IConsole console, CancellationToken cancellationToken)
         {
-            return ((ICommandHandlers)this).Unbind(busId, console, cancellationToken);
+            var connectedDevices = await ExportedDevice.GetAll(cancellationToken);
+            var device = connectedDevices.Where(x => x.BusId == busId).SingleOrDefault();
+            if (device is null)
+            {
+                ReportError(console, $"There is no compatible device with busid '{busId}'.");
+                return ExitCode.Failure;
+            }
+            if (!RegistryUtils.IsDeviceAttached(device))
+            {
+                // Not an error, just let the user know they just executed a no-op.
+                ReportInfo(console, $"Connected device with busid '{busId}' was already not attached.");
+                return ExitCode.Success;
+            }
+            RegistryUtils.SetDeviceAsDetached(device);
+            return ExitCode.Success;
         }
 
         Task<ExitCode> ICommandHandlers.WslDetachAll(IConsole console, CancellationToken cancellationToken)
         {
-            return ((ICommandHandlers)this).UnbindAll(console, cancellationToken);
+            RegistryUtils.SetAllDevicesAsDetached();
+            return Task.FromResult(ExitCode.Success);
         }
 
         async Task<ExitCode> ICommandHandlers.WslList(IConsole console, CancellationToken cancellationToken)

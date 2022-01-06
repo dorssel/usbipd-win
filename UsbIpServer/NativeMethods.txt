@@ -30,6 +30,7 @@ DeviceIoControl
 GetCurrentProcess
 LookupPrivilegeValue
 OpenProcessToken
+RegDeleteKey
 RegNotifyChangeKeyValue
 SetEvent
 
