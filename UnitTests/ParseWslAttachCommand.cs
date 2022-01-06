@@ -15,12 +15,12 @@ namespace UnitTests
     using ExitCode = Program.ExitCode;
 
     [TestClass]
-    public class ParseWslAttachCommand
+    sealed class ParseWslAttachCommand
         : ParseTest
     {
         static readonly BusId TestBusId = BusId.Parse("3-42");
-        static readonly string TestDistribution = "Test Distribution";
-        static readonly string TestUsbipPath = "/Test/Path/To/usbip";
+        const string TestDistribution = "Test Distribution";
+        const string TestUsbipPath = "/Test/Path/To/usbip";
 
         [TestMethod]
         public void Success()
