@@ -400,13 +400,21 @@ namespace UsbIpServer
                 ReportInfo(console, $"Connected device with busid '{busId}' was already not attached.");
                 return ExitCode.Success;
             }
-            RegistryUtils.SetDeviceAsDetached(device);
+            if (!RegistryUtils.SetDeviceAsDetached(device))
+            {
+                ReportError(console, $"Failed to detach device with BUSID '{busId}'.");
+                return ExitCode.Failure;
+            }
             return ExitCode.Success;
         }
 
         Task<ExitCode> ICommandHandlers.WslDetachAll(IConsole console, CancellationToken cancellationToken)
         {
-            RegistryUtils.SetAllDevicesAsDetached();
+            if (!RegistryUtils.SetAllDevicesAsDetached())
+            {
+                ReportError(console, $"Failed to detach one or more devices.");
+                return Task.FromResult(ExitCode.Failure);
+            }
             return Task.FromResult(ExitCode.Success);
         }
 

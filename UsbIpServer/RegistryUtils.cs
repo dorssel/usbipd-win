@@ -4,7 +4,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Linq;
 using System.Net;
 using System.Security;
@@ -12,7 +11,6 @@ using System.Security.AccessControl;
 using System.Security.Principal;
 using Microsoft.Win32;
 using Windows.Win32;
-using Windows.Win32.Foundation;
 
 using static UsbIpServer.Interop.VBoxUsb;
 
@@ -188,24 +186,27 @@ namespace UsbIpServer
             }
         }
 
-        public static void SetDeviceAsDetached(ExportedDevice device)
+        static bool RemoveAttachedSubKey(RegistryKey deviceKey)
+        {
+            // .NET does not have this functionality: delete a key to which you have rights while
+            // you do not have rights to the containing key. So, we must use the API directly.
+            // Instead of checking the return value we will check if the Attached key is actually gone.
+            PInvoke.RegDeleteKey(deviceKey.Handle, AttachedName);
+            using var attached = deviceKey.OpenSubKey(AttachedName, false);
+            return attached is null;
+        }
+
+        public static bool SetDeviceAsDetached(ExportedDevice device)
         {
             using var deviceKey = GetDeviceKey(device, false);
             if (deviceKey is null)
             {
-                return;
+                return true;
             }
-            // .NET does not have this functionality: delete a key to which you have rights while
-            // you do not have rights to the containing key. So, we must use the API directly.
-            var result = (WIN32_ERROR)PInvoke.RegDeleteKey(deviceKey.Handle, AttachedName).Value;
-            using var attached = deviceKey.OpenSubKey(AttachedName, false);
-            if (attached is not null)
-            {
-                throw new Win32Exception((int)result, "RegDeleteKey");
-            }
+            return RemoveAttachedSubKey(deviceKey);
         }
 
-        public static void SetAllDevicesAsDetached()
+        public static bool SetAllDevicesAsDetached()
         {
             using var devicesKey = GetDevicesKey(false);
             var deviceKeyNames = devicesKey?.GetSubKeyNames() ?? Array.Empty<string>();
@@ -215,21 +216,14 @@ namespace UsbIpServer
                 using var deviceKey = devicesKey?.OpenSubKey(deviceKeyName, false);
                 if (deviceKey is null)
                 {
-                    return;
+                    continue;
                 }
-                // .NET does not have this functionality: delete a key to which you have rights while
-                // you do not have rights to the containing key. So, we must use the API directly.
-                var result = (WIN32_ERROR)PInvoke.RegDeleteKey(deviceKey.Handle, AttachedName).Value;
-                using var attached = deviceKey.OpenSubKey(AttachedName, false);
-                if (attached is not null)
+                if (!RemoveAttachedSubKey(deviceKey))
                 {
                     failure = true;
                 }
             }
-            if (failure)
-            {
-                throw new UnexpectedResultException("Failed to detach one or more devices.");
-            }
+            return !failure;
         }
 
         public static IPAddress? GetDeviceAddress(ExportedDevice device)

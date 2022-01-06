@@ -221,6 +221,8 @@ namespace UsbIpServer
 
                     ClientContext.AttachedDevice.Dispose();
 
+                    Logger.ClientDetach(ClientContext.ClientAddress, exportedDevice.BusId, exportedDevice.InstanceId);
+
                     try
                     {
                         // This solves the cases where VBoxUsbMon does not properly hand back the device to the host.
@@ -229,8 +231,6 @@ namespace UsbIpServer
                         await mon.RemoveFilter(filterId);
                     }
                     catch (ConfigurationManagerException) { }
-
-                    Logger.ClientDetach(ClientContext.ClientAddress, exportedDevice.BusId, exportedDevice.InstanceId);
                 }
             }
             catch (Exception ex)
