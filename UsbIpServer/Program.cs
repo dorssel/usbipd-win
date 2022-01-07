@@ -97,10 +97,10 @@ namespace UsbIpServer
 
             {
                 //
-                //  bind --bus-id <BUSID>
+                //  bind --busid <BUSID>
                 //
                 var busIdOption = new Option<BusId>(
-                    aliases: new[] { "--bus-id", "-b" },
+                    aliases: new[] { "--busid", "-b" },
                     parseArgument: ParseBusId
                 )
                 {
@@ -197,10 +197,10 @@ namespace UsbIpServer
                     Description = "Stop sharing all devices",
                 };
                 //
-                //  unbind [--bus-id <BUSID>]
+                //  unbind [--busid <BUSID>]
                 //
                 var busIdOption = new Option<BusId>(
-                    aliases: new[] { "--bus-id", "-b" },
+                    aliases: new[] { "--busid", "-b" },
                     parseArgument: ParseBusId
                 )
                 {
@@ -278,10 +278,10 @@ namespace UsbIpServer
                 rootCommand.AddCommand(wslCommand);
                 {
                     //
-                    //  wsl attach --bus-id <BUSID>
+                    //  wsl attach --busid <BUSID>
                     //
                     var busIdOption = new Option<BusId>(
-                        aliases: new[] { "--bus-id", "-b" },
+                        aliases: new[] { "--busid", "-b" },
                         parseArgument: ParseBusId
                     )
                     {
@@ -345,10 +345,10 @@ namespace UsbIpServer
                         Description = "Detach all devices",
                     };
                     //
-                    //  wsl detach [--bus-id <BUSID>]
+                    //  wsl detach [--busid <BUSID>]
                     //
                     var busIdOption = new Option<BusId>(
-                        aliases: new[] { "--bus-id", "-b" },
+                        aliases: new[] { "--busid", "-b" },
                         parseArgument: ParseBusId
                     )
                     {

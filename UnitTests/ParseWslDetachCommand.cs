@@ -57,7 +57,7 @@ namespace UnitTests
             mock.Setup(m => m.WslDetach(It.Is<BusId>(busId => busId == TestBusId),
                 It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Success));
 
-            Test(ExitCode.Success, mock, "wsl", "detach", "--bus-id", TestBusId.ToString());
+            Test(ExitCode.Success, mock, "wsl", "detach", "--busid", TestBusId.ToString());
         }
 
         [TestMethod]
@@ -67,7 +67,7 @@ namespace UnitTests
             mock.Setup(m => m.WslDetach(It.Is<BusId>(busId => busId == TestBusId),
                 It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Failure));
 
-            Test(ExitCode.Failure, mock, "wsl", "detach", "--bus-id", TestBusId.ToString());
+            Test(ExitCode.Failure, mock, "wsl", "detach", "--busid", TestBusId.ToString());
         }
 
         [TestMethod]
@@ -77,7 +77,7 @@ namespace UnitTests
             mock.Setup(m => m.WslDetach(It.Is<BusId>(busId => busId == TestBusId),
                 It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Throws<OperationCanceledException>();
 
-            Test(ExitCode.Canceled, mock, "wsl", "detach", "--bus-id", TestBusId.ToString());
+            Test(ExitCode.Canceled, mock, "wsl", "detach", "--busid", TestBusId.ToString());
         }
 
         [TestMethod]
@@ -95,7 +95,7 @@ namespace UnitTests
         [TestMethod]
         public void AllAndBusId()
         {
-            Test(ExitCode.ParseError, "wsl", "detach", "--all", "--bus-id", TestBusId.ToString());
+            Test(ExitCode.ParseError, "wsl", "detach", "--all", "--busid", TestBusId.ToString());
         }
 
         [TestMethod]
@@ -107,19 +107,19 @@ namespace UnitTests
         [TestMethod]
         public void BusIdArgumentMissing()
         {
-            Test(ExitCode.ParseError, "wsl", "detach", "--bus-id");
+            Test(ExitCode.ParseError, "wsl", "detach", "--busid");
         }
 
         [TestMethod]
         public void BusIdArgumentInvalid()
         {
-            Test(ExitCode.ParseError, "wsl", "detach", "--bus-id", "not-a-bus-id");
+            Test(ExitCode.ParseError, "wsl", "detach", "--busid", "not-a-busid");
         }
 
         [TestMethod]
         public void StrayArgument()
         {
-            Test(ExitCode.ParseError, "wsl", "detach", "--bus-id", TestBusId.ToString(), "stray-argument");
+            Test(ExitCode.ParseError, "wsl", "detach", "--busid", TestBusId.ToString(), "stray-argument");
         }
     }
 }

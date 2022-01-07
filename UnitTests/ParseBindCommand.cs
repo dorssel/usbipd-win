@@ -27,7 +27,7 @@ namespace UnitTests
             mock.Setup(m => m.Bind(It.Is<BusId>(busId => busId == TestBusId),
                 It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Success));
 
-            Test(ExitCode.Success, mock, "bind", "--bus-id", TestBusId.ToString());
+            Test(ExitCode.Success, mock, "bind", "--busid", TestBusId.ToString());
         }
 
         [TestMethod]
@@ -37,7 +37,7 @@ namespace UnitTests
             mock.Setup(m => m.Bind(It.Is<BusId>(busId => busId == TestBusId),
                 It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Failure));
 
-            Test(ExitCode.Failure, mock, "bind", "--bus-id", TestBusId.ToString());
+            Test(ExitCode.Failure, mock, "bind", "--busid", TestBusId.ToString());
         }
 
         [TestMethod]
@@ -47,7 +47,7 @@ namespace UnitTests
             mock.Setup(m => m.Bind(It.Is<BusId>(busId => busId == TestBusId),
                 It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Throws<OperationCanceledException>();
 
-            Test(ExitCode.Canceled, mock, "bind", "--bus-id", TestBusId.ToString());
+            Test(ExitCode.Canceled, mock, "bind", "--busid", TestBusId.ToString());
         }
 
         [TestMethod]
@@ -65,19 +65,19 @@ namespace UnitTests
         [TestMethod]
         public void BusIdArgumentMissing()
         {
-            Test(ExitCode.ParseError, "bind", "--bus-id");
+            Test(ExitCode.ParseError, "bind", "--busid");
         }
 
         [TestMethod]
         public void BusIdArgumentInvalid()
         {
-            Test(ExitCode.ParseError, "bind", "--bus-id", "not-a-bus-id");
+            Test(ExitCode.ParseError, "bind", "--busid", "not-a-busid");
         }
 
         [TestMethod]
         public void StrayArgument()
         {
-            Test(ExitCode.ParseError, "bind", "--bus-id", TestBusId.ToString(), "stray-argument");
+            Test(ExitCode.ParseError, "bind", "--busid", TestBusId.ToString(), "stray-argument");
         }
     }
 }

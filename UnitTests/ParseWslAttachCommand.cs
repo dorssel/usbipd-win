@@ -29,7 +29,7 @@ namespace UnitTests
             mock.Setup(m => m.WslAttach(It.Is<BusId>(busId => busId == TestBusId), null, null,
                 It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Success));
 
-            Test(ExitCode.Success, mock, "wsl", "attach", "--bus-id", TestBusId.ToString());
+            Test(ExitCode.Success, mock, "wsl", "attach", "--busid", TestBusId.ToString());
         }
 
         [TestMethod]
@@ -39,7 +39,7 @@ namespace UnitTests
             mock.Setup(m => m.WslAttach(It.Is<BusId>(busId => busId == TestBusId), It.Is<string>(distribution => distribution == TestDistribution), null,
                 It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Success));
 
-            Test(ExitCode.Success, mock, "wsl", "attach", "--bus-id", TestBusId.ToString(), "--distribution", TestDistribution);
+            Test(ExitCode.Success, mock, "wsl", "attach", "--busid", TestBusId.ToString(), "--distribution", TestDistribution);
         }
 
         [TestMethod]
@@ -49,7 +49,7 @@ namespace UnitTests
             mock.Setup(m => m.WslAttach(It.Is<BusId>(busId => busId == TestBusId), null, It.Is<string>(usbipPath => usbipPath == TestUsbipPath),
                 It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Success));
 
-            Test(ExitCode.Success, mock, "wsl", "attach", "--bus-id", TestBusId.ToString(), "--usbip-path", TestUsbipPath);
+            Test(ExitCode.Success, mock, "wsl", "attach", "--busid", TestBusId.ToString(), "--usbip-path", TestUsbipPath);
         }
 
         [TestMethod]
@@ -59,7 +59,7 @@ namespace UnitTests
             mock.Setup(m => m.WslAttach(It.Is<BusId>(busId => busId == TestBusId), It.Is<string>(distribution => distribution == TestDistribution), It.Is<string>(usbipPath => usbipPath == TestUsbipPath),
                 It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Success));
 
-            Test(ExitCode.Success, mock, "wsl", "attach", "--bus-id", TestBusId.ToString(), "--distribution", TestDistribution, "--usbip-path", TestUsbipPath);
+            Test(ExitCode.Success, mock, "wsl", "attach", "--busid", TestBusId.ToString(), "--distribution", TestDistribution, "--usbip-path", TestUsbipPath);
         }
 
         [TestMethod]
@@ -69,7 +69,7 @@ namespace UnitTests
             mock.Setup(m => m.WslAttach(It.Is<BusId>(busId => busId == TestBusId), null, null,
                 It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Failure));
 
-            Test(ExitCode.Failure, mock, "wsl", "attach", "--bus-id", TestBusId.ToString());
+            Test(ExitCode.Failure, mock, "wsl", "attach", "--busid", TestBusId.ToString());
         }
 
         [TestMethod]
@@ -79,7 +79,7 @@ namespace UnitTests
             mock.Setup(m => m.WslAttach(It.Is<BusId>(busId => busId == TestBusId), null, null,
                 It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Throws<OperationCanceledException>();
 
-            Test(ExitCode.Canceled, mock, "wsl", "attach", "--bus-id", TestBusId.ToString());
+            Test(ExitCode.Canceled, mock, "wsl", "attach", "--busid", TestBusId.ToString());
         }
 
         [TestMethod]
@@ -97,13 +97,13 @@ namespace UnitTests
         [TestMethod]
         public void BusIdArgumentMissing()
         {
-            Test(ExitCode.ParseError, "wsl", "attach", "--bus-id");
+            Test(ExitCode.ParseError, "wsl", "attach", "--busid");
         }
 
         [TestMethod]
         public void BusIdArgumentInvalid()
         {
-            Test(ExitCode.ParseError, "wsl", "attach", "--bus-id", "not-a-bus-id");
+            Test(ExitCode.ParseError, "wsl", "attach", "--busid", "not-a-busid");
         }
 
         [TestMethod]
