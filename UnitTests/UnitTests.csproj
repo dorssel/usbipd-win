@@ -11,10 +11,16 @@ SPDX-License-Identifier: GPL-2.0-only
     <Platforms>x64</Platforms>
     <Platform>x64</Platform>
 
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Nullable>enable</Nullable>
 
+    <AnalysisMode>AllEnabledByDefault</AnalysisMode>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
-      
+
+    <InvariantGlobalization>true</InvariantGlobalization>
+
     <IsPackable>false</IsPackable>
 
   </PropertyGroup>

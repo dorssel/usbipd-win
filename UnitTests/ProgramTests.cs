@@ -10,12 +10,15 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using UsbIpServer;
 
+[assembly: CLSCompliant(true)]
+[assembly: DiscoverInternals]
+
 namespace UnitTests
 {
     using ExitCode = Program.ExitCode;
 
     [TestClass]
-    public class ProgramTests
+    sealed class ProgramTests
         : ParseTest
     {
         [TestMethod]
