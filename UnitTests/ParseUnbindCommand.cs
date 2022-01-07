@@ -58,7 +58,7 @@ namespace UnitTests
             mock.Setup(m => m.Unbind(It.Is<BusId>(busId => busId == TestBusId),
                 It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Success));
 
-            Test(ExitCode.Success, mock, "unbind", "--bus-id", TestBusId.ToString());
+            Test(ExitCode.Success, mock, "unbind", "--busid", TestBusId.ToString());
         }
 
         [TestMethod]
@@ -68,7 +68,7 @@ namespace UnitTests
             mock.Setup(m => m.Unbind(It.Is<BusId>(busId => busId == TestBusId),
                 It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Failure));
 
-            Test(ExitCode.Failure, mock, "unbind", "--bus-id", TestBusId.ToString());
+            Test(ExitCode.Failure, mock, "unbind", "--busid", TestBusId.ToString());
         }
 
         [TestMethod]
@@ -78,7 +78,7 @@ namespace UnitTests
             mock.Setup(m => m.Unbind(It.Is<BusId>(busId => busId == TestBusId),
                 It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Throws<OperationCanceledException>();
 
-            Test(ExitCode.Canceled, mock, "unbind", "--bus-id", TestBusId.ToString());
+            Test(ExitCode.Canceled, mock, "unbind", "--busid", TestBusId.ToString());
         }
 
         [TestMethod]
@@ -126,7 +126,7 @@ namespace UnitTests
         [TestMethod]
         public void AllAndBusId()
         {
-            Test(ExitCode.ParseError, "unbind", "--all", "--bus-id", TestBusId.ToString());
+            Test(ExitCode.ParseError, "unbind", "--all", "--busid", TestBusId.ToString());
         }
 
         [TestMethod]
@@ -138,13 +138,13 @@ namespace UnitTests
         [TestMethod]
         public void BusIdAndGuid()
         {
-            Test(ExitCode.ParseError, "unbind", "--bus-id", TestBusId.ToString(), "--guid", TestGuid.ToString());
+            Test(ExitCode.ParseError, "unbind", "--busid", TestBusId.ToString(), "--guid", TestGuid.ToString());
         }
 
         [TestMethod]
         public void AllAndBusIdAndGuid()
         {
-            Test(ExitCode.ParseError, "unbind", "--all", "--bus-id", TestBusId.ToString(), "--guid", TestGuid.ToString());
+            Test(ExitCode.ParseError, "unbind", "--all", "--busid", TestBusId.ToString(), "--guid", TestGuid.ToString());
         }
 
         [TestMethod]
@@ -156,7 +156,7 @@ namespace UnitTests
         [TestMethod]
         public void BusIdArgumentMissing()
         {
-            Test(ExitCode.ParseError, "unbind", "--bus-id");
+            Test(ExitCode.ParseError, "unbind", "--busid");
         }
 
         [TestMethod]
@@ -168,7 +168,7 @@ namespace UnitTests
         [TestMethod]
         public void BusIdArgumentInvalid()
         {
-            Test(ExitCode.ParseError, "unbind", "--bus-id", "not-a-bus-id");
+            Test(ExitCode.ParseError, "unbind", "--busid", "not-a-busid");
         }
 
         [TestMethod]
@@ -180,7 +180,7 @@ namespace UnitTests
         [TestMethod]
         public void StrayArgument()
         {
-            Test(ExitCode.ParseError, "unbind", "--bus-id", TestBusId.ToString(), "stray-argument");
+            Test(ExitCode.ParseError, "unbind", "--busid", TestBusId.ToString(), "stray-argument");
         }
     }
 }
