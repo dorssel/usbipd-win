@@ -9,7 +9,7 @@ using UsbIpServer;
 
 namespace UnitTests
 {
-    abstract class ParseTest
+    abstract class ParseTestBase
     {
         internal static Mock<ICommandHandlers> CreateMock() => new(MockBehavior.Strict);
 

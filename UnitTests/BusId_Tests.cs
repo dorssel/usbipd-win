@@ -11,7 +11,7 @@ using UsbIpServer;
 namespace UnitTests
 {
     [TestClass]
-    sealed class BusIdTests
+    sealed class BusId_Tests
     {
         [TestMethod]
         public void DefaultConstructor()

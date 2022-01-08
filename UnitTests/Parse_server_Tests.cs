@@ -16,8 +16,8 @@ namespace UnitTests
     using ExitCode = Program.ExitCode;
 
     [TestClass]
-    sealed class ParseServerCommand
-        : ParseTest
+    sealed class Parse_server_Tests
+        : ParseTestBase
     {
         [TestMethod]
         public void Success()

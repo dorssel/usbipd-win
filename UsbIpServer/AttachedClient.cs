@@ -4,7 +4,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -22,7 +21,6 @@ using static UsbIpServer.Tools;
 
 namespace UsbIpServer
 {
-    [SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes", Justification = "Instantiated by DI")]
     sealed class AttachedClient
     {
         public AttachedClient(ILogger<AttachedClient> logger, ClientContext clientContext)

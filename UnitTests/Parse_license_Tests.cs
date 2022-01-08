@@ -15,49 +15,49 @@ namespace UnitTests
     using ExitCode = Program.ExitCode;
 
     [TestClass]
-    sealed class ParseListCommand
-        : ParseTest
+    sealed class Parse_license_Tests
+        : ParseTestBase
     {
         [TestMethod]
         public void Success()
         {
             var mock = CreateMock();
-            mock.Setup(m => m.List(
+            mock.Setup(m => m.License(
                 It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Success));
 
-            Test(ExitCode.Success, mock, "list");
+            Test(ExitCode.Success, mock, "license");
         }
 
         [TestMethod]
         public void Failure()
         {
             var mock = CreateMock();
-            mock.Setup(m => m.List(
+            mock.Setup(m => m.License(
                 It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Failure));
 
-            Test(ExitCode.Failure, mock, "list");
+            Test(ExitCode.Failure, mock, "license");
         }
 
         [TestMethod]
         public void Canceled()
         {
             var mock = CreateMock();
-            mock.Setup(m => m.List(
+            mock.Setup(m => m.License(
                 It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Throws<OperationCanceledException>();
 
-            Test(ExitCode.Canceled, mock, "list");
+            Test(ExitCode.Canceled, mock, "license");
         }
 
         [TestMethod]
         public void Help()
         {
-            Test(ExitCode.Success, "list", "--help");
+            Test(ExitCode.Success, "license", "--help");
         }
 
         [TestMethod]
         public void StrayArgument()
         {
-            Test(ExitCode.ParseError, "list", "stray-argument");
+            Test(ExitCode.ParseError, "license", "stray-argument");
         }
     }
 }

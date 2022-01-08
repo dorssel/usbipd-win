@@ -15,8 +15,8 @@ namespace UnitTests
     using ExitCode = Program.ExitCode;
 
     [TestClass]
-    sealed class ParseWslDetachCommand
-        : ParseTest
+    sealed class Parse_wsl_detach_Tests
+        : ParseTestBase
     {
         static readonly BusId TestBusId = BusId.Parse("3-42");
 
