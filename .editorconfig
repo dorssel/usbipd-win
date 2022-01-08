@@ -26,6 +26,8 @@ charset = utf-8-bom
 [*.md]
 insert_final_newline = true
 trim_trailing_whitespace = true
+[*.csproj]
+indent_size = 2
 ###############################
 # .NET Coding Conventions     #
 ###############################

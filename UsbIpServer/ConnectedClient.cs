@@ -6,7 +6,6 @@
 using System;
 using System.Buffers.Binary;
 using System.ComponentModel;
-using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -26,7 +25,6 @@ using static UsbIpServer.Interop.VBoxUsb;
 
 namespace UsbIpServer
 {
-    [SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes", Justification = "Instantiated by DI")]
     sealed class ConnectedClient
     {
         public ConnectedClient(ILogger<ConnectedClient> logger, ClientContext clientContext, IServiceProvider serviceProvider)

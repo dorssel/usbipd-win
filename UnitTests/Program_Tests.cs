@@ -18,8 +18,8 @@ namespace UnitTests
     using ExitCode = Program.ExitCode;
 
     [TestClass]
-    sealed class ProgramTests
-        : ParseTest
+    sealed class Program_Tests
+        : ParseTestBase
     {
         [TestMethod]
         public void MainSuccess()
