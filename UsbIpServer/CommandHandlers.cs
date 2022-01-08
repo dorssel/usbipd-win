@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.CommandLine;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
@@ -370,16 +371,64 @@ namespace UsbIpServer
                 return ExitCode.Failure;
             }
 
-            var path = usbipPath ?? "usbip";
-            var wslResult = await ProcessUtils.RunUncapturedProcessAsync(
-                WslDistributions.WslPath,
-                (distribution is not null ? new[] { "--distribution", distribution } : Enumerable.Empty<string>()).Concat(
-                    new[] { "--", "sudo", path, "attach", $"--remote={distros.HostAddress}", $"--busid={busId}" }),
-                cancellationToken);
-            if (wslResult != 0)
+            usbipPath ??= "usbip";
+
+            // 6) WSL kernel must be USBIP capable.
+
             {
-                ReportError(console, $"Failed to attach device with BUSID '{busId}'.");
-                return ExitCode.Failure;
+                var wslResult = await ProcessUtils.RunCapturedProcessAsync(
+                    WslDistributions.WslPath,
+                    (distribution is not null ? new[] { "--distribution", distribution } : Enumerable.Empty<string>()).Concat(
+                        new[] { "--user", "root", "--", "cat", "/sys/devices/platform/vhci_hcd.0/status" }),
+                    Encoding.UTF8, cancellationToken);
+                // Expected output:
+                //
+                //    hub port sta spd dev      sockfd local_busid
+                //    hs  0000 006 002 00040002 000003 1-1
+                //    hs  0001 004 000 00000000 000000 0-0
+                //    ...
+                if (wslResult.ExitCode != 0 || !wslResult.StandardOutput.Contains("local_busid"))
+                {
+                    ReportError(console, $"WSL kernel is not USBIP capable; update with 'wsl --update'.");
+                    return ExitCode.Failure;
+                }
+            }
+
+            // 7) WSL 'usbip' must be correctly installed for root.
+
+            {
+                var wslResult = await ProcessUtils.RunCapturedProcessAsync(
+                    WslDistributions.WslPath,
+                    (distribution is not null ? new[] { "--distribution", distribution } : Enumerable.Empty<string>()).Concat(
+                        new[] { "--user", "root", "--", usbipPath, "version" }),
+                    Encoding.UTF8, cancellationToken);
+                // Expected output:
+                //
+                //    usbip (usbip-utils 2.0)
+                //
+                // NOTE: The package name and version varies.
+#pragma warning disable CA1508 // Avoid dead conditional code (false positive)
+                if (wslResult.ExitCode != 0 || !wslResult.StandardOutput.StartsWith("usbip ("))
+#pragma warning restore CA1508 // Avoid dead conditional code
+                {
+                    ReportError(console, $"WSL 'usbip' client not correctly installed.");
+                    return ExitCode.Failure;
+                }
+            }
+
+            // Finally, call 'usbip attach'.
+
+            {
+                var wslResult = await ProcessUtils.RunUncapturedProcessAsync(
+                    WslDistributions.WslPath,
+                    (distribution is not null ? new[] { "--distribution", distribution } : Enumerable.Empty<string>()).Concat(
+                        new[] { "--user", "root", "--", usbipPath, "attach", $"--remote={distros.HostAddress}", $"--busid={busId}" }),
+                    cancellationToken);
+                if (wslResult != 0)
+                {
+                    ReportError(console, $"Failed to attach device with BUSID '{busId}'.");
+                    return ExitCode.Failure;
+                }
             }
 
             return ExitCode.Success;
