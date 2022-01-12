@@ -70,5 +70,12 @@ SPDX-License-Identifier: GPL-2.0-only
                     />
             </Component>
         </DirectoryRef>
+
+        <!-- This will restore the original Windows drivers for devices that were forced bound. -->
+        <CustomAction Id="RestoreDrivers" FileKey="usbipd.exe" ExeCommand="unbind --all" Return="ignore" Impersonate="no" Execute="deferred" />
+
+        <InstallExecuteSequence>
+            <Custom Action="RestoreDrivers" After="StopServices">InstallMode = "Remove"</Custom>
+        </InstallExecuteSequence>
     </Fragment>
 </Wix>

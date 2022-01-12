@@ -125,6 +125,13 @@ namespace UsbIpServer
                     return;
                 }
 
+                if (ConfigurationManager.HasVBoxDriver(exportedDevice.InstanceId))
+                {
+                    // This is a forced device.
+                    (var testDevice, var x) = await VBoxUsb.ClaimDevice(exportedDevice);
+                    x.Dispose();
+                }
+
                 status = Status.ST_NA;
                 using var mon = new VBoxUsbMon();
                 await mon.CheckVersion();

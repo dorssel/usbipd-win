@@ -15,7 +15,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Hosting.WindowsServices;
 using Microsoft.Extensions.Logging;
-using Microsoft.Win32;
 using static UsbIpServer.ConsoleTools;
 using ExitCode = UsbIpServer.Program.ExitCode;
 
@@ -39,55 +38,6 @@ namespace UsbIpServer
 
     class CommandHandlers : ICommandHandlers
     {
-        static bool CheckWriteAccess(IConsole console)
-        {
-            if (!RegistryUtils.HasWriteAccess())
-            {
-                ReportError(console, "Access denied.");
-                return false;
-            }
-            return true;
-        }
-
-        static bool CheckServerRunning(IConsole console)
-        {
-            if (!Server.IsServerRunning())
-            {
-                ReportError(console, "Server is currently not running.");
-                return false;
-            }
-            return true;
-        }
-
-        static readonly SortedSet<string> WhitelistUpperFilters = new();
-
-        static readonly SortedSet<string> BlacklistUpperFilters = new()
-        {
-            "TsUsbFlt",
-            "UsbDk",
-            "USBPcap",
-        };
-
-        const string UpperFiltersPath = @"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Class\{36fc9e60-c465-11cf-8056-444553540000}";
-        const string UpperFiltersName = @"UpperFilters";
-
-        static bool ReportForceNeeded(IConsole console)
-        {
-            var upperFilters = Registry.GetValue(UpperFiltersPath, UpperFiltersName, null) as string[] ?? Array.Empty<string>();
-            foreach (var filter in new SortedSet<string>(upperFilters.Where(f => !string.IsNullOrWhiteSpace(f)), StringComparer.InvariantCultureIgnoreCase))
-            {
-                if (BlacklistUpperFilters.Contains(filter, StringComparer.InvariantCultureIgnoreCase))
-                {
-                    ReportWarning(console, $"USB filter '{filter}' is known to be incompatible with this software; 'bind --force' will be required.");
-                }
-                else if (!WhitelistUpperFilters.Contains(filter, StringComparer.InvariantCultureIgnoreCase))
-                {
-                    ReportWarning(console, $"Unknown USB filter '{filter}' may be incompatible with this software; 'bind --force' may be required.");
-                }
-            }
-            return true;
-        }
-
         Task<ExitCode> ICommandHandlers.License(IConsole console, CancellationToken cancellationToken)
         {
             // 70 leads (approximately) to the GPL default.
@@ -132,8 +82,8 @@ namespace UsbIpServer
             {
                 console.WriteLine($"{device.Guid,-38:B}  {device.BusId,-5}  {device.Description.Truncate(60),-60}");
             }
-            ReportServerRunning(console);
-            ReportForceNeeded(console);
+            console.ReportIfServerNotRunning();
+            console.ReportIfForceNeeded();
             return ExitCode.Success;
         }
 
@@ -143,46 +93,51 @@ namespace UsbIpServer
             var device = connectedDevices.Where(x => x.BusId == busId).SingleOrDefault();
             if (device is null)
             {
-                ReportError(console, $"There is no compatible device with busid '{busId}'.");
+                console.ReportError($"There is no device with busid '{busId}'.");
                 return ExitCode.Failure;
             }
             var isShared = RegistryUtils.IsDeviceShared(device);
             var isForced = ConfigurationManager.HasVBoxDriver(device.InstanceId);
-            if (isShared && (force == isForced))
+            if (isShared && (wslAttach || (force == isForced)))
             {
                 // Not an error, just let the user know they just executed a no-op.
                 if (!wslAttach)
                 {
-                    ReportInfo(console, $"Connected device with busid '{busId}' was already shared.");
+                    console.ReportInfo($"Connected device with busid '{busId}' was already shared.");
+                }
+                else if (!isForced)
+                {
+                    console.ReportIfForceNeeded();
                 }
                 return ExitCode.Success;
             }
             if (!CheckWriteAccess(console))
             {
+                if (wslAttach)
+                {
+                    console.ReportInfo("The first time you attach a device to WSL requires administrator privileges; subsequent attaches will succeed with standard privileges.");
+                }
                 return ExitCode.AccessDenied;
             }
             if (!isShared)
             {
                 RegistryUtils.ShareDevice(device, device.Description);
             }
-            if (force != isForced)
-            {
-                // TODO: report if reboot needed.
-                if (force)
-                {
-                    NewDev.ForceVBoxDriver(device.InstanceId);
-                }
-                else
-                {
-                    NewDev.UnforceVBoxDriver(device.InstanceId);
-                }
-            }
-            ReportServerRunning(console);
             if (!force)
             {
                 // Do not warn that force may be needed if the user is actually using --force.
-                ReportForceNeeded(console);
+                console.ReportIfForceNeeded();
             }
+            if (force != isForced)
+            {
+                // Switch driver.
+                var reboot = force ? NewDev.ForceVBoxDriver(device.InstanceId) : NewDev.UnforceVBoxDriver(device.InstanceId);
+                if (reboot)
+                {
+                    console.ReportRebootRequired();
+                }
+            }
+            console.ReportIfServerNotRunning();
             return ExitCode.Success;
         }
 
@@ -203,7 +158,7 @@ namespace UsbIpServer
             using var mutex = new Mutex(true, UsbIpServer.Server.SingletonMutexName, out var createdNew);
             if (!createdNew)
             {
-                ReportError(console, "Another instance is already running.");
+                console.ReportError("Another instance is already running.");
                 return ExitCode.Failure;
             }
 
@@ -258,13 +213,13 @@ namespace UsbIpServer
             var device = connectedDevices.Where(x => x.BusId == busId).SingleOrDefault();
             if (device is null)
             {
-                ReportError(console, $"There is no compatible device with busid '{busId}'.");
+                console.ReportError($"There is no device with busid '{busId}'.");
                 return ExitCode.Failure;
             }
             if (!RegistryUtils.IsDeviceShared(device))
             {
                 // Not an error, just let the user know they just executed a no-op.
-                ReportInfo(console, $"Connected device with busid '{busId}' was already not shared.");
+                console.ReportInfo($"Connected device with busid '{busId}' was already not shared.");
                 return ExitCode.Success;
             }
             if (!CheckWriteAccess(console))
@@ -272,24 +227,32 @@ namespace UsbIpServer
                 return ExitCode.AccessDenied;
             }
             RegistryUtils.StopSharingDevice(device);
-            // TODO: for completeness, report if reboot needed (but weird, as this device is currently not present).
-            NewDev.UnforceVBoxDriver(device.InstanceId);
+            if (NewDev.UnforceVBoxDriver(device.InstanceId))
+            {
+                console.ReportRebootRequired();
+            }
             return ExitCode.Success;
         }
 
         Task<ExitCode> ICommandHandlers.Unbind(Guid guid, IConsole console, CancellationToken cancellationToken)
         {
-            if (!RegistryUtils.GetPersistedDeviceGuids().Contains(guid))
+            var persistedDevices = RegistryUtils.GetPersistedDevices();
+            if (!persistedDevices.Any(persistedDevice => persistedDevice.Guid == guid))
             {
-                // Not an error, just let the user know they just executed a no-op.
-                ReportInfo(console, $"There is no persisted device with guid '{guid:B}'.");
-                return Task.FromResult(ExitCode.Success);
+                console.ReportError($"There is no device with guid '{guid:B}'.");
+                return Task.FromResult(ExitCode.Failure);
             }
             if (!CheckWriteAccess(console))
             {
                 return Task.FromResult(ExitCode.AccessDenied);
             }
             RegistryUtils.StopSharingDevice(guid);
+#if false
+            foreach (var persistedDevice in persistedDevices)
+            {
+                if (NewDev.UnforceVBoxDriver(persistedDevice.))
+            }
+#endif
             // TODO: find device and then NewDev.UnforceVBoxDriver(device.InstanceId);
             // TODO: report if reboot required
             return Task.FromResult(ExitCode.Success);
@@ -297,13 +260,37 @@ namespace UsbIpServer
 
         Task<ExitCode> ICommandHandlers.UnbindAll(IConsole console, CancellationToken cancellationToken)
         {
+#if false
             if (!CheckWriteAccess(console))
             {
                 return Task.FromResult(ExitCode.AccessDenied);
             }
+#endif
             RegistryUtils.StopSharingAllDevices();
-            // TODO: for all devices: NewDev.UnforceVBoxDriver(device.InstanceId);
-            // TODO: report if reboot required
+            var reboot = false;
+            var error = false;
+            foreach (var originalDeviceId in ConfigurationManager.GetOriginalDeviceIdsWithVBoxDriver())
+            {
+                try
+                {
+                    if (NewDev.UnforceVBoxDriver(originalDeviceId))
+                    {
+                        reboot = true;
+                    }
+                }
+                catch (ConfigurationManagerException)
+                {
+                    error = true;
+                }
+            }
+            if (error)
+            {
+                console.ReportError("Not all drivers could be restored.");
+            }
+            if (reboot)
+            {
+                console.ReportRebootRequired();
+            }
             return Task.FromResult(ExitCode.Success);
         }
 
@@ -312,7 +299,7 @@ namespace UsbIpServer
             var distributions = await WslDistributions.CreateAsync(cancellationToken);
             if (distributions is null)
             {
-                ReportError(console, $"Windows Subsystem for Linux version 2 is not available. See {WslDistributions.InstallWslUrl}.");
+                console.ReportError($"Windows Subsystem for Linux version 2 is not available. See {WslDistributions.InstallWslUrl}.");
             }
             return distributions;
         }
@@ -341,7 +328,7 @@ namespace UsbIpServer
 
             if (distroData is null)
             {
-                ReportError(console, distribution is not null
+                console.ReportError(distribution is not null
                     ? $"The WSL distribution '{distribution}' does not exist."
                     : "No default WSL distribution exists."
                 );
@@ -353,13 +340,13 @@ namespace UsbIpServer
             switch (distroData.Version)
             {
                 case 1:
-                    ReportError(console, $"The specified WSL distribution is using WSL 1, but WSL 2 is required. Learn how to upgrade at {WslDistributions.SetWslVersionUrl}.");
+                    console.ReportError($"The specified WSL distribution is using WSL 1, but WSL 2 is required. Learn how to upgrade at {WslDistributions.SetWslVersionUrl}.");
                     return ExitCode.Failure;
                 case 2:
                     // Supported
                     break;
                 default:
-                    ReportError(console, $"The specified WSL distribution is using unsupported WSL {distroData.Version}, but WSL 2 is required.");
+                    console.ReportError($"The specified WSL distribution is using unsupported WSL {distroData.Version}, but WSL 2 is required.");
                     return ExitCode.Failure;
             }
 
@@ -367,7 +354,7 @@ namespace UsbIpServer
 
             if (!distroData.IsRunning)
             {
-                ReportError(console, $"The specified WSL distribution is not running.");
+                console.ReportError($"The specified WSL distribution is not running.");
                 return ExitCode.Failure;
             }
 
@@ -378,7 +365,7 @@ namespace UsbIpServer
             {
                 // This would be weird: we already know that a WSL 2 instance is running.
                 // Maybe the virtual switch does not have 'WSL' in the name?
-                ReportError(console, "The local IP address for the WSL virtual switch could not be found.");
+                console.ReportError("The local IP address for the WSL virtual switch could not be found.");
                 return ExitCode.Failure;
             }
 
@@ -387,15 +374,14 @@ namespace UsbIpServer
 
             if (distroData.IPAddress is null)
             {
-                ReportError(console, $"The specified WSL distribution cannot be reached via the WSL virtual switch; try restarting the WSL distribution.");
+                console.ReportError($"The specified WSL distribution cannot be reached via the WSL virtual switch; try restarting the WSL distribution.");
                 return ExitCode.Failure;
             }
 
             var bindResult = await Bind(busId, true, false, console, cancellationToken);
             if (bindResult != ExitCode.Success)
             {
-                ReportError(console, $"Failed to bind device with BUSID '{busId}'.");
-                return ExitCode.Failure;
+                return bindResult;
             }
 
             usbipPath ??= "usbip";
@@ -416,7 +402,7 @@ namespace UsbIpServer
                 //    ...
                 if (wslResult.ExitCode != 0 || !wslResult.StandardOutput.Contains("local_busid"))
                 {
-                    ReportError(console, $"WSL kernel is not USBIP capable; update with 'wsl --update'.");
+                    console.ReportError($"WSL kernel is not USBIP capable; update with 'wsl --update'.");
                     return ExitCode.Failure;
                 }
             }
@@ -438,7 +424,7 @@ namespace UsbIpServer
                 if (wslResult.ExitCode != 0 || !wslResult.StandardOutput.StartsWith("usbip ("))
 #pragma warning restore CA1508 // Avoid dead conditional code
                 {
-                    ReportError(console, $"WSL 'usbip' client not correctly installed.");
+                    console.ReportError($"WSL 'usbip' client not correctly installed.");
                     return ExitCode.Failure;
                 }
             }
@@ -464,7 +450,7 @@ namespace UsbIpServer
                 }
                 catch (OperationCanceledException) when (timeoutTokenSource.IsCancellationRequested)
                 {
-                    ReportWarning(console, $"A third-party firewall may be blocking the connection; ensure TCP port {Interop.UsbIp.USBIP_PORT} is allowed.");
+                    console.ReportWarning($"A third-party firewall may be blocking the connection; ensure TCP port {Interop.UsbIp.USBIP_PORT} is allowed.");
                 }
             }
 
@@ -478,7 +464,7 @@ namespace UsbIpServer
                     cancellationToken);
                 if (wslResult != 0)
                 {
-                    ReportError(console, $"Failed to attach device with BUSID '{busId}'.");
+                    console.ReportError($"Failed to attach device with BUSID '{busId}'.");
                     return ExitCode.Failure;
                 }
             }
@@ -492,18 +478,18 @@ namespace UsbIpServer
             var device = connectedDevices.Where(x => x.BusId == busId).SingleOrDefault();
             if (device is null)
             {
-                ReportError(console, $"There is no compatible device with busid '{busId}'.");
+                console.ReportError($"There is no device with busid '{busId}'.");
                 return ExitCode.Failure;
             }
             if (!RegistryUtils.IsDeviceAttached(device))
             {
                 // Not an error, just let the user know they just executed a no-op.
-                ReportInfo(console, $"Connected device with busid '{busId}' was already not attached.");
+                console.ReportInfo($"Connected device with busid '{busId}' was already not attached.");
                 return ExitCode.Success;
             }
             if (!RegistryUtils.SetDeviceAsDetached(device))
             {
-                ReportError(console, $"Failed to detach device with BUSID '{busId}'.");
+                console.ReportError($"Failed to detach device with BUSID '{busId}'.");
                 return ExitCode.Failure;
             }
             return ExitCode.Success;
@@ -513,7 +499,7 @@ namespace UsbIpServer
         {
             if (!RegistryUtils.SetAllDevicesAsDetached())
             {
-                ReportError(console, $"Failed to detach one or more devices.");
+                console.ReportError($"Failed to detach one or more devices.");
                 return Task.FromResult(ExitCode.Failure);
             }
             return Task.FromResult(ExitCode.Success);
@@ -539,8 +525,8 @@ namespace UsbIpServer
 
                 console.WriteLine($"{device.BusId,-5}  {description,-60}  {state}");
             }
-            ReportServerRunning(console);
-            ReportForceNeeded(console);
+            console.ReportIfServerNotRunning();
+            console.ReportIfForceNeeded();
             return ExitCode.Success;
         }
     }

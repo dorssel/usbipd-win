@@ -310,6 +310,41 @@ namespace UsbIpServer
             }
         }
 
+        public static IEnumerable<string> GetOriginalDeviceIdsWithVBoxDriver()
+        {
+            // This gets all the VBox driver installations ever installed, even those
+            // that are not currently installed for a device and for devices that are not
+            // plugged in now.
+            var deviceInterfaces = Get_Device_Interface_List(Interop.VBoxUsb.GUID_CLASS_VBOXUSB, PInvoke.CM_GET_DEVICE_INTERFACE_LIST_ALL_DEVICES);
+            foreach (var deviceInterface in deviceInterfaces)
+            {
+                string deviceId;
+                // This may fail due to one of the properties not existing.
+                // In such cases, just skip the device as it does not have the VBox driver currently anyway.
+                try
+                {
+                    deviceId = (string)Get_Device_Interface_Property(deviceInterface, PInvoke.DEVPKEY_Device_InstanceId);
+                    var deviceNode = Locate_DevNode(deviceId, false);
+                    // Filter out the devices that are mocked by VboxUsbMon, since those are supposed to have the VBox driver.
+                    var hardwareIds = (string[])Get_DevNode_Property(deviceNode, PInvoke.DEVPKEY_Device_HardwareIds);
+                    if (hardwareIds.Any(hardwareId => hardwareId.Contains("VID_80EE&PID_CAFE", StringComparison.InvariantCultureIgnoreCase)))
+                    {
+                        continue;
+                    }
+                    // Don't return the device if the *current* driver isn't the VBox driver.
+                    if (!HasVBoxDriver(deviceId))
+                    {
+                        continue;
+                    }
+                }
+                catch (ConfigurationManagerException)
+                {
+                    continue;
+                }
+                yield return deviceId;
+            }
+        }
+
         public static void SetDeviceFriendlyName(uint deviceNode)
         {
             unsafe

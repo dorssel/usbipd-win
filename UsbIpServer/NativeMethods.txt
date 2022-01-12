@@ -16,6 +16,7 @@ CM_Set_DevNode_Property
 CM_Setup_DevNode
 CM_Unregister_Notification
 
+CM_GET_DEVICE_INTERFACE_LIST_ALL_DEVICES
 CM_GET_DEVICE_INTERFACE_LIST_PRESENT
 CM_LOCATE_DEVNODE_NORMAL
 CM_LOCATE_DEVNODE_PHANTOM
@@ -55,6 +56,7 @@ DEVPKEY_Device_Children
 DEVPKEY_Device_CompatibleIds
 DEVPKEY_Device_DriverDesc
 DEVPKEY_Device_FriendlyName
+DEVPKEY_Device_HardwareIds
 DEVPKEY_Device_InstanceId
 DEVPKEY_Device_LocationInfo
 DEVPKEY_NAME

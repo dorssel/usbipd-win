@@ -51,17 +51,11 @@ namespace UsbIpServer
             return devicesKey.OpenSubKey(guid.ToString("B"), writable);
         }
 
-        public static IEnumerable<Guid> GetPersistedDeviceGuids()
-        {
-            using var devicesKey = GetDevicesKey(false);
-            return devicesKey.GetSubKeyNames().Where((s) => Guid.TryParseExact(s, "B", out _)).Select((s) => Guid.ParseExact(s, "B"));
-        }
-
         static RegistryKey? GetDeviceKey(ExportedDevice device, bool writable)
         {
-            foreach (var guid in GetPersistedDeviceGuids())
+            foreach (var persistedDevice in GetPersistedDevices())
             {
-                var deviceKey = GetDeviceKey(guid, writable);
+                var deviceKey = GetDeviceKey(persistedDevice.Guid, writable);
                 if (deviceKey is not null && IsDeviceMatch(deviceKey, device))
                 {
                     return deviceKey;
@@ -124,12 +118,12 @@ namespace UsbIpServer
 
         public static void StopSharingDevice(ExportedDevice device)
         {
-            foreach (var guid in GetPersistedDeviceGuids())
+            foreach (var persistedDevice in GetPersistedDevices())
             {
-                using var deviceKey = GetDeviceKey(guid, false);
+                using var deviceKey = GetDeviceKey(persistedDevice.Guid, false);
                 if (deviceKey is not null && IsDeviceMatch(deviceKey, device))
                 {
-                    StopSharingDevice(guid);
+                    StopSharingDevice(persistedDevice.Guid);
                     return;
                 }
             }
@@ -137,9 +131,9 @@ namespace UsbIpServer
 
         public static void StopSharingAllDevices()
         {
-            foreach (var guid in GetPersistedDeviceGuids())
+            foreach (var persistedDevice in GetPersistedDevices())
             {
-                StopSharingDevice(guid);
+                StopSharingDevice(persistedDevice.Guid);
             }
         }
 
@@ -240,13 +234,25 @@ namespace UsbIpServer
             return (string?)subKey?.GetValue(OriginalInstanceIdName);
         }
 
-        public static List<PersistedDevice> GetPersistedDevices(ExportedDevice[] connectedDevices)
+        /// <summary>
+        /// Enumerates all persisted devices, currently present or not.
+        /// </summary>
+        public static IEnumerable<PersistedDevice> GetPersistedDevices()
         {
+            var guids = new SortedSet<Guid>();
+            using var devicesKey = GetDevicesKey(false);
+            foreach (var subKeyName in devicesKey.GetSubKeyNames())
+            {
+                if (Guid.TryParseExact(subKeyName, "B", out var guid))
+                {
+                    guids.Add(guid);
+                }
+            }
             var persistedDevices = new List<PersistedDevice>();
-            foreach (var guid in GetPersistedDeviceGuids())
+            foreach (var guid in guids)
             {
                 using var deviceKey = GetDeviceKey(guid, false);
-                if (deviceKey is not null && !connectedDevices.Any((connectedDevice) => IsDeviceMatch(deviceKey, connectedDevice)))
+                if (deviceKey is not null)
                 {
                     if (!BusId.TryParse(deviceKey.GetValue(BusIdName) as string ?? "", out var busId))
                     {
@@ -260,6 +266,22 @@ namespace UsbIpServer
                 }
             }
             return persistedDevices;
+        }
+
+        /// <summary>
+        /// Enumerates the persisted devices that are currently not present.
+        /// </summary>
+        public static IEnumerable<PersistedDevice> GetPersistedDevices(ExportedDevice[] connectedDevices)
+        {
+            return GetPersistedDevices().Where(persistedDevice =>
+            {
+                using var deviceKey = GetDeviceKey(persistedDevice.Guid, false);
+                if (deviceKey is null)
+                {
+                    return false;
+                }
+                return !connectedDevices.Any(connectedDevice => IsDeviceMatch(deviceKey, connectedDevice));
+            });
         }
 
         public static bool HasWriteAccess()
