@@ -84,6 +84,11 @@ namespace UsbIpServer
 
         internal static int Main(string[] args)
         {
+            if (!Console.IsInputRedirected)
+            {
+                // This is required for Windows Terminal.
+                Console.TreatControlCAsInput = false;
+            }
             return (int)Run(null, new CommandHandlers(), args);
         }
 

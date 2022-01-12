@@ -145,78 +145,85 @@ namespace UsbIpServer
 
             using var hubFile = new DeviceFile(device.HubInterfacePath);
             using var cancellationTokenRegistration = cancellationToken.Register(() => hubFile.Dispose());
-
-            var data = new UsbNodeConnectionInformationEx() { ConnectionIndex = device.BusId.Port };
-            var buf = StructToBytes(data);
-            await hubFile.IoControlAsync(IoControl.IOCTL_USB_GET_NODE_CONNECTION_INFORMATION_EX, buf, buf);
-            BytesToStruct(buf, out data);
-
-            var speed = MapWindowsSpeedToLinuxSpeed((USB_DEVICE_SPEED)data.Speed);
-
-            var data2 = new UsbNodeConnectionInformationExV2()
-            {
-                ConnectionIndex = device.BusId.Port,
-                Length = (uint)Marshal.SizeOf<UsbNodeConnectionInformationExV2>(),
-                SupportedUsbProtocols = UsbProtocols.Usb110 | UsbProtocols.Usb200 | UsbProtocols.Usb300,
-            };
-            var buf2 = StructToBytes(data2);
-            await hubFile.IoControlAsync(IoControl.IOCTL_USB_GET_NODE_CONNECTION_INFORMATION_EX_V2, buf2, buf2);
-            BytesToStruct(buf2, out data2);
-
-            if ((data2.SupportedUsbProtocols & UsbProtocols.Usb300) != 0)
-            {
-                if ((data2.Flags & UsbNodeConnectionInformationExV2Flags.DeviceIsOperatingAtSuperSpeedPlusOrHigher) != 0)
-                {
-                    speed = Linux.UsbDeviceSpeed.USB_SPEED_SUPER_PLUS;
-                }
-                else if ((data2.Flags & UsbNodeConnectionInformationExV2Flags.DeviceIsOperatingAtSuperSpeedOrHigher) != 0)
-                {
-                    speed = Linux.UsbDeviceSpeed.USB_SPEED_SUPER;
-                }
-            }
-
-            var interfaces = new List<(byte, byte, byte)>();
             try
             {
-                // This may or may not fail if the device is disabled.
-                // Failure is not fatal, it just means that the export list will not contain
-                // the interface list, which only makes the identification of the 
-                // device by the user a little more difficult.
-                interfaces = await GetInterfacesAsync(hubFile, device.BusId.Port);
+                var data = new UsbNodeConnectionInformationEx() { ConnectionIndex = device.BusId.Port };
+                var buf = StructToBytes(data);
+                await hubFile.IoControlAsync(IoControl.IOCTL_USB_GET_NODE_CONNECTION_INFORMATION_EX, buf, buf);
+                BytesToStruct(buf, out data);
+
+                var speed = MapWindowsSpeedToLinuxSpeed((USB_DEVICE_SPEED)data.Speed);
+
+                var data2 = new UsbNodeConnectionInformationExV2()
+                {
+                    ConnectionIndex = device.BusId.Port,
+                    Length = (uint)Marshal.SizeOf<UsbNodeConnectionInformationExV2>(),
+                    SupportedUsbProtocols = UsbProtocols.Usb110 | UsbProtocols.Usb200 | UsbProtocols.Usb300,
+                };
+                var buf2 = StructToBytes(data2);
+                await hubFile.IoControlAsync(IoControl.IOCTL_USB_GET_NODE_CONNECTION_INFORMATION_EX_V2, buf2, buf2);
+                BytesToStruct(buf2, out data2);
+
+                if ((data2.SupportedUsbProtocols & UsbProtocols.Usb300) != 0)
+                {
+                    if ((data2.Flags & UsbNodeConnectionInformationExV2Flags.DeviceIsOperatingAtSuperSpeedPlusOrHigher) != 0)
+                    {
+                        speed = Linux.UsbDeviceSpeed.USB_SPEED_SUPER_PLUS;
+                    }
+                    else if ((data2.Flags & UsbNodeConnectionInformationExV2Flags.DeviceIsOperatingAtSuperSpeedOrHigher) != 0)
+                    {
+                        speed = Linux.UsbDeviceSpeed.USB_SPEED_SUPER;
+                    }
+                }
+
+                var interfaces = new List<(byte, byte, byte)>();
+                try
+                {
+                    // This may or may not fail if the device is disabled.
+                    // Failure is not fatal, it just means that the export list will not contain
+                    // the interface list, which only makes the identification of the 
+                    // device by the user a little more difficult.
+                    interfaces = await GetInterfacesAsync(hubFile, device.BusId.Port);
+                }
+                catch (Win32Exception) { }
+
+                var exportedDevice = new ExportedDevice()
+                {
+                    InstanceId = device.InstanceId,
+                    BusId = device.BusId,
+                    Speed = speed,
+                    VendorId = data.DeviceDescriptor.idVendor,
+                    ProductId = data.DeviceDescriptor.idProduct,
+                    BcdDevice = data.DeviceDescriptor.bcdDevice,
+                    DeviceClass = data.DeviceDescriptor.bDeviceClass,
+                    DeviceSubClass = data.DeviceDescriptor.bDeviceSubClass,
+                    DeviceProtocol = data.DeviceDescriptor.bDeviceProtocol,
+                    ConfigurationValue = data.CurrentConfigurationValue,
+                    NumConfigurations = data.DeviceDescriptor.bNumConfigurations,
+                    Interfaces = interfaces,
+                    Description = device.Description,
+                };
+
+                if (RegistryUtils.GetOriginalInstanceId(exportedDevice) is string originalInstanceId)
+                {
+                    // If the device is currently attached, then VBoxMon will have replaced it
+                    // with a different device node that has a different instance ID.
+                    exportedDevice.InstanceId = originalInstanceId;
+                }
+
+                if (RegistryUtils.GetDeviceDescription(exportedDevice) is string cachedDescription)
+                {
+                    // If the device is currently attached, then we will have overridden the description.
+                    exportedDevice.Description = cachedDescription;
+                }
+
+                return exportedDevice;
             }
-            catch (Win32Exception) { }
-
-            var exportedDevice = new ExportedDevice()
+            catch (ObjectDisposedException)
             {
-                InstanceId = device.InstanceId,
-                BusId = device.BusId,
-                Speed = speed,
-                VendorId = data.DeviceDescriptor.idVendor,
-                ProductId = data.DeviceDescriptor.idProduct,
-                BcdDevice = data.DeviceDescriptor.bcdDevice,
-                DeviceClass = data.DeviceDescriptor.bDeviceClass,
-                DeviceSubClass = data.DeviceDescriptor.bDeviceSubClass,
-                DeviceProtocol = data.DeviceDescriptor.bDeviceProtocol,
-                ConfigurationValue = data.CurrentConfigurationValue,
-                NumConfigurations = data.DeviceDescriptor.bNumConfigurations,
-                Interfaces = interfaces,
-                Description = device.Description,
-            };
-
-            if (RegistryUtils.GetOriginalInstanceId(exportedDevice) is string originalInstanceId)
-            {
-                // If the device is currently attached, then VBoxMon will have replaced it
-                // with a different device node that has a different instance ID.
-                exportedDevice.InstanceId = originalInstanceId;
+                cancellationToken.ThrowIfCancellationRequested();
+                throw;
             }
-
-            if (RegistryUtils.GetDeviceDescription(exportedDevice) is string cachedDescription)
-            {
-                // If the device is currently attached, then we will have overridden the description.
-                exportedDevice.Description = cachedDescription;
-            }
-
-            return exportedDevice;
         }
 
         public static async Task<ExportedDevice[]> GetAll(CancellationToken cancellationToken)
