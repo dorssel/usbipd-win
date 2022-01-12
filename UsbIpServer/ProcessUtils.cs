@@ -86,11 +86,8 @@ namespace UsbIpServer
                 await TerminateProcess(process);
             }
 
-            // Since the local process either completed or was killed, these should complete or cancel promptly. 
-            foreach (var captureTask in captureTasks)
-            {
-                await captureTask;
-            }
+            // Since the local process either completed or was killed, these should complete or cancel promptly.
+            await Task.WhenAll(captureTasks);
 
             cancellationToken.ThrowIfCancellationRequested();
             return new(process.ExitCode, stdout, stderr);
