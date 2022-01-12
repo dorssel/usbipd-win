@@ -416,6 +416,31 @@ namespace UsbIpServer
                 }
             }
 
+            // 8) Heuristical firewall check
+            //
+            // With minimal requirements (bash only) try to connect from WSL to our server.
+            // If the process does not terminate within one second, then most likely a third party
+            // firewall is blocking the connection. Anything else (e.g. bash not available, or not supporting
+            // /dev/tcp, or whatever) will most likely finish within 1 second and the test will simply pass.
+            // In any case, just issue a warning, which is a lot more informative than the 1 minute TCP
+            // timeout that usbip will get.
+            {
+                using var timeoutTokenSource = new CancellationTokenSource(TimeSpan.FromSeconds(1));
+                using var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutTokenSource.Token);
+                try
+                {
+                    var wslResult = await ProcessUtils.RunCapturedProcessAsync(
+                        WslDistributions.WslPath,
+                        (distribution is not null ? new[] { "--distribution", distribution } : Enumerable.Empty<string>()).Concat(
+                            new[] { "--user", "root", "--", "bash", "-c", $"echo < /dev/tcp/{distros.HostAddress}/{Interop.UsbIp.USBIP_PORT}" }),
+                        Encoding.UTF8, linkedTokenSource.Token);
+                }
+                catch (OperationCanceledException) when (timeoutTokenSource.IsCancellationRequested)
+                {
+                    ReportWarning(console, $"A third-party firewall may be blocking the connection; ensure TCP port {Interop.UsbIp.USBIP_PORT} is allowed.");
+                }
+           }
+
             // Finally, call 'usbip attach'.
 
             {
