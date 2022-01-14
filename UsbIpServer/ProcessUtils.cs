@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -61,12 +62,8 @@ namespace UsbIpServer
             startInfo.RedirectStandardOutput = true;
             startInfo.RedirectStandardError = true;
 
-            using var process = new Process { StartInfo = startInfo };
-
-            if (!process.Start())
-            {
-                throw new UnexpectedResultException(FormatStartFailedMessage(filename, arguments));
-            }
+            using var process = Process.Start(startInfo);
+            ThrowIf(process is null, filename, arguments);
 
             var stdout = string.Empty;
             var stderr = string.Empty;
@@ -96,8 +93,9 @@ namespace UsbIpServer
         public static async Task<int> RunUncapturedProcessAsync(string filename, IEnumerable<string> arguments, CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            using var process = Process.Start(CreateCommonProcessStartInfo(filename, arguments))
-                ?? throw new UnexpectedResultException(FormatStartFailedMessage(filename, arguments));
+            using var process = Process.Start(CreateCommonProcessStartInfo(filename, arguments));
+            ThrowIf(process is null, filename, arguments);
+
             try
             {
                 await process.WaitForExitAsync(cancellationToken);
@@ -129,9 +127,13 @@ namespace UsbIpServer
             return startInfo;
         }
 
-        static string FormatStartFailedMessage(string filename, IEnumerable<string> arguments)
+        [ExcludeFromCodeCoverage(Justification = "Not testable with UseShellExecute = false")]
+        static void ThrowIf([DoesNotReturnIf(true)] bool processIsNull, string filename, IEnumerable<string> arguments)
         {
-            return $"Failed to start \"{filename}\" with arguments {string.Join(" ", arguments.Select(arg => $"\"{arg}\""))}.";
+            if (processIsNull)
+            {
+                throw new UnexpectedResultException($"Failed to start \"{filename}\" with arguments {string.Join(" ", arguments.Select(arg => $"\"{arg}\""))}.");
+            }
         }
     }
 }

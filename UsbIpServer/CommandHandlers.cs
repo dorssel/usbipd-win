@@ -439,7 +439,7 @@ namespace UsbIpServer
                 {
                     ReportWarning(console, $"A third-party firewall may be blocking the connection; ensure TCP port {Interop.UsbIp.USBIP_PORT} is allowed.");
                 }
-           }
+            }
 
             // Finally, call 'usbip attach'.
 

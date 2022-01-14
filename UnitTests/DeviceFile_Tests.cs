@@ -18,12 +18,6 @@ namespace UnitTests
     {
         static readonly string TemporaryPath = Path.GetTempFileName();
 
-        [ClassInitialize]
-        public static void ClassInitialize(TestContext _)
-        {
-            File.Create(TemporaryPath).Dispose();
-        }
-
         [ClassCleanup]
         public static void ClassCleanup()
         {
