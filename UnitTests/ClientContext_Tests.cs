@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 using System;
+using System.IO;
 using System.Net;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using UsbIpServer;
@@ -12,8 +13,22 @@ namespace UnitTests
     [TestClass]
     sealed class ClientContext_Tests
     {
+        static readonly string TemporaryPath = Path.GetTempFileName();
+
+        [ClassInitialize]
+        public static void ClassInitialize(TestContext context)
+        {
+            File.Create(TemporaryPath).Dispose();
+        }
+
+        [ClassCleanup]
+        public static void ClassCleanup()
+        {
+            File.Delete(TemporaryPath);
+        }
+
         [TestMethod]
-        public void DefaultContructor()
+        public void DefaultConstructor()
         {
             using var clientContext = new ClientContext();
         }
@@ -32,7 +47,10 @@ namespace UnitTests
         [TestMethod]
         public void DisposeTwice()
         {
-            var clientContext = new ClientContext();
+            var clientContext = new ClientContext
+            {
+                AttachedDevice = new DeviceFile(TemporaryPath)
+            };
             ((IDisposable)clientContext).Dispose();
             ((IDisposable)clientContext).Dispose();
         }

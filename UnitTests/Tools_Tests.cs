@@ -41,7 +41,11 @@ namespace UnitTests
         {
             using var memoryStream = new MemoryStream(TestStreamBytes);
             var buf = new byte[TestStreamBytes.Length + 1];
-            Assert.IsInstanceOfType(memoryStream.ReadExactlyAsync(buf, CancellationToken.None).Exception?.InnerException, typeof(EndOfStreamException));
+            var exception = Assert.ThrowsException<AggregateException>(() =>
+            {
+                memoryStream.ReadExactlyAsync(buf, CancellationToken.None).Wait();
+            });
+            Assert.IsInstanceOfType(exception.InnerException, typeof(EndOfStreamException));
         }
 
         [TestMethod]
