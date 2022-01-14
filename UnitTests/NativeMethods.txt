@@ -1,0 +1,6 @@
+// SPDX-FileCopyrightText: 2022 Frans van Dorsselaer
+//
+// SPDX-License-Identifier: GPL-2.0-only
+
+FILE_ALLOCATED_RANGE_BUFFER
+FSCTL_QUERY_ALLOCATED_RANGES

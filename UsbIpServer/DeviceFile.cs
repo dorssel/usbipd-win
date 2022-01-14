@@ -37,7 +37,14 @@ namespace UsbIpServer
 
         readonly SafeFileHandle handle;
 
-        public HANDLE DangerousGetHandle() => (HANDLE)handle.DangerousGetHandle();
+        public HANDLE DangerousGetHandle()
+        {
+            if (handle.IsClosed)
+            {
+                throw new ObjectDisposedException(nameof(DeviceFile));
+            }
+            return (HANDLE)handle.DangerousGetHandle();
+        }
 
         Task<uint> IoControlAsync(uint ioControlCode, byte[]? input, byte[]? output, bool exactOutput = true)
         {

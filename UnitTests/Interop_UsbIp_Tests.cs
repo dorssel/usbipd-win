@@ -92,9 +92,10 @@ namespace UnitTests
         public void ReadUsbIpHeaderAsync_Short()
         {
             using var memoryStream = new MemoryStream(TestUsbIpHeaderBytes[0..^1]);
-            var exception = memoryStream.ReadUsbIpHeaderAsync(CancellationToken.None).Exception;
-            Assert.IsNotNull(exception);
-            Assert.IsInstanceOfType(exception, typeof(AggregateException));
+            var exception = Assert.ThrowsException<AggregateException>(() =>
+            {
+                memoryStream.ReadUsbIpHeaderAsync(CancellationToken.None).Wait();
+            });
             Assert.IsInstanceOfType(exception.InnerException, typeof(EndOfStreamException));
         }
 
@@ -137,9 +138,10 @@ namespace UnitTests
         public void ReadUsbIpIsoPacketDescriptorsAsync_Short()
         {
             using var memoryStream = new MemoryStream(TestUsbIpIsoPacketDescriptorBytes[0..^1]);
-            var exception = memoryStream.ReadUsbIpIsoPacketDescriptorsAsync(1, CancellationToken.None).Exception;
-            Assert.IsNotNull(exception);
-            Assert.IsInstanceOfType(exception, typeof(AggregateException));
+            var exception = Assert.ThrowsException<AggregateException>(() =>
+            {
+                memoryStream.ReadUsbIpIsoPacketDescriptorsAsync(1, CancellationToken.None).Wait();
+            });
             Assert.IsInstanceOfType(exception.InnerException, typeof(EndOfStreamException));
         }
 
@@ -165,9 +167,10 @@ namespace UnitTests
         {
             using var memoryStream = new MemoryStream(
                 new byte[TestUsbIpIsoPacketDescriptorBytes.Length].Concat(TestUsbIpIsoPacketDescriptorBytes[0..^1]).ToArray());
-            var exception = memoryStream.ReadUsbIpIsoPacketDescriptorsAsync(2, CancellationToken.None).Exception;
-            Assert.IsNotNull(exception);
-            Assert.IsInstanceOfType(exception, typeof(AggregateException));
+            var exception = Assert.ThrowsException<AggregateException>(() =>
+            {
+                memoryStream.ReadUsbIpIsoPacketDescriptorsAsync(2, CancellationToken.None).Wait();
+            });
             Assert.IsInstanceOfType(exception.InnerException, typeof(EndOfStreamException));
         }
 

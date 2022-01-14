@@ -55,10 +55,11 @@ namespace UnitTests
             mock.Setup(m => m.License(
                 It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Throws<NotImplementedException>();
 
-            Assert.ThrowsException<AggregateException>(() =>
+            var exception = Assert.ThrowsException<AggregateException>(() =>
             {
                 Test(ExitCode.Success, mock, "license");
             });
+            Assert.IsInstanceOfType(exception.InnerException, typeof(NotImplementedException));
         }
     }
 }
