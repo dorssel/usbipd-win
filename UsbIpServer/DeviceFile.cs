@@ -20,36 +20,40 @@ namespace UsbIpServer
     {
         public DeviceFile(string fileName)
         {
-            handle = PInvoke.CreateFile(fileName, FILE_ACCESS_FLAGS.FILE_READ_DATA | FILE_ACCESS_FLAGS.FILE_WRITE_DATA,
+            FileHandle = PInvoke.CreateFile(fileName, FILE_ACCESS_FLAGS.FILE_READ_DATA | FILE_ACCESS_FLAGS.FILE_WRITE_DATA,
                 FILE_SHARE_MODE.FILE_SHARE_READ | FILE_SHARE_MODE.FILE_SHARE_WRITE,
                 null, FILE_CREATION_DISPOSITION.OPEN_EXISTING, FILE_FLAGS_AND_ATTRIBUTES.FILE_FLAG_OVERLAPPED, null);
 
-            if (handle.IsInvalid)
+            try
             {
-                throw new Win32Exception("CreateFile");
+                if (FileHandle.IsInvalid)
+                {
+                    throw new Win32Exception("CreateFile");
+                }
+                BoundHandle = ThreadPoolBoundHandle.BindHandle(FileHandle);
             }
-            if (!ThreadPool.BindHandle(handle))
+            catch
             {
-                handle.Dispose();
-                throw new UnexpectedResultException("ThreadPool.BindHandle() failed");
+                FileHandle.Dispose();
+                throw;
             }
         }
 
-        readonly SafeFileHandle handle;
+        readonly SafeFileHandle FileHandle;
+        readonly ThreadPoolBoundHandle BoundHandle;
 
         public HANDLE DangerousGetHandle()
         {
-            if (handle.IsClosed)
+            if (FileHandle.IsClosed)
             {
                 throw new ObjectDisposedException(nameof(DeviceFile));
             }
-            return (HANDLE)handle.DangerousGetHandle();
+            return (HANDLE)FileHandle.DangerousGetHandle();
         }
 
         Task<uint> IoControlAsync(uint ioControlCode, byte[]? input, byte[]? output, bool exactOutput = true)
         {
             var taskCompletionSource = new TaskCompletionSource<uint>();
-            var overlapped = new Overlapped();
 
             unsafe
             {
@@ -73,10 +77,10 @@ namespace UsbIpServer
                     Overlapped.Free(nativeOverlapped);
                 }
 
-                var nativeOverlapped = overlapped.Pack(OnCompletion, new object?[] { input, output });
+                var nativeOverlapped = BoundHandle.AllocateNativeOverlapped(OnCompletion, null, new object?[] { input, output });
                 fixed (byte* pInput = input, pOutput = output)
                 {
-                    if (!PInvoke.DeviceIoControl(handle, ioControlCode, pInput, (uint)(input?.Length ?? 0),
+                    if (!PInvoke.DeviceIoControl(FileHandle, ioControlCode, pInput, (uint)(input?.Length ?? 0),
                         pOutput, (uint)(output?.Length ?? 0), null, (OVERLAPPED*)nativeOverlapped))
                     {
                         var errorCode = (WIN32_ERROR)Marshal.GetLastWin32Error();
@@ -100,7 +104,8 @@ namespace UsbIpServer
         {
             if (!IsDisposed)
             {
-                handle.Dispose();
+                BoundHandle.Dispose();
+                FileHandle.Dispose();
                 IsDisposed = true;
             }
         }
