@@ -144,7 +144,7 @@ namespace UsbIpServer
                         throw;
                     }
                 }
-                (var vboxDevice, ClientContext.AttachedDevice) = await mon.ClaimDevice(exportedDevice);
+                (var vboxDevice, ClientContext.AttachedDevice) = await VBoxUsbMon.ClaimDevice(exportedDevice);
 
                 HCMNOTIFICATION notification = default;
                 Logger.ClientAttach(ClientContext.ClientAddress, exportedDevice.BusId, exportedDevice.InstanceId);
