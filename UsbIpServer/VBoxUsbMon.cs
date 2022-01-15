@@ -6,7 +6,6 @@ using System;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
-using System.Net;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Windows.Win32;
@@ -63,7 +62,7 @@ namespace UsbIpServer
             }
         }
 
-        async Task<(ConfigurationManager.VBoxDevice, DeviceFile)> ClaimDeviceOnce(ExportedDevice device)
+        static async Task<(ConfigurationManager.VBoxDevice, DeviceFile)> ClaimDeviceOnce(ExportedDevice device)
         {
             var vboxDevice = ConfigurationManager.GetVBoxDevice(device.BusId);
             var dev = new DeviceFile(vboxDevice.InterfacePath);
@@ -79,43 +78,14 @@ namespace UsbIpServer
                     }
                 }
                 {
-                    await dev.IoControlAsync(SUPUSB_IOCTL.IS_OPERATIONAL, null, null);
-                }
-                IntPtr hdev;
-                {
-                    var getDev = new UsbSupGetDev();
-                    var output = new byte[Marshal.SizeOf<UsbSupGetDev>()];
-                    await dev.IoControlAsync(SUPUSB_IOCTL.GET_DEVICE, StructToBytes(getDev), output);
-                    BytesToStruct(output, out getDev);
-                    hdev = getDev.hDevice;
-                }
-                {
-                    var getDev = new UsbSupGetDev()
-                    {
-                        hDevice = hdev,
-                    };
-                    var output = new byte[Marshal.SizeOf<UsbSupGetDevMon>()];
-                    await UsbMonitor.IoControlAsync(SUPUSBFLT_IOCTL.GET_DEVICE, StructToBytes(getDev), output);
-                    var getDevMon = BytesToStruct<UsbSupGetDevMon>(output);
-                }
-                {
                     var claimDev = new UsbSupClaimDev();
                     var output = new byte[Marshal.SizeOf<UsbSupClaimDev>()];
                     await dev.IoControlAsync(SUPUSB_IOCTL.USB_CLAIM_DEVICE, StructToBytes(claimDev), output);
                     BytesToStruct(output, out claimDev);
                     if (!claimDev.fClaimed)
                     {
-                        throw new ProtocolViolationException("could not claim");
+                        throw new UnexpectedResultException("USB_CLAIM_DEVICE did not claim the device");
                     }
-                }
-                {
-                    var getDev = new UsbSupGetDev()
-                    {
-                        hDevice = hdev,
-                    };
-                    var output = new byte[Marshal.SizeOf<UsbSupGetDevMon>()];
-                    await UsbMonitor.IoControlAsync(SUPUSBFLT_IOCTL.GET_DEVICE, StructToBytes(getDev), output);
-                    var getDevMon = BytesToStruct<UsbSupGetDevMon>(output);
                 }
 
                 try
@@ -140,7 +110,7 @@ namespace UsbIpServer
             throw new FileNotFoundException();
         }
 
-        public async Task<(ConfigurationManager.VBoxDevice, DeviceFile)> ClaimDevice(ExportedDevice device)
+        public static async Task<(ConfigurationManager.VBoxDevice, DeviceFile)> ClaimDevice(ExportedDevice device)
         {
             var sw = new Stopwatch();
             sw.Start();

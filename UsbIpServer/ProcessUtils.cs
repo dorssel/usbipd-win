@@ -42,7 +42,7 @@ namespace UsbIpServer
                 // If this is not a remote command execution, then the local Windows process gets it free of charge.
                 await process.StandardInput.WriteAsync(new[] { '\x03' }, remoteTimeoutTokenSource.Token);
                 process.StandardInput.Close();
-                await Task.Delay(Timeout.InfiniteTimeSpan, remoteTimeoutTokenSource.Token);
+                await process.WaitForExitAsync(remoteTimeoutTokenSource.Token);
             }
             catch (OperationCanceledException) { }
             finally
