@@ -5,7 +5,9 @@
 
 using System;
 using System.Buffers.Binary;
+using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -64,27 +66,25 @@ namespace UsbIpServer
             }
         }
 
-        static async Task<ExportedDevice[]> GetSharedDevicesAsync(CancellationToken cancellationToken)
-        {
-            if (RegistryUtils.HasWriteAccess())
-            {
-                return (await ExportedDevice.GetAll(cancellationToken))
-               .Where(x => RegistryUtils.IsDeviceShared(x))
-               .ToArray();
-            }
-
-            return await ExportedDevice.GetAll(cancellationToken);
-        }
-
         async Task HandleRequestDeviceListAsync(CancellationToken cancellationToken)
         {
-            var exportedDevices = await GetSharedDevicesAsync(cancellationToken);
+            var exportedDevices = new List<ExportedDevice>();
+            foreach (var device in RegistryUtils.GetBoundDevices().Where(d => d.BusId.HasValue).OrderBy(d => d.BusId.GetValueOrDefault()))
+            {
+                Debug.Assert(device.BusId.HasValue);
+                try
+                {
+                    exportedDevices.Add(await ExportedDevice.GetExportedDevice(device, cancellationToken));
+                }
+                catch (ConfigurationManagerException) { }
+                catch (Win32Exception) { }
+            }
 
             await SendOpCodeAsync(OpCode.OP_REP_DEVLIST, Status.ST_OK);
 
             // reply count
             var buf = new byte[4];
-            BinaryPrimitives.WriteUInt32BigEndian(buf, (uint)exportedDevices.Length);
+            BinaryPrimitives.WriteUInt32BigEndian(buf, (uint)exportedDevices.Count);
             await Stream.WriteAsync(buf, cancellationToken);
 
             foreach (var exportedDevice in exportedDevices)
@@ -109,55 +109,57 @@ namespace UsbIpServer
             // whatever happens, try to report "something" to the client
             var status = Status.ST_ERROR;
 
+            VBoxUsbMon? mon = null;
             try
             {
-                var exportedDevices = await GetSharedDevicesAsync(cancellationToken);
-                var exportedDevice = exportedDevices.SingleOrDefault(x => x.BusId == busId);
-                if (exportedDevice is null)
+                var device = RegistryUtils.GetBoundDevices().SingleOrDefault(d => d.BusId.HasValue && d.BusId.Value == busId);
+                if (device is null)
                 {
                     await SendOpCodeAsync(OpCode.OP_REP_IMPORT, Status.ST_NODEV);
                     return;
                 }
+                Debug.Assert(device.BusId.HasValue);
+                Debug.Assert(device.Guid.HasValue);
 
-                if (RegistryUtils.IsDeviceAttached(exportedDevice))
+                if (device.IPAddress is not null)
                 {
                     await SendOpCodeAsync(OpCode.OP_REP_IMPORT, Status.ST_DEV_BUSY);
                     return;
                 }
 
-                if (ConfigurationManager.HasVBoxDriver(exportedDevice.InstanceId))
-                {
-                    // This is a forced device.
-                    (var testDevice, var x) = await VBoxUsb.ClaimDevice(exportedDevice);
-                    x.Dispose();
-                }
+                var exportedDevice = await ExportedDevice.GetExportedDevice(device, cancellationToken);
 
                 status = Status.ST_NA;
-                using var mon = new VBoxUsbMon();
-                await mon.CheckVersion();
-                ulong filterId;
+
+                ulong filterId = 0;
+                if (!device.IsForced)
                 {
-                    try
+                    mon = new VBoxUsbMon();
+                    await mon.CheckVersion();
                     {
-                        // VBoxUsbMon SUPUSBFLT_IOCTL_RUN_FILTERS is not potent enough as it only cycles the port.
-                        // Instead, we mark the device for removal, add the filter, and then mark the device ready again.
-                        using var restartingDevice = new ConfigurationManager.RestartingDevice(exportedDevice.InstanceId);
-                        filterId = await mon.AddFilter(exportedDevice);
-                    }
-                    catch (ConfigurationManagerException ex) when (ex.ConfigRet == CONFIGRET.CR_REMOVE_VETOED)
-                    {
-                        // The host is actively using the device.
-                        status = Status.ST_DEV_BUSY;
-                        throw;
+                        try
+                        {
+                            // VBoxUsbMon SUPUSBFLT_IOCTL_RUN_FILTERS is not potent enough as it only cycles the port.
+                            // Instead, we mark the device for removal, add the filter, and then mark the device ready again.
+                            using var restartingDevice = new ConfigurationManager.RestartingDevice(device.InstanceId);
+                            filterId = await mon.AddFilter(exportedDevice);
+                        }
+                        catch (ConfigurationManagerException ex) when (ex.ConfigRet == CONFIGRET.CR_REMOVE_VETOED)
+                        {
+                            // The host is actively using the device.
+                            status = Status.ST_DEV_BUSY;
+                            throw;
+                        }
                     }
                 }
-                (var vboxDevice, ClientContext.AttachedDevice) = await VBoxUsb.ClaimDevice(exportedDevice);
+
+                status = Status.ST_DEV_ERR;
+                (var vboxDevice, ClientContext.AttachedDevice) = await VBoxUsb.ClaimDevice(device.BusId.Value);
 
                 HCMNOTIFICATION notification = default;
-                Logger.ClientAttach(ClientContext.ClientAddress, exportedDevice.BusId, exportedDevice.InstanceId);
+                Logger.ClientAttach(ClientContext.ClientAddress, busId, device.InstanceId);
                 try
                 {
-                    status = Status.ST_DEV_ERR;
                     var cfg = new byte[1] { 0 };
                     await ClientContext.AttachedDevice.IoControlAsync(SUPUSB_IOCTL.USB_SET_CONFIG, cfg, null);
 
@@ -207,7 +209,7 @@ namespace UsbIpServer
                     }
 
                     // Detect unbind.
-                    using var attachedKey = RegistryUtils.SetDeviceAsAttached(exportedDevice, ClientContext.ClientAddress);
+                    using var attachedKey = RegistryUtils.SetDeviceAsAttached(device.Guid.Value, device.BusId.Value, ClientContext.ClientAddress, vboxDevice.InstanceId);
                     var lresult = PInvoke.RegNotifyChangeKeyValue(attachedKey.Handle, false, Windows.Win32.System.Registry.REG_NOTIFY_FILTER.REG_NOTIFY_THREAD_AGNOSTIC, cancelEvent.SafeWaitHandle, true);
                     if (lresult != (int)WIN32_ERROR.ERROR_SUCCESS)
                     {
@@ -222,20 +224,23 @@ namespace UsbIpServer
                     {
                         PInvoke.CM_Unregister_Notification(notification);
                     }
-                    RegistryUtils.SetDeviceAsDetached(exportedDevice);
+                    RegistryUtils.SetDeviceAsDetached(device.Guid.Value);
 
                     ClientContext.AttachedDevice.Dispose();
 
-                    Logger.ClientDetach(ClientContext.ClientAddress, exportedDevice.BusId, exportedDevice.InstanceId);
+                    Logger.ClientDetach(ClientContext.ClientAddress, busId, device.InstanceId);
 
-                    try
+                    if (mon is not null)
                     {
-                        // This solves the cases where VBoxUsbMon does not properly hand back the device to the host.
-                        // Instead, we mark the device for removal, add the filter, and then mark the device ready again.
-                        using var restartingDevice = new ConfigurationManager.RestartingDevice(vboxDevice.DeviceNode);
-                        await mon.RemoveFilter(filterId);
+                        try
+                        {
+                            // This solves the cases where VBoxUsbMon does not properly hand back the device to the host.
+                            // Instead, we mark the device for removal, add the filter, and then mark the device ready again.
+                            using var restartingDevice = new ConfigurationManager.RestartingDevice(vboxDevice.DeviceNode);
+                            await mon.RemoveFilter(filterId);
+                        }
+                        catch (ConfigurationManagerException) { }
                     }
-                    catch (ConfigurationManagerException) { }
                 }
             }
             catch (Exception ex)
@@ -253,6 +258,10 @@ namespace UsbIpServer
                     await SendOpCodeAsync(OpCode.OP_REP_IMPORT, status);
                 }
                 throw;
+            }
+            finally
+            {
+                mon?.Dispose();
             }
         }
 

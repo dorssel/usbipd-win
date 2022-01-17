@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.CommandLine;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -63,49 +64,59 @@ namespace UsbIpServer
             return Task.FromResult(ExitCode.Success);
         }
 
-        async Task<ExitCode> ICommandHandlers.List(IConsole console, CancellationToken cancellationToken)
+        Task<ExitCode> ICommandHandlers.List(IConsole console, CancellationToken cancellationToken)
         {
-            var connectedDevices = await ExportedDevice.GetAll(cancellationToken);
-            var persistedDevices = RegistryUtils.GetPersistedDevices(connectedDevices);
-            console.WriteLine("Present:");
+            var allDevices = UsbDevice.GetAll();
+            console.WriteLine("Connected:");
             console.WriteLine($"{"BUSID",-5}  {"DEVICE",-60}  STATE");
-            foreach (var device in connectedDevices)
+            foreach (var device in allDevices.Where(d => d.BusId.HasValue).OrderBy(d => d.BusId.GetValueOrDefault()))
             {
+                Debug.Assert(device.BusId.HasValue);
+                string state;
+                if (device.IPAddress is not null)
+                {
+                    state = "Attached";
+                }
+                else if (device.Guid is not null)
+                {
+                    state = device.IsForced ? "Shared (forced)" : "Shared";
+                }
+                else
+                {
+                    state = "Not shared";
+                }
                 // NOTE: Strictly speaking, both Bus and Port can be > 99. If you have one of those, you win a prize!
-                console.WriteLine($@"{device.BusId,-5}  {device.Description.Truncate(60),-60}  {
-                    (RegistryUtils.IsDeviceShared(device) ? RegistryUtils.IsDeviceAttached(device) ? "Attached" : "Shared" : "Not shared")}");
+                console.WriteLine($@"{device.BusId.Value,-5}  {device.Description.Truncate(60),-60}  {state}");
             }
             console.Write("\n");
             console.WriteLine("Persisted:");
-            console.WriteLine($"{"GUID",-38}  {"BUSID",-5}  DEVICE");
-            foreach (var device in persistedDevices)
+            console.WriteLine($"{"GUID",-38}  DEVICE");
+            foreach (var device in allDevices.Where(d => !d.BusId.HasValue && d.Guid.HasValue).OrderBy(d => d.Guid.GetValueOrDefault()))
             {
-                console.WriteLine($"{device.Guid,-38:B}  {device.BusId,-5}  {device.Description.Truncate(60),-60}");
+                Debug.Assert(device.Guid.HasValue);
+                console.WriteLine($"{device.Guid.Value,-38:B}  {device.Description.Truncate(60),-60}");
             }
             console.ReportIfServerNotRunning();
             console.ReportIfForceNeeded();
-            return ExitCode.Success;
+            return Task.FromResult(ExitCode.Success);
         }
 
-        static async Task<ExitCode> Bind(BusId busId, bool wslAttach, bool force, IConsole console, CancellationToken cancellationToken)
+        static ExitCode Bind(BusId busId, bool wslAttach, bool force, IConsole console)
         {
-            var connectedDevices = await ExportedDevice.GetAll(cancellationToken);
-            var device = connectedDevices.Where(x => x.BusId == busId).SingleOrDefault();
+            var device = UsbDevice.GetAll().Where(d => d.BusId.HasValue && d.BusId.Value == busId).SingleOrDefault();
             if (device is null)
             {
                 console.ReportError($"There is no device with busid '{busId}'.");
                 return ExitCode.Failure;
             }
-            var isShared = RegistryUtils.IsDeviceShared(device);
-            var isForced = ConfigurationManager.HasVBoxDriver(device.InstanceId);
-            if (isShared && (wslAttach || (force == isForced)))
+            if (device.Guid.HasValue && (wslAttach || (force == device.IsForced)))
             {
                 // Not an error, just let the user know they just executed a no-op.
                 if (!wslAttach)
                 {
                     console.ReportInfo($"Connected device with busid '{busId}' was already shared.");
                 }
-                else if (!isForced)
+                if (!device.IsForced)
                 {
                     console.ReportIfForceNeeded();
                 }
@@ -119,16 +130,16 @@ namespace UsbIpServer
                 }
                 return ExitCode.AccessDenied;
             }
-            if (!isShared)
+            if (!device.Guid.HasValue)
             {
-                RegistryUtils.ShareDevice(device, device.Description);
+                RegistryUtils.Persist(device.InstanceId, device.Description);
             }
             if (!force)
             {
                 // Do not warn that force may be needed if the user is actually using --force.
                 console.ReportIfForceNeeded();
             }
-            if (force != isForced)
+            if (force != device.IsForced)
             {
                 // Switch driver.
                 var reboot = force ? NewDev.ForceVBoxDriver(device.InstanceId) : NewDev.UnforceVBoxDriver(device.InstanceId);
@@ -143,7 +154,7 @@ namespace UsbIpServer
 
         Task<ExitCode> ICommandHandlers.Bind(BusId busId, bool force, IConsole console, CancellationToken cancellationToken)
         {
-            return Bind(busId, false, force, console, cancellationToken);
+            return Task.FromResult(Bind(busId, false, force, console));
         }
 
         async Task<ExitCode> ICommandHandlers.Server(string[] args, IConsole console, CancellationToken cancellationToken)
@@ -207,37 +218,36 @@ namespace UsbIpServer
             return ExitCode.Success;
         }
 
-        async Task<ExitCode> ICommandHandlers.Unbind(BusId busId, IConsole console, CancellationToken cancellationToken)
+        Task<ExitCode> ICommandHandlers.Unbind(BusId busId, IConsole console, CancellationToken cancellationToken)
         {
-            var connectedDevices = await ExportedDevice.GetAll(cancellationToken);
-            var device = connectedDevices.Where(x => x.BusId == busId).SingleOrDefault();
+            var device = UsbDevice.GetAll().Where(d => d.BusId.HasValue && d.BusId.Value == busId).SingleOrDefault();
             if (device is null)
             {
                 console.ReportError($"There is no device with busid '{busId}'.");
-                return ExitCode.Failure;
+                return Task.FromResult(ExitCode.Failure);
             }
-            if (!RegistryUtils.IsDeviceShared(device))
+            if (device.Guid is null)
             {
                 // Not an error, just let the user know they just executed a no-op.
                 console.ReportInfo($"Connected device with busid '{busId}' was already not shared.");
-                return ExitCode.Success;
+                return Task.FromResult(ExitCode.Success);
             }
             if (!CheckWriteAccess(console))
             {
-                return ExitCode.AccessDenied;
+                return Task.FromResult(ExitCode.AccessDenied);
             }
-            RegistryUtils.StopSharingDevice(device);
+            RegistryUtils.StopSharingDevice(device.Guid.Value);
             if (NewDev.UnforceVBoxDriver(device.InstanceId))
             {
                 console.ReportRebootRequired();
             }
-            return ExitCode.Success;
+            return Task.FromResult(ExitCode.Success);
         }
 
         Task<ExitCode> ICommandHandlers.Unbind(Guid guid, IConsole console, CancellationToken cancellationToken)
         {
-            var persistedDevices = RegistryUtils.GetPersistedDevices();
-            if (!persistedDevices.Any(persistedDevice => persistedDevice.Guid == guid))
+            var device = RegistryUtils.GetBoundDevices().Where(d => d.Guid.HasValue && d.Guid.Value == guid).SingleOrDefault();
+            if (device is null)
             {
                 console.ReportError($"There is no device with guid '{guid:B}'.");
                 return Task.FromResult(ExitCode.Failure);
@@ -247,25 +257,19 @@ namespace UsbIpServer
                 return Task.FromResult(ExitCode.AccessDenied);
             }
             RegistryUtils.StopSharingDevice(guid);
-#if false
-            foreach (var persistedDevice in persistedDevices)
+            if (NewDev.UnforceVBoxDriver(device.InstanceId))
             {
-                if (NewDev.UnforceVBoxDriver(persistedDevice.))
+                console.ReportRebootRequired();
             }
-#endif
-            // TODO: find device and then NewDev.UnforceVBoxDriver(device.InstanceId);
-            // TODO: report if reboot required
             return Task.FromResult(ExitCode.Success);
         }
 
         Task<ExitCode> ICommandHandlers.UnbindAll(IConsole console, CancellationToken cancellationToken)
         {
-#if false
             if (!CheckWriteAccess(console))
             {
                 return Task.FromResult(ExitCode.AccessDenied);
             }
-#endif
             RegistryUtils.StopSharingAllDevices();
             var reboot = false;
             var error = false;
@@ -378,7 +382,7 @@ namespace UsbIpServer
                 return ExitCode.Failure;
             }
 
-            var bindResult = await Bind(busId, true, false, console, cancellationToken);
+            var bindResult = Bind(busId, true, false, console);
             if (bindResult != ExitCode.Success)
             {
                 return bindResult;
@@ -472,27 +476,26 @@ namespace UsbIpServer
             return ExitCode.Success;
         }
 
-        async Task<ExitCode> ICommandHandlers.WslDetach(BusId busId, IConsole console, CancellationToken cancellationToken)
+        Task<ExitCode> ICommandHandlers.WslDetach(BusId busId, IConsole console, CancellationToken cancellationToken)
         {
-            var connectedDevices = await ExportedDevice.GetAll(cancellationToken);
-            var device = connectedDevices.Where(x => x.BusId == busId).SingleOrDefault();
+            var device = UsbDevice.GetAll().Where(d => d.BusId.HasValue && d.BusId.Value == busId).SingleOrDefault();
             if (device is null)
             {
                 console.ReportError($"There is no device with busid '{busId}'.");
-                return ExitCode.Failure;
+                return Task.FromResult(ExitCode.Failure);
             }
-            if (!RegistryUtils.IsDeviceAttached(device))
+            if (!device.Guid.HasValue || device.IPAddress is null)
             {
                 // Not an error, just let the user know they just executed a no-op.
                 console.ReportInfo($"Connected device with busid '{busId}' was already not attached.");
-                return ExitCode.Success;
+                return Task.FromResult(ExitCode.Success);
             }
-            if (!RegistryUtils.SetDeviceAsDetached(device))
+            if (!RegistryUtils.SetDeviceAsDetached(device.Guid.Value))
             {
                 console.ReportError($"Failed to detach device with BUSID '{busId}'.");
-                return ExitCode.Failure;
+                return Task.FromResult(ExitCode.Failure);
             }
-            return ExitCode.Success;
+            return Task.FromResult(ExitCode.Success);
         }
 
         Task<ExitCode> ICommandHandlers.WslDetachAll(IConsole console, CancellationToken cancellationToken)
@@ -512,18 +515,27 @@ namespace UsbIpServer
                 return ExitCode.Failure;
             }
 
-            var connectedDevices = await ExportedDevice.GetAll(CancellationToken.None);
-
             console.WriteLine($"{"BUSID",-5}  {"DEVICE",-60}  STATE");
-            foreach (var device in connectedDevices)
+            foreach (var device in UsbDevice.GetAll().OrderBy(d => d.BusId))
             {
-                var isAttached = RegistryUtils.IsDeviceAttached(device);
-                var address = RegistryUtils.GetDeviceAddress(device);
-                var distro = address is not null ? distros.LookupByIPAddress(address)?.Name : null;
-                var state = isAttached ? ("Attached" + (distro is not null ? $" - {distro}" : string.Empty)) : "Not attached";
-                var description = ConsoleTools.Truncate(device.Description, 60);
-
-                console.WriteLine($"{device.BusId,-5}  {description,-60}  {state}");
+                string state;
+                if (device.IPAddress is not null)
+                {
+                    if (distros.LookupByIPAddress(device.IPAddress)?.Name is string distro)
+                    {
+                        state = $"Attached - {distro}";
+                    }
+                    else
+                    {
+                        state = "Attached";
+                    }
+                }
+                else
+                {
+                    state = "Not attached";
+                }
+                // NOTE: Strictly speaking, both Bus and Port can be > 99. If you have one of those, you win a prize!
+                console.WriteLine($"{device.BusId,-5}  {ConsoleTools.Truncate(device.Description, 60),-60}  {state}");
             }
             console.ReportIfServerNotRunning();
             console.ReportIfForceNeeded();

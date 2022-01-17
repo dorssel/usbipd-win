@@ -4,15 +4,12 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using System.Security;
 using System.Security.AccessControl;
 using System.Security.Principal;
 using Microsoft.Win32;
 using Windows.Win32;
-
-using static UsbIpServer.Interop.VBoxUsbMon;
 
 namespace UsbIpServer
 {
@@ -32,12 +29,11 @@ namespace UsbIpServer
         static RegistryKey BaseKey(bool writable) => (writable ? WritableBaseKey : ReadOnlyBaseKey).Value;
 
         const string DevicesName = "Devices";
+        const string InstanceIdName = "InstanceId";
         const string DescriptionName = "Description";
-        const string BusIdName = "BusId";
-        const string FilterName = "Filter";
         const string AttachedName = "Attached";
+        const string BusIdName = "BusId";
         const string IPAddressName = "IPAddress";
-        const string OriginalInstanceIdName = "OriginalInstanceId";
 
         static RegistryKey GetDevicesKey(bool writable)
         {
@@ -51,63 +47,12 @@ namespace UsbIpServer
             return devicesKey.OpenSubKey(guid.ToString("B"), writable);
         }
 
-        static RegistryKey? GetDeviceKey(ExportedDevice device, bool writable)
-        {
-            foreach (var persistedDevice in GetPersistedDevices())
-            {
-                var deviceKey = GetDeviceKey(persistedDevice.Guid, writable);
-                if (deviceKey is not null && IsDeviceMatch(deviceKey, device))
-                {
-                    return deviceKey;
-                }
-                deviceKey?.Dispose();
-            }
-            return null;
-        }
-
-        // To share is to equivalently have it in the registry.
-        // If a device is not in the registry, then it is not shared.
-        public static void ShareDevice(ExportedDevice device, string description)
+        public static void Persist(string instanceId, string description)
         {
             var guid = Guid.NewGuid();
             using var deviceKey = GetDevicesKey(true).CreateSubKey($"{guid:B}");
-            deviceKey.SetValue(BusIdName, device.BusId.ToString());
+            deviceKey.SetValue(InstanceIdName, instanceId);
             deviceKey.SetValue(DescriptionName, description);
-            using var filterKey = deviceKey.CreateSubKey(FilterName);
-            // int maps to RegistryValueKind.DWord
-            filterKey.SetValue(nameof(UsbFilterIdx.VENDOR_ID), (int)device.VendorId);
-            filterKey.SetValue(nameof(UsbFilterIdx.PRODUCT_ID), (int)device.ProductId);
-            filterKey.SetValue(nameof(UsbFilterIdx.DEVICE), (int)device.BcdDevice);
-            filterKey.SetValue(nameof(UsbFilterIdx.DEVICE_CLASS), (int)device.DeviceClass);
-            filterKey.SetValue(nameof(UsbFilterIdx.DEVICE_SUB_CLASS), (int)device.DeviceSubClass);
-            filterKey.SetValue(nameof(UsbFilterIdx.DEVICE_PROTOCOL), (int)device.DeviceProtocol);
-        }
-
-        public static string? GetDeviceDescription(ExportedDevice device)
-        {
-            using var deviceKey = GetDeviceKey(device, false);
-            return (string?)deviceKey?.GetValue(DescriptionName);
-        }
-
-        public static bool IsDeviceShared(ExportedDevice device)
-        {
-            using var deviceKey = GetDeviceKey(device, false);
-            return deviceKey is not null;
-        }
-
-        static bool IsDeviceMatch(RegistryKey deviceKey, ExportedDevice device)
-        {
-            using var filterKey = deviceKey.OpenSubKey(FilterName);
-            return filterKey is not null
-                && BusId.TryParse((string?)deviceKey.GetValue(BusIdName) ?? string.Empty, out var busId)
-                && busId == device.BusId
-                && (int?)filterKey.GetValue(nameof(UsbFilterIdx.VENDOR_ID)) == device.VendorId
-                && (int?)filterKey.GetValue(nameof(UsbFilterIdx.PRODUCT_ID)) == device.ProductId
-                && (int?)filterKey.GetValue(nameof(UsbFilterIdx.DEVICE)) == device.BcdDevice
-                && (int?)filterKey.GetValue(nameof(UsbFilterIdx.DEVICE_CLASS)) == device.DeviceClass
-                && (int?)filterKey.GetValue(nameof(UsbFilterIdx.DEVICE_SUB_CLASS)) == device.DeviceSubClass
-                && (int?)filterKey.GetValue(nameof(UsbFilterIdx.DEVICE_PROTOCOL)) == device.DeviceProtocol
-                ;
         }
 
         public static void StopSharingDevice(Guid guid)
@@ -116,49 +61,18 @@ namespace UsbIpServer
             devicesKey.DeleteSubKeyTree(guid.ToString("B"), false);
         }
 
-        public static void StopSharingDevice(ExportedDevice device)
-        {
-            foreach (var persistedDevice in GetPersistedDevices())
-            {
-                using var deviceKey = GetDeviceKey(persistedDevice.Guid, false);
-                if (deviceKey is not null && IsDeviceMatch(deviceKey, device))
-                {
-                    StopSharingDevice(persistedDevice.Guid);
-                    return;
-                }
-            }
-        }
-
         public static void StopSharingAllDevices()
         {
-            foreach (var persistedDevice in GetPersistedDevices())
+            using var devicesKey = GetDevicesKey(true);
+            foreach (var subKeyName in devicesKey.GetSubKeyNames())
             {
-                StopSharingDevice(persistedDevice.Guid);
+                devicesKey.DeleteSubKeyTree(subKeyName, false);
             }
         }
 
-        public class PersistedDevice
+        public static RegistryKey SetDeviceAsAttached(Guid guid, BusId busId, IPAddress address, string stubInstanceId)
         {
-            public Guid Guid { get; }
-            public BusId BusId { get; }
-            public string Description { get; }
-            public PersistedDevice(Guid guid, BusId busid, string description)
-            {
-                Guid = guid;
-                BusId = busid;
-                Description = description;
-            }
-        }
-
-        public static bool IsDeviceAttached(ExportedDevice device)
-        {
-            using var deviceKey = GetDeviceKey(device, false);
-            return deviceKey is not null && deviceKey.GetSubKeyNames().Contains(AttachedName) && Server.IsServerRunning();
-        }
-
-        public static RegistryKey SetDeviceAsAttached(ExportedDevice device, IPAddress address)
-        {
-            using var key = GetDeviceKey(device, true)
+            using var key = GetDeviceKey(guid, true)
                 ?? throw new UnexpectedResultException($"{nameof(SetDeviceAsAttached)}: Device key not found");
             var attached = key.CreateSubKey(AttachedName, true, RegistryOptions.Volatile)
                 ?? throw new UnexpectedResultException($"{nameof(SetDeviceAsAttached)}: Unable to create ${AttachedName} subkey");
@@ -169,8 +83,9 @@ namespace UsbIpServer
             attached.SetAccessControl(registrySecurity);
             try
             {
+                attached.SetValue(BusIdName, busId);
                 attached.SetValue(IPAddressName, address.ToString());
-                attached.SetValue(OriginalInstanceIdName, device.InstanceId);
+                attached.SetValue(InstanceIdName, stubInstanceId);
                 return attached;
             }
             catch
@@ -190,9 +105,9 @@ namespace UsbIpServer
             return attached is null;
         }
 
-        public static bool SetDeviceAsDetached(ExportedDevice device)
+        public static bool SetDeviceAsDetached(Guid guid)
         {
-            using var deviceKey = GetDeviceKey(device, false);
+            using var deviceKey = GetDeviceKey(guid, false);
             if (deviceKey is null)
             {
                 return true;
@@ -220,24 +135,13 @@ namespace UsbIpServer
             return !failure;
         }
 
-        public static IPAddress? GetDeviceAddress(ExportedDevice device)
-        {
-            using var deviceKey = GetDeviceKey(device, false);
-            using var subKey = deviceKey?.OpenSubKey(AttachedName, false);
-            return subKey?.GetValue(IPAddressName) is string value ? IPAddress.Parse(value) : null;
-        }
-
-        public static string? GetOriginalInstanceId(ExportedDevice device)
-        {
-            using var deviceKey = GetDeviceKey(device, false);
-            using var subKey = deviceKey?.OpenSubKey(AttachedName, false);
-            return (string?)subKey?.GetValue(OriginalInstanceIdName);
-        }
-
         /// <summary>
-        /// Enumerates all persisted devices, currently present or not.
+        /// Enumerates all bound devices.
+        /// <para>
+        /// This retrieves the entire (valid) registry state.
+        /// </para>
         /// </summary>
-        public static IEnumerable<PersistedDevice> GetPersistedDevices()
+        public static IEnumerable<UsbDevice> GetBoundDevices()
         {
             var guids = new SortedSet<Guid>();
             using var devicesKey = GetDevicesKey(false);
@@ -245,43 +149,65 @@ namespace UsbIpServer
             {
                 if (Guid.TryParseExact(subKeyName, "B", out var guid))
                 {
+                    // Sanitize uniqueness.
                     guids.Add(guid);
                 }
             }
-            var persistedDevices = new List<PersistedDevice>();
+            var ignoreAttached = !Server.IsServerRunning();
+            var persistedDevices = new Dictionary<string, UsbDevice>();
             foreach (var guid in guids)
             {
                 using var deviceKey = GetDeviceKey(guid, false);
-                if (deviceKey is not null)
-                {
-                    if (!BusId.TryParse(deviceKey.GetValue(BusIdName) as string ?? "", out var busId))
-                    {
-                        continue;
-                    }
-                    if (deviceKey.GetValue(DescriptionName) is not string description)
-                    {
-                        continue;
-                    }
-                    persistedDevices.Add(new(guid, busId, description));
-                }
-            }
-            return persistedDevices;
-        }
-
-        /// <summary>
-        /// Enumerates the persisted devices that are currently not present.
-        /// </summary>
-        public static IEnumerable<PersistedDevice> GetPersistedDevices(ExportedDevice[] connectedDevices)
-        {
-            return GetPersistedDevices().Where(persistedDevice =>
-            {
-                using var deviceKey = GetDeviceKey(persistedDevice.Guid, false);
                 if (deviceKey is null)
                 {
-                    return false;
+                    continue;
                 }
-                return !connectedDevices.Any(connectedDevice => IsDeviceMatch(deviceKey, connectedDevice));
-            });
+                if (deviceKey.GetValue(InstanceIdName) is not string instanceId)
+                {
+                    // Must exist.
+                    continue;
+                }
+                if (persistedDevices.ContainsKey(instanceId))
+                {
+                    // Sanitize uniqueness.
+                    continue;
+                }
+                if (deviceKey.GetValue(DescriptionName) is not string description)
+                {
+                    // Must exist.
+                    continue;
+                }
+                BusId? attachedBusId = null;
+                IPAddress? attachedIPAddress = null;
+                string? attachedStubInstanceId = null;
+                if (!ignoreAttached)
+                {
+                    // If the server is not running, ignore any left-over attaches as they are no longer valid.
+                    using var attachedKey = deviceKey.OpenSubKey(AttachedName, false);
+                    if (attachedKey is not null)
+                    {
+                        if (BusId.TryParse(attachedKey.GetValue(BusIdName) as string ?? "", out var busId)
+                            && IPAddress.TryParse(attachedKey.GetValue(IPAddressName) as string ?? "", out var ipAddress)
+                            && attachedKey.GetValue(InstanceIdName) is string stubInstanceId)
+                        {
+                            attachedBusId = busId;
+                            attachedIPAddress = ipAddress;
+                            attachedStubInstanceId = stubInstanceId;
+                        }
+                    }
+                }
+                persistedDevices.Add(instanceId, new()
+                {
+                    InstanceId = instanceId,
+                    Description = description,
+                    Guid = guid,
+                    IsForced = ConfigurationManager.HasVBoxDriver(instanceId),
+                    BusId = attachedBusId ?? ConfigurationManager.GetBusId(instanceId),
+                    IPAddress = attachedIPAddress,
+                    StubInstanceId = attachedStubInstanceId,
+                });
+            }
+            return persistedDevices.Values;
         }
 
         public static bool HasWriteAccess()

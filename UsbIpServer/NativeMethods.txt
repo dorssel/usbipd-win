@@ -7,6 +7,7 @@ CM_Get_Device_Interface_List
 CM_Get_Device_Interface_List_Size
 CM_Get_Device_Interface_Property
 CM_Get_DevNode_Property
+CM_Get_Parent
 CM_Get_Sibling
 CM_Locate_DevNode
 CM_MapCrToWin32Err

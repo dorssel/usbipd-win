@@ -149,6 +149,7 @@ namespace UsbIpServer
 
         static readonly SortedSet<string> BlacklistUpperFilters = new()
         {
+            "EUsbHubFilter",
             "TsUsbFlt",
             "UsbDk",
             "USBPcap",

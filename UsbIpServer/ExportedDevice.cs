@@ -7,7 +7,6 @@ using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
-using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
@@ -21,7 +20,7 @@ using static UsbIpServer.Tools;
 
 namespace UsbIpServer
 {
-    sealed class ExportedDevice
+    sealed record ExportedDevice
     {
         private ExportedDevice()
         {
@@ -39,8 +38,6 @@ namespace UsbIpServer
         public byte ConfigurationValue { get; private init; }
         public byte NumConfigurations { get; private init; }
         public List<(byte, byte, byte)> Interfaces { get; private set; } = new();
-
-        public string Description { get; private set; } = string.Empty;
 
         static void Serialize(Stream stream, string value, uint size)
         {
@@ -137,17 +134,23 @@ namespace UsbIpServer
             return result;
         }
 
-        static async Task<ExportedDevice?> GetExportedDevice(ConfigurationManager.UsbDevice device, CancellationToken cancellationToken)
+        public static async Task<ExportedDevice> GetExportedDevice(UsbDevice device, CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            // now query the parent USB hub for device details
+            if (!device.BusId.HasValue)
+            {
+                throw new ArgumentException("device is not connected", nameof(device));
+            }
 
-            using var hubFile = new DeviceFile(device.HubInterfacePath);
+            // Query the parent USB hub for device details.
+
+            var hubInterfacePath = ConfigurationManager.GetHubInterfacePath(device.StubInstanceId ?? device.InstanceId);
+            using var hubFile = new DeviceFile(hubInterfacePath);
             using var cancellationTokenRegistration = cancellationToken.Register(() => hubFile.Dispose());
             try
             {
-                var data = new UsbNodeConnectionInformationEx() { ConnectionIndex = device.BusId.Port };
+                var data = new UsbNodeConnectionInformationEx() { ConnectionIndex = device.BusId.Value.Port };
                 var buf = StructToBytes(data);
                 await hubFile.IoControlAsync(IoControl.IOCTL_USB_GET_NODE_CONNECTION_INFORMATION_EX, buf, buf);
                 BytesToStruct(buf, out data);
@@ -156,7 +159,7 @@ namespace UsbIpServer
 
                 var data2 = new UsbNodeConnectionInformationExV2()
                 {
-                    ConnectionIndex = device.BusId.Port,
+                    ConnectionIndex = device.BusId.Value.Port,
                     Length = (uint)Marshal.SizeOf<UsbNodeConnectionInformationExV2>(),
                     SupportedUsbProtocols = UsbProtocols.Usb110 | UsbProtocols.Usb200 | UsbProtocols.Usb300,
                 };
@@ -180,17 +183,17 @@ namespace UsbIpServer
                 try
                 {
                     // This may or may not fail if the device is disabled.
-                    // Failure is not fatal, it just means that the export list will not contain
+                    // Failure is not fatal, it just means that the export data will not contain
                     // the interface list, which only makes the identification of the 
                     // device by the user a little more difficult.
-                    interfaces = await GetInterfacesAsync(hubFile, device.BusId.Port);
+                    interfaces = await GetInterfacesAsync(hubFile, device.BusId.Value.Port);
                 }
                 catch (Win32Exception) { }
 
                 var exportedDevice = new ExportedDevice()
                 {
                     InstanceId = device.InstanceId,
-                    BusId = device.BusId,
+                    BusId = device.BusId.Value,
                     Speed = speed,
                     VendorId = data.DeviceDescriptor.idVendor,
                     ProductId = data.DeviceDescriptor.idProduct,
@@ -201,21 +204,7 @@ namespace UsbIpServer
                     ConfigurationValue = data.CurrentConfigurationValue,
                     NumConfigurations = data.DeviceDescriptor.bNumConfigurations,
                     Interfaces = interfaces,
-                    Description = device.Description,
                 };
-
-                if (RegistryUtils.GetOriginalInstanceId(exportedDevice) is string originalInstanceId)
-                {
-                    // If the device is currently attached, then VBoxMon will have replaced it
-                    // with a different device node that has a different instance ID.
-                    exportedDevice.InstanceId = originalInstanceId;
-                }
-
-                if (RegistryUtils.GetDeviceDescription(exportedDevice) is string cachedDescription)
-                {
-                    // If the device is currently attached, then we will have overridden the description.
-                    exportedDevice.Description = cachedDescription;
-                }
 
                 return exportedDevice;
             }
@@ -224,30 +213,6 @@ namespace UsbIpServer
                 cancellationToken.ThrowIfCancellationRequested();
                 throw;
             }
-        }
-
-        public static async Task<ExportedDevice[]> GetAll(CancellationToken cancellationToken)
-        {
-            var exportedDevices = new SortedDictionary<BusId, ExportedDevice>();
-            foreach (var device in ConfigurationManager.GetUsbDevices(true))
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-                try
-                {
-                    if (await GetExportedDevice(device, cancellationToken) is ExportedDevice exportedDevice)
-                    {
-                        exportedDevices.Add(exportedDevice.BusId, exportedDevice);
-                    }
-                }
-                catch (Win32Exception)
-                {
-                    // This can happen after standby/hibernation, or when racing against unplugging the device.
-                    // Simply do not report the device as present, which will force a surprise removal if the device was attached.
-                    // Common errors: ERROR_NO_SUCH_DEVICE, ERROR_GEN_FAILURE, and possibly many more
-                    continue;
-                }
-            }
-            return exportedDevices.Values.ToArray();
         }
     }
 }

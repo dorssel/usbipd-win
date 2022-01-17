@@ -17,9 +17,9 @@ namespace UsbIpServer
 {
     static class VBoxUsb
     {
-        static async Task<(ConfigurationManager.VBoxDevice, DeviceFile)> ClaimDeviceOnce(ExportedDevice device)
+        static async Task<(ConfigurationManager.VBoxDevice, DeviceFile)> ClaimDeviceOnce(BusId busId)
         {
-            var vboxDevice = ConfigurationManager.GetVBoxDevice(device.BusId);
+            var vboxDevice = ConfigurationManager.GetVBoxDevice(busId);
             var dev = new DeviceFile(vboxDevice.InterfacePath);
             try
             {
@@ -65,7 +65,7 @@ namespace UsbIpServer
             throw new FileNotFoundException();
         }
 
-        public static async Task<(ConfigurationManager.VBoxDevice, DeviceFile)> ClaimDevice(ExportedDevice device)
+        public static async Task<(ConfigurationManager.VBoxDevice, DeviceFile)> ClaimDevice(BusId busId)
         {
             var sw = new Stopwatch();
             sw.Start();
@@ -73,7 +73,7 @@ namespace UsbIpServer
             {
                 try
                 {
-                    return await ClaimDeviceOnce(device);
+                    return await ClaimDeviceOnce(busId);
                 }
                 catch (FileNotFoundException)
                 {
