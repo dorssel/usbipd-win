@@ -266,6 +266,7 @@ namespace UsbIpServer
                         if (hardwareIds.Any(hardwareId => hardwareId.Contains("VID_80EE&PID_CAFE", StringComparison.InvariantCultureIgnoreCase)))
                         {
                             // Do not include stubs.
+                            continue;
                         }
                         var instanceId = (string)Get_DevNode_Property(deviceNode, PInvoke.DEVPKEY_Device_InstanceId);
                         usbDevices[instanceId] = new()
