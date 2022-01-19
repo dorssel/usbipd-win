@@ -18,7 +18,9 @@ using System.Threading.Tasks;
 
 namespace UsbIpServer
 {
-    sealed class WslDistributions
+    sealed partial record WslDistributions(IEnumerable<WslDistributions.Distribution> Distributions, IPAddress? HostAddress);
+
+    sealed partial record WslDistributions
     {
         public const string InstallWslUrl = "https://aka.ms/installwsl";
         public const string SetWslVersionUrl = "https://docs.microsoft.com/windows/wsl/basic-commands#set-wsl-version-to-1-or-2";
@@ -28,30 +30,21 @@ namespace UsbIpServer
 
         public sealed record Distribution(string Name, bool IsDefault, uint Version, bool IsRunning, IPAddress? IPAddress);
 
-        WslDistributions(List<Distribution> distributions, IPAddress? hostAddress)
-        {
-            Distributions = distributions;
-            HostAddress = hostAddress;
-        }
-
-        public IReadOnlyCollection<Distribution> Distributions { get; }
-
-        public IPAddress? HostAddress { get; }
-
         public Distribution? DefaultDistribution => Distributions.FirstOrDefault((distro) => distro.IsDefault);
 
-        static bool IsOnSameIPv4Network(UnicastIPAddressInformation wslHost, IPAddress wslInstance)
+        internal static bool IsOnSameIPv4Network(IPAddress hostAddress, IPAddress hostMask, IPAddress clientAddress)
         {
-            if (wslHost.Address.AddressFamily != AddressFamily.InterNetwork
-                || wslInstance.AddressFamily != AddressFamily.InterNetwork)
+            if (hostAddress.AddressFamily != AddressFamily.InterNetwork
+                || hostMask.AddressFamily != AddressFamily.InterNetwork
+                || clientAddress.AddressFamily != AddressFamily.InterNetwork)
             {
                 return false;
             }
 
             // NOTE: we don't care about byte order here
-            var rawHost = BitConverter.ToUInt32(wslHost.Address.GetAddressBytes());
-            var rawInstance = BitConverter.ToUInt32(wslInstance.GetAddressBytes());
-            var rawMask = BitConverter.ToUInt32(wslHost.IPv4Mask.GetAddressBytes());
+            var rawHost = BitConverter.ToUInt32(hostAddress.GetAddressBytes());
+            var rawInstance = BitConverter.ToUInt32(clientAddress.GetAddressBytes());
+            var rawMask = BitConverter.ToUInt32(hostMask.GetAddressBytes());
             return (rawHost & rawMask) == (rawInstance & rawMask);
         }
 
@@ -150,7 +143,7 @@ namespace UsbIpServer
                                     {
                                         continue;
                                     }
-                                    if (IsOnSameIPv4Network(wslHost, wslInstance))
+                                    if (IsOnSameIPv4Network(wslHost.Address, wslHost.IPv4Mask, wslInstance))
                                     {
                                         address = wslInstance;
                                         break;
