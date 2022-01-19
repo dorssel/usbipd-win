@@ -147,10 +147,10 @@ namespace UsbIpServer
                 //  bind
                 //
                 var bindCommand = new Command("bind", "Bind device\0"
-                    + "Registers a single compatible USB devices for sharing, so it can be "
-                    + "attached by other machines. Bound devices remain available to the host "
-                    + "until they are attached by another machine, at which time they "
-                    + "become unavailable to the host.")
+                    + "Registers a single USB device for sharing, so it can be "
+                    + "attached to other machines. Unless the --force option is used, "
+                    + "shared devices remain available to the host "
+                    + "until they are attached to another machine.")
                 {
                     busIdOption,
                     forceOption,
@@ -262,7 +262,7 @@ namespace UsbIpServer
                 //
                 var unbindCommand = new Command("unbind", "Unbind device\0"
                     + "Unregisters one (or all) USB devices for sharing. If the device is currently "
-                    + "attached, it will immediately be detached and it becomes available to the "
+                    + "attached to another machine, it will immediately be detached and it becomes available to the "
                     + "host again; the remote machine will see this as a surprise removal event.\n"
                     + "\n"
                     + OneOfRequiredText(allOption, busIdOption, guidOption))
@@ -353,8 +353,9 @@ namespace UsbIpServer
                     var attachCommand = new Command("attach", "Attach a USB device to a WSL instance\0"
                         + "Attaches a USB device to a WSL instance.\n"
                         + "\n"
-                        + "The 'wsl attach' command is equivalent to the 'bind' command followed by "
-                        + "a 'usbip attach' command on the Linux side."
+                        + "The first time a device is attached this command will include a 'bind', for "
+                        + "which administrator privileges are required. Subsequent attaches can be "
+                        + "done with standard user privileges."
                         )
                     {
                         busIdOption,
@@ -399,9 +400,8 @@ namespace UsbIpServer
                     //
                     var detachCommand = new Command("detach", "Detach a USB device from a WSL instance\0"
                         + "Detaches one (or all) USB devices. The WSL instance sees this as a surprise "
-                        + "removal event. A detached device becomes available again in Windows.\n"
-                        + "\n"
-                        + "The 'wsl detach' command is equivalent to the 'unbind' command.\n"
+                        + "removal event. A detached device becomes available again in Windows, "
+                        + "unless it was bound using the --force option.\n"
                         + "\n"
                         + OneOfRequiredText(allOption, busIdOption))
                     {
