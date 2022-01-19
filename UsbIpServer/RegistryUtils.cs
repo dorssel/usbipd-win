@@ -153,7 +153,7 @@ namespace UsbIpServer
                     guids.Add(guid);
                 }
             }
-            var ignoreAttached = !Server.IsServerRunning();
+            var ignoreAttached = !Server.IsRunning();
             var persistedDevices = new Dictionary<string, UsbDevice>();
             foreach (var guid in guids)
             {

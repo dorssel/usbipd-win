@@ -88,7 +88,8 @@ namespace UsbIpServer
                 // NOTE: Strictly speaking, both Bus and Port can be > 99. If you have one of those, you win a prize!
                 console.WriteLine($@"{device.BusId.Value,-5}  {device.Description.Truncate(60),-60}  {state}");
             }
-            console.Write("\n");
+            console.WriteLine(string.Empty);
+
             console.WriteLine("Persisted:");
             console.WriteLine($"{"GUID",-38}  DEVICE");
             foreach (var device in allDevices.Where(d => !d.BusId.HasValue && d.Guid.HasValue).OrderBy(d => d.Guid.GetValueOrDefault()))
@@ -96,6 +97,8 @@ namespace UsbIpServer
                 Debug.Assert(device.Guid.HasValue);
                 console.WriteLine($"{device.Guid.Value,-38:B}  {device.Description.Truncate(60),-60}");
             }
+            console.WriteLine(string.Empty);
+
             console.ReportIfServerNotRunning();
             console.ReportIfForceNeeded();
             return Task.FromResult(ExitCode.Success);
@@ -114,7 +117,7 @@ namespace UsbIpServer
                 // Not an error, just let the user know they just executed a no-op.
                 if (!wslAttach)
                 {
-                    console.ReportInfo($"Connected device with busid '{busId}' was already shared.");
+                    console.ReportInfo($"Device with busid '{busId}' was already shared.");
                 }
                 if (!device.IsForced)
                 {
@@ -126,7 +129,7 @@ namespace UsbIpServer
             {
                 if (wslAttach)
                 {
-                    console.ReportInfo("The first time you attach a device to WSL requires administrator privileges; subsequent attaches will succeed with standard privileges.");
+                    console.ReportInfo("The first time you attach a device to WSL requires administrator privileges; subsequent attaches will succeed with standard user privileges.");
                 }
                 return ExitCode.AccessDenied;
             }
@@ -229,7 +232,7 @@ namespace UsbIpServer
             if (device.Guid is null)
             {
                 // Not an error, just let the user know they just executed a no-op.
-                console.ReportInfo($"Connected device with busid '{busId}' was already not shared.");
+                console.ReportInfo($"Device with busid '{busId}' was already not shared.");
                 return Task.FromResult(ExitCode.Success);
             }
             if (!CheckWriteAccess(console))
@@ -428,7 +431,7 @@ namespace UsbIpServer
                 if (wslResult.ExitCode != 0 || !wslResult.StandardOutput.StartsWith("usbip ("))
 #pragma warning restore CA1508 // Avoid dead conditional code
                 {
-                    console.ReportError($"WSL 'usbip' client not correctly installed.");
+                    console.ReportError($"WSL 'usbip' client not correctly installed. See {WslDistributions.WslWikiUrl} for the latest instructions.");
                     return ExitCode.Failure;
                 }
             }
@@ -487,7 +490,7 @@ namespace UsbIpServer
             if (!device.Guid.HasValue || device.IPAddress is null)
             {
                 // Not an error, just let the user know they just executed a no-op.
-                console.ReportInfo($"Connected device with busid '{busId}' was already not attached.");
+                console.ReportInfo($"Device with busid '{busId}' was already not attached.");
                 return Task.FromResult(ExitCode.Success);
             }
             if (!RegistryUtils.SetDeviceAsDetached(device.Guid.Value))
@@ -537,6 +540,8 @@ namespace UsbIpServer
                 // NOTE: Strictly speaking, both Bus and Port can be > 99. If you have one of those, you win a prize!
                 console.WriteLine($"{device.BusId,-5}  {ConsoleTools.Truncate(device.Description, 60),-60}  {state}");
             }
+            console.WriteLine(string.Empty);
+
             console.ReportIfServerNotRunning();
             console.ReportIfForceNeeded();
             return ExitCode.Success;
