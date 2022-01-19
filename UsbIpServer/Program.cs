@@ -4,8 +4,10 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 using System;
+using System.Collections.Generic;
 using System.CommandLine;
 using System.CommandLine.Builder;
+using System.CommandLine.Completions;
 using System.CommandLine.Help;
 using System.CommandLine.Invocation;
 using System.CommandLine.IO;
@@ -15,7 +17,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-
+using System.Threading;
 using static UsbIpServer.ConsoleTools;
 
 [assembly: CLSCompliant(true)]
@@ -82,6 +84,20 @@ namespace UsbIpServer
             return null;
         }
 
+        static IEnumerable<string> CompletionGuard(CompletionContext completionContext, Func<IEnumerable<string>?> complete)
+        {
+            try
+            {
+                return complete()?.Where(s => s.StartsWith(completionContext.WordToComplete)) ?? Array.Empty<string>();
+            }
+#pragma warning disable CA1031 // Do not catch general exception types (justification: completions are supposed to help, not crash)
+            catch
+#pragma warning restore CA1031 // Do not catch general exception types
+            {
+                return Array.Empty<string>();
+            }
+        }
+
         internal static int Main(string[] args)
         {
             if (!Console.IsInputRedirected)
@@ -116,7 +132,8 @@ namespace UsbIpServer
                     IsRequired = true,
                     ArgumentHelpName = "BUSID",
                     Description = "Share device having <BUSID>",
-                };
+                }.AddCompletions(completionContext => CompletionGuard(completionContext, () =>
+                    UsbDevice.GetAll().Where(d => d.BusId.HasValue).Select(d => d.BusId.GetValueOrDefault().ToString())));
                 //
                 //  bind [--force]
                 //
@@ -226,10 +243,8 @@ namespace UsbIpServer
                 {
                     ArgumentHelpName = "BUSID",
                     Description = "Stop sharing device having <BUSID>",
-                }.AddCompletions(completionContext =>
-                {
-                    return new string[] { "1-2", "3-4" };
-                });
+                }.AddCompletions(completionContext => CompletionGuard(completionContext, () =>
+                    UsbDevice.GetAll().Where(d => d.BusId.HasValue).Select(d => d.BusId.GetValueOrDefault().ToString())));
                 //
                 //  unbind [--guid <GUID>]
                 //
@@ -240,7 +255,8 @@ namespace UsbIpServer
                 {
                     ArgumentHelpName = "GUID",
                     Description = "Stop sharing persisted device having <GUID>",
-                };
+                }.AddCompletions(completionContext => CompletionGuard(completionContext, () =>
+                    RegistryUtils.GetBoundDevices().Where(d => !d.BusId.HasValue).Select(d => d.Guid.GetValueOrDefault().ToString("D"))));
                 //
                 //  unbind
                 //
@@ -308,7 +324,8 @@ namespace UsbIpServer
                         IsRequired = true,
                         ArgumentHelpName = "BUSID",
                         Description = "Attach device having <BUSID>",
-                    };
+                    }.AddCompletions(completionContext => CompletionGuard(completionContext, () =>
+                        UsbDevice.GetAll().Where(d => d.BusId.HasValue).Select(d => d.BusId.GetValueOrDefault().ToString())));
                     //
                     //  wsl attach --distribution <NAME>
                     //
@@ -318,7 +335,8 @@ namespace UsbIpServer
                     {
                         ArgumentHelpName = "NAME",
                         Description = "Name of the WSL distribution to attach to",
-                    };
+                    }.AddCompletions(completionContext => CompletionGuard(completionContext, () =>
+                        WslDistributions.CreateAsync(CancellationToken.None).Result?.Distributions.Select(d => d.Name)));
                     //
                     //  wsl attach --usbip-path <PATH>
                     //
@@ -374,10 +392,8 @@ namespace UsbIpServer
                     {
                         ArgumentHelpName = "BUSID",
                         Description = "Detach device having <BUSID>",
-                    }.AddCompletions(completionContext =>
-                    {
-                        return new string[] { "1-2", "3-4" };
-                    });
+                    }.AddCompletions(completionContext => CompletionGuard(completionContext, () =>
+                        UsbDevice.GetAll().Where(d => d.BusId.HasValue).Select(d => d.BusId.GetValueOrDefault().ToString())));
                     //
                     //  wsl detach
                     //
