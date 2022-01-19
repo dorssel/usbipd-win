@@ -131,6 +131,9 @@ namespace UsbIpServer
             console.ReportText("info", text);
         }
 
+        const string ServiceNotRunningText = "The service is currently not running; a reboot should fix that.";
+        const string VBoxUsbMonNotRunningText = "The VBoxUsbMon driver is currently not running; a reboot should fix that.";
+
         /// <summary>
         /// Helper to warn users that the service is not running.
         /// For commands that may lead the user to believe that everything is fine when in fact it is not.
@@ -139,10 +142,31 @@ namespace UsbIpServer
         /// </summary>
         public static void ReportIfServerNotRunning(this IConsole console)
         {
-            if (!Server.IsServerRunning())
+            if (!Server.IsRunning())
             {
-                console.ReportWarning("Server is currently not running.");
+                console.ReportWarning(ServiceNotRunningText);
             }
+            else if (!VBoxUsbMon.IsRunning())
+            {
+                // The usbipd service has a dependency on VBoxUsbMon, but this check also works if running the server from the command line.
+                console.ReportWarning(VBoxUsbMonNotRunningText);
+            }
+        }
+
+        public static bool CheckServerRunning(IConsole console)
+        {
+            if (!Server.IsRunning())
+            {
+                console.ReportError(ServiceNotRunningText);
+                return false;
+            }
+            else if (!VBoxUsbMon.IsRunning())
+            {
+                // The usbipd service has a dependency on VBoxUsbMon, but this check also works if running the server from the command line.
+                console.ReportError(VBoxUsbMonNotRunningText);
+                return false;
+            }
+            return true;
         }
 
         static readonly SortedSet<string> WhitelistUpperFilters = new();
@@ -189,17 +213,7 @@ namespace UsbIpServer
         {
             if (!RegistryUtils.HasWriteAccess())
             {
-                console.ReportError("Access denied.");
-                return false;
-            }
-            return true;
-        }
-
-        public static bool CheckServerRunning(IConsole console)
-        {
-            if (!Server.IsServerRunning())
-            {
-                console.ReportError("Server is currently not running.");
+                console.ReportError("Access denied; this operation requires administrator privileges.");
                 return false;
             }
             return true;

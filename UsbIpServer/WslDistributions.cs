@@ -22,6 +22,7 @@ namespace UsbIpServer
     {
         public const string InstallWslUrl = "https://aka.ms/installwsl";
         public const string SetWslVersionUrl = "https://docs.microsoft.com/windows/wsl/basic-commands#set-wsl-version-to-1-or-2";
+        public const string WslWikiUrl = "https://github.com/dorssel/usbipd-win/wiki/WSL-support";
 
         public static readonly string WslPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "wsl.exe");
 

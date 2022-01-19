@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 using System;
+using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
@@ -14,6 +15,19 @@ namespace UsbIpServer
     sealed class VBoxUsbMon : IDisposable
     {
         readonly DeviceFile UsbMonitor = new(USBMON_DEVICE_NAME);
+
+        public static bool IsRunning()
+        {
+            try
+            {
+                using var _ = new VBoxUsbMon();
+                return true;
+            }
+            catch (Win32Exception)
+            {
+                return false;
+            }
+        }
 
         public async Task CheckVersion()
         {

@@ -31,9 +31,12 @@ SPDX-License-Identifier: GPL-2.0-only
                     Name="usbipd"
                     Arguments="server"
                     Start="auto"
+                    Vital="yes"
                     DisplayName="USBIP Device Host"
                     Description="Enables sharing of locally connected USB devices to other machines. If this service is stopped, clients will not be able to attach shared devices."
-                    />
+                    >
+                    <ServiceDependency Id="VBoxUsbMon" />
+                </ServiceInstall>
                 <!-- Stop and remove the old service of version <= 0.3.1, if any -->
                 <ServiceControl
                     Id="usbipd_old"

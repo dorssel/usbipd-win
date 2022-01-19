@@ -33,7 +33,7 @@ namespace UsbIpServer
         readonly IServiceScopeFactory ServiceScopeFactory;
         readonly TcpListener TcpListener = TcpListener.Create(USBIP_PORT);
 
-        public static bool IsServerRunning()
+        public static bool IsRunning()
         {
             try
             {
