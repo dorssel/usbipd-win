@@ -93,11 +93,11 @@ namespace UsbIpServer
             console.WriteLine(string.Empty);
 
             console.WriteLine("Persisted:");
-            console.WriteLine($"{"GUID",-38}  DEVICE");
+            console.WriteLine($"{"GUID",-36}  DEVICE");
             foreach (var device in allDevices.Where(d => !d.BusId.HasValue && d.Guid.HasValue).OrderBy(d => d.Guid.GetValueOrDefault()))
             {
                 Debug.Assert(device.Guid.HasValue);
-                console.Write($"{device.Guid.Value,-38:B}  ");
+                console.Write($"{device.Guid.Value,-36:D}  ");
                 console.WriteTruncated(device.Description, 60, false);
                 console.WriteLine(string.Empty);
             }
@@ -256,7 +256,7 @@ namespace UsbIpServer
             var device = RegistryUtils.GetBoundDevices().Where(d => d.Guid.HasValue && d.Guid.Value == guid).SingleOrDefault();
             if (device is null)
             {
-                console.ReportError($"There is no device with guid '{guid:B}'.");
+                console.ReportError($"There is no device with guid '{guid:D}'.");
                 return Task.FromResult(ExitCode.Failure);
             }
             if (!CheckWriteAccess(console))
@@ -440,7 +440,7 @@ namespace UsbIpServer
                 }
             }
 
-            // 8) Heuristical firewall check
+            // 8) Heuristic firewall check
             //
             // With minimal requirements (bash only) try to connect from WSL to our server.
             // If the process does not terminate within one second, then most likely a third party
