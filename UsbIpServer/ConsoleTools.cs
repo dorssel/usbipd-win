@@ -60,9 +60,55 @@ namespace UsbIpServer
             }
         }
 
-        public static string Truncate(this string value, int maxChars)
+        public static void WriteTruncated(this IConsole console, string text, int width, bool fill)
         {
-            return value.Length <= maxChars ? value : string.Concat(value.AsSpan(0, maxChars - 3), "...");
+            // Console: depending on terminal / font / etc. international characters can take more than 1 cell.
+            // Redirected: just assume every character has width 1.
+            var measureConsole = !console.IsOutputRedirected;
+            if (measureConsole)
+            {
+                // We need at least 2 extra characters to be able to measure the console output:
+                // international characters may take up 2 cells, and the cursor should not wrap around yet.
+                if (Console.CursorLeft + width + 2 >= Console.WindowWidth)
+                {
+                    // The console is not wide enough; we cannot measure across line wrapping.
+                    measureConsole = false;
+                }
+            }
+            if (measureConsole)
+            {
+                var start = Console.CursorLeft;
+                foreach (var c in text)
+                {
+                    console.Out.Write($"{c}");
+                    if (Console.CursorLeft - start > width)
+                    {
+                        Console.CursorLeft = start + width - 3;
+                        console.Write("...");
+                        break;
+                    }
+                }
+                if (fill)
+                {
+                    console.Write(new string(' ', width - (Console.CursorLeft - start)));
+                }
+            }
+            else
+            {
+                if (text.Length > width)
+                {
+                    console.Write(text[..(width - 3)]);
+                    console.Write("...");
+                }
+                else
+                {
+                    console.Write(text);
+                    if (fill)
+                    {
+                        console.Write(new string(' ', width - text.Length));
+                    }
+                }
+            }
         }
 
         /// <summary>
