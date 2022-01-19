@@ -239,11 +239,7 @@ namespace UsbIpServer
             return string.Join(", ", descriptionList);
         }
 
-        public sealed record ConnectedUsbDevice
-        {
-            public uint DeviceNode { get; init; }
-            public string InstanceId { get; init; } = string.Empty;
-        }
+        public sealed record ConnectedUsbDevice(uint DeviceNode, string InstanceId);
 
         public static IEnumerable<ConnectedUsbDevice> GetConnectedUsbDevices()
         {
@@ -269,11 +265,7 @@ namespace UsbIpServer
                             continue;
                         }
                         var instanceId = (string)Get_DevNode_Property(deviceNode, PInvoke.DEVPKEY_Device_InstanceId);
-                        usbDevices[instanceId] = new()
-                        {
-                            DeviceNode = deviceNode,
-                            InstanceId = instanceId,
-                        };
+                        usbDevices[instanceId] = new(deviceNode, instanceId);
                     }
                     catch (ConfigurationManagerException) { }
                 }
@@ -289,12 +281,7 @@ namespace UsbIpServer
             return Get_Device_Interface_List(PInvoke.GUID_DEVINTERFACE_USB_HUB, hubInstanceId, PInvoke.CM_GET_DEVICE_INTERFACE_LIST_PRESENT).Single();
         }
 
-        public sealed record VBoxDevice
-        {
-            public uint DeviceNode { get; init; }
-            public string InstanceId { get; init; } = string.Empty;
-            public string InterfacePath { get; init; } = string.Empty;
-        }
+        public sealed record VBoxDevice(uint DeviceNode, string InstanceId, string InterfacePath);
 
         public static VBoxDevice GetVBoxDevice(BusId busId)
         {
@@ -309,12 +296,7 @@ namespace UsbIpServer
                     var deviceNode = Locate_DevNode(deviceId, true);
                     if (GetBusId(deviceNode) == busId)
                     {
-                        return new()
-                        {
-                            DeviceNode = deviceNode,
-                            InstanceId = deviceId,
-                            InterfacePath = deviceInterface,
-                        };
+                        return new(deviceNode, deviceId, deviceInterface);
                     }
                 }
                 catch (ConfigurationManagerException) { }

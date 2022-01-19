@@ -37,7 +37,7 @@ namespace UsbIpServer
         public Task<ExitCode> WslList(IConsole console, CancellationToken cancellationToken);
     }
 
-    class CommandHandlers : ICommandHandlers
+    sealed class CommandHandlers : ICommandHandlers
     {
         Task<ExitCode> ICommandHandlers.License(IConsole console, CancellationToken cancellationToken)
         {

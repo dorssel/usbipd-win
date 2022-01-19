@@ -16,7 +16,7 @@ namespace UsbIpServer
 {
     static class ProcessUtils
     {
-        public record ProcessResult(int ExitCode, string StandardOutput, string StandardError);
+        public sealed record ProcessResult(int ExitCode, string StandardOutput, string StandardError);
 
         /// <summary>
         /// <para>

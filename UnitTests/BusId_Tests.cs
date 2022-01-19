@@ -22,7 +22,7 @@ namespace UnitTests
             Assert.AreEqual(0, busId.Port);
         }
 
-        class BusIdData
+        sealed class BusIdData
         {
             static readonly string[] _Invalid = new[]
             {

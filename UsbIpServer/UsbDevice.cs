@@ -16,37 +16,11 @@ namespace UsbIpServer
     ///     <item>Disconnected (persisted) devices that are bound.</item>
     /// </list>
     /// </summary>
-    sealed record UsbDevice
-    {
-        /// <summary>
-        /// The InstanceId of the original device.
-        /// </summary>
-        public string InstanceId { get; init; } = string.Empty;
-        /// <summary>
-        /// The user-friendly description of the device.
-        /// </summary>
-        public string Description { get; init; } = string.Empty;
-        /// <summary>
-        /// Set if and only if the device itself uses the stub driver.
-        /// </summary>
-        public bool IsForced { get; init; }
-        /// <summary>
-        /// Set if and only if the device is currently connected to the host.
-        /// </summary>
-        public BusId? BusId { get; init; }
-        /// <summary>
-        /// Set if and only if the device is currently persisted.
-        /// </summary>
-        public Guid? Guid { get; init; }
-        /// <summary>
-        /// Set if and only if the device is currently attached.
-        /// </summary>
-        public IPAddress? IPAddress { get; init; }
-        /// <summary>
-        /// Set if and only if the device is currently attached; identical to InstanceId if and only if the device is forced-bound.
-        /// </summary>
-        public string? StubInstanceId { get; init; } = string.Empty;
+    sealed partial record UsbDevice(string InstanceId, string Description, bool IsForced,
+        BusId? BusId = null, Guid? Guid = null, IPAddress? IPAddress = null, string? StubInstanceId = null);
 
+    sealed partial record UsbDevice
+    {
         /// <summary>
         /// Gets all devices, either bound or connected.
         /// </summary>
@@ -64,13 +38,11 @@ namespace UsbIpServer
                 // This can fail due to race conditions, in which case we just do not report the device.
                 try
                 {
-                    usbDevices[device.InstanceId] = new()
-                    {
-                        InstanceId = device.InstanceId,
-                        Description = ConfigurationManager.GetDescription(device.DeviceNode),
-                        BusId = ConfigurationManager.GetBusId(device.DeviceNode),
-                        IsForced = ConfigurationManager.HasVBoxDriver(device.InstanceId),
-                    };
+                    usbDevices[device.InstanceId] = new(
+                        InstanceId: device.InstanceId,
+                        Description: ConfigurationManager.GetDescription(device.DeviceNode),
+                        BusId: ConfigurationManager.GetBusId(device.DeviceNode),
+                        IsForced: ConfigurationManager.HasVBoxDriver(device.InstanceId));
                 }
                 catch (ConfigurationManagerException) { }
             }

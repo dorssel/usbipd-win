@@ -143,7 +143,7 @@ namespace UnitTests
             });
         }
 
-        class SpeedData
+        sealed class SpeedData
         {
             static readonly Dictionary<USB_DEVICE_SPEED, UsbDeviceSpeed> _KnownGood = new()
             {
@@ -167,7 +167,7 @@ namespace UnitTests
             Assert.AreEqual(linux, MapWindowsSpeedToLinuxSpeed(windows));
         }
 
-        class ErrorData
+        sealed class ErrorData
         {
             static readonly Dictionary<UsbSupError, Errno> _KnownGood = new()
             {

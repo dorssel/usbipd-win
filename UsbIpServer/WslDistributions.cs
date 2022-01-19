@@ -18,14 +18,14 @@ using System.Threading.Tasks;
 
 namespace UsbIpServer
 {
-    class WslDistributions
+    sealed class WslDistributions
     {
         public const string InstallWslUrl = "https://aka.ms/installwsl";
         public const string SetWslVersionUrl = "https://docs.microsoft.com/windows/wsl/basic-commands#set-wsl-version-to-1-or-2";
 
         public static readonly string WslPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "wsl.exe");
 
-        public record Distribution(string Name, bool IsDefault, uint Version, bool IsRunning, IPAddress? IPAddress);
+        public sealed record Distribution(string Name, bool IsDefault, uint Version, bool IsRunning, IPAddress? IPAddress);
 
         WslDistributions(List<Distribution> distributions, IPAddress? hostAddress)
         {
