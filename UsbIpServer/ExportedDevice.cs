@@ -20,25 +20,13 @@ using static UsbIpServer.Tools;
 
 namespace UsbIpServer
 {
-    sealed record ExportedDevice
+    sealed partial record ExportedDevice(string InstanceId, BusId BusId, Linux.UsbDeviceSpeed Speed,
+        ushort VendorId, ushort ProductId, ushort BcdDevice,
+        byte DeviceClass, byte DeviceSubClass, byte DeviceProtocol,
+        byte ConfigurationValue, byte NumConfigurations, List<(byte, byte, byte)> Interfaces);
+
+    sealed partial record ExportedDevice
     {
-        private ExportedDevice()
-        {
-        }
-
-        public string InstanceId { get; private set; } = string.Empty;
-        public BusId BusId { get; private init; }
-        public Linux.UsbDeviceSpeed Speed { get; private init; }
-        public ushort VendorId { get; private init; }
-        public ushort ProductId { get; private init; }
-        public ushort BcdDevice { get; private init; }
-        public byte DeviceClass { get; private init; }
-        public byte DeviceSubClass { get; private init; }
-        public byte DeviceProtocol { get; private init; }
-        public byte ConfigurationValue { get; private init; }
-        public byte NumConfigurations { get; private init; }
-        public List<(byte, byte, byte)> Interfaces { get; private set; } = new();
-
         static void Serialize(Stream stream, string value, uint size)
         {
             var buf = new byte[size];
@@ -190,21 +178,19 @@ namespace UsbIpServer
                 }
                 catch (Win32Exception) { }
 
-                var exportedDevice = new ExportedDevice()
-                {
-                    InstanceId = device.InstanceId,
-                    BusId = device.BusId.Value,
-                    Speed = speed,
-                    VendorId = data.DeviceDescriptor.idVendor,
-                    ProductId = data.DeviceDescriptor.idProduct,
-                    BcdDevice = data.DeviceDescriptor.bcdDevice,
-                    DeviceClass = data.DeviceDescriptor.bDeviceClass,
-                    DeviceSubClass = data.DeviceDescriptor.bDeviceSubClass,
-                    DeviceProtocol = data.DeviceDescriptor.bDeviceProtocol,
-                    ConfigurationValue = data.CurrentConfigurationValue,
-                    NumConfigurations = data.DeviceDescriptor.bNumConfigurations,
-                    Interfaces = interfaces,
-                };
+                var exportedDevice = new ExportedDevice(
+                    InstanceId: device.InstanceId,
+                    BusId: device.BusId.Value,
+                    Speed: speed,
+                    VendorId: data.DeviceDescriptor.idVendor,
+                    ProductId: data.DeviceDescriptor.idProduct,
+                    BcdDevice: data.DeviceDescriptor.bcdDevice,
+                    DeviceClass: data.DeviceDescriptor.bDeviceClass,
+                    DeviceSubClass: data.DeviceDescriptor.bDeviceSubClass,
+                    DeviceProtocol: data.DeviceDescriptor.bDeviceProtocol,
+                    ConfigurationValue: data.CurrentConfigurationValue,
+                    NumConfigurations: data.DeviceDescriptor.bNumConfigurations,
+                    Interfaces: interfaces);
 
                 return exportedDevice;
             }

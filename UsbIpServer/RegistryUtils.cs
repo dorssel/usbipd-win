@@ -196,16 +196,14 @@ namespace UsbIpServer
                         }
                     }
                 }
-                persistedDevices.Add(instanceId, new()
-                {
-                    InstanceId = instanceId,
-                    Description = description,
-                    Guid = guid,
-                    IsForced = ConfigurationManager.HasVBoxDriver(instanceId),
-                    BusId = attachedBusId ?? ConfigurationManager.GetBusId(instanceId),
-                    IPAddress = attachedIPAddress,
-                    StubInstanceId = attachedStubInstanceId,
-                });
+                persistedDevices.Add(instanceId, new(
+                    InstanceId: instanceId,
+                    Description: description,
+                    Guid: guid,
+                    IsForced: ConfigurationManager.HasVBoxDriver(instanceId),
+                    BusId: attachedBusId ?? ConfigurationManager.GetBusId(instanceId),
+                    IPAddress: attachedIPAddress,
+                    StubInstanceId: attachedStubInstanceId));
             }
             return persistedDevices.Values;
         }

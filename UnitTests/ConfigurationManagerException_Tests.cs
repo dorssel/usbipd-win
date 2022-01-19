@@ -45,7 +45,7 @@ namespace UnitTests
             Assert.AreSame(TestInnerException, win32Exception.InnerException);
         }
 
-        class MappingData
+        sealed class MappingData
         {
             static readonly Dictionary<CONFIGRET, WIN32_ERROR> _KnownGood = new()
             {
