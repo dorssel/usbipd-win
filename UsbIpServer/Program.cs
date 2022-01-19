@@ -89,6 +89,10 @@ namespace UsbIpServer
                 // This is required for Windows Terminal.
                 Console.TreatControlCAsInput = false;
             }
+            // All our own texts are ASCII only, but device descriptions support full unicode.
+            Console.InputEncoding = System.Text.Encoding.UTF8;
+            Console.OutputEncoding = System.Text.Encoding.UTF8;
+
             return (int)Run(null, new CommandHandlers(), args);
         }
 

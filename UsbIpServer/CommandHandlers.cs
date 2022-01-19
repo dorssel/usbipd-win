@@ -86,7 +86,9 @@ namespace UsbIpServer
                     state = "Not shared";
                 }
                 // NOTE: Strictly speaking, both Bus and Port can be > 99. If you have one of those, you win a prize!
-                console.WriteLine($@"{device.BusId.Value,-5}  {device.Description.Truncate(60),-60}  {state}");
+                console.Write($"{device.BusId.Value,-5}  ");
+                console.WriteTruncated(device.Description, 60, true);
+                console.WriteLine($"  {state}");
             }
             console.WriteLine(string.Empty);
 
@@ -95,7 +97,9 @@ namespace UsbIpServer
             foreach (var device in allDevices.Where(d => !d.BusId.HasValue && d.Guid.HasValue).OrderBy(d => d.Guid.GetValueOrDefault()))
             {
                 Debug.Assert(device.Guid.HasValue);
-                console.WriteLine($"{device.Guid.Value,-38:B}  {device.Description.Truncate(60),-60}");
+                console.Write($"{device.Guid.Value,-38:B}  ");
+                console.WriteTruncated(device.Description, 60, false);
+                console.WriteLine(string.Empty);
             }
             console.WriteLine(string.Empty);
 
@@ -538,7 +542,9 @@ namespace UsbIpServer
                     state = "Not attached";
                 }
                 // NOTE: Strictly speaking, both Bus and Port can be > 99. If you have one of those, you win a prize!
-                console.WriteLine($"{device.BusId,-5}  {ConsoleTools.Truncate(device.Description, 60),-60}  {state}");
+                console.Write($"{device.BusId,-5}  ");
+                console.WriteTruncated(device.Description, 60, true);
+                console.WriteLine($"  {state}");
             }
             console.WriteLine(string.Empty);
 
