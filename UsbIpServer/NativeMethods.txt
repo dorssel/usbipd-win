@@ -7,6 +7,7 @@ CM_Get_Device_Interface_List
 CM_Get_Device_Interface_List_Size
 CM_Get_Device_Interface_Property
 CM_Get_DevNode_Property
+CM_Get_Parent
 CM_Get_Sibling
 CM_Locate_DevNode
 CM_MapCrToWin32Err
@@ -16,8 +17,10 @@ CM_Set_DevNode_Property
 CM_Setup_DevNode
 CM_Unregister_Notification
 
+CM_GET_DEVICE_INTERFACE_LIST_ALL_DEVICES
 CM_GET_DEVICE_INTERFACE_LIST_PRESENT
 CM_LOCATE_DEVNODE_NORMAL
+CM_LOCATE_DEVNODE_PHANTOM
 CM_REMOVE_NO_RESTART
 CM_REMOVE_UI_NOT_OK
 CM_SETUP_DEVNODE_READY
@@ -27,19 +30,34 @@ MAX_PATH
 AdjustTokenPrivileges
 CreateFile
 DeviceIoControl
+DiInstallDevice
 GetCurrentProcess
 LookupPrivilegeValue
 OpenProcessToken
 RegDeleteKey
 RegNotifyChangeKeyValue
 SetEvent
+SetupDiBuildDriverInfoList 
+SetupDiCreateDeviceInfoList
+SetupDiDestroyDeviceInfoList
+SetupDiEnumDriverInfo
+SetupDiGetDeviceInstallParams
+SetupDiOpenDeviceInfo
+SetupDiSetDeviceInstallParams
+
+DI_ENUMSINGLEINF
+DI_FLAGSEX_ALLOWEXCLUDEDDRVS
+INVALID_HANDLE_VALUE
+SP_DRVINFO_DATA_V2_W
 
 DEVPROP_TYPE_STRING
 DEVPROP_TYPEMOD_LIST
 
 DEVPKEY_Device_Children
 DEVPKEY_Device_CompatibleIds
+DEVPKEY_Device_DriverDesc
 DEVPKEY_Device_FriendlyName
+DEVPKEY_Device_HardwareIds
 DEVPKEY_Device_InstanceId
 DEVPKEY_Device_LocationInfo
 DEVPKEY_NAME

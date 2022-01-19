@@ -5,8 +5,9 @@
 using System;
 using System.Collections.Generic;
 using System.CommandLine;
+using System.Linq;
 using System.Text;
-
+using Microsoft.Win32;
 using static System.CommandLine.IO.StandardStreamWriter;
 
 namespace UsbIpServer
@@ -83,7 +84,7 @@ namespace UsbIpServer
         /// All "console logging" reports go to <see cref="Console.Error"/>, so they can be easily
         /// separated from expected output, e.g. from 'list', which goes to <see cref="Console.Out"/>.
         /// </summary>
-        static void ReportText(IConsole console, string level, string text)
+        static void ReportText(this IConsole console, string level, string text)
         {
             console.Error.WriteLine($"{Program.ApplicationName}: {level}: {EnforceFinalPeriod(text)}");
         }
@@ -112,22 +113,22 @@ namespace UsbIpServer
             }
         }
 
-        public static void ReportError(IConsole console, string text)
+        public static void ReportError(this IConsole console, string text)
         {
             using var color = new TemporaryColor(console, ConsoleColor.Red);
-            ReportText(console, "error", text);
+            console.ReportText("error", text);
         }
 
-        public static void ReportWarning(IConsole console, string text)
+        public static void ReportWarning(this IConsole console, string text)
         {
             using var color = new TemporaryColor(console, ConsoleColor.Yellow);
-            ReportText(console, "warning", text);
+            console.ReportText("warning", text);
         }
 
-        public static void ReportInfo(IConsole console, string text)
+        public static void ReportInfo(this IConsole console, string text)
         {
             using var color = new TemporaryColor(console, ConsoleColor.DarkGray);
-            ReportText(console, "info", text);
+            console.ReportText("info", text);
         }
 
         /// <summary>
@@ -136,12 +137,72 @@ namespace UsbIpServer
         /// For example: 'list' succeeds and shows 'Shared', but attaching from the client will fail.
         /// For example: 'bind' succeeds, but attaching from the client will fail.
         /// </summary>
-        public static void ReportServerRunning(IConsole console)
+        public static void ReportIfServerNotRunning(this IConsole console)
         {
             if (!Server.IsServerRunning())
             {
-                ReportWarning(console, "Server is currently not running.");
+                console.ReportWarning("Server is currently not running.");
             }
+        }
+
+        static readonly SortedSet<string> WhitelistUpperFilters = new();
+
+        static readonly SortedSet<string> BlacklistUpperFilters = new()
+        {
+            "EUsbHubFilter",
+            "TsUsbFlt",
+            "UsbDk",
+            "USBPcap",
+        };
+
+        const string UpperFiltersPath = @"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Class\{36fc9e60-c465-11cf-8056-444553540000}";
+        const string UpperFiltersName = @"UpperFilters";
+
+        /// <summary>
+        /// Helper to warn users that the service is not running.
+        /// For commands that may lead the user to believe that everything is fine when in fact it is not.
+        /// For example: 'list' succeeds and shows 'Shared', but attaching from the client will fail.
+        /// For example: 'bind' succeeds, but attaching from the client will fail.
+        /// </summary>
+        public static void ReportIfForceNeeded(this IConsole console)
+        {
+            var upperFilters = Registry.GetValue(UpperFiltersPath, UpperFiltersName, null) as string[] ?? Array.Empty<string>();
+            foreach (var filter in new SortedSet<string>(upperFilters.Where(f => !string.IsNullOrWhiteSpace(f)), StringComparer.InvariantCultureIgnoreCase))
+            {
+                if (BlacklistUpperFilters.Contains(filter, StringComparer.InvariantCultureIgnoreCase))
+                {
+                    console.ReportWarning($"USB filter '{filter}' is known to be incompatible with this software; 'bind --force' will be required.");
+                }
+                else if (!WhitelistUpperFilters.Contains(filter, StringComparer.InvariantCultureIgnoreCase))
+                {
+                    console.ReportWarning($"Unknown USB filter '{filter}' may be incompatible with this software; 'bind --force' may be required.");
+                }
+            }
+        }
+
+        public static void ReportRebootRequired(this IConsole console)
+        {
+            console.ReportWarning("A reboot may be required before the changes take effect.");
+        }
+
+        public static bool CheckWriteAccess(IConsole console)
+        {
+            if (!RegistryUtils.HasWriteAccess())
+            {
+                console.ReportError("Access denied.");
+                return false;
+            }
+            return true;
+        }
+
+        public static bool CheckServerRunning(IConsole console)
+        {
+            if (!Server.IsServerRunning())
+            {
+                console.ReportError("Server is currently not running.");
+                return false;
+            }
+            return true;
         }
     }
 }

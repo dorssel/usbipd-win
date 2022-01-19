@@ -114,6 +114,15 @@ namespace UsbIpServer
                     Description = "Share device having <BUSID>",
                 };
                 //
+                //  bind [--force]
+                //
+                var forceOption = new Option(
+                    aliases: new[] { "--force", "-f" }
+                )
+                {
+                    Description = "Force binding; the host cannot use the device",
+                };
+                //
                 //  bind
                 //
                 var bindCommand = new Command("bind", "Bind device\0"
@@ -123,11 +132,13 @@ namespace UsbIpServer
                     + "become unavailable to the host.")
                 {
                     busIdOption,
+                    forceOption,
                 };
                 bindCommand.SetHandler(async (InvocationContext invocationContext) =>
                 {
                     invocationContext.ExitCode = (int)(
                         await commandHandlers.Bind(invocationContext.ParseResult.GetValueForOption(busIdOption),
+                            invocationContext.ParseResult.HasOption(forceOption),
                             invocationContext.Console, invocationContext.GetCancellationToken())
                         );
                 });
