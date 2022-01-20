@@ -106,8 +106,13 @@ namespace UsbIpServer
                 Console.TreatControlCAsInput = false;
             }
             // All our own texts are ASCII only, but device descriptions support full unicode.
-            Console.InputEncoding = System.Text.Encoding.UTF8;
-            Console.OutputEncoding = System.Text.Encoding.UTF8;
+            try
+            {
+                // This will fail when running as a service; we can silently ignore that.
+                Console.InputEncoding = System.Text.Encoding.UTF8;
+                Console.OutputEncoding = System.Text.Encoding.UTF8;
+            }
+            catch (IOException) { }
 
             return (int)Run(null, new CommandHandlers(), args);
         }
