@@ -49,7 +49,6 @@ SPDX-License-Identifier: GPL-2.0-only
                     Name="usbipd"
                     Remove="uninstall"
                     Stop="both"
-                    Start="install"
                     />
                 <!--
                 The registry uses the full product name by convention.
@@ -77,8 +76,17 @@ SPDX-License-Identifier: GPL-2.0-only
         <!-- This will restore the original Windows drivers for devices that were forced bound. -->
         <CustomAction Id="RestoreDrivers" FileKey="usbipd.exe" ExeCommand="unbind --all" Return="ignore" Impersonate="no" Execute="deferred" />
 
+        <!--
+        This will *try to* start the service. However, unlike ServiceControl, it will not fail if it can't.
+        Now that usbipd depends on VBoxUsbMon, sometimes Windows requires a reboot before the service can start.
+        Users will be informed if the service is not running and to try a reboot by the CLI tool.
+        -->
+        <SetProperty Id="TryStartService" Value="&quot;[System64Folder]\sc.exe&quot; start usbipd" Sequence="execute" Before="TryStartService" />
+        <CustomAction Id="TryStartService" BinaryKey="WixCA" DllEntry="WixQuietExec64" Return="ignore" Impersonate="no" Execute="deferred" />
+
         <InstallExecuteSequence>
             <Custom Action="RestoreDrivers" After="StopServices">InstallMode = "Remove"</Custom>
+            <Custom Action="TryStartService" Before="InstallFinalize" />
         </InstallExecuteSequence>
     </Fragment>
 </Wix>
