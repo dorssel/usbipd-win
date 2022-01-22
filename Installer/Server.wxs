@@ -74,19 +74,22 @@ SPDX-License-Identifier: GPL-2.0-only
         </DirectoryRef>
 
         <!-- This will restore the original Windows drivers for devices that were forced bound. -->
-        <CustomAction Id="RestoreDrivers" FileKey="usbipd.exe" ExeCommand="unbind --all" Return="ignore" Impersonate="no" Execute="deferred" />
+        <SetProperty Id="RestoreDrivers" Value="&quot;[#usbipd.exe]&quot; unbind --all" Sequence="execute" Before="RestoreDrivers" />
+        <CustomAction Id="RestoreDrivers" BinaryKey="WixCA" DllEntry="WixQuietExec64" Return="ignore" Impersonate="no" Execute="deferred" />
 
         <!--
         This will *try to* start the service. However, unlike ServiceControl, it will not fail if it can't.
         Now that usbipd depends on VBoxUsbMon, sometimes Windows requires a reboot before the service can start.
-        Users will be informed if the service is not running and to try a reboot by the CLI tool.
+        The CLI tool will inform the user if the service is not running and that a reboot should fix that.
         -->
         <SetProperty Id="TryStartService" Value="&quot;[System64Folder]\sc.exe&quot; start usbipd" Sequence="execute" Before="TryStartService" />
         <CustomAction Id="TryStartService" BinaryKey="WixCA" DllEntry="WixQuietExec64" Return="ignore" Impersonate="no" Execute="deferred" />
 
         <InstallExecuteSequence>
-            <Custom Action="RestoreDrivers" After="StopServices">InstallMode = "Remove"</Custom>
-            <Custom Action="TryStartService" Before="InstallFinalize" />
+            <!-- Condition: usbipd.exe is installed and will be uninstalled -->
+            <Custom Action="RestoreDrivers" After="StopServices">(?usbipd.exe=3) AND ($usbipd.exe=2)</Custom>
+            <!-- Condition: usbipd.exe will be (or remains) installed -->
+            <Custom Action="TryStartService" Before="InstallFinalize">$usbipd.exe=3</Custom>
         </InstallExecuteSequence>
     </Fragment>
 </Wix>
