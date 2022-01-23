@@ -523,7 +523,7 @@ namespace UsbIpServer
             }
 
             console.WriteLine($"{"BUSID",-5}  {"DEVICE",-60}  STATE");
-            foreach (var device in UsbDevice.GetAll().OrderBy(d => d.BusId))
+            foreach (var device in UsbDevice.GetAll().Where(d => d.BusId.HasValue).OrderBy(d => d.BusId))
             {
                 string state;
                 if (device.IPAddress is not null)
