@@ -9,6 +9,7 @@ using System.Linq;
 using System.Text;
 using Microsoft.Win32;
 using static System.CommandLine.IO.StandardStreamWriter;
+using static UsbIpServer.Interop.VBoxUsbMon;
 
 namespace UsbIpServer
 {
@@ -180,6 +181,11 @@ namespace UsbIpServer
         const string ServiceNotRunningText = "The service is currently not running; a reboot should fix that.";
         const string VBoxUsbMonNotRunningText = "The VBoxUsbMon driver is currently not running; a reboot should fix that.";
 
+        public static void ReportVersionNotSupported(IConsole console, UsbSupVersion version)
+        {
+            console.ReportError($"VBoxUsbMon version {version.major}.{version.minor} is not supported; this must be resolved first.");
+        }
+
         /// <summary>
         /// Helper to warn users that the service is not running.
         /// For commands that may lead the user to believe that everything is fine when in fact it is not.
@@ -192,10 +198,14 @@ namespace UsbIpServer
             {
                 console.ReportWarning(ServiceNotRunningText);
             }
-            else if (!VBoxUsbMon.IsRunning())
+            else if (VBoxUsbMon.GetRunningVersion() is not UsbSupVersion version)
             {
                 // The usbipd service has a dependency on VBoxUsbMon, but this check also works if running the server from the command line.
                 console.ReportWarning(VBoxUsbMonNotRunningText);
+            }
+            else if (!VBoxUsbMon.IsVersionSupported(version))
+            {
+                ReportVersionNotSupported(console, version);
             }
         }
 
@@ -206,10 +216,15 @@ namespace UsbIpServer
                 console.ReportError(ServiceNotRunningText);
                 return false;
             }
-            else if (!VBoxUsbMon.IsRunning())
+            else if (VBoxUsbMon.GetRunningVersion() is not UsbSupVersion version)
             {
                 // The usbipd service has a dependency on VBoxUsbMon, but this check also works if running the server from the command line.
                 console.ReportError(VBoxUsbMonNotRunningText);
+                return false;
+            }
+            else if (!VBoxUsbMon.IsVersionSupported(version))
+            {
+                ReportVersionNotSupported(console, version);
                 return false;
             }
             return true;

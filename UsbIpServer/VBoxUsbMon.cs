@@ -16,28 +16,28 @@ namespace UsbIpServer
     {
         readonly DeviceFile UsbMonitor = new(USBMON_DEVICE_NAME);
 
-        public static bool IsRunning()
+        public static UsbSupVersion? GetRunningVersion()
         {
             try
             {
-                using var _ = new VBoxUsbMon();
-                return true;
+                using var mon = new VBoxUsbMon();
+                return mon.GetVersion().Result;
             }
             catch (Win32Exception)
             {
-                return false;
+                return null;
             }
         }
 
-        public async Task CheckVersion()
+        public static bool IsVersionSupported(UsbSupVersion version) =>
+            (version.major == USBMON_MAJOR_VERSION) && (version.minor >= USBMON_MINOR_VERSION);
+
+        public async Task<UsbSupVersion> GetVersion()
         {
             var output = new byte[Marshal.SizeOf<UsbSupVersion>()];
             await UsbMonitor.IoControlAsync(SUPUSBFLT_IOCTL.GET_VERSION, null, output);
             BytesToStruct(output, out UsbSupVersion version);
-            if ((version.major != USBMON_MAJOR_VERSION) || (version.minor < USBMON_MINOR_VERSION))
-            {
-                throw new NotSupportedException($"version not supported: {version.major}.{version.minor}, expected {USBMON_MAJOR_VERSION}.{USBMON_MINOR_VERSION}");
-            }
+            return version;
         }
 
         public async Task<ulong> AddFilter(ExportedDevice device)
