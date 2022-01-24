@@ -5,6 +5,7 @@
 using System;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
+using Microsoft.Win32.SafeHandles;
 using Windows.Win32;
 using Windows.Win32.Devices.DeviceAndDriverInstallation;
 using Windows.Win32.Foundation;
@@ -21,45 +22,83 @@ namespace UsbIpServer
             }
         }
 
+        sealed class SafeDeviceInfoSet : SafeHandleZeroOrMinusOneIsInvalid
+        {
+            public unsafe SafeDeviceInfoSet(void* handle)
+                : base(true)
+            {
+                SetHandle((IntPtr)handle);
+            }
+
+            public static unsafe implicit operator void*(SafeDeviceInfoSet deviceInfoSet) =>
+                deviceInfoSet.IsClosed || deviceInfoSet.IsInvalid ? PInvoke.INVALID_HANDLE_VALUE.Value.ToPointer() : deviceInfoSet.handle.ToPointer();
+
+            protected override bool ReleaseHandle()
+            {
+                unsafe
+                {
+                    return PInvoke.SetupDiDestroyDeviceInfoList(handle.ToPointer());
+                }
+            }
+        }
+
         public static bool ForceVBoxDriver(string originalInstanceId)
         {
             BOOL reboot = false;
             unsafe
             {
-                var deviceInfoSet = PInvoke.SetupDiCreateDeviceInfoList((Guid*)null, default);
-                if (deviceInfoSet == (void*)PInvoke.INVALID_HANDLE_VALUE.Value)
+                // First, we must set a NULL driver to clear any existing Device Setup Class.
+                using var deviceInfoSet = new SafeDeviceInfoSet(PInvoke.SetupDiCreateDeviceInfoList((Guid*)null, default));
+                if (deviceInfoSet.IsInvalid)
                 {
                     throw new Win32Exception(nameof(PInvoke.SetupDiCreateDeviceInfoList));
                 }
-                try
+                var deviceInfoData = new SP_DEVINFO_DATA()
                 {
-                    var deviceInfoData = new SP_DEVINFO_DATA()
-                    {
-                        cbSize = (uint)Marshal.SizeOf<SP_DEVINFO_DATA>(),
-                    };
-                    PInvoke.SetupDiOpenDeviceInfo(deviceInfoSet, originalInstanceId, default, 0, &deviceInfoData).ThrowOnError(nameof(PInvoke.SetupDiOpenDeviceInfo));
-                    var deviceInstallParams = new SP_DEVINSTALL_PARAMS_W()
-                    {
-                        cbSize = (uint)Marshal.SizeOf<SP_DEVINSTALL_PARAMS_W>(),
-                    };
-                    PInvoke.SetupDiGetDeviceInstallParams(deviceInfoSet, &deviceInfoData, ref deviceInstallParams).ThrowOnError(nameof(PInvoke.SetupDiGetDeviceInstallParams));
-                    deviceInstallParams.Flags |= PInvoke.DI_ENUMSINGLEINF;
-                    deviceInstallParams.FlagsEx |= PInvoke.DI_FLAGSEX_ALLOWEXCLUDEDDRVS;
-                    deviceInstallParams.DriverPath = @"C:\Program Files\usbipd-win\Drivers\VBoxUSB\VBoxUSB.inf";
-                    PInvoke.SetupDiSetDeviceInstallParams(deviceInfoSet, &deviceInfoData, deviceInstallParams).ThrowOnError(nameof(PInvoke.SetupDiSetDeviceInstallParams));
-                    PInvoke.SetupDiBuildDriverInfoList(deviceInfoSet, &deviceInfoData, SETUP_DI_BUILD_DRIVER_DRIVER_TYPE.SPDIT_CLASSDRIVER).ThrowOnError(nameof(PInvoke.SetupDiBuildDriverInfoList));
-                    var driverInfoData = new SP_DRVINFO_DATA_V2_W()
-                    {
-                        cbSize = (uint)Marshal.SizeOf<SP_DRVINFO_DATA_V2_W>(),
-                    };
-                    PInvoke.SetupDiEnumDriverInfo(deviceInfoSet, deviceInfoData, (uint)SETUP_DI_BUILD_DRIVER_DRIVER_TYPE.SPDIT_CLASSDRIVER, 0, ref driverInfoData).ThrowOnError(nameof(PInvoke.SetupDiEnumDriverInfo));
-                    PInvoke.DiInstallDevice(default, deviceInfoSet, &deviceInfoData, (SP_DRVINFO_DATA_V2_A*)&driverInfoData, 0, &reboot).ThrowOnError(nameof(PInvoke.DiInstallDevice));
-                    ConfigurationManager.SetDeviceFriendlyName(deviceInfoData.DevInst);
-                }
-                finally
+                    cbSize = (uint)Marshal.SizeOf<SP_DEVINFO_DATA>(),
+                };
+                PInvoke.SetupDiOpenDeviceInfo(deviceInfoSet, originalInstanceId, default, 0, &deviceInfoData).ThrowOnError(nameof(PInvoke.SetupDiOpenDeviceInfo));
+                BOOL tmpReboot;
+                PInvoke.DiInstallDevice(default, deviceInfoSet, &deviceInfoData, null, PInvoke.DIIDFLAG_INSTALLNULLDRIVER, &tmpReboot).ThrowOnError(nameof(PInvoke.DIIDFLAG_INSTALLNULLDRIVER));
+                if (tmpReboot)
                 {
-                    PInvoke.SetupDiDestroyDeviceInfoList(deviceInfoSet);
+                    reboot = true;
                 }
+            }
+            unsafe
+            {
+                // Now we can update the driver.
+                using var deviceInfoSet = new SafeDeviceInfoSet(PInvoke.SetupDiCreateDeviceInfoList((Guid*)null, default));
+                if (deviceInfoSet.IsInvalid)
+                {
+                    throw new Win32Exception(nameof(PInvoke.SetupDiCreateDeviceInfoList));
+                }
+                var deviceInfoData = new SP_DEVINFO_DATA()
+                {
+                    cbSize = (uint)Marshal.SizeOf<SP_DEVINFO_DATA>(),
+                };
+                PInvoke.SetupDiOpenDeviceInfo(deviceInfoSet, originalInstanceId, default, 0, &deviceInfoData).ThrowOnError(nameof(PInvoke.SetupDiOpenDeviceInfo));
+                var deviceInstallParams = new SP_DEVINSTALL_PARAMS_W()
+                {
+                    cbSize = (uint)Marshal.SizeOf<SP_DEVINSTALL_PARAMS_W>(),
+                    Flags = PInvoke.DI_ENUMSINGLEINF,
+                    FlagsEx = PInvoke.DI_FLAGSEX_ALLOWEXCLUDEDDRVS,
+                    DriverPath = @"C:\Program Files\usbipd-win\Drivers\VBoxUSB\VBoxUSB.inf",
+                };
+                PInvoke.SetupDiSetDeviceInstallParams(deviceInfoSet, deviceInfoData, deviceInstallParams).ThrowOnError(nameof(PInvoke.SetupDiSetDeviceInstallParams));
+                PInvoke.SetupDiBuildDriverInfoList(deviceInfoSet, &deviceInfoData, SETUP_DI_BUILD_DRIVER_DRIVER_TYPE.SPDIT_CLASSDRIVER).ThrowOnError(nameof(PInvoke.SetupDiBuildDriverInfoList));
+                var driverInfoData = new SP_DRVINFO_DATA_V2_W()
+                {
+                    cbSize = (uint)Marshal.SizeOf<SP_DRVINFO_DATA_V2_W>(),
+                };
+                PInvoke.SetupDiEnumDriverInfo(deviceInfoSet, deviceInfoData, (uint)SETUP_DI_BUILD_DRIVER_DRIVER_TYPE.SPDIT_CLASSDRIVER, 0, ref driverInfoData).ThrowOnError(nameof(PInvoke.SetupDiEnumDriverInfo));
+                BOOL tmpReboot;
+                PInvoke.DiInstallDevice(default, deviceInfoSet, &deviceInfoData, (SP_DRVINFO_DATA_V2_A*)&driverInfoData, 0, &tmpReboot).ThrowOnError(nameof(PInvoke.DiInstallDevice));
+                if (tmpReboot)
+                {
+                    reboot = true;
+                }
+                ConfigurationManager.SetDeviceFriendlyName(deviceInfoData.DevInst);
             }
             return reboot;
         }
@@ -75,24 +114,17 @@ namespace UsbIpServer
             BOOL reboot = false;
             unsafe
             {
-                var deviceInfoSet = PInvoke.SetupDiCreateDeviceInfoList((Guid*)null, default);
-                if (deviceInfoSet == (void*)PInvoke.INVALID_HANDLE_VALUE.Value)
+                using var deviceInfoSet = new SafeDeviceInfoSet(PInvoke.SetupDiCreateDeviceInfoList((Guid*)null, default));
+                if (deviceInfoSet.IsInvalid)
                 {
                     throw new Win32Exception(nameof(PInvoke.SetupDiCreateDeviceInfoList));
                 }
-                try
+                var deviceInfoData = new SP_DEVINFO_DATA()
                 {
-                    var deviceInfoData = new SP_DEVINFO_DATA()
-                    {
-                        cbSize = (uint)Marshal.SizeOf<SP_DEVINFO_DATA>(),
-                    };
-                    PInvoke.SetupDiOpenDeviceInfo(deviceInfoSet, originalInstanceId, default, 0, &deviceInfoData).ThrowOnError(nameof(PInvoke.SetupDiOpenDeviceInfo));
-                    PInvoke.DiInstallDevice(default, deviceInfoSet, &deviceInfoData, null, 0, &reboot).ThrowOnError(nameof(PInvoke.DiInstallDevice));
-                }
-                finally
-                {
-                    PInvoke.SetupDiDestroyDeviceInfoList(deviceInfoSet);
-                }
+                    cbSize = (uint)Marshal.SizeOf<SP_DEVINFO_DATA>(),
+                };
+                PInvoke.SetupDiOpenDeviceInfo(deviceInfoSet, originalInstanceId, default, 0, &deviceInfoData).ThrowOnError(nameof(PInvoke.SetupDiOpenDeviceInfo));
+                PInvoke.DiInstallDevice(default, deviceInfoSet, &deviceInfoData, null, 0, &reboot).ThrowOnError(nameof(PInvoke.DiInstallDevice));
             }
             return reboot;
         }
