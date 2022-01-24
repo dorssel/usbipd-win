@@ -135,7 +135,11 @@ namespace UsbIpServer
                 if (!device.IsForced)
                 {
                     mon = new VBoxUsbMon();
-                    await mon.CheckVersion();
+                    var version = await mon.GetVersion();
+                    if (!VBoxUsbMon.IsVersionSupported(version))
+                    {
+                        throw new NotSupportedException($"VBoxUsbMon version {version.major}.{version.minor} is not supported.");
+                    }
                     {
                         try
                         {
