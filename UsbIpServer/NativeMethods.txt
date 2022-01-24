@@ -37,7 +37,7 @@ OpenProcessToken
 RegDeleteKey
 RegNotifyChangeKeyValue
 SetEvent
-SetupDiBuildDriverInfoList 
+SetupDiBuildDriverInfoList
 SetupDiCreateDeviceInfoList
 SetupDiDestroyDeviceInfoList
 SetupDiEnumDriverInfo
@@ -47,6 +47,7 @@ SetupDiSetDeviceInstallParams
 
 DI_ENUMSINGLEINF
 DI_FLAGSEX_ALLOWEXCLUDEDDRVS
+DIIDFLAG_INSTALLNULLDRIVER
 INVALID_HANDLE_VALUE
 SP_DRVINFO_DATA_V2_W
 
