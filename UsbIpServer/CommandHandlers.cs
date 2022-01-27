@@ -207,6 +207,10 @@ namespace UsbIpServer
                 })
                 .ConfigureLogging((context, logging) =>
                 {
+                    if (!EventLog.SourceExists(Program.Product))
+                    {
+                        EventLog.CreateEventSource(Program.Product, "Application");
+                    }
                     logging.AddEventLog(settings =>
                     {
                         settings.SourceName = Program.Product;
