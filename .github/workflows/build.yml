@@ -37,6 +37,9 @@ jobs:
       run: dotnet test --configuration Release --no-restore --verbosity normal --collect:"XPlat Code Coverage"
     - name: Codecov
       uses: codecov/codecov-action@v2.1.0
+      with:
+        # Not strictly required, but codecov upload fails often. Maybe this helps...
+        token: ${{ secrets.CODECOV_TOKEN }}
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v1
     - name: Build (Installer)
