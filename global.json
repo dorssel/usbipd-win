@@ -10,6 +10,6 @@
     "rollForward": "latestFeature"
   },
   "msbuild-sdks": {
-    "Microsoft.Build.NoTargets": "3.2.14"
+    "Microsoft.Build.NoTargets": "3.3.0"
   }
 }
