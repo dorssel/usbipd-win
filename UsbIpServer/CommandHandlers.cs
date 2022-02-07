@@ -350,6 +350,12 @@ namespace UsbIpServer
                 return ExitCode.Failure;
             }
 
+            if ((distros.Distributions.Count() > 1) && (distribution is null))
+            {
+                // This helps out users that may not be aware that they have more than one and have the default set to the "wrong" one.
+                console.ReportInfo($"Using default distribution '{distroData.Name}'.");
+            }
+
             // 2) Distro must be correct WSL version
 
             switch (distroData.Version)
