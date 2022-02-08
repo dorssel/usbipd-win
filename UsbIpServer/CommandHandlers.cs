@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.CommandLine;
 using System.Diagnostics;
 using System.Linq;
+using System.Security.Principal;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -16,6 +17,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Hosting.WindowsServices;
 using Microsoft.Extensions.Logging;
+using Windows.Win32.Security;
 using static UsbIpServer.ConsoleTools;
 using ExitCode = UsbIpServer.Program.ExitCode;
 
@@ -133,7 +135,26 @@ namespace UsbIpServer
             {
                 if (wslAttach)
                 {
-                    console.ReportInfo("The first time you attach a device to WSL requires administrator privileges; subsequent attaches will succeed with standard user privileges.");
+                    TOKEN_ELEVATION_TYPE elevationType;
+                    unsafe
+                    {
+                        using var identity = WindowsIdentity.GetCurrent();
+                        var b = Windows.Win32.PInvoke.GetTokenInformation(identity.AccessToken, TOKEN_INFORMATION_CLASS.TokenElevationType, &elevationType, 4, out var returnLength);
+                        if (!b || returnLength != 4)
+                        {
+                            // Assume elevation is not available.
+                            elevationType = TOKEN_ELEVATION_TYPE.TokenElevationTypeDefault;
+                        }
+                    }
+
+                    if (elevationType == TOKEN_ELEVATION_TYPE.TokenElevationTypeLimited)
+                    {
+                        console.ReportInfo("The first time attaching a device to WSL requires elevated privileges; subsequent attaches will succeed with standard user privileges.");
+                    }
+                    else
+                    {
+                        console.ReportInfo($"To share this device, an administrator will first have to execute 'usbipd bind --busid {busId}'.");
+                    }
                 }
                 return ExitCode.AccessDenied;
             }
