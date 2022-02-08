@@ -62,7 +62,7 @@ namespace UsbIpServer
             return guid;
         }
 
-        static string OneOfRequiredText(params IOption[] options)
+        static string OneOfRequiredText(params Option[] options)
         {
             Debug.Assert(options.Length >= 2);
 
@@ -73,15 +73,14 @@ namespace UsbIpServer
             return $"Exactly one of the options {list} is required.";
         }
 
-        static string? ValidateOneOf(CommandResult commandResult, params IOption[] options)
+        static void ValidateOneOf(CommandResult commandResult, params Option[] options)
         {
             Debug.Assert(options.Length >= 2);
 
             if (options.Count(option => commandResult.FindResultFor(option) is not null) != 1)
             {
-                return OneOfRequiredText(options);
+                commandResult.ErrorMessage = OneOfRequiredText(options);
             }
-            return null;
         }
 
         static IEnumerable<string> CompletionGuard(CompletionContext completionContext, Func<IEnumerable<string>?> complete)
@@ -278,7 +277,7 @@ namespace UsbIpServer
                 };
                 unbindCommand.AddValidator(commandResult =>
                 {
-                    return ValidateOneOf(commandResult, allOption, busIdOption, guidOption);
+                    ValidateOneOf(commandResult, allOption, busIdOption, guidOption);
                 });
                 unbindCommand.SetHandler(async (InvocationContext invocationContext) =>
                 {
@@ -415,7 +414,7 @@ namespace UsbIpServer
                     };
                     detachCommand.AddValidator(commandResult =>
                     {
-                        return ValidateOneOf(commandResult, allOption, busIdOption);
+                        ValidateOneOf(commandResult, allOption, busIdOption);
                     });
                     detachCommand.SetHandler(async (InvocationContext invocationContext) =>
                     {
@@ -456,7 +455,6 @@ namespace UsbIpServer
                 .UseVersionOption()
                 .UseEnvironmentVariableDirective()
                 .UseParseDirective((int)ExitCode.ParseError)
-                .UseDebugDirective()
                 .UseSuggestDirective()
                 .RegisterWithDotnetSuggest()
                 .UseTypoCorrections()
@@ -465,7 +463,7 @@ namespace UsbIpServer
                 .UseHelp()
                 .UseHelp(helpContext =>
                 {
-                    foreach (var subCommand in helpContext.Command.Children.OfType<ICommand>())
+                    foreach (var subCommand in helpContext.Command.Children.OfType<Command>())
                     {
                         var subDescriptions = subCommand.Description?.Split('\0', 2) ?? Array.Empty<string>();
                         if (subDescriptions.Length > 1)
