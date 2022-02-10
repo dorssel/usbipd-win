@@ -32,6 +32,7 @@ CreateFile
 DeviceIoControl
 DiInstallDevice
 GetCurrentProcess
+GetTokenInformation
 LookupPrivilegeValue
 OpenProcessToken
 RegDeleteKey
@@ -106,3 +107,5 @@ METHOD_BUFFERED
 
 FILE_ANY_ACCESS
 FILE_WRITE_ACCESS
+
+TOKEN_ELEVATION_TYPE
