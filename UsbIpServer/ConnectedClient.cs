@@ -215,9 +215,9 @@ namespace UsbIpServer
                     // Detect unbind.
                     using var attachedKey = RegistryUtils.SetDeviceAsAttached(device.Guid.Value, device.BusId.Value, ClientContext.ClientAddress, vboxDevice.InstanceId);
                     var lresult = PInvoke.RegNotifyChangeKeyValue(attachedKey.Handle, false, Windows.Win32.System.Registry.REG_NOTIFY_FILTER.REG_NOTIFY_THREAD_AGNOSTIC, cancelEvent.SafeWaitHandle, true);
-                    if (lresult != (int)WIN32_ERROR.ERROR_SUCCESS)
+                    if (lresult != WIN32_ERROR.ERROR_SUCCESS)
                     {
-                        throw new Win32Exception(lresult, nameof(PInvoke.RegNotifyChangeKeyValue));
+                        throw new Win32Exception((int)lresult, nameof(PInvoke.RegNotifyChangeKeyValue));
                     }
 
                     await ServiceProvider.GetRequiredService<AttachedClient>().RunAsync(attachedClientTokenSource.Token);
