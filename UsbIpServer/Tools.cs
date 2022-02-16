@@ -3,12 +3,14 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 using System;
+using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Windows.Win32.Devices.Usb;
+using Windows.Win32.Foundation;
 
 using static UsbIpServer.Interop.Linux;
 using static UsbIpServer.Interop.VBoxUsb;
@@ -106,5 +108,14 @@ namespace UsbIpServer
                 _ => Errno.EPROTO,
             };
         }
+
+        public static void ThrowOnError(this BOOL success, string message)
+        {
+            if (!success)
+            {
+                throw new Win32Exception(message);
+            }
+        }
+
     }
 }

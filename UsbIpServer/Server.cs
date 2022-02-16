@@ -57,25 +57,16 @@ namespace UsbIpServer
             {
                 PrivilegeCount = 1,
             };
-            if (!PInvoke.LookupPrivilegeValue(null, name, out tokenPrivileges.Privileges[0].Luid))
-            {
-                throw new Win32Exception(Marshal.GetLastWin32Error(), nameof(PInvoke.LookupPrivilegeValue));
-            }
+            PInvoke.LookupPrivilegeValue(null, name, out tokenPrivileges.Privileges[0].Luid).ThrowOnError(nameof(PInvoke.LookupPrivilegeValue));
             tokenPrivileges.Privileges[0].Attributes = TOKEN_PRIVILEGES_ATTRIBUTES.SE_PRIVILEGE_ENABLED;
 
             using var currentProcess = PInvoke.GetCurrentProcess_SafeHandle();
-            if (!PInvoke.OpenProcessToken(currentProcess, TOKEN_ACCESS_MASK.TOKEN_ADJUST_PRIVILEGES, out var token))
-            {
-                throw new Win32Exception(Marshal.GetLastWin32Error(), nameof(PInvoke.OpenProcessToken));
-            }
+            PInvoke.OpenProcessToken(currentProcess, TOKEN_ACCESS_MASK.TOKEN_ADJUST_PRIVILEGES, out var token).ThrowOnError(nameof(PInvoke.OpenProcessToken));
             try
             {
                 unsafe
                 {
-                    if (!PInvoke.AdjustTokenPrivileges(token, false, tokenPrivileges, 0, null, null))
-                    {
-                        throw new Win32Exception(Marshal.GetLastWin32Error(), nameof(PInvoke.AdjustTokenPrivileges));
-                    }
+                    PInvoke.AdjustTokenPrivileges(token, false, tokenPrivileges, 0, null, null).ThrowOnError(nameof(PInvoke.AdjustTokenPrivileges));
                 }
             }
             finally
