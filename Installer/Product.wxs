@@ -98,6 +98,17 @@ SPDX-License-Identifier: GPL-2.0-only
                 >
                 <ComponentGroupRef Id="Drivers" />
             </Feature>
+            <Feature
+                Id="PowerShell"
+                Level="1"
+                AllowAdvertise="no"
+                Display="expand"
+                Absent="disallow"
+                Title="PowerShell Support"
+                Description="A loadable module for PowerShell."
+                >
+                <ComponentGroupRef Id="PowerShell" />
+            </Feature>
         </Feature>
 
         <UIRef Id="UserInterface"/>
@@ -106,7 +117,9 @@ SPDX-License-Identifier: GPL-2.0-only
     <Fragment>
         <Directory Id="TARGETDIR" Name="SourceDir">
             <Directory Id="ProgramFiles64Folder">
-                <Directory Id="APPLICATIONFOLDER" Name="usbipd-win" FileSource="$(var.PublishDir)" />
+                <Directory Id="APPLICATIONFOLDER" Name="usbipd-win" FileSource="$(var.PublishDir)">
+                    <Directory Id="PowerShell" Name="PowerShell" FileSource="$(var.PowerShellDir)" />
+                </Directory>
             </Directory>
         </Directory>
     </Fragment>

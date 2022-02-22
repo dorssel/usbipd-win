@@ -229,6 +229,21 @@ namespace UsbIpServer
             }
             {
                 //
+                //  state
+                //
+                var stateCommand = new Command("state", "Output state in JSON\0"
+                    + "Outputs the current state of all USB devices in machine-readable JSON suitable for scripted automation.");
+                stateCommand.SetHandler(async (InvocationContext invocationContext) =>
+                {
+                    invocationContext.ExitCode = (int)(
+                        await commandHandlers.State(
+                            invocationContext.Console, invocationContext.GetCancellationToken())
+                        );
+                });
+                rootCommand.AddCommand(stateCommand);
+            }
+            {
+                //
                 //  unbind [--all]
                 //
                 var allOption = new Option(

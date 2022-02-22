@@ -7,7 +7,11 @@ using System;
 using System.Collections.Generic;
 using System.CommandLine;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+using System.IO;
 using System.Linq;
+using System.Net;
+using System.Runtime.Serialization.Json;
 using System.Security.Principal;
 using System.Text;
 using System.Threading;
@@ -19,6 +23,7 @@ using Microsoft.Extensions.Hosting.WindowsServices;
 using Microsoft.Extensions.Logging;
 using Windows.Win32.Security;
 using static UsbIpServer.ConsoleTools;
+using Automation = Usbipd.Automation;
 using ExitCode = UsbIpServer.Program.ExitCode;
 
 namespace UsbIpServer
@@ -37,6 +42,8 @@ namespace UsbIpServer
         public Task<ExitCode> WslDetach(BusId busId, IConsole console, CancellationToken cancellationToken);
         public Task<ExitCode> WslDetachAll(IConsole console, CancellationToken cancellationToken);
         public Task<ExitCode> WslList(IConsole console, CancellationToken cancellationToken);
+
+        public Task<ExitCode> State(IConsole console, CancellationToken cancellationToken);
     }
 
     sealed class CommandHandlers : ICommandHandlers
@@ -582,6 +589,30 @@ namespace UsbIpServer
             console.ReportIfServerNotRunning();
             console.ReportIfForceNeeded();
             return ExitCode.Success;
+        }
+
+        [UnconditionalSuppressMessage("Trimming", "IL2026:Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code",
+            Justification = "Only basic types are used; all required members are accessed (and therefore not trimmed away).")]
+        Task<ExitCode> ICommandHandlers.State(IConsole console, CancellationToken cancellationToken)
+        {
+            var state = new Automation.State()
+            {
+                Devices = new[]
+                {
+                    new Automation.Device() { Name = "些字", IPAddress = IPAddress.Parse("1.2.3.4"), },
+                    new Automation.Device() { Name = "etc" },
+                }
+            };
+
+            using var memoryStream = new MemoryStream();
+            {
+                using var writer = JsonReaderWriterFactory.CreateJsonWriter(memoryStream, Encoding.UTF8, false, true);
+                var serializer = new DataContractJsonSerializer(state.GetType());
+                serializer.WriteObject(writer, state);
+            }
+
+            Console.Write(Encoding.UTF8.GetString(memoryStream.ToArray()));
+            return Task.FromResult(ExitCode.Success);
         }
     }
 }

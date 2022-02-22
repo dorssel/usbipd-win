@@ -23,19 +23,20 @@ SPDX-License-Identifier: GPL-2.0-only
     <OutputName>usbipd-win</OutputName>
     <DefineSolutionProperties>false</DefineSolutionProperties>
     <PublishDir>..\UsbIpServer\bin\publish</PublishDir>
+    <PowerShellDir>..\Usbipd.PowerShell\bin\$(Configuration)\netstandard2.0\win</PowerShellDir>
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x64' ">
     <OutputPath>bin\$(Configuration)\</OutputPath>
-    <DefineConstants>Debug;PublishDir=$(PublishDir);DriversDir=$(ProjectDir)..\Drivers;Year=$([System.DateTime]::UtcNow.ToString("yyyy"))</DefineConstants>
+    <DefineConstants>Debug;PublishDir=$(PublishDir);PowerShellDir=$(PowerShellDir);DriversDir=$(ProjectDir)..\Drivers;Year=$([System.DateTime]::UtcNow.ToString("yyyy"))</DefineConstants>
     <Cultures>en-US</Cultures>
     <SuppressAllWarnings>False</SuppressAllWarnings>
     <Pedantic>True</Pedantic>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x64' ">
     <OutputPath>bin\$(Configuration)\</OutputPath>
-    <DefineConstants>PublishDir=$(PublishDir);DriversDir=$(ProjectDir)..\Drivers;Year=$([System.DateTime]::UtcNow.ToString("yyyy"))</DefineConstants>
+    <DefineConstants>PublishDir=$(PublishDir);PowerShellDir=$(PowerShellDir);DriversDir=$(ProjectDir)..\Drivers;Year=$([System.DateTime]::UtcNow.ToString("yyyy"))</DefineConstants>
     <Cultures>en-US</Cultures>
     <SuppressAllWarnings>False</SuppressAllWarnings>
     <Pedantic>True</Pedantic>
@@ -55,6 +56,14 @@ SPDX-License-Identifier: GPL-2.0-only
       <ComponentGroupName>UsbIpServer</ComponentGroupName>
       <PreprocessorVariable>var.PublishDir</PreprocessorVariable>
       <Transforms>HarvestTransform.xslt</Transforms>
+    </HarvestDirectory>
+    <HarvestDirectory Include="$(PowerShellDir)" Visible="false">
+      <DirectoryRefId>PowerShell</DirectoryRefId>
+      <SuppressRootDirectory>true</SuppressRootDirectory>
+      <SuppressCOM>true</SuppressCOM>
+      <SuppressRegistry>true</SuppressRegistry>
+      <ComponentGroupName>PowerShell</ComponentGroupName>
+      <PreprocessorVariable>var.PowerShellDir</PreprocessorVariable>
     </HarvestDirectory>
   </ItemGroup>
   <ItemGroup>

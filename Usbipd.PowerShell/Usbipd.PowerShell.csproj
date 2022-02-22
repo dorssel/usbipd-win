@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+SPDX-FileCopyrightText: 2022 Frans van Dorsselaer
+
+SPDX-License-Identifier: GPL-2.0-only
+-->
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="..\NetStandard.props" />
+  
+  <PropertyGroup>
+    <RuntimeIdentifier>win</RuntimeIdentifier>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="$(PkgMicrosoft_Win32_Registry)\runtimes\$(RuntimeIdentifier)\lib\$(TargetFramework)\Microsoft.Win32.Registry.dll" CopyToOutputDirectory="PreserveNewest" Visible="false" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Win32.Registry" GeneratePathProperty="true" />
+    <PackageReference Include="PowerShellStandard.Library">
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+  </ItemGroup>
+  
+  <ItemGroup>
+    <ProjectReference Include="..\Usbipd.Automation\Usbipd.Automation.csproj" />
+  </ItemGroup>
+
+</Project>
