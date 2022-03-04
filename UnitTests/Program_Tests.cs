@@ -4,6 +4,7 @@
 
 using System;
 using System.CommandLine;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -60,6 +61,13 @@ namespace UnitTests
                 Test(ExitCode.Success, mock, "license");
             });
             Assert.IsInstanceOfType(exception.InnerException, typeof(NotImplementedException));
+        }
+
+        [TestMethod]
+        public void CompletionGuard_DoesNotThrow()
+        {
+            var completions = Program.CompletionGuard(null!, null!);
+            Assert.IsTrue(completions.SequenceEqual(Array.Empty<string>()));
         }
     }
 }

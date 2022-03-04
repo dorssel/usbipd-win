@@ -83,7 +83,7 @@ namespace UsbIpServer
             }
         }
 
-        static IEnumerable<string> CompletionGuard(CompletionContext completionContext, Func<IEnumerable<string>?> complete)
+        internal static IEnumerable<string> CompletionGuard(CompletionContext completionContext, Func<IEnumerable<string>?> complete)
         {
             try
             {

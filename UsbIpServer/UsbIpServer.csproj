@@ -20,10 +20,6 @@ SPDX-License-Identifier: GPL-2.0-only
   </PropertyGroup>
 
   <ItemGroup>
-    <TrimmableAssembly Include="System.CommandLine" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Content Include="..\COPYING.md" Link="COPYING.md" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 

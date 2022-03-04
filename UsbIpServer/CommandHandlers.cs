@@ -10,7 +10,6 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
-using System.Net;
 using System.Runtime.Serialization.Json;
 using System.Security.Principal;
 using System.Text;
@@ -593,15 +592,34 @@ namespace UsbIpServer
 
         [UnconditionalSuppressMessage("Trimming", "IL2026:Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code",
             Justification = "Only basic types are used; all required members are accessed (and therefore not trimmed away).")]
-        Task<ExitCode> ICommandHandlers.State(IConsole console, CancellationToken cancellationToken)
+        async Task<ExitCode> ICommandHandlers.State(IConsole console, CancellationToken cancellationToken)
         {
+            WslDistributions? distros = null;
+            try
+            {
+                distros = await GetDistributionsAsync(console, cancellationToken);
+            }
+            catch (UnexpectedResultException) { }
+
+            var devices = new List<Automation.Device>();
+            foreach (var device in UsbDevice.GetAll().OrderBy(d => d.InstanceId))
+            {
+                devices.Add(new()
+                {
+                    InstanceId = device.InstanceId,
+                    Description = device.Description,
+                    IsForced = device.IsForced,
+                    BusId = device.BusId?.ToString(),
+                    PersistedGuid = device.Guid,
+                    StubInstanceId = device.StubInstanceId,
+                    ClientIPAddress = device.IPAddress,
+                    ClientWslInstance = device.IPAddress is null ? null : distros?.LookupByIPAddress(device.IPAddress)?.Name,
+                });
+            }
+
             var state = new Automation.State()
             {
-                Devices = new[]
-                {
-                    new Automation.Device() { Name = "些字", IPAddress = IPAddress.Parse("1.2.3.4"), },
-                    new Automation.Device() { Name = "etc" },
-                }
+                Devices = devices,
             };
 
             using var memoryStream = new MemoryStream();
@@ -612,7 +630,7 @@ namespace UsbIpServer
             }
 
             Console.Write(Encoding.UTF8.GetString(memoryStream.ToArray()));
-            return Task.FromResult(ExitCode.Success);
+            return ExitCode.Success;
         }
     }
 }
