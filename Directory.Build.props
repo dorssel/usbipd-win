@@ -25,8 +25,7 @@ SPDX-License-Identifier: GPL-2.0-only
     <Nullable>enable</Nullable>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <AnalysisLevel>latest-all</AnalysisLevel>
-    <!-- NOTE: disabled, see: https://github.com/dotnet/linker/issues/2622 -->
-    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
 
     <!-- Common defaults -->
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>

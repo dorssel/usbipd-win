@@ -594,6 +594,8 @@ namespace UsbIpServer
             Justification = "Only basic types are used; all required members are accessed (and therefore not trimmed away).")]
         async Task<ExitCode> ICommandHandlers.State(IConsole console, CancellationToken cancellationToken)
         {
+            Console.SetError(TextWriter.Null);
+
             WslDistributions? distros = null;
             try
             {

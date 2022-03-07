@@ -17,6 +17,9 @@ SPDX-License-Identifier: GPL-2.0-only
     <PublishProfile>Properties\PublishProfiles\InputForInstaller.pubxml</PublishProfile>
 
     <AssemblyName>usbipd</AssemblyName>
+
+    <!-- NOTE: see: https://github.com/dotnet/linker/issues/2622 -->
+    <NoWarn>AD0001</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

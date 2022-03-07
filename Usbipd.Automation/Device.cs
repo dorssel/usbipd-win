@@ -32,29 +32,24 @@ namespace Usbipd.Automation
         /// <summary>
         /// Serialization for <see cref="IPAddress"/>.
         /// </summary>
-        [DataMember(Name = nameof(IPAddress))]
-        string? _IPAddress;
+        [DataMember(Name = nameof(ClientIPAddress))]
+        string? _ClientIPAddress;
 
-        [IgnoreDataMember]
         public IPAddress? ClientIPAddress
         {
-            get => IPAddress.TryParse(_IPAddress, out var ipAddress) ? ipAddress : null;
-            init => _IPAddress = value?.ToString();
+            get => IPAddress.TryParse(_ClientIPAddress, out var clientIPAddress) ? clientIPAddress : null;
+            init => _ClientIPAddress = value?.ToString();
         }
 
         [DataMember]
         public string? ClientWslInstance { get; init; }
 
-        [IgnoreDataMember]
         public bool IsBound { get => PersistedGuid is not null; }
 
-        [IgnoreDataMember]
         public bool IsConnected { get => BusId is not null; }
 
-        [IgnoreDataMember]
         public bool IsAttached { get => ClientIPAddress is not null; }
 
-        [IgnoreDataMember]
         public bool IsWslAttached { get => ClientWslInstance is not null; }
     }
 }

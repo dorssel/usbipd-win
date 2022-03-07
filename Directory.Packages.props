@@ -16,7 +16,7 @@ SPDX-License-Identifier: GPL-2.0-only
 
     <!-- Usbipd.PowerShell -->
     <PackageVersion Include="Microsoft.Win32.Registry" Version="5.0.0" />
-    <PackageVersion Include="PowerShellStandard.Library" Version="5.1.0" />
+    <PackageVersion Include="PowerShellStandard.Library" Version="5.1.1" />
 
     <!-- Installer -->
     <PackageVersion Include="WiX" Version="3.11.2" />
