@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.IO.Pipelines;
 using System.Linq;
@@ -12,6 +13,7 @@ using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using UsbIpServer;
 using Windows.Win32.Devices.Usb;
+using Windows.Win32.Foundation;
 using static UsbIpServer.Interop.Linux;
 using static UsbIpServer.Interop.VBoxUsb;
 using static UsbIpServer.Tools;
@@ -192,6 +194,25 @@ namespace UnitTests
         public void ConvertError_Test(UsbSupError vbox, Errno linux)
         {
             Assert.AreEqual(linux, ConvertError(vbox));
+        }
+
+        [TestMethod]
+        public void ThrowOnError_Success()
+        {
+            BOOL success = true;
+            success.ThrowOnError("dummy");
+        }
+
+        [TestMethod]
+        public void ThrowOnError_Error()
+        {
+            const string testMessage = "TestMessage";
+            BOOL failure = false;
+            var exception = Assert.ThrowsException<Win32Exception>(() =>
+            {
+                failure.ThrowOnError(testMessage);
+            });
+            Assert.IsTrue(exception.Message.Contains(testMessage));
         }
     }
 }

@@ -5,6 +5,7 @@
 using System;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 using Microsoft.Win32.SafeHandles;
 using Windows.Win32;
 using Windows.Win32.Devices.DeviceAndDriverInstallation;
@@ -14,14 +15,6 @@ namespace UsbIpServer
 {
     static class NewDev
     {
-        static void ThrowOnError(this BOOL success, string message)
-        {
-            if (!success)
-            {
-                throw new Win32Exception(message);
-            }
-        }
-
         sealed class SafeDeviceInfoSet : SafeHandleZeroOrMinusOneIsInvalid
         {
             public unsafe SafeDeviceInfoSet(void* handle)
@@ -42,6 +35,15 @@ namespace UsbIpServer
             }
         }
 
+        static class NativeMethods
+        {
+            // NOTE: Workaround for https://github.com/microsoft/win32metadata/issues/826
+            [DllImport("NewDev", ExactSpelling = true, SetLastError = true)]
+            [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+            [SupportedOSPlatform("windows6.0.6000")]
+            internal static extern unsafe BOOL DiInstallDevice(HWND hwndParent, void* DeviceInfoSet, SP_DEVINFO_DATA* DeviceInfoData, [Optional] SP_DRVINFO_DATA_V2_W* DriverInfoData, uint Flags, [Optional] BOOL* NeedReboot);
+        }
+
         public static bool ForceVBoxDriver(string originalInstanceId)
         {
             BOOL reboot = false;
@@ -59,7 +61,7 @@ namespace UsbIpServer
                 };
                 PInvoke.SetupDiOpenDeviceInfo(deviceInfoSet, originalInstanceId, default, 0, &deviceInfoData).ThrowOnError(nameof(PInvoke.SetupDiOpenDeviceInfo));
                 BOOL tmpReboot;
-                PInvoke.DiInstallDevice(default, deviceInfoSet, &deviceInfoData, null, PInvoke.DIIDFLAG_INSTALLNULLDRIVER, &tmpReboot).ThrowOnError(nameof(PInvoke.DIIDFLAG_INSTALLNULLDRIVER));
+                NativeMethods.DiInstallDevice(default, deviceInfoSet, &deviceInfoData, null, PInvoke.DIIDFLAG_INSTALLNULLDRIVER, &tmpReboot).ThrowOnError(nameof(PInvoke.DIIDFLAG_INSTALLNULLDRIVER));
                 if (tmpReboot)
                 {
                     reboot = true;
@@ -93,7 +95,7 @@ namespace UsbIpServer
                 };
                 PInvoke.SetupDiEnumDriverInfo(deviceInfoSet, deviceInfoData, (uint)SETUP_DI_BUILD_DRIVER_DRIVER_TYPE.SPDIT_CLASSDRIVER, 0, ref driverInfoData).ThrowOnError(nameof(PInvoke.SetupDiEnumDriverInfo));
                 BOOL tmpReboot;
-                PInvoke.DiInstallDevice(default, deviceInfoSet, &deviceInfoData, (SP_DRVINFO_DATA_V2_A*)&driverInfoData, 0, &tmpReboot).ThrowOnError(nameof(PInvoke.DiInstallDevice));
+                NativeMethods.DiInstallDevice(default, deviceInfoSet, &deviceInfoData, &driverInfoData, 0, &tmpReboot).ThrowOnError(nameof(NativeMethods.DiInstallDevice));
                 if (tmpReboot)
                 {
                     reboot = true;
@@ -124,7 +126,7 @@ namespace UsbIpServer
                     cbSize = (uint)Marshal.SizeOf<SP_DEVINFO_DATA>(),
                 };
                 PInvoke.SetupDiOpenDeviceInfo(deviceInfoSet, originalInstanceId, default, 0, &deviceInfoData).ThrowOnError(nameof(PInvoke.SetupDiOpenDeviceInfo));
-                PInvoke.DiInstallDevice(default, deviceInfoSet, &deviceInfoData, null, 0, &reboot).ThrowOnError(nameof(PInvoke.DiInstallDevice));
+                NativeMethods.DiInstallDevice(default, deviceInfoSet, &deviceInfoData, null, 0, &reboot).ThrowOnError(nameof(NativeMethods.DiInstallDevice));
             }
             return reboot;
         }
