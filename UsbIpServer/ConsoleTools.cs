@@ -180,6 +180,7 @@ namespace UsbIpServer
 
         const string ServiceNotRunningText = "The service is currently not running; a reboot should fix that.";
         const string VBoxUsbMonNotRunningText = "The VBoxUsbMon driver is currently not running; a reboot should fix that.";
+        const string VBoxUsbMonNotInstalled = "The VBoxUsbMon driver is not correctly installed; a repair or re-install of this software should fix that.";
 
         public static void ReportVersionNotSupported(IConsole console, UsbSupVersion version)
         {
@@ -189,41 +190,65 @@ namespace UsbIpServer
         /// <summary>
         /// Helper to warn users that the service is not running.
         /// For commands that may lead the user to believe that everything is fine when in fact it is not.
+        ///
+        /// <para>
         /// For example: 'list' succeeds and shows 'Shared', but attaching from the client will fail.
+        /// </para>
+        /// <para>
         /// For example: 'bind' succeeds, but attaching from the client will fail.
+        /// </para>
+        ///
+        /// <para>
+        /// Things that can be fixed by a simple reboot are reported as a warning. More serious stuff as an error.
+        /// </para>
         /// </summary>
         public static void ReportIfServerNotRunning(this IConsole console)
         {
-            if (!Server.IsRunning())
+            if (!VBoxUsbMon.IsServiceInstalled())
+            {
+                // We rely on the DIFX driver installer framework and on the (suboptimal) VBoxUsbMon.inf.
+                // Sometimes, DIFX cannot create the VBoxUsbMon service, but still appears to succeed.
+                console.ReportError(VBoxUsbMonNotInstalled);
+            }
+            else if (!Server.IsRunning())
             {
                 console.ReportWarning(ServiceNotRunningText);
             }
             else if (VBoxUsbMon.GetRunningVersion() is not UsbSupVersion version)
             {
-                // The usbipd service has a dependency on VBoxUsbMon, but this check also works if running the server from the command line.
+                // The usbipd service has a dependency on VBoxUsbMon, but we can still get here when running the server from the command line.
                 console.ReportWarning(VBoxUsbMonNotRunningText);
             }
             else if (!VBoxUsbMon.IsVersionSupported(version))
             {
+                // This may happen if a full installation of (a rather old version of) VirtualBox interferes.
                 ReportVersionNotSupported(console, version);
             }
         }
 
         public static bool CheckServerRunning(IConsole console)
         {
+            if (!VBoxUsbMon.IsServiceInstalled())
+            {
+                // We rely on the DIFX driver installer framework and on the (suboptimal) VBoxUsbMon.inf.
+                // Sometimes, DIFX cannot create the VBoxUsbMon service, but still appears to succeed.
+                console.ReportError(VBoxUsbMonNotInstalled);
+                return false;
+            }
             if (!Server.IsRunning())
             {
                 console.ReportError(ServiceNotRunningText);
                 return false;
             }
-            else if (VBoxUsbMon.GetRunningVersion() is not UsbSupVersion version)
+            if (VBoxUsbMon.GetRunningVersion() is not UsbSupVersion version)
             {
-                // The usbipd service has a dependency on VBoxUsbMon, but this check also works if running the server from the command line.
+                // The usbipd service has a dependency on VBoxUsbMon, but we can still get here when running the server from the command line.
                 console.ReportError(VBoxUsbMonNotRunningText);
                 return false;
             }
-            else if (!VBoxUsbMon.IsVersionSupported(version))
+            if (!VBoxUsbMon.IsVersionSupported(version))
             {
+                // This may happen if a full installation of (a rather old version of) VirtualBox interferes.
                 ReportVersionNotSupported(console, version);
                 return false;
             }

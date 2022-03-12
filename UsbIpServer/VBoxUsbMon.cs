@@ -4,7 +4,9 @@
 
 using System;
 using System.ComponentModel;
+using System.Linq;
 using System.Runtime.InteropServices;
+using System.ServiceProcess;
 using System.Threading.Tasks;
 
 using static UsbIpServer.Interop.VBoxUsbMon;
@@ -27,6 +29,11 @@ namespace UsbIpServer
             {
                 return null;
             }
+        }
+
+        public static bool IsServiceInstalled()
+        {
+            return ServiceController.GetDevices().Any((sc) => sc.ServiceName.Equals(ServiceName, StringComparison.InvariantCultureIgnoreCase));
         }
 
         public static bool IsVersionSupported(UsbSupVersion version) =>
