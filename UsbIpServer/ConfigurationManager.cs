@@ -259,7 +259,7 @@ namespace UsbIpServer
                             continue;
                         }
                         var hardwareIds = (string[])Get_DevNode_Property(deviceNode, PInvoke.DEVPKEY_Device_HardwareIds);
-                        if (hardwareIds.Any(hardwareId => hardwareId.Contains("VID_80EE&PID_CAFE", StringComparison.InvariantCultureIgnoreCase)))
+                        if (hardwareIds.Any(hardwareId => hardwareId.Contains(Interop.VBoxUsb.StubHardwareId, StringComparison.InvariantCultureIgnoreCase)))
                         {
                             // Do not include stubs.
                             continue;
@@ -337,7 +337,7 @@ namespace UsbIpServer
                     var deviceNode = Locate_DevNode(deviceId, false);
                     // Filter out the devices that are mocked by VboxUsbMon, since those are supposed to have the VBox driver.
                     var hardwareIds = (string[])Get_DevNode_Property(deviceNode, PInvoke.DEVPKEY_Device_HardwareIds);
-                    if (hardwareIds.Any(hardwareId => hardwareId.Contains("VID_80EE&PID_CAFE", StringComparison.InvariantCultureIgnoreCase)))
+                    if (hardwareIds.Any(hardwareId => hardwareId.Contains(Interop.VBoxUsb.StubHardwareId, StringComparison.InvariantCultureIgnoreCase)))
                     {
                         continue;
                     }

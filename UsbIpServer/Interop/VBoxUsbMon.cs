@@ -115,6 +115,8 @@ namespace UsbIpServer.Interop
             public int rc;
         }
 
+        public const string ServiceName = "VBoxUSBMon";
+
         /// <summary>VBoxUsb: usblib-win.h</summary>
         public const string USBMON_DEVICE_NAME = @"\\.\VBoxUSBMon";
 
