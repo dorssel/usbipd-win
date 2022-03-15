@@ -15,6 +15,7 @@ using UsbIpServer;
 using Windows.Win32.Devices.Usb;
 using Windows.Win32.Foundation;
 using static UsbIpServer.Interop.Linux;
+using static UsbIpServer.Interop.UsbIp;
 using static UsbIpServer.Interop.VBoxUsb;
 using static UsbIpServer.Tools;
 
@@ -213,6 +214,32 @@ namespace UnitTests
                 failure.ThrowOnError(testMessage);
             });
             Assert.IsTrue(exception.Message.Contains(testMessage));
+        }
+
+        [TestMethod]
+        public void RawEndpoint_Input()
+        {
+            const byte testEndpoint = 42;
+            UsbIpHeaderBasic basic = new()
+            {
+                ep = testEndpoint,
+                direction = UsbIpDir.USBIP_DIR_IN,
+            };
+            var rawEndpoint = basic.RawEndpoint();
+            Assert.AreEqual(testEndpoint | 0x80, rawEndpoint);
+        }
+
+        [TestMethod]
+        public void RawEndpoint_Output()
+        {
+            const byte testEndpoint = 42;
+            UsbIpHeaderBasic basic = new()
+            {
+                ep = testEndpoint,
+                direction = UsbIpDir.USBIP_DIR_OUT,
+            };
+            var rawEndpoint = basic.RawEndpoint();
+            Assert.AreEqual(testEndpoint, rawEndpoint);
         }
     }
 }

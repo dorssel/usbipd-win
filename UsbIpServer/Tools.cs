@@ -13,6 +13,7 @@ using Windows.Win32.Devices.Usb;
 using Windows.Win32.Foundation;
 
 using static UsbIpServer.Interop.Linux;
+using static UsbIpServer.Interop.UsbIp;
 using static UsbIpServer.Interop.VBoxUsb;
 
 namespace UsbIpServer
@@ -117,5 +118,9 @@ namespace UsbIpServer
             }
         }
 
+        public static byte RawEndpoint(this UsbIpHeaderBasic basic)
+        {
+            return (byte)((basic.ep & 0x7f) | (basic.direction == UsbIpDir.USBIP_DIR_IN ? 0x80u : 0x00u));
+        }
     }
 }
