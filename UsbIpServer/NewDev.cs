@@ -116,6 +116,7 @@ namespace UsbIpServer
             BOOL reboot = false;
             unsafe
             {
+                // First, we must set a NULL driver, just in case no default driver exists.
                 using var deviceInfoSet = new SafeDeviceInfoSet(PInvoke.SetupDiCreateDeviceInfoList((Guid*)null, default));
                 if (deviceInfoSet.IsInvalid)
                 {
@@ -126,7 +127,41 @@ namespace UsbIpServer
                     cbSize = (uint)Marshal.SizeOf<SP_DEVINFO_DATA>(),
                 };
                 PInvoke.SetupDiOpenDeviceInfo(deviceInfoSet, originalInstanceId, default, 0, &deviceInfoData).ThrowOnError(nameof(PInvoke.SetupDiOpenDeviceInfo));
-                NativeMethods.DiInstallDevice(default, deviceInfoSet, &deviceInfoData, null, 0, &reboot).ThrowOnError(nameof(NativeMethods.DiInstallDevice));
+                BOOL tmpReboot;
+                NativeMethods.DiInstallDevice(default, deviceInfoSet, &deviceInfoData, null, PInvoke.DIIDFLAG_INSTALLNULLDRIVER, &tmpReboot).ThrowOnError(nameof(PInvoke.DIIDFLAG_INSTALLNULLDRIVER));
+                if (tmpReboot)
+                {
+                    reboot = true;
+                }
+            }
+            unsafe
+            {
+                // Now we let Windows install the default PnP driver.
+                // We don't fail if no such driver can be found.
+                using var deviceInfoSet = new SafeDeviceInfoSet(PInvoke.SetupDiCreateDeviceInfoList((Guid*)null, default));
+                if (deviceInfoSet.IsInvalid)
+                {
+                    throw new Win32Exception(nameof(PInvoke.SetupDiCreateDeviceInfoList));
+                }
+                var deviceInfoData = new SP_DEVINFO_DATA()
+                {
+                    cbSize = (uint)Marshal.SizeOf<SP_DEVINFO_DATA>(),
+                };
+                PInvoke.SetupDiOpenDeviceInfo(deviceInfoSet, originalInstanceId, default, 0, &deviceInfoData).ThrowOnError(nameof(PInvoke.SetupDiOpenDeviceInfo));
+                try
+                {
+                    BOOL tmpReboot;
+                    NativeMethods.DiInstallDevice(default, deviceInfoSet, &deviceInfoData, null, 0, &tmpReboot).ThrowOnError(nameof(NativeMethods.DiInstallDevice));
+                    if (tmpReboot)
+                    {
+                        reboot = true;
+                    }
+                }
+                catch (Win32Exception ex) when ((uint)ex.NativeErrorCode == Interop.WinSDK.ERROR_NO_DRIVER_SELECTED)
+                {
+                    // Not really an error; this just means Windows does not have a default PnP driver for it.
+                    // The device will be listed under "Other devices" with a question mark.
+                }
             }
             return reboot;
         }

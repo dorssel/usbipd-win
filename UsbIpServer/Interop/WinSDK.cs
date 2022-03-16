@@ -94,5 +94,8 @@ namespace UsbIpServer.Interop
             public UsbProtocols SupportedUsbProtocols;
             public UsbNodeConnectionInformationExV2Flags Flags;
         }
+
+        /// <summary>WinSDK: setupapi.h: ERROR_NO_DRIVER_SELECTED</summary>
+        public const uint ERROR_NO_DRIVER_SELECTED = PInvoke.APPLICATION_ERROR_MASK | PInvoke.ERROR_SEVERITY_ERROR | 0x203;
     }
 }
