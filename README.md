@@ -16,7 +16,7 @@ Windows software for sharing locally connected USB devices to other machines, in
 
 ## How to install
 
-This software requires Microsoft Windows 8 / Microsoft Windows Server 2012 or newer;
+This software requires Microsoft Windows 8.1 x64 / Microsoft Windows Server 2012 or newer;
 it does not depend on any other software.
 
 Run the installer (.msi) from the [latest release](https://github.com/dorssel/usbipd-win/releases/latest)
@@ -71,7 +71,7 @@ Please file an issue if your device is not working.
 ### WSL 2
 
 You can use the `usbipd wsl` subcommand to share and connect a device with a single command.
-For example, open a command prompt as an Administrator:
+For example, open a command prompt:
 
 ```powershell
 usbipd wsl --help
