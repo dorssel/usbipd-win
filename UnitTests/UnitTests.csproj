@@ -7,22 +7,7 @@ SPDX-License-Identifier: GPL-2.0-only
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net6.0-windows8.0</TargetFramework>
-    <Platforms>x64</Platforms>
-    <Platform>x64</Platform>
-
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <Nullable>enable</Nullable>
-
-    <AnalysisMode>AllEnabledByDefault</AnalysisMode>
-    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
-
-    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
-
-    <InvariantGlobalization>true</InvariantGlobalization>
-
-    <IsPackable>false</IsPackable>
-
   </PropertyGroup>
 
   <ItemGroup>

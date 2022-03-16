@@ -83,7 +83,7 @@ namespace UsbIpServer
             }
         }
 
-        static IEnumerable<string> CompletionGuard(CompletionContext completionContext, Func<IEnumerable<string>?> complete)
+        internal static IEnumerable<string> CompletionGuard(CompletionContext completionContext, Func<IEnumerable<string>?> complete)
         {
             try
             {
@@ -226,6 +226,21 @@ namespace UsbIpServer
                         invocationContext.Console, invocationContext.GetCancellationToken());
                 });
                 rootCommand.AddCommand(serverCommand);
+            }
+            {
+                //
+                //  state
+                //
+                var stateCommand = new Command("state", "Output state in JSON\0"
+                    + "Outputs the current state of all USB devices in machine-readable JSON suitable for scripted automation.");
+                stateCommand.SetHandler(async (InvocationContext invocationContext) =>
+                {
+                    invocationContext.ExitCode = (int)(
+                        await commandHandlers.State(
+                            invocationContext.Console, invocationContext.GetCancellationToken())
+                        );
+                });
+                rootCommand.AddCommand(stateCommand);
             }
             {
                 //

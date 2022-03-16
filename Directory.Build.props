@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+SPDX-FileCopyrightText: 2021 Frans van Dorsselaer
+
+SPDX-License-Identifier: GPL-2.0-only
+-->
+<Project>
+  
+  <!-- Sane defaults; override in project where needed -->
+
+  <PropertyGroup>
+    <!-- This product only supports x64 (the only architecture supported by VBoxUsb) -->
+    <Platforms>x64</Platforms>
+    <Platform>x64</Platform>
+
+    <!-- Use the latest .NET SDK -->
+    <!-- This product requires Windows 8 or higher -->
+    <TargetFramework>net6.0-windows8.0</TargetFramework>
+    
+    <!-- Use the latest C# language standard -->
+    <LangVersion>10.0</LangVersion>
+    
+    <!-- Be very strict -->
+    <WarningLevel>5</WarningLevel>
+    <Nullable>enable</Nullable>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <AnalysisLevel>latest-all</AnalysisLevel>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+
+    <!-- Common defaults -->
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <SelfContained>false</SelfContained>
+    <IsPackable>false</IsPackable>
+    <IsPublishable>false</IsPublishable>
+    <IsTrimmable>true</IsTrimmable>
+
+    <Product>usbipd-win</Product>
+    <Company>Frans van Dorsselaer</Company>
+    <Copyright>Copyright (C) $([System.DateTime]::UtcNow.ToString("yyyy"))  $(Company)</Copyright>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="GitVersion.MsBuild">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+</Project>

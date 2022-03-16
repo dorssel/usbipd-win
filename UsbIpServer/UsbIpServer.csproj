@@ -8,58 +8,35 @@ SPDX-License-Identifier: GPL-2.0-only
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <Platforms>x64</Platforms>
     <ApplicationManifest>app.manifest</ApplicationManifest>
-
-    <!-- defaults (used by: dotnet build) -->
-    <TargetFramework>net6.0-windows8.0</TargetFramework>
-    <Platform>x64</Platform>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
 
-    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
-    <SelfContained>false</SelfContained>
-
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <Nullable>enable</Nullable>
 
-    <AnalysisMode>AllEnabledByDefault</AnalysisMode>
-    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
-
-    <Product>usbipd-win</Product>
-    <Company>Frans van Dorsselaer</Company>
-    <Copyright>Copyright (C) $([System.DateTime]::UtcNow.ToString("yyyy"))  $(Company)</Copyright>
-
-    <!-- generate info, but exclude the stuff that is set by GitVersion -->
-    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
-    <GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
-    <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
-    <GenerateAssemblyInformationalVersionAttribute>false</GenerateAssemblyInformationalVersionAttribute>
-
+    <IsPublishable>true</IsPublishable>
     <PublishProfile>Properties\PublishProfiles\InputForInstaller.pubxml</PublishProfile>
 
     <AssemblyName>usbipd</AssemblyName>
-    <InvariantGlobalization>true</InvariantGlobalization>
-  </PropertyGroup>
 
-  <ItemGroup>
-    <TrimmableAssembly Include="System.CommandLine" />
-  </ItemGroup>
+    <!-- NOTE: see: https://github.com/dotnet/linker/issues/2622 -->
+    <NoWarn>AD0001</NoWarn>
+  </PropertyGroup>
 
   <ItemGroup>
     <Content Include="..\COPYING.md" Link="COPYING.md" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="GitVersion.MsBuild">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
     <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" />
     <PackageReference Include="Microsoft.Windows.CsWin32">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="System.CommandLine" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Usbipd.Automation\Usbipd.Automation.csproj" />
   </ItemGroup>
 
 </Project>

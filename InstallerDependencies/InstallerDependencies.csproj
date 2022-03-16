@@ -7,20 +7,16 @@ SPDX-License-Identifier: GPL-2.0-only
 <Project Sdk="Microsoft.Build.NoTargets">
 
   <PropertyGroup>
-    <TargetFrameworks>net6.0-windows8.0</TargetFrameworks>
-    <Platforms>x64</Platforms>
-    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <!-- This project is not really C#, so disable all analyzers. -->
     <EnableNETAnalyzers>false</EnableNETAnalyzers>
+    <EnforceCodeStyleInBuild>false</EnforceCodeStyleInBuild>
+    <IsTrimmable>false</IsTrimmable>
     <!-- This project is not really C#, so prevent creating any .cs files. -->
     <GenerateGitVersionInformation>false</GenerateGitVersionInformation>
     <UpdateAssemblyInfo>false</UpdateAssemblyInfo>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="GitVersion.MsBuild">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
     <PackageReference Include="WiX" />
   </ItemGroup>
 
