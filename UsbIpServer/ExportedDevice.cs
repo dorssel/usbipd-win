@@ -159,7 +159,13 @@ namespace UsbIpServer
                 {
                     if ((data2.Flags & UsbNodeConnectionInformationExV2Flags.DeviceIsOperatingAtSuperSpeedPlusOrHigher) != 0)
                     {
-                        speed = Linux.UsbDeviceSpeed.USB_SPEED_SUPER_PLUS;
+                        // HACK: Linux vhci_hcd does not (yet) support USB_SPEED_SUPER_PLUS.
+                        // See: https://elixir.bootlin.com/linux/v5.16.9/source/drivers/usb/usbip/vhci_sysfs.c#L288
+                        // Looks like this only influences the reported rate; the USB protocol is supposed to be the same.
+                        // So, we simply lie about the speed...
+
+                        // speed = Linux.UsbDeviceSpeed.USB_SPEED_SUPER_PLUS;
+                        speed = Linux.UsbDeviceSpeed.USB_SPEED_SUPER;
                     }
                     else if ((data2.Flags & UsbNodeConnectionInformationExV2Flags.DeviceIsOperatingAtSuperSpeedOrHigher) != 0)
                     {
