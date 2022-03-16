@@ -57,11 +57,11 @@ namespace UsbIpServer
         readonly ConcurrentDictionary<byte, ChannelWriter<Task<byte[]>>> EndpointChannels = new();
 
         /// <summary>
-        /// Returns the channel writer for the given endpoint.
+        /// Returns the channel writer for the given raw endpoint number.
         /// </summary>
-        ChannelWriter<Task<byte[]>> GetEndpointWriter(byte endpoint, CancellationToken cancellationToken)
+        ChannelWriter<Task<byte[]>> GetEndpointWriter(byte rawEndpoint, CancellationToken cancellationToken)
         {
-            return EndpointChannels.GetOrAdd(endpoint, (_) =>
+            return EndpointChannels.GetOrAdd(rawEndpoint, (_) =>
             {
                 var channel = Channel.CreateUnbounded<Task<byte[]>>();
                 Task.Run(async () =>
@@ -105,7 +105,7 @@ namespace UsbIpServer
 
             // To support UNLINK, we must be able to abort the pipe that is used for this URB.
             // We need the raw USB endpoint number, i.e. including the high bit for input pipes.
-            if (!PendingSubmits.TryAdd(basic.seqnum, (byte)(basic.ep | (basic.direction == UsbIpDir.USBIP_DIR_IN ? 0x80u : 0x00u))))
+            if (!PendingSubmits.TryAdd(basic.seqnum, basic.RawEndpoint()))
             {
                 throw new ProtocolViolationException($"duplicate sequence number {basic.seqnum}");
             }
@@ -221,7 +221,7 @@ namespace UsbIpServer
                 // Now we queue the task that creates the response, so that all replies for a single
                 // endpoint remain ordered.
 
-                var endpointWriter = GetEndpointWriter((byte)basic.ep, cancellationToken);
+                var endpointWriter = GetEndpointWriter(basic.RawEndpoint(), cancellationToken);
                 await endpointWriter.WriteAsync(replyTask, cancellationToken);
 
                 // We return to the caller, so that the next request can be handled. As a result, multiple requests
@@ -340,7 +340,7 @@ namespace UsbIpServer
 
                 // To support UNLINK, we must be able to abort the pipe that is used for this URB.
                 // We need the raw USB endpoint number, i.e. including the high bit for input pipes.
-                if (!PendingSubmits.TryAdd(basic.seqnum, (byte)(basic.ep | (basic.direction == UsbIpDir.USBIP_DIR_IN ? 0x80u : 0x00u))))
+                if (!PendingSubmits.TryAdd(basic.seqnum, basic.RawEndpoint()))
                 {
                     throw new ProtocolViolationException($"duplicate sequence number {basic.seqnum}");
                 }
@@ -438,7 +438,7 @@ namespace UsbIpServer
             // Now we queue the task that creates the response, so that all replies for a single
             // endpoint remain ordered.
 
-            var endpointWriter = GetEndpointWriter((byte)basic.ep, cancellationToken);
+            var endpointWriter = GetEndpointWriter(basic.RawEndpoint(), cancellationToken);
             await endpointWriter.WriteAsync(replyTask, cancellationToken);
 
             // We return to the caller, so that the next request can be handled. As a result, multiple requests
@@ -450,7 +450,7 @@ namespace UsbIpServer
         {
             // We are synchronous with the receiver.
 
-            var pending = PendingSubmits.TryGetValue(unlink.seqnum, out var endpoint);
+            var pending = PendingSubmits.TryGetValue(unlink.seqnum, out var rawEndpoint);
             Logger.Trace($"Unlinking {unlink.seqnum}, pending = {pending}, pending count = {PendingSubmits.Count}");
 
             if (pending)
@@ -459,11 +459,11 @@ namespace UsbIpServer
                 // This is OK, since Linux will normally unlink all URBs anyway in quick succession.
                 var clearEndpoint = new UsbSupClearEndpoint()
                 {
-                    bEndpoint = endpoint,
+                    bEndpoint = rawEndpoint,
                 };
                 // Just like for CLEAR_FEATURE, we are going to wait until this finishes,
                 // in order to avoid races with subsequent SUBMIT to the same endpoint.
-                Logger.Trace($"Aborting endpoint {endpoint}");
+                Logger.Trace($"Aborting endpoint {rawEndpoint}");
                 await Device.IoControlAsync(SUPUSB_IOCTL.USB_ABORT_ENDPOINT, StructToBytes(clearEndpoint), null);
             }
 
@@ -484,7 +484,7 @@ namespace UsbIpServer
             {
                 // We need to queue this on the same endpoint that the UNLINK was for, such
                 // that the reply of the aborted request gets sent first.
-                var endpointWriter = GetEndpointWriter((byte)(endpoint & 0x7f), cancellationToken);
+                var endpointWriter = GetEndpointWriter(rawEndpoint, cancellationToken);
                 await endpointWriter.WriteAsync(Task.FromResult(header.ToBytes()), cancellationToken);
             }
             else
