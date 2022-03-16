@@ -164,9 +164,6 @@ namespace UsbIpServer
                 Logger.ClientAttach(ClientContext.ClientAddress, busId, device.InstanceId);
                 try
                 {
-                    var cfg = new byte[1] { 0 };
-                    await ClientContext.AttachedDevice.IoControlAsync(SUPUSB_IOCTL.USB_SET_CONFIG, cfg, null);
-
                     status = Status.ST_OK;
                     await SendOpCodeAsync(OpCode.OP_REP_IMPORT, Status.ST_OK);
                     exportedDevice.Serialize(Stream, false);
