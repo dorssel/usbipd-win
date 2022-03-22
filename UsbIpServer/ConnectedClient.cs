@@ -131,29 +131,26 @@ namespace UsbIpServer
                 status = Status.ST_NA;
 
                 ulong filterId = 0;
-                if (!device.IsForced)
+                try
                 {
-                    mon = new VBoxUsbMon();
-                    var version = await mon.GetVersion();
-                    if (!VBoxUsbMon.IsVersionSupported(version))
+                    // We use the modern way to restart the device, which works much better than the obsolete VBoxUsbMon port cycling.
+                    using var restartingDevice = new ConfigurationManager.RestartingDevice(device.InstanceId);
+                    if (!device.IsForced)
                     {
-                        throw new NotSupportedException($"VBoxUsbMon version {version.major}.{version.minor} is not supported.");
-                    }
-                    {
-                        try
+                        mon = new VBoxUsbMon();
+                        var version = await mon.GetVersion();
+                        if (!VBoxUsbMon.IsVersionSupported(version))
                         {
-                            // VBoxUsbMon SUPUSBFLT_IOCTL_RUN_FILTERS is not potent enough as it only cycles the port.
-                            // Instead, we mark the device for removal, add the filter, and then mark the device ready again.
-                            using var restartingDevice = new ConfigurationManager.RestartingDevice(device.InstanceId);
-                            filterId = await mon.AddFilter(exportedDevice);
+                            throw new NotSupportedException($"VBoxUsbMon version {version.major}.{version.minor} is not supported.");
                         }
-                        catch (ConfigurationManagerException ex) when (ex.ConfigRet == CONFIGRET.CR_REMOVE_VETOED)
-                        {
-                            // The host is actively using the device.
-                            status = Status.ST_DEV_BUSY;
-                            throw;
-                        }
+                        filterId = await mon.AddFilter(exportedDevice);
                     }
+                }
+                catch (ConfigurationManagerException ex) when (ex.ConfigRet == CONFIGRET.CR_REMOVE_VETOED)
+                {
+                    // The host is actively using the device.
+                    status = Status.ST_DEV_BUSY;
+                    throw;
                 }
 
                 status = Status.ST_DEV_ERR;
@@ -230,17 +227,16 @@ namespace UsbIpServer
 
                     Logger.ClientDetach(ClientContext.ClientAddress, busId, device.InstanceId);
 
-                    if (mon is not null)
+                    try
                     {
-                        try
+                        // We use the modern way to restart the device, which works much better than the obsolete VBoxUsbMon port cycling.
+                        using var restartingDevice = new ConfigurationManager.RestartingDevice(vboxDevice.DeviceNode);
+                        if (mon is not null)
                         {
-                            // This solves the cases where VBoxUsbMon does not properly hand back the device to the host.
-                            // Instead, we mark the device for removal, add the filter, and then mark the device ready again.
-                            using var restartingDevice = new ConfigurationManager.RestartingDevice(vboxDevice.DeviceNode);
                             await mon.RemoveFilter(filterId);
                         }
-                        catch (ConfigurationManagerException) { }
                     }
+                    catch (ConfigurationManagerException) { }
                 }
             }
             catch (Exception ex)
