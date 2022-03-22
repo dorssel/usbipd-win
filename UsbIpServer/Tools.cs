@@ -122,5 +122,27 @@ namespace UsbIpServer
         {
             return (byte)((basic.ep & 0x7f) | (basic.direction == UsbIpDir.USBIP_DIR_IN ? 0x80u : 0x00u));
         }
+
+        public static UsbSupTransferType EndpointType(this UsbIpHeaderBasic basic, UsbIpHeaderCmdSubmit submit)
+        {
+            if (basic.ep == 0)
+            {
+                return UsbSupTransferType.USBSUP_TRANSFER_TYPE_MSG;
+            }
+            else if (submit.number_of_packets > 0)
+            {
+                // Specs at https://www.kernel.org/doc/html/latest/usb/usbip_protocol.html state that
+                // this shall be 0xffffffff for non-ISO, but Linux itself often sets it to 0.
+                return UsbSupTransferType.USBSUP_TRANSFER_TYPE_ISOC;
+            }
+            else if (submit.interval != 0)
+            {
+                return UsbSupTransferType.USBSUP_TRANSFER_TYPE_INTR;
+            }
+            else
+            {
+                return UsbSupTransferType.USBSUP_TRANSFER_TYPE_BULK;
+            }
+        }
     }
 }

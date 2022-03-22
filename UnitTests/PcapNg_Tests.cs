@@ -4,6 +4,7 @@
 
 using System;
 using System.IO;
+using System.Threading;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -26,9 +27,13 @@ namespace UnitTests
 
         sealed class MockConfiguration : IDisposable
         {
-            public MockConfiguration(string? path)
+            public MockConfiguration(string? path, uint? snapLength = null)
             {
                 Mock.Setup(m => m["usbipd:PcapNg:Path"]).Returns(path!);
+                if (path is not null)
+                {
+                    Mock.Setup(m => m["usbipd:PcapNg:SnapLength"]).Returns(snapLength?.ToString()!);
+                }
             }
 
             readonly Mock<IConfiguration> Mock = new(MockBehavior.Strict);
@@ -111,67 +116,136 @@ namespace UnitTests
         }
 
         [TestMethod]
-        public void DumpPacket_Submit_Disabled()
+        public void DumpPacketNonIsoRequest_Disabled()
         {
             using var mockConfiguration = new MockConfiguration(null);
             using var pcapNg = new PcapNg(mockConfiguration.Object, MockLogger);
-            pcapNg.DumpPacket(new UsbIpHeaderBasic(), new UsbIpHeaderCmdSubmit(), new byte[10]);
+            pcapNg.DumpPacketNonIsoRequest(new(), new(), null);
         }
 
         [TestMethod]
-        public void DumpPacket_Submit_NoData_Disabled()
+        public void DumpPacketNonIsoRequest_WithData()
+        {
+            using var mockConfiguration = new MockConfiguration(TemporaryPath);
+            using var pcapNg = new PcapNg(mockConfiguration.Object, MockLogger);
+            pcapNg.DumpPacketNonIsoRequest(new(), new(), new byte[10]);
+        }
+
+        [TestMethod]
+        public void DumpPacketNonIsoRequest_NoData()
+        {
+            using var mockConfiguration = new MockConfiguration(TemporaryPath);
+            using var pcapNg = new PcapNg(mockConfiguration.Object, MockLogger);
+            pcapNg.DumpPacketNonIsoRequest(new(), new(), null);
+        }
+
+        [TestMethod]
+        public void DumpPacketNonIsoRequest_NoSetup()
+        {
+            using var mockConfiguration = new MockConfiguration(TemporaryPath);
+            using var pcapNg = new PcapNg(mockConfiguration.Object, MockLogger);
+            pcapNg.DumpPacketNonIsoRequest(new() { ep = 1 }, new(), null);
+        }
+
+        [TestMethod]
+        public void DumpPacketNonIsoReply_Disabled()
         {
             using var mockConfiguration = new MockConfiguration(null);
             using var pcapNg = new PcapNg(mockConfiguration.Object, MockLogger);
-            pcapNg.DumpPacket(new UsbIpHeaderBasic(), new UsbIpHeaderCmdSubmit(), null);
+            pcapNg.DumpPacketNonIsoReply(new(), new(), new(), null);
         }
 
         [TestMethod]
-        public void DumpPacket_Reply_Disabled()
+        public void DumpPacketNonIsoReply_WithData()
+        {
+            using var mockConfiguration = new MockConfiguration(TemporaryPath);
+            using var pcapNg = new PcapNg(mockConfiguration.Object, MockLogger);
+            pcapNg.DumpPacketNonIsoReply(new(), new(), new(), new byte[10]);
+        }
+
+        [TestMethod]
+        public void DumpPacketNonIsoReply_NoData()
+        {
+            using var mockConfiguration = new MockConfiguration(TemporaryPath);
+            using var pcapNg = new PcapNg(mockConfiguration.Object, MockLogger);
+            pcapNg.DumpPacketNonIsoReply(new(), new(), new(), null);
+        }
+
+        [TestMethod]
+        public void DumpPacketIsoRequest_Disabled()
         {
             using var mockConfiguration = new MockConfiguration(null);
             using var pcapNg = new PcapNg(mockConfiguration.Object, MockLogger);
-            pcapNg.DumpPacket(new UsbIpHeaderBasic(), new UsbIpHeaderCmdSubmit(), new UsbIpHeaderRetSubmit(), new byte[10]);
+            pcapNg.DumpPacketIsoRequest(new(), new(), Array.Empty<UsbIpIsoPacketDescriptor>(), null);
         }
 
         [TestMethod]
-        public void DumpPacket_Reply_NoData_Disabled()
+        public void DumpPacketIsoRequest_WithData()
+        {
+            using var mockConfiguration = new MockConfiguration(TemporaryPath);
+            using var pcapNg = new PcapNg(mockConfiguration.Object, MockLogger);
+            pcapNg.DumpPacketIsoRequest(new(), new(), new UsbIpIsoPacketDescriptor[2], new byte[10]);
+        }
+
+        [TestMethod]
+        public void DumpPacketIsoRequest_NoData()
+        {
+            using var mockConfiguration = new MockConfiguration(TemporaryPath);
+            using var pcapNg = new PcapNg(mockConfiguration.Object, MockLogger);
+            pcapNg.DumpPacketIsoRequest(new(), new(), Array.Empty<UsbIpIsoPacketDescriptor>(), null);
+        }
+
+        [TestMethod]
+        public void DumpPacketIsoReply_Disabled()
         {
             using var mockConfiguration = new MockConfiguration(null);
             using var pcapNg = new PcapNg(mockConfiguration.Object, MockLogger);
-            pcapNg.DumpPacket(new UsbIpHeaderBasic(), new UsbIpHeaderCmdSubmit(), new UsbIpHeaderRetSubmit(), null);
+            pcapNg.DumpPacketIsoReply(new(), new(), new(), Array.Empty<UsbIpIsoPacketDescriptor>(), null);
         }
 
         [TestMethod]
-        public void DumpPacket_Submit()
+        public void DumpPacketIsoReply_WithData()
         {
             using var mockConfiguration = new MockConfiguration(TemporaryPath);
             using var pcapNg = new PcapNg(mockConfiguration.Object, MockLogger);
-            pcapNg.DumpPacket(new UsbIpHeaderBasic(), new UsbIpHeaderCmdSubmit(), new byte[10]);
+            pcapNg.DumpPacketIsoReply(new(), new(), new(), new UsbIpIsoPacketDescriptor[2], new byte[10]);
         }
 
         [TestMethod]
-        public void DumpPacket_Submit_NoData()
+        public void DumpPacketIsoReply_NoData()
         {
             using var mockConfiguration = new MockConfiguration(TemporaryPath);
             using var pcapNg = new PcapNg(mockConfiguration.Object, MockLogger);
-            pcapNg.DumpPacket(new UsbIpHeaderBasic(), new UsbIpHeaderCmdSubmit(), null);
+            pcapNg.DumpPacketIsoReply(new(), new(), new(), Array.Empty<UsbIpIsoPacketDescriptor>(), null);
         }
 
         [TestMethod]
-        public void DumpPacket_Reply()
+        public void SnapLength_Normal()
         {
-            using var mockConfiguration = new MockConfiguration(TemporaryPath);
+            using var mockConfiguration = new MockConfiguration(TemporaryPath, 1024);
             using var pcapNg = new PcapNg(mockConfiguration.Object, MockLogger);
-            pcapNg.DumpPacket(new UsbIpHeaderBasic(), new UsbIpHeaderCmdSubmit(), new UsbIpHeaderRetSubmit(), new byte[10]);
         }
 
         [TestMethod]
-        public void DumpPacket_Reply_NoData()
+        public void SnapLength_ClipMinimum()
+        {
+            using var mockConfiguration = new MockConfiguration(TemporaryPath, 1);
+            using var pcapNg = new PcapNg(mockConfiguration.Object, MockLogger);
+        }
+
+        [TestMethod]
+        public void SnapLength_ClipMaximum()
+        {
+            using var mockConfiguration = new MockConfiguration(TemporaryPath, uint.MaxValue);
+            using var pcapNg = new PcapNg(mockConfiguration.Object, MockLogger);
+        }
+
+        [TestMethod]
+        public void PacketWriterAsync_Flush()
         {
             using var mockConfiguration = new MockConfiguration(TemporaryPath);
             using var pcapNg = new PcapNg(mockConfiguration.Object, MockLogger);
-            pcapNg.DumpPacket(new UsbIpHeaderBasic(), new UsbIpHeaderCmdSubmit(), new UsbIpHeaderRetSubmit(), null);
+            Thread.Sleep(TimeSpan.FromSeconds(6));
         }
     }
 }

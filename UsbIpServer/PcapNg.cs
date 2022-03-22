@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using static UsbIpServer.Interop.UsbIp;
+using static UsbIpServer.Interop.VBoxUsb;
 
 namespace UsbIpServer
 {
@@ -30,6 +31,21 @@ namespace UsbIpServer
                 return;
             }
 
+            var snapLength = config["usbipd:PcapNg:SnapLength"];
+            if (uint.TryParse(snapLength, out SnapLength))
+            {
+                // The absolute minimum, just the URB without any data.
+                if (SnapLength < 64)
+                {
+                    SnapLength = 64;
+                }
+                else if (SnapLength > int.MaxValue)
+                {
+                    SnapLength = int.MaxValue;
+                }
+            }
+            Logger.Debug($"usbipd:PcapNg:SnapLength = {(SnapLength == 0 ? "unlimited" : SnapLength)}");
+
             try
             {
                 Stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read);
@@ -44,7 +60,19 @@ namespace UsbIpServer
             }
         }
 
-        public void DumpPacket(UsbIpHeaderBasic basic, UsbIpHeaderCmdSubmit cmdSubmit, ReadOnlySpan<byte> data)
+        static byte ConvertType(UsbSupTransferType type)
+        {
+            return type switch
+            {
+                UsbSupTransferType.USBSUP_TRANSFER_TYPE_ISOC => 0,
+                UsbSupTransferType.USBSUP_TRANSFER_TYPE_INTR => 1,
+                UsbSupTransferType.USBSUP_TRANSFER_TYPE_MSG => 2,
+                UsbSupTransferType.USBSUP_TRANSFER_TYPE_BULK => 3,
+                _ => throw new ArgumentOutOfRangeException(nameof(type)),
+            };
+        }
+
+        public void DumpPacketNonIsoRequest(UsbIpHeaderBasic basic, UsbIpHeaderCmdSubmit cmdSubmit, ReadOnlySpan<byte> data)
         {
             if (!Enabled)
             {
@@ -56,8 +84,8 @@ namespace UsbIpServer
             using var usbmon = new BinaryWriter(new MemoryStream());
             usbmon.Write((ulong)basic.seqnum);
             usbmon.Write((byte)'S');
-            usbmon.Write((byte)(cmdSubmit.number_of_packets != 0 ? 0 : basic.ep == 0 ? 2 : 3));
-            usbmon.Write((byte)(basic.ep | (basic.direction == UsbIpDir.USBIP_DIR_IN ? 0x80u : 0x00u)));
+            usbmon.Write(ConvertType(basic.EndpointType(cmdSubmit)));
+            usbmon.Write(basic.RawEndpoint());
             usbmon.Write((byte)basic.devid);
             usbmon.Write((ushort)(basic.devid >> 16));
             usbmon.Write((byte)(basic.ep == 0 ? '\0' : '-'));
@@ -77,25 +105,18 @@ namespace UsbIpServer
             }
             else
             {
-                usbmon.Write(0ul);
+                usbmon.Write(0ul); // setup == 0 for ep != 0
             }
-            if (cmdSubmit.number_of_packets != 0)
-            {
-                usbmon.Write(cmdSubmit.interval);
-                usbmon.Write(cmdSubmit.start_frame);
-            }
-            else
-            {
-                usbmon.Write(0ul);
-            }
+            usbmon.Write(cmdSubmit.interval);
+            usbmon.Write(0u); // start_frame == 0 for non-ISO
             usbmon.Write(cmdSubmit.transfer_flags);
-            usbmon.Write(cmdSubmit.number_of_packets);
+            usbmon.Write(0u); // number_of_packets == 0 for non-ISO
             usbmon.Write(data);
 
             BlockChannel.Writer.WriteAsync(CreateEnhancedPacketBlock(usbmon)).AsTask().Wait();
         }
 
-        public void DumpPacket(UsbIpHeaderBasic basic, UsbIpHeaderCmdSubmit cmdSubmit, UsbIpHeaderRetSubmit retSubmit, ReadOnlySpan<byte> data)
+        public void DumpPacketNonIsoReply(UsbIpHeaderBasic basic, UsbIpHeaderCmdSubmit cmdSubmit, UsbIpHeaderRetSubmit retSubmit, ReadOnlySpan<byte> data)
         {
             if (!Enabled)
             {
@@ -107,8 +128,8 @@ namespace UsbIpServer
             using var usbmon = new BinaryWriter(new MemoryStream());
             usbmon.Write((ulong)basic.seqnum);
             usbmon.Write((byte)'C');
-            usbmon.Write((byte)(retSubmit.number_of_packets != 0 ? 0 : basic.ep == 0 ? 2 : 3));
-            usbmon.Write((byte)(basic.ep | (basic.direction == UsbIpDir.USBIP_DIR_IN ? 0x80u : 0x00u)));
+            usbmon.Write(ConvertType(basic.EndpointType(cmdSubmit)));
+            usbmon.Write(basic.RawEndpoint());
             usbmon.Write((byte)basic.devid);
             usbmon.Write((ushort)(basic.devid >> 16));
             usbmon.Write((byte)'-');
@@ -116,26 +137,19 @@ namespace UsbIpServer
             usbmon.Write(timestamp / 1000000); // seconds
             usbmon.Write((uint)(timestamp % 1000000)); // micro seconds
             usbmon.Write(retSubmit.status);
-            usbmon.Write(cmdSubmit.transfer_buffer_length); // length
+            usbmon.Write(retSubmit.actual_length); // length
             usbmon.Write(retSubmit.actual_length); // actual
-            usbmon.Write(0ul); // setup not relevant
-            if (cmdSubmit.number_of_packets != 0)
-            {
-                usbmon.Write(cmdSubmit.interval);
-                usbmon.Write(retSubmit.start_frame);
-            }
-            else
-            {
-                usbmon.Write(0ul);
-            }
+            usbmon.Write(0ul); // setup == 0 for reply
+            usbmon.Write(cmdSubmit.interval);
+            usbmon.Write(0u); // start_frame == 0 for non-ISO
             usbmon.Write(cmdSubmit.transfer_flags);
-            usbmon.Write(retSubmit.number_of_packets);
+            usbmon.Write(0u); // number_of_packets == 0 for non-ISO
             usbmon.Write(data);
 
             BlockChannel.Writer.WriteAsync(CreateEnhancedPacketBlock(usbmon)).AsTask().Wait();
         }
 
-        public void DumpPacket(UsbIpHeaderBasic basic, UsbIpHeaderCmdSubmit cmdSubmit, UsbIpIsoPacketDescriptor[] packetDescriptors, ReadOnlySpan<byte> data)
+        public void DumpPacketIsoRequest(UsbIpHeaderBasic basic, UsbIpHeaderCmdSubmit cmdSubmit, UsbIpIsoPacketDescriptor[] packetDescriptors, ReadOnlySpan<byte> data)
         {
             if (!Enabled)
             {
@@ -148,10 +162,10 @@ namespace UsbIpServer
             usbmon.Write((ulong)basic.seqnum);
             usbmon.Write((byte)'S');
             usbmon.Write((byte)0); // ISO
-            usbmon.Write((byte)(basic.ep | (basic.direction == UsbIpDir.USBIP_DIR_IN ? 0x80u : 0x00u)));
+            usbmon.Write(basic.RawEndpoint());
             usbmon.Write((byte)basic.devid);
             usbmon.Write((ushort)(basic.devid >> 16));
-            usbmon.Write((byte)(basic.ep == 0 ? '\0' : '-'));
+            usbmon.Write((byte)'-');
             usbmon.Write((byte)(data.IsEmpty ? basic.direction == UsbIpDir.USBIP_DIR_IN ? '<' : '>' : '\0'));
             usbmon.Write(timestamp / 1000000); // seconds
             usbmon.Write((uint)(timestamp % 1000000)); // micro seconds
@@ -176,17 +190,85 @@ namespace UsbIpServer
             BlockChannel.Writer.WriteAsync(CreateEnhancedPacketBlock(usbmon)).AsTask().Wait();
         }
 
+        public void DumpPacketIsoReply(UsbIpHeaderBasic basic, UsbIpHeaderCmdSubmit cmdSubmit, UsbIpHeaderRetSubmit retSubmit, UsbIpIsoPacketDescriptor[] packetDescriptors, ReadOnlySpan<byte> data)
+        {
+            if (!Enabled)
+            {
+                return;
+            }
+
+            var timestamp = GetTimestamp() / 10;  // in micro seconds
+
+            using var usbmon = new BinaryWriter(new MemoryStream());
+            usbmon.Write((ulong)basic.seqnum);
+            usbmon.Write((byte)'C');
+            usbmon.Write((byte)0); // ISO
+            usbmon.Write(basic.RawEndpoint());
+            usbmon.Write((byte)basic.devid);
+            usbmon.Write((ushort)(basic.devid >> 16));
+            usbmon.Write((byte)'-');
+            usbmon.Write((byte)(data.IsEmpty ? basic.direction == UsbIpDir.USBIP_DIR_IN ? '<' : '>' : '\0'));
+            usbmon.Write(timestamp / 1000000); // seconds
+            usbmon.Write((uint)(timestamp % 1000000)); // micro seconds
+            usbmon.Write(retSubmit.status);
+            usbmon.Write(retSubmit.actual_length); // length
+            usbmon.Write(data.Length + packetDescriptors.Length * 16); // actual
+            usbmon.Write((uint)retSubmit.error_count); // ISO error count
+            usbmon.Write((uint)packetDescriptors.Length);
+            usbmon.Write(cmdSubmit.interval);
+            usbmon.Write(cmdSubmit.start_frame);
+            usbmon.Write(cmdSubmit.transfer_flags);
+            usbmon.Write(cmdSubmit.number_of_packets);
+            var actualOffset = 0u;
+            foreach (var packetDescriptor in packetDescriptors)
+            {
+                // NOTE: Usbmon on Linux gets this wrong. On input, the actual_offset needs to be calculated.
+                usbmon.Write(packetDescriptor.status);
+                usbmon.Write(basic.direction == UsbIpDir.USBIP_DIR_IN ? actualOffset : packetDescriptor.offset);
+                usbmon.Write(packetDescriptor.actual_length);
+                usbmon.Write((uint)0); // padding
+                actualOffset += packetDescriptor.actual_length;
+            }
+            usbmon.Write(data);
+
+            BlockChannel.Writer.WriteAsync(CreateEnhancedPacketBlock(usbmon)).AsTask().Wait();
+        }
+
         async Task PacketWriterAsync(CancellationToken cancellationToken)
         {
             try
             {
                 await Stream.WriteAsync(CreateSectionHeaderBlock(), CancellationToken.None);
                 await Stream.WriteAsync(CreateInterfaceDescriptionBlock(), CancellationToken.None);
+                bool needFlush = true;
                 while (true)
                 {
-                    var block = await BlockChannel.Reader.ReadAsync(cancellationToken);
-                    await Stream.WriteAsync(block, CancellationToken.None);
-                    ++TotalPacketsWritten;
+                    using var flushTimer = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+                    if (needFlush)
+                    {
+                        flushTimer.CancelAfter(TimeSpan.FromSeconds(5));
+                    }
+                    try
+                    {
+                        await BlockChannel.Reader.WaitToReadAsync(flushTimer.Token);
+                        while (BlockChannel.Reader.TryRead(out var block))
+                        {
+                            await Stream.WriteAsync(block, CancellationToken.None);
+                            ++TotalPacketsWritten;
+                            needFlush = true;
+                        }
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        if (cancellationToken.IsCancellationRequested)
+                        {
+                            throw;
+                        }
+                        // The timer tripped
+                        Logger.Debug("Flushing");
+                        await Stream.FlushAsync(CancellationToken.None);
+                        needFlush = false;
+                    }
                 }
             }
             catch (IOException ex)
@@ -244,7 +326,7 @@ namespace UsbIpServer
         static byte[] CreateSectionHeaderBlock()
         {
             using var block = CreateBlock(0x0a0d0d0a);
-            block.Write(0x1a2b3c4d); // endianness magig
+            block.Write(0x1a2b3c4d); // endianness magic
             block.Write((ushort)1); // major pcapng version
             block.Write((ushort)0); // minor pcapng version
             block.Write(0xffffffffffffffff); // unspecified section size
@@ -253,12 +335,12 @@ namespace UsbIpServer
             return FinishBlock(block);
         }
 
-        static byte[] CreateInterfaceDescriptionBlock()
+        byte[] CreateInterfaceDescriptionBlock()
         {
             using var block = CreateBlock(1);
             block.Write((ushort)220); // LINKTYPE_USB_LINUX_MMAPPED
             block.Write((ushort)0); // reserved
-            block.Write(0); // snaplen (unlimited)
+            block.Write(SnapLength); // snaplen (0 == unlimited)
             AddOption(block, 2, "USBIP"); // if_name
             AddOption(block, 9, 7); // if_tsresol, 10^-7 s == 100 ns
             return FinishBlock(block);
@@ -270,14 +352,15 @@ namespace UsbIpServer
 
             usbmon.Flush();
             var data = ((MemoryStream)usbmon.BaseStream).ToArray();
+            var captureLength = ((SnapLength == 0) || (data.Length < SnapLength)) ? data.Length : (int)SnapLength;
 
             using var block = CreateBlock(6);
             block.Write(0); // interface ID
             block.Write((uint)(timestamp >> 32));
             block.Write((uint)timestamp);
-            block.Write(data.Length); // captured packet length
+            block.Write(captureLength); // captured packet length
             block.Write(data.Length); // original packet length
-            block.Write(data);
+            block.Write(data[0..captureLength]);
             return FinishBlock(block);
         }
 
@@ -337,6 +420,7 @@ namespace UsbIpServer
         readonly Stopwatch Stopwatch = new();
         readonly ILogger Logger;
         readonly Stream Stream = Stream.Null;
+        readonly uint SnapLength;
         readonly Channel<byte[]> BlockChannel = Channel.CreateUnbounded<byte[]>();
         readonly CancellationTokenSource Cancellation = new();
         readonly Task PacketWriterTask = Task.CompletedTask;

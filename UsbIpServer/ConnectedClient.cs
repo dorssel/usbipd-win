@@ -23,7 +23,6 @@ using Windows.Win32.Devices.DeviceAndDriverInstallation;
 using Windows.Win32.Foundation;
 
 using static UsbIpServer.Interop.UsbIp;
-using static UsbIpServer.Interop.VBoxUsb;
 
 namespace UsbIpServer
 {
