@@ -17,7 +17,7 @@ namespace Usbipd.PowerShell
         {
             get
             {
-                // NOTE: User may be running 32-bit PowerShell, so we must excplicitly ask for 64-bit registry.
+                // NOTE: User may be running 32-bit PowerShell, so we must explicitly ask for 64-bit registry.
                 using var root = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64);
 
                 string exeFile;

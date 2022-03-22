@@ -3,10 +3,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 using System;
-using System.ComponentModel;
 using System.Net;
 using System.Net.Sockets;
-using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
@@ -23,7 +21,7 @@ namespace UsbIpServer
     {
         public const string SingletonMutexName = @"Global\usbipd-{A8256F62-728F-49B0-82BB-E5E48F83D28F}";
 
-        public Server(ILogger<Server> logger, IServiceScopeFactory serviceScopeFactory)
+        public Server(ILogger<Server> logger, IServiceScopeFactory serviceScopeFactory, PcapNg _)
         {
             Logger = logger;
             ServiceScopeFactory = serviceScopeFactory;
@@ -77,6 +75,8 @@ namespace UsbIpServer
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
+            Logger.Debug(GitVersionInformation.InformationalVersion);
+
             // Cleanup any left-overs in case the previous instance crashed.
             RegistryUtils.SetAllDevicesAsDetached();
 

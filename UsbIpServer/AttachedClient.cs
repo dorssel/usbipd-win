@@ -26,10 +26,11 @@ namespace UsbIpServer
 {
     sealed class AttachedClient
     {
-        public AttachedClient(ILogger<AttachedClient> logger, ClientContext clientContext)
+        public AttachedClient(ILogger<AttachedClient> logger, ClientContext clientContext, PcapNg pcap)
         {
             Logger = logger;
             ClientContext = clientContext;
+            Pcap = pcap;
 
             var tcpClient = clientContext.TcpClient;
             Stream = tcpClient.GetStream();
@@ -41,6 +42,7 @@ namespace UsbIpServer
 
         readonly ILogger Logger;
         readonly ClientContext ClientContext;
+        readonly PcapNg Pcap;
         readonly NetworkStream Stream;
         readonly Channel<byte[]> ReplyChannel = Channel.CreateUnbounded<byte[]>();
         readonly DeviceFile Device;
@@ -103,13 +105,14 @@ namespace UsbIpServer
 
             // Everything has been read and validated, now process...
 
+            Pcap.DumpPacketIsoRequest(basic, submit, packetDescriptors, basic.direction == UsbIpDir.USBIP_DIR_OUT ? buf : ReadOnlySpan<byte>.Empty);
+
             // To support UNLINK, we must be able to abort the pipe that is used for this URB.
             // We need the raw USB endpoint number, i.e. including the high bit for input pipes.
             if (!PendingSubmits.TryAdd(basic.seqnum, basic.RawEndpoint()))
             {
                 throw new ProtocolViolationException($"duplicate sequence number {basic.seqnum}");
             }
-            Logger.Trace($"Scheduled seqnum={basic.seqnum}, pending count = {PendingSubmits.Count}");
 
             // VBoxUSB only excepts up to 8 iso packets per ioctl, so we may have to split
             // the request into multiple ioctls.
@@ -191,8 +194,6 @@ namespace UsbIpServer
                         },
                     };
 
-                    Logger.Trace($"ISO: error_count: {header.ret_submit.error_count}, actual_length: {header.ret_submit.actual_length}");
-
                     var retBuf = buf;
                     if ((basic.direction == UsbIpDir.USBIP_DIR_IN) && (header.ret_submit.actual_length != submit.transfer_buffer_length))
                     {
@@ -208,6 +209,7 @@ namespace UsbIpServer
                         }
                     }
 
+                    Pcap.DumpPacketIsoReply(basic, submit, header.ret_submit, packetDescriptors, basic.direction == UsbIpDir.USBIP_DIR_IN ? retBuf.AsSpan(0, header.ret_submit.actual_length) : ReadOnlySpan<byte>.Empty);
                     using var replyStream = new MemoryStream();
                     replyStream.Write(header.ToBytes());
                     if (basic.direction == UsbIpDir.USBIP_DIR_IN)
@@ -239,7 +241,7 @@ namespace UsbIpServer
 
         async Task HandleSubmitAsync(UsbIpHeaderBasic basic, UsbIpHeaderCmdSubmit submit, CancellationToken cancellationToken)
         {
-            if (submit.number_of_packets != 0)
+            if (basic.EndpointType(submit) == UsbSupTransferType.USBSUP_TRANSFER_TYPE_ISOC)
             {
                 await HandleSubmitIsochronousAsync(basic, submit, cancellationToken);
                 return;
@@ -247,7 +249,7 @@ namespace UsbIpServer
 
             var urb = new UsbSupUrb()
             {
-                type = (basic.ep) == 0 ? UsbSupTransferType.USBSUP_TRANSFER_TYPE_MSG : UsbSupTransferType.USBSUP_TRANSFER_TYPE_BULK,
+                type = basic.EndpointType(submit),
                 ep = basic.ep,
                 dir = (basic.direction == UsbIpDir.USBIP_DIR_IN) ? UsbSupDirection.USBSUP_DIRECTION_IN : UsbSupDirection.USBSUP_DIRECTION_OUT,
                 flags = (basic.direction == UsbIpDir.USBIP_DIR_IN)
@@ -255,8 +257,8 @@ namespace UsbIpServer
                     : UsbSupXferFlags.USBSUP_FLAG_NONE,
                 error = UsbSupError.USBSUP_XFER_OK,
                 len = submit.transfer_buffer_length,
-                numIsoPkts = (uint)submit.number_of_packets,
-                aIsoPkts = new UsbSupIsoPkt[8],
+                numIsoPkts = 0, // number_of_packets == 0 here
+                aIsoPkts = new UsbSupIsoPkt[8], // unused, but must be present for VBoxUsb
             };
 
             var requestLength = submit.transfer_buffer_length;
@@ -286,6 +288,8 @@ namespace UsbIpServer
             // - Otherwise, we will start a new task so that the receiver can continue.
             //   This means multiple URBs can be outstanding awaiting completion.
             //   The pending URBs can be completed out of order, but for each endpoint the replies must be sent in order.
+
+            Pcap.DumpPacketNonIsoRequest(basic, submit, basic.direction == UsbIpDir.USBIP_DIR_OUT ? buf.AsSpan(payloadOffset) : ReadOnlySpan<byte>.Empty);
 
             Task ioctl;
             var pending = false;
@@ -333,11 +337,6 @@ namespace UsbIpServer
             }
             else
             {
-                if (urb.type == UsbSupTransferType.USBSUP_TRANSFER_TYPE_MSG)
-                {
-                    Logger.Trace($"{submit.setup.bmRequestType.B} {submit.setup.bRequest} {submit.setup.wValue.W} {submit.setup.wIndex.W} {submit.setup.wLength}");
-                }
-
                 // To support UNLINK, we must be able to abort the pipe that is used for this URB.
                 // We need the raw USB endpoint number, i.e. including the high bit for input pipes.
                 if (!PendingSubmits.TryAdd(basic.seqnum, basic.RawEndpoint()))
@@ -409,8 +408,8 @@ namespace UsbIpServer
                     {
                         status = -(int)ConvertError(urb.error),
                         actual_length = (int)urb.len,
-                        start_frame = submit.start_frame,
-                        number_of_packets = (int)urb.numIsoPkts,
+                        start_frame = 0, // shall be 0 for non-ISO
+                        number_of_packets = unchecked((int)0xffffffff), // shall be 0xffffffff for non-ISO
                         error_count = 0,
                     },
                 };
@@ -424,8 +423,8 @@ namespace UsbIpServer
                 {
                     Logger.Debug($"{urb.error} -> {ConvertError(urb.error)} -> {header.ret_submit.status}");
                 }
-                Logger.Trace($"actual: {header.ret_submit.actual_length}, requested: {requestLength}");
 
+                Pcap.DumpPacketNonIsoReply(basic, submit, header.ret_submit, basic.direction == UsbIpDir.USBIP_DIR_IN ? buf.AsSpan(payloadOffset, header.ret_submit.actual_length) : ReadOnlySpan<byte>.Empty);
                 using var replyStream = new MemoryStream();
                 replyStream.Write(header.ToBytes());
                 if (basic.direction == UsbIpDir.USBIP_DIR_IN)
@@ -512,12 +511,9 @@ namespace UsbIpServer
                 switch (header.basic.command)
                 {
                     case UsbIpCmd.USBIP_CMD_SUBMIT:
-                        Logger.Trace($"USBIP_CMD_SUBMIT, seqnum={header.basic.seqnum}, flags={header.cmd_submit.transfer_flags}, " +
-                                $"length={header.cmd_submit.transfer_buffer_length}, ep={header.basic.ep}");
                         await HandleSubmitAsync(header.basic, header.cmd_submit, cancellationToken);
                         break;
                     case UsbIpCmd.USBIP_CMD_UNLINK:
-                        Logger.Trace($"USBIP_CMD_UNLINK, seqnum={header.basic.seqnum}, unlink_seqnum={header.cmd_unlink.seqnum}");
                         await HandleUnlinkAsync(header.basic, header.cmd_unlink, cancellationToken);
                         break;
                     default:

@@ -241,5 +241,43 @@ namespace UnitTests
             var rawEndpoint = basic.RawEndpoint();
             Assert.AreEqual(testEndpoint, rawEndpoint);
         }
+
+        [TestMethod]
+        public void EndpointType_MSG()
+        {
+            var basic = new UsbIpHeaderBasic() { ep = 0 };
+            // Bogus number_of_packets + bogus interval, endpoint has precedence.
+            var submit = new UsbIpHeaderCmdSubmit() { number_of_packets = 42, interval = 42 };
+            var type = basic.EndpointType(submit);
+            Assert.AreEqual(UsbSupTransferType.USBSUP_TRANSFER_TYPE_MSG, type);
+        }
+
+        [TestMethod]
+        public void EndpointType_ISOC()
+        {
+            var basic = new UsbIpHeaderBasic() { ep = 1 };
+            // Bogus interval, number_of_packets has precedence.
+            var submit = new UsbIpHeaderCmdSubmit() { number_of_packets = 42 };
+            var type = basic.EndpointType(submit);
+            Assert.AreEqual(UsbSupTransferType.USBSUP_TRANSFER_TYPE_ISOC, type);
+        }
+
+        [TestMethod]
+        public void EndpointType_INTR()
+        {
+            var basic = new UsbIpHeaderBasic() { ep = 1 };
+            var submit = new UsbIpHeaderCmdSubmit() { interval = 42 };
+            var type = basic.EndpointType(submit);
+            Assert.AreEqual(UsbSupTransferType.USBSUP_TRANSFER_TYPE_INTR, type);
+        }
+
+        [TestMethod]
+        public void EndpointType_BULK()
+        {
+            var basic = new UsbIpHeaderBasic() { ep = 1 };
+            var submit = new UsbIpHeaderCmdSubmit();
+            var type = basic.EndpointType(submit);
+            Assert.AreEqual(UsbSupTransferType.USBSUP_TRANSFER_TYPE_BULK, type);
+        }
     }
 }

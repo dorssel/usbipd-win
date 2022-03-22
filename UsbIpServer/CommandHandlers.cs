@@ -246,6 +246,7 @@ namespace UsbIpServer
                 .ConfigureServices((hostContext, services) =>
                 {
                     services.AddHostedService<Server>();
+                    services.AddSingleton<PcapNg>();
                     services.AddScoped<ClientContext>();
                     services.AddScoped<ConnectedClient>();
                     services.AddScoped<AttachedClient>();
