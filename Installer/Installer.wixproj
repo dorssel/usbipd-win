@@ -115,10 +115,8 @@ SPDX-License-Identifier: GPL-2.0-only
     This ensures that each x.y.z version has a different ProductId, so every update is a MajorUpgrade.
     It also ensures that 2 builds of the same x.y.z version will never be installed simultaneously.
     The alternative (WiX AllowSameVersionUpgrades) causes ICE61.
-    
-    The chance of a hash-collision is much smaller than the chance of forgetting to update ProductId manually.
     -->
-    <CreateProperty Value="$(DefineConstants);ProductId=EA1D5623-E6A7-4E4A-9259-E397$(GitVersion_MajorMinorPatch.GetHashCode().ToString(X8))">
+    <CreateProperty Value="$(DefineConstants);ProductId=EA1D5623-E6A7-4E4A-9259-E39722$([System.Byte]::Parse($(GitVersion_Major)).ToString(X2))$([System.Byte]::Parse($(GitVersion_Minor)).ToString(X2))$([System.Byte]::Parse($(GitVersion_Patch)).ToString(X2))">
       <Output TaskParameter="Value" PropertyName="DefineConstants" />
     </CreateProperty>
   </Target>
