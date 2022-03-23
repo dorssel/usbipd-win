@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -13,6 +14,7 @@ using Windows.Win32;
 using Windows.Win32.Devices.DeviceAndDriverInstallation;
 using Windows.Win32.Devices.Properties;
 using Windows.Win32.UI.Shell.PropertiesSystem;
+using static UsbIpServer.Interop.WinSDK;
 
 namespace Windows.Win32.Devices.Properties
 {
@@ -275,7 +277,11 @@ namespace UsbIpServer
 
         public static string GetHubInterfacePath(string instanceId)
         {
-            var deviceNode = Locate_DevNode(instanceId, true);
+            return GetHubInterfacePath(Locate_DevNode(instanceId, true));
+        }
+
+        static string GetHubInterfacePath(uint deviceNode)
+        {
             PInvoke.CM_Get_Parent(out var hubDeviceNode, deviceNode, 0).ThrowOnError(nameof(PInvoke.CM_Get_Parent));
             var hubInstanceId = (string)Get_DevNode_Property(hubDeviceNode, PInvoke.DEVPKEY_Device_InstanceId);
             return Get_Device_Interface_List(PInvoke.GUID_DEVINTERFACE_USB_HUB, hubInstanceId, PInvoke.CM_GET_DEVICE_INTERFACE_LIST_PRESENT).Single();
@@ -408,6 +414,22 @@ namespace UsbIpServer
                 // b) Race condition with physical device removal.
                 // c) Race condition with the device node being marked ready by something else and
                 //    device enumeration already replaced the DevNode with its (non-)VBox counterpart.
+
+                try
+                {
+                    // For extra measure, we also try to reset the USB port, which may fail silently.
+                    var busId = GetBusId(DeviceNode);
+                    var hubInterfacePath = GetHubInterfacePath(DeviceNode);
+                    using var hubFile = new DeviceFile(hubInterfacePath);
+
+                    var data = new UsbCyclePortParams() { ConnectionIndex = busId.Port };
+                    var buf = Tools.StructToBytes(data);
+                    hubFile.IoControlAsync(IoControl.IOCTL_USB_HUB_CYCLE_PORT, buf, buf).Wait();
+                }
+                catch (ConfigurationManagerException) { }
+                catch (Win32Exception) { }
+
+                // This is the reverse of what the constructor accomplished.
                 PInvoke.CM_Setup_DevNode(DeviceNode, PInvoke.CM_SETUP_DEVNODE_READY);
             }
         }
