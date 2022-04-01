@@ -8,145 +8,144 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Usbipd.Automation;
 using UsbIpServer;
 
-namespace UnitTests
+namespace UnitTests;
+
+[TestClass]
+sealed class Automation_Tests
 {
-    [TestClass]
-    sealed class Automation_Tests
+    [TestMethod]
+    public void State_Constructor()
     {
-        [TestMethod]
-        public void State_Constructor()
-        {
-            _ = new State();
-        }
+        _ = new State();
+    }
 
-        [TestMethod]
-        public void State_Devices()
+    [TestMethod]
+    public void State_Devices()
+    {
+        var state = new State()
         {
-            var state = new State()
+            Devices = new Device[]
             {
-                Devices = new Device[]
-                {
-                    new(),
-                    new(),
-                },
-            };
-            Assert.AreEqual(2, state.Devices.Count);
-        }
+                new(),
+                new(),
+            },
+        };
+        Assert.AreEqual(2, state.Devices.Count);
+    }
 
-        [TestMethod]
-        public void Device_Constructor()
+    [TestMethod]
+    public void Device_Constructor()
+    {
+        var device = new Device();
+        Assert.AreEqual(string.Empty, device.InstanceId);
+        Assert.AreEqual(string.Empty, device.Description);
+        Assert.IsFalse(device.IsForced);
+        Assert.IsNull(device.BusId);
+        Assert.IsNull(device.PersistedGuid);
+        Assert.IsNull(device.StubInstanceId);
+        Assert.IsNull(device.ClientIPAddress);
+        Assert.IsNull(device.ClientWslInstance);
+        Assert.IsFalse(device.IsBound);
+        Assert.IsFalse(device.IsConnected);
+        Assert.IsFalse(device.IsAttached);
+        Assert.IsFalse(device.IsWslAttached);
+    }
+
+    [TestMethod]
+    public void Device_InstanceId()
+    {
+        const string testInstanceId = "testInstanceId";
+
+        var device = new Device()
         {
-            var device = new Device();
-            Assert.AreEqual(string.Empty, device.InstanceId);
-            Assert.AreEqual(string.Empty, device.Description);
-            Assert.IsFalse(device.IsForced);
-            Assert.IsNull(device.BusId);
-            Assert.IsNull(device.PersistedGuid);
-            Assert.IsNull(device.StubInstanceId);
-            Assert.IsNull(device.ClientIPAddress);
-            Assert.IsNull(device.ClientWslInstance);
-            Assert.IsFalse(device.IsBound);
-            Assert.IsFalse(device.IsConnected);
-            Assert.IsFalse(device.IsAttached);
-            Assert.IsFalse(device.IsWslAttached);
-        }
+            InstanceId = testInstanceId,
+        };
+        Assert.AreEqual(testInstanceId, device.InstanceId);
+    }
 
-        [TestMethod]
-        public void Device_InstanceId()
+    [TestMethod]
+    public void Device_Description()
+    {
+        const string testDescription = "testDescription";
+
+        var device = new Device()
         {
-            const string testInstanceId = "testInstanceId";
+            Description = testDescription,
+        };
+        Assert.AreEqual(testDescription, device.Description);
+    }
 
-            var device = new Device()
-            {
-                InstanceId = testInstanceId,
-            };
-            Assert.AreEqual(testInstanceId, device.InstanceId);
-        }
-
-        [TestMethod]
-        public void Device_Description()
+    [TestMethod]
+    public void Device_IsForced()
+    {
+        var device = new Device()
         {
-            const string testDescription = "testDescription";
+            IsForced = true,
+        };
+        Assert.IsTrue(device.IsForced);
+    }
 
-            var device = new Device()
-            {
-                Description = testDescription,
-            };
-            Assert.AreEqual(testDescription, device.Description);
-        }
+    [TestMethod]
+    public void Device_BusId()
+    {
+        var testBusId = new BusId() { Bus = 1, Port = 42 };
 
-        [TestMethod]
-        public void Device_IsForced()
+        var device = new Device()
         {
-            var device = new Device()
-            {
-                IsForced = true,
-            };
-            Assert.IsTrue(device.IsForced);
-        }
+            BusId = testBusId.ToString(),
+        };
+        Assert.AreEqual(testBusId.ToString(), device.BusId);
+        Assert.IsTrue(device.IsConnected);
+    }
 
-        [TestMethod]
-        public void Device_BusId()
+    [TestMethod]
+    public void Device_PeristedGuid()
+    {
+        var testPersistedGuid = Guid.NewGuid();
+
+        var device = new Device()
         {
-            var testBusId = new BusId() { Bus = 1, Port = 42 };
+            PersistedGuid = testPersistedGuid,
+        };
+        Assert.AreEqual(testPersistedGuid, device.PersistedGuid);
+        Assert.IsTrue(device.IsBound);
+    }
 
-            var device = new Device()
-            {
-                BusId = testBusId.ToString(),
-            };
-            Assert.AreEqual(testBusId.ToString(), device.BusId);
-            Assert.IsTrue(device.IsConnected);
-        }
+    [TestMethod]
+    public void Device_StubInstanceId()
+    {
+        const string testStubInstanceId = "testStubInstanceId";
 
-        [TestMethod]
-        public void Device_PeristedGuid()
+        var device = new Device()
         {
-            var testPersistedGuid = Guid.NewGuid();
+            StubInstanceId = testStubInstanceId,
+        };
+        Assert.AreEqual(testStubInstanceId, device.StubInstanceId);
+    }
 
-            var device = new Device()
-            {
-                PersistedGuid = testPersistedGuid,
-            };
-            Assert.AreEqual(testPersistedGuid, device.PersistedGuid);
-            Assert.IsTrue(device.IsBound);
-        }
+    [TestMethod]
+    public void Device_ClientIPAddress()
+    {
+        var testClientIPAddress = IPAddress.Parse("1.2.3.4");
 
-        [TestMethod]
-        public void Device_StubInstanceId()
+        var device = new Device()
         {
-            const string testStubInstanceId = "testStubInstanceId";
+            ClientIPAddress = testClientIPAddress,
+        };
+        Assert.AreEqual(testClientIPAddress, device.ClientIPAddress);
+        Assert.IsTrue(device.IsAttached);
+    }
 
-            var device = new Device()
-            {
-                StubInstanceId = testStubInstanceId,
-            };
-            Assert.AreEqual(testStubInstanceId, device.StubInstanceId);
-        }
+    [TestMethod]
+    public void Device_ClientWslInstance()
+    {
+        var testClientWslInstance = "testClientWslInstance";
 
-        [TestMethod]
-        public void Device_ClientIPAddress()
+        var device = new Device()
         {
-            var testClientIPAddress = IPAddress.Parse("1.2.3.4");
-
-            var device = new Device()
-            {
-                ClientIPAddress = testClientIPAddress,
-            };
-            Assert.AreEqual(testClientIPAddress, device.ClientIPAddress);
-            Assert.IsTrue(device.IsAttached);
-        }
-
-        [TestMethod]
-        public void Device_ClientWslInstance()
-        {
-            var testClientWslInstance = "testClientWslInstance";
-
-            var device = new Device()
-            {
-                ClientWslInstance = testClientWslInstance,
-            };
-            Assert.AreEqual(testClientWslInstance, device.ClientWslInstance);
-            Assert.IsTrue(device.IsWslAttached);
-        }
+            ClientWslInstance = testClientWslInstance,
+        };
+        Assert.AreEqual(testClientWslInstance, device.ClientWslInstance);
+        Assert.IsTrue(device.IsWslAttached);
     }
 }

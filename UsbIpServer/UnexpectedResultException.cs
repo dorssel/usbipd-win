@@ -4,20 +4,19 @@
 
 using System;
 
-namespace UsbIpServer
+namespace UsbIpServer;
+
+public sealed class UnexpectedResultException : Exception
 {
-    public sealed class UnexpectedResultException : Exception
+    public UnexpectedResultException()
     {
-        public UnexpectedResultException()
-        {
-        }
+    }
 
-        public UnexpectedResultException(string message) : base(message)
-        {
-        }
+    public UnexpectedResultException(string message) : base(message)
+    {
+    }
 
-        public UnexpectedResultException(string message, Exception innerException) : base(message, innerException)
-        {
-        }
+    public UnexpectedResultException(string message, Exception innerException) : base(message, innerException)
+    {
     }
 }

@@ -6,40 +6,39 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace UsbIpServer
+namespace UsbIpServer;
+
+sealed class Lock : IDisposable
 {
-    sealed class Lock : IDisposable
+    public static Lock Create(SemaphoreSlim semaphore)
     {
-        public static Lock Create(SemaphoreSlim semaphore)
-        {
-            var result = new Lock(semaphore);
-            semaphore.Wait();
-            Interlocked.Exchange(ref result.Locked, 1);
-            return result;
-        }
+        var result = new Lock(semaphore);
+        semaphore.Wait();
+        Interlocked.Exchange(ref result.Locked, 1);
+        return result;
+    }
 
-        public static async Task<Lock> CreateAsync(SemaphoreSlim semaphore, CancellationToken cancellationToken)
-        {
-            var result = new Lock(semaphore);
-            await semaphore.WaitAsync(cancellationToken);
-            Interlocked.Exchange(ref result.Locked, 1);
-            return result;
-        }
+    public static async Task<Lock> CreateAsync(SemaphoreSlim semaphore, CancellationToken cancellationToken)
+    {
+        var result = new Lock(semaphore);
+        await semaphore.WaitAsync(cancellationToken);
+        Interlocked.Exchange(ref result.Locked, 1);
+        return result;
+    }
 
-        readonly SemaphoreSlim Semaphore;
-        int Locked;
+    readonly SemaphoreSlim Semaphore;
+    int Locked;
 
-        Lock(SemaphoreSlim semaphore)
-        {
-            Semaphore = semaphore;
-        }
+    Lock(SemaphoreSlim semaphore)
+    {
+        Semaphore = semaphore;
+    }
 
-        public void Dispose()
+    public void Dispose()
+    {
+        if (Interlocked.CompareExchange(ref Locked, 0, 1) == 1)
         {
-            if (Interlocked.CompareExchange(ref Locked, 0, 1) == 1)
-            {
-                Semaphore.Release();
-            }
+            Semaphore.Release();
         }
     }
 }

@@ -8,21 +8,20 @@ using System.Runtime.Serialization;
 
 [assembly: CLSCompliant(false)]
 
-namespace Usbipd.Automation
-{
-    [DataContract]
-    public sealed class State
-    {
-        /// <summary>
-        /// Serialization for <see cref="Devices" />.
-        /// </summary>
-        [DataMember(Name = nameof(Devices))]
-        List<Device> _Devices = new();
+namespace Usbipd.Automation;
 
-        public IReadOnlyCollection<Device> Devices
-        {
-            get => _Devices.AsReadOnly();
-            init => _Devices = new(value);
-        }
+[DataContract]
+public sealed class State
+{
+    /// <summary>
+    /// Serialization for <see cref="Devices" />.
+    /// </summary>
+    [DataMember(Name = nameof(Devices))]
+    List<Device> _Devices = new();
+
+    public IReadOnlyCollection<Device> Devices
+    {
+        get => _Devices.AsReadOnly();
+        init => _Devices = new(value);
     }
 }

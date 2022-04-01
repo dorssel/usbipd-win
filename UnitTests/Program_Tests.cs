@@ -14,60 +14,59 @@ using UsbIpServer;
 [assembly: CLSCompliant(true)]
 [assembly: DiscoverInternals]
 
-namespace UnitTests
+namespace UnitTests;
+
+using ExitCode = Program.ExitCode;
+
+[TestClass]
+sealed class Program_Tests
+    : ParseTestBase
 {
-    using ExitCode = Program.ExitCode;
-
-    [TestClass]
-    sealed class Program_Tests
-        : ParseTestBase
+    [TestMethod]
+    public void MainSuccess()
     {
-        [TestMethod]
-        public void MainSuccess()
+        var exitCode = (ExitCode)Program.Main(new string[] { "--version" });
+        Assert.AreEqual(ExitCode.Success, exitCode);
+    }
+
+    [TestMethod]
+    public void MainParseError()
+    {
+        var exitCode = (ExitCode)Program.Main(new string[] { "unknown-command" });
+        Assert.AreEqual(ExitCode.ParseError, exitCode);
+    }
+
+    [TestMethod]
+    public void RunInvalidExitCode()
+    {
+        var mock = CreateMock();
+        mock.Setup(m => m.License(
+            It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult((ExitCode)0x0badf00d));
+
+        Assert.ThrowsException<UnexpectedResultException>(() =>
         {
-            var exitCode = (ExitCode)Program.Main(new string[] { "--version" });
-            Assert.AreEqual(ExitCode.Success, exitCode);
-        }
+            Test(ExitCode.Success, mock, "license");
+        });
+    }
 
-        [TestMethod]
-        public void MainParseError()
+    [TestMethod]
+    public void RunException()
+    {
+        var mock = CreateMock();
+        mock.Setup(m => m.License(
+            It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Throws<NotImplementedException>();
+
+        var exception = Assert.ThrowsException<AggregateException>(() =>
         {
-            var exitCode = (ExitCode)Program.Main(new string[] { "unknown-command" });
-            Assert.AreEqual(ExitCode.ParseError, exitCode);
-        }
+            Test(ExitCode.Success, mock, "license");
+        });
+        Assert.IsInstanceOfType(exception.InnerException, typeof(NotImplementedException));
+    }
 
-        [TestMethod]
-        public void RunInvalidExitCode()
-        {
-            var mock = CreateMock();
-            mock.Setup(m => m.License(
-                It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult((ExitCode)0x0badf00d));
-
-            Assert.ThrowsException<UnexpectedResultException>(() =>
-            {
-                Test(ExitCode.Success, mock, "license");
-            });
-        }
-
-        [TestMethod]
-        public void RunException()
-        {
-            var mock = CreateMock();
-            mock.Setup(m => m.License(
-                It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Throws<NotImplementedException>();
-
-            var exception = Assert.ThrowsException<AggregateException>(() =>
-            {
-                Test(ExitCode.Success, mock, "license");
-            });
-            Assert.IsInstanceOfType(exception.InnerException, typeof(NotImplementedException));
-        }
-
-        [TestMethod]
-        public void CompletionGuard_DoesNotThrow()
-        {
-            var completions = Program.CompletionGuard(null!, null!);
-            Assert.IsTrue(completions.SequenceEqual(Array.Empty<string>()));
-        }
+    [TestMethod]
+    public void CompletionGuard_DoesNotThrow()
+    {
+        var completions = Program.CompletionGuard(null!, null!);
+        Assert.IsTrue(completions.SequenceEqual(Array.Empty<string>()));
     }
 }

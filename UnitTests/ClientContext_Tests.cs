@@ -8,45 +8,44 @@ using System.Net;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using UsbIpServer;
 
-namespace UnitTests
+namespace UnitTests;
+
+[TestClass]
+sealed class ClientContext_Tests
 {
-    [TestClass]
-    sealed class ClientContext_Tests
+    static readonly string TemporaryPath = Path.GetTempFileName();
+
+    [ClassCleanup]
+    public static void ClassCleanup()
     {
-        static readonly string TemporaryPath = Path.GetTempFileName();
+        File.Delete(TemporaryPath);
+    }
 
-        [ClassCleanup]
-        public static void ClassCleanup()
-        {
-            File.Delete(TemporaryPath);
-        }
+    [TestMethod]
+    public void DefaultConstructor()
+    {
+        using var clientContext = new ClientContext();
+    }
 
-        [TestMethod]
-        public void DefaultConstructor()
+    [TestMethod]
+    public void Dispose()
+    {
+        var clientContext = new ClientContext();
+        ((IDisposable)clientContext).Dispose();
+        Assert.ThrowsException<ObjectDisposedException>(() =>
         {
-            using var clientContext = new ClientContext();
-        }
+            clientContext.TcpClient.Connect(IPAddress.Loopback, 1234);
+        });
+    }
 
-        [TestMethod]
-        public void Dispose()
+    [TestMethod]
+    public void DisposeTwice()
+    {
+        var clientContext = new ClientContext
         {
-            var clientContext = new ClientContext();
-            ((IDisposable)clientContext).Dispose();
-            Assert.ThrowsException<ObjectDisposedException>(() =>
-            {
-                clientContext.TcpClient.Connect(IPAddress.Loopback, 1234);
-            });
-        }
-
-        [TestMethod]
-        public void DisposeTwice()
-        {
-            var clientContext = new ClientContext
-            {
-                AttachedDevice = new DeviceFile(TemporaryPath)
-            };
-            ((IDisposable)clientContext).Dispose();
-            ((IDisposable)clientContext).Dispose();
-        }
+            AttachedDevice = new DeviceFile(TemporaryPath)
+        };
+        ((IDisposable)clientContext).Dispose();
+        ((IDisposable)clientContext).Dispose();
     }
 }

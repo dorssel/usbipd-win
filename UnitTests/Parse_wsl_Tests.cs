@@ -5,30 +5,29 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using UsbIpServer;
 
-namespace UnitTests
+namespace UnitTests;
+
+using ExitCode = Program.ExitCode;
+
+[TestClass]
+sealed class Parse_wsl_Tests
+    : ParseTestBase
 {
-    using ExitCode = Program.ExitCode;
-
-    [TestClass]
-    sealed class Parse_wsl_Tests
-        : ParseTestBase
+    [TestMethod]
+    public void Success()
     {
-        [TestMethod]
-        public void Success()
-        {
-            Test(ExitCode.Success, "wsl");
-        }
+        Test(ExitCode.Success, "wsl");
+    }
 
-        [TestMethod]
-        public void Help()
-        {
-            Test(ExitCode.Success, "wsl", "--help");
-        }
+    [TestMethod]
+    public void Help()
+    {
+        Test(ExitCode.Success, "wsl", "--help");
+    }
 
-        [TestMethod]
-        public void UnknownCommand()
-        {
-            Test(ExitCode.ParseError, "wsl", "unknown-command");
-        }
+    [TestMethod]
+    public void UnknownCommand()
+    {
+        Test(ExitCode.ParseError, "wsl", "unknown-command");
     }
 }

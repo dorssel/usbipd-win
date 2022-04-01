@@ -11,66 +11,65 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using UsbIpServer;
 
-namespace UnitTests
+namespace UnitTests;
+
+using ExitCode = Program.ExitCode;
+
+[TestClass]
+sealed class Parse_server_Tests
+    : ParseTestBase
 {
-    using ExitCode = Program.ExitCode;
-
-    [TestClass]
-    sealed class Parse_server_Tests
-        : ParseTestBase
+    [TestMethod]
+    public void Success()
     {
-        [TestMethod]
-        public void Success()
+        var mock = CreateMock();
+        mock.Setup(m => m.Server(It.Is<string[]>(array => array.SequenceEqual(Array.Empty<string>())),
+            It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Success));
+
+        Test(ExitCode.Success, mock, "server");
+    }
+
+    [TestMethod]
+    public void SuccessWithArguments()
+    {
+        var testArgs = new string[]
         {
-            var mock = CreateMock();
-            mock.Setup(m => m.Server(It.Is<string[]>(array => array.SequenceEqual(Array.Empty<string>())),
-                It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Success));
+            "arg1",
+            "arg2",
+            "key3=value4",
+            "arg5 with spaces",
+        };
 
-            Test(ExitCode.Success, mock, "server");
-        }
+        var mock = CreateMock();
+        mock.Setup(m => m.Server(It.Is<string[]>(array => array.SequenceEqual(testArgs)),
+            It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Success));
 
-        [TestMethod]
-        public void SuccessWithArguments()
-        {
-            var testArgs = new string[]
-            {
-                "arg1",
-                "arg2",
-                "key3=value4",
-                "arg5 with spaces",
-            };
+        Test(ExitCode.Success, mock, testArgs.Prepend("server").ToArray());
+    }
 
-            var mock = CreateMock();
-            mock.Setup(m => m.Server(It.Is<string[]>(array => array.SequenceEqual(testArgs)),
-                It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Success));
+    [TestMethod]
+    public void Failure()
+    {
+        var mock = CreateMock();
+        mock.Setup(m => m.Server(It.Is<string[]>(array => array.SequenceEqual(Array.Empty<string>())),
+            It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Failure));
 
-            Test(ExitCode.Success, mock, testArgs.Prepend("server").ToArray());
-        }
+        Test(ExitCode.Failure, mock, "server");
+    }
 
-        [TestMethod]
-        public void Failure()
-        {
-            var mock = CreateMock();
-            mock.Setup(m => m.Server(It.Is<string[]>(array => array.SequenceEqual(Array.Empty<string>())),
-                It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Failure));
+    [TestMethod]
+    public void Canceled()
+    {
+        var mock = CreateMock();
+        mock.Setup(m => m.Server(It.Is<string[]>(array => array.SequenceEqual(Array.Empty<string>())),
+            It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Throws<OperationCanceledException>();
 
-            Test(ExitCode.Failure, mock, "server");
-        }
+        Test(ExitCode.Canceled, mock, "server");
+    }
 
-        [TestMethod]
-        public void Canceled()
-        {
-            var mock = CreateMock();
-            mock.Setup(m => m.Server(It.Is<string[]>(array => array.SequenceEqual(Array.Empty<string>())),
-                It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Throws<OperationCanceledException>();
-
-            Test(ExitCode.Canceled, mock, "server");
-        }
-
-        [TestMethod]
-        public void Help()
-        {
-            Test(ExitCode.Success, "server", "--help");
-        }
+    [TestMethod]
+    public void Help()
+    {
+        Test(ExitCode.Success, "server", "--help");
     }
 }

@@ -2,12 +2,11 @@
 //
 // SPDX-License-Identifier: GPL-2.0-only
 
-namespace System.Runtime.CompilerServices
+namespace System.Runtime.CompilerServices;
+
+/// <summary>
+/// Fix for using C# 9 feature in netstandard2.0.
+/// </summary>
+static class IsExternalInit
 {
-    /// <summary>
-    /// Fix for using C# 9 feature in netstandard2.0.
-    /// </summary>
-    static class IsExternalInit
-    {
-    }
 }
