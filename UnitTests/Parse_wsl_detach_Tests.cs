@@ -10,116 +10,115 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using UsbIpServer;
 
-namespace UnitTests
+namespace UnitTests;
+
+using ExitCode = Program.ExitCode;
+
+[TestClass]
+sealed class Parse_wsl_detach_Tests
+    : ParseTestBase
 {
-    using ExitCode = Program.ExitCode;
+    static readonly BusId TestBusId = BusId.Parse("3-42");
 
-    [TestClass]
-    sealed class Parse_wsl_detach_Tests
-        : ParseTestBase
+    [TestMethod]
+    public void AllSuccess()
     {
-        static readonly BusId TestBusId = BusId.Parse("3-42");
+        var mock = CreateMock();
+        mock.Setup(m => m.WslDetachAll(
+            It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Success));
 
-        [TestMethod]
-        public void AllSuccess()
-        {
-            var mock = CreateMock();
-            mock.Setup(m => m.WslDetachAll(
-                It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Success));
+        Test(ExitCode.Success, mock, "wsl", "detach", "--all");
+    }
 
-            Test(ExitCode.Success, mock, "wsl", "detach", "--all");
-        }
+    [TestMethod]
+    public void AllFailure()
+    {
+        var mock = CreateMock();
+        mock.Setup(m => m.WslDetachAll(
+            It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Failure));
 
-        [TestMethod]
-        public void AllFailure()
-        {
-            var mock = CreateMock();
-            mock.Setup(m => m.WslDetachAll(
-                It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Failure));
+        Test(ExitCode.Failure, mock, "wsl", "detach", "--all");
+    }
 
-            Test(ExitCode.Failure, mock, "wsl", "detach", "--all");
-        }
+    [TestMethod]
+    public void AllCanceled()
+    {
+        var mock = CreateMock();
+        mock.Setup(m => m.WslDetachAll(
+            It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Throws<OperationCanceledException>();
 
-        [TestMethod]
-        public void AllCanceled()
-        {
-            var mock = CreateMock();
-            mock.Setup(m => m.WslDetachAll(
-                It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Throws<OperationCanceledException>();
+        Test(ExitCode.Canceled, mock, "wsl", "detach", "--all");
+    }
 
-            Test(ExitCode.Canceled, mock, "wsl", "detach", "--all");
-        }
+    [TestMethod]
+    public void BusIdSuccess()
+    {
+        var mock = CreateMock();
+        mock.Setup(m => m.WslDetach(It.Is<BusId>(busId => busId == TestBusId),
+            It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Success));
 
-        [TestMethod]
-        public void BusIdSuccess()
-        {
-            var mock = CreateMock();
-            mock.Setup(m => m.WslDetach(It.Is<BusId>(busId => busId == TestBusId),
-                It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Success));
+        Test(ExitCode.Success, mock, "wsl", "detach", "--busid", TestBusId.ToString());
+    }
 
-            Test(ExitCode.Success, mock, "wsl", "detach", "--busid", TestBusId.ToString());
-        }
+    [TestMethod]
+    public void BusIdFailure()
+    {
+        var mock = CreateMock();
+        mock.Setup(m => m.WslDetach(It.Is<BusId>(busId => busId == TestBusId),
+            It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Failure));
 
-        [TestMethod]
-        public void BusIdFailure()
-        {
-            var mock = CreateMock();
-            mock.Setup(m => m.WslDetach(It.Is<BusId>(busId => busId == TestBusId),
-                It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Failure));
+        Test(ExitCode.Failure, mock, "wsl", "detach", "--busid", TestBusId.ToString());
+    }
 
-            Test(ExitCode.Failure, mock, "wsl", "detach", "--busid", TestBusId.ToString());
-        }
+    [TestMethod]
+    public void BusIdCanceled()
+    {
+        var mock = CreateMock();
+        mock.Setup(m => m.WslDetach(It.Is<BusId>(busId => busId == TestBusId),
+            It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Throws<OperationCanceledException>();
 
-        [TestMethod]
-        public void BusIdCanceled()
-        {
-            var mock = CreateMock();
-            mock.Setup(m => m.WslDetach(It.Is<BusId>(busId => busId == TestBusId),
-                It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Throws<OperationCanceledException>();
+        Test(ExitCode.Canceled, mock, "wsl", "detach", "--busid", TestBusId.ToString());
+    }
 
-            Test(ExitCode.Canceled, mock, "wsl", "detach", "--busid", TestBusId.ToString());
-        }
+    [TestMethod]
+    public void Help()
+    {
+        Test(ExitCode.Success, "wsl", "detach", "--help");
+    }
 
-        [TestMethod]
-        public void Help()
-        {
-            Test(ExitCode.Success, "wsl", "detach", "--help");
-        }
+    [TestMethod]
+    public void OptionMissing()
+    {
+        Test(ExitCode.ParseError, "wsl", "detach");
+    }
 
-        [TestMethod]
-        public void OptionMissing()
-        {
-            Test(ExitCode.ParseError, "wsl", "detach");
-        }
+    [TestMethod]
+    public void AllAndBusId()
+    {
+        Test(ExitCode.ParseError, "wsl", "detach", "--all", "--busid", TestBusId.ToString());
+    }
 
-        [TestMethod]
-        public void AllAndBusId()
-        {
-            Test(ExitCode.ParseError, "wsl", "detach", "--all", "--busid", TestBusId.ToString());
-        }
+    [TestMethod]
+    public void AllWithArgument()
+    {
+        Test(ExitCode.ParseError, "wsl", "detach", "--all=argument");
+    }
 
-        [TestMethod]
-        public void AllWithArgument()
-        {
-            Test(ExitCode.ParseError, "wsl", "detach", "--all=argument");
-        }
+    [TestMethod]
+    public void BusIdArgumentMissing()
+    {
+        Test(ExitCode.ParseError, "wsl", "detach", "--busid");
+    }
 
-        [TestMethod]
-        public void BusIdArgumentMissing()
-        {
-            Test(ExitCode.ParseError, "wsl", "detach", "--busid");
-        }
+    [TestMethod]
+    public void BusIdArgumentInvalid()
+    {
+        Test(ExitCode.ParseError, "wsl", "detach", "--busid", "not-a-busid");
+    }
 
-        [TestMethod]
-        public void BusIdArgumentInvalid()
-        {
-            Test(ExitCode.ParseError, "wsl", "detach", "--busid", "not-a-busid");
-        }
-
-        [TestMethod]
-        public void StrayArgument()
-        {
-            Test(ExitCode.ParseError, "wsl", "detach", "--busid", TestBusId.ToString(), "stray-argument");
-        }
+    [TestMethod]
+    public void StrayArgument()
+    {
+        Test(ExitCode.ParseError, "wsl", "detach", "--busid", TestBusId.ToString(), "stray-argument");
     }
 }

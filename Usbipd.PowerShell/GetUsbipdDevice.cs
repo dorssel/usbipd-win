@@ -10,71 +10,70 @@ using System.Text;
 using System.Threading.Tasks;
 using Usbipd.Automation;
 
-namespace Usbipd.PowerShell
+namespace Usbipd.PowerShell;
+
+[Cmdlet(VerbsCommon.Get, "UsbipdDevice")]
+[OutputType(typeof(Device))]
+public class GetUsbipdDeviceCommand : Cmdlet
 {
-    [Cmdlet(VerbsCommon.Get, "UsbipdDevice")]
-    [OutputType(typeof(Device))]
-    public class GetUsbipdDeviceCommand : Cmdlet
+    State State = new();
+
+    protected override void BeginProcessing()
     {
-        State State = new();
+        WriteDebug($"Detected installation path: {Installation.ExePath}");
 
-        protected override void BeginProcessing()
+        var startInfo = new ProcessStartInfo
         {
-            WriteDebug($"Detected installation path: {Installation.ExePath}");
+            FileName = Installation.ExePath,
+            UseShellExecute = false,
+            StandardOutputEncoding = Encoding.UTF8,
+            StandardErrorEncoding = Encoding.UTF8,
+            RedirectStandardInput = true,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            CreateNoWindow = true,
+            Arguments = "state",
+        };
 
-            var startInfo = new ProcessStartInfo
-            {
-                FileName = Installation.ExePath,
-                UseShellExecute = false,
-                StandardOutputEncoding = Encoding.UTF8,
-                StandardErrorEncoding = Encoding.UTF8,
-                RedirectStandardInput = true,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                CreateNoWindow = true,
-                Arguments = "state",
-            };
-
-            using var process = Process.Start(startInfo);
-            if (process is null)
-            {
-                throw new ApplicationFailedException($"Cannot execute '{Installation.ExePath}'.");
-            }
-
-            var stdout = string.Empty;
-            var stderr = string.Empty;
-
-            var captureTasks = new[]
-            {
-                Task.Run(async () => { stdout = await process.StandardOutput.ReadToEndAsync(); }),
-                Task.Run(async () => { stderr = await process.StandardError.ReadToEndAsync(); }),
-            };
-
-            process.WaitForExit();
-            Task.WhenAll(captureTasks).Wait();
-
-            if (process.ExitCode != 0)
-            {
-                throw new ApplicationFailedException($"usbipd failed with exit code {process.ExitCode}.");
-            }
-            if (!string.IsNullOrEmpty(stderr))
-            {
-                throw new ApplicationFailedException($"usbipd returned unexpected error text:\n\n{stderr}");
-            }
-
-            WriteDebug(stdout);
-
-            var serializer = new DataContractJsonSerializer(typeof(State));
-            using var memoryStream = new MemoryStream(Encoding.UTF8.GetBytes(stdout));
-            State = (State)serializer.ReadObject(memoryStream);
+        using var process = Process.Start(startInfo);
+        if (process is null)
+        {
+            throw new ApplicationFailedException($"Cannot execute '{Installation.ExePath}'.");
         }
 
-        protected override void ProcessRecord()
+        var stdout = string.Empty;
+        var stderr = string.Empty;
+
+        var captureTasks = new[]
         {
-            foreach (var d in State.Devices)
-            {
-                WriteObject(d);
-            }
+            Task.Run(async () => { stdout = await process.StandardOutput.ReadToEndAsync(); }),
+            Task.Run(async () => { stderr = await process.StandardError.ReadToEndAsync(); }),
+        };
+
+        process.WaitForExit();
+        Task.WhenAll(captureTasks).Wait();
+
+        if (process.ExitCode != 0)
+        {
+            throw new ApplicationFailedException($"usbipd failed with exit code {process.ExitCode}.");
+        }
+        if (!string.IsNullOrEmpty(stderr))
+        {
+            throw new ApplicationFailedException($"usbipd returned unexpected error text:\n\n{stderr}");
+        }
+
+        WriteDebug(stdout);
+
+        var serializer = new DataContractJsonSerializer(typeof(State));
+        using var memoryStream = new MemoryStream(Encoding.UTF8.GetBytes(stdout));
+        State = (State)serializer.ReadObject(memoryStream);
+    }
+
+    protected override void ProcessRecord()
+    {
+        foreach (var d in State.Devices)
+        {
+            WriteObject(d);
         }
     }
 }

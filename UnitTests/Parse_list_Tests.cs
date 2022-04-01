@@ -10,54 +10,53 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using UsbIpServer;
 
-namespace UnitTests
+namespace UnitTests;
+
+using ExitCode = Program.ExitCode;
+
+[TestClass]
+sealed class Parse_list_Tests
+    : ParseTestBase
 {
-    using ExitCode = Program.ExitCode;
-
-    [TestClass]
-    sealed class Parse_list_Tests
-        : ParseTestBase
+    [TestMethod]
+    public void Success()
     {
-        [TestMethod]
-        public void Success()
-        {
-            var mock = CreateMock();
-            mock.Setup(m => m.List(
-                It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Success));
+        var mock = CreateMock();
+        mock.Setup(m => m.List(
+            It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Success));
 
-            Test(ExitCode.Success, mock, "list");
-        }
+        Test(ExitCode.Success, mock, "list");
+    }
 
-        [TestMethod]
-        public void Failure()
-        {
-            var mock = CreateMock();
-            mock.Setup(m => m.List(
-                It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Failure));
+    [TestMethod]
+    public void Failure()
+    {
+        var mock = CreateMock();
+        mock.Setup(m => m.List(
+            It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Failure));
 
-            Test(ExitCode.Failure, mock, "list");
-        }
+        Test(ExitCode.Failure, mock, "list");
+    }
 
-        [TestMethod]
-        public void Canceled()
-        {
-            var mock = CreateMock();
-            mock.Setup(m => m.List(
-                It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Throws<OperationCanceledException>();
+    [TestMethod]
+    public void Canceled()
+    {
+        var mock = CreateMock();
+        mock.Setup(m => m.List(
+            It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Throws<OperationCanceledException>();
 
-            Test(ExitCode.Canceled, mock, "list");
-        }
+        Test(ExitCode.Canceled, mock, "list");
+    }
 
-        [TestMethod]
-        public void Help()
-        {
-            Test(ExitCode.Success, "list", "--help");
-        }
+    [TestMethod]
+    public void Help()
+    {
+        Test(ExitCode.Success, "list", "--help");
+    }
 
-        [TestMethod]
-        public void StrayArgument()
-        {
-            Test(ExitCode.ParseError, "list", "stray-argument");
-        }
+    [TestMethod]
+    public void StrayArgument()
+    {
+        Test(ExitCode.ParseError, "list", "stray-argument");
     }
 }

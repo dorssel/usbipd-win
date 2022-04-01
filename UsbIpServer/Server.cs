@@ -15,104 +15,103 @@ using Windows.Win32.Security;
 
 using static UsbIpServer.Interop.UsbIp;
 
-namespace UsbIpServer
+namespace UsbIpServer;
+
+sealed class Server : BackgroundService
 {
-    sealed class Server : BackgroundService
+    public const string SingletonMutexName = @"Global\usbipd-{A8256F62-728F-49B0-82BB-E5E48F83D28F}";
+
+    public Server(ILogger<Server> logger, IServiceScopeFactory serviceScopeFactory, PcapNg _)
     {
-        public const string SingletonMutexName = @"Global\usbipd-{A8256F62-728F-49B0-82BB-E5E48F83D28F}";
+        Logger = logger;
+        ServiceScopeFactory = serviceScopeFactory;
+    }
 
-        public Server(ILogger<Server> logger, IServiceScopeFactory serviceScopeFactory, PcapNg _)
+    readonly ILogger Logger;
+    readonly IServiceScopeFactory ServiceScopeFactory;
+    readonly TcpListener TcpListener = TcpListener.Create(USBIP_PORT);
+
+    public static bool IsRunning()
+    {
+        try
         {
-            Logger = logger;
-            ServiceScopeFactory = serviceScopeFactory;
+            using var mutex = Mutex.OpenExisting(SingletonMutexName);
+            return true;
         }
-
-        readonly ILogger Logger;
-        readonly IServiceScopeFactory ServiceScopeFactory;
-        readonly TcpListener TcpListener = TcpListener.Create(USBIP_PORT);
-
-        public static bool IsRunning()
+        catch (UnauthorizedAccessException)
         {
-            try
+            // The mutex exists nevertheless.
+            return true;
+        }
+        catch (WaitHandleCannotBeOpenedException)
+        {
+            return false;
+        }
+    }
+
+    static void EnablePrivilege(string name)
+    {
+        var tokenPrivileges = new TOKEN_PRIVILEGES
+        {
+            PrivilegeCount = 1,
+        };
+        PInvoke.LookupPrivilegeValue(null, name, out tokenPrivileges.Privileges[0].Luid).ThrowOnError(nameof(PInvoke.LookupPrivilegeValue));
+        tokenPrivileges.Privileges[0].Attributes = TOKEN_PRIVILEGES_ATTRIBUTES.SE_PRIVILEGE_ENABLED;
+
+        using var currentProcess = PInvoke.GetCurrentProcess_SafeHandle();
+        PInvoke.OpenProcessToken(currentProcess, TOKEN_ACCESS_MASK.TOKEN_ADJUST_PRIVILEGES, out var token).ThrowOnError(nameof(PInvoke.OpenProcessToken));
+        try
+        {
+            unsafe
             {
-                using var mutex = Mutex.OpenExisting(SingletonMutexName);
-                return true;
-            }
-            catch (UnauthorizedAccessException)
-            {
-                // The mutex exists nevertheless.
-                return true;
-            }
-            catch (WaitHandleCannotBeOpenedException)
-            {
-                return false;
+                PInvoke.AdjustTokenPrivileges(token, false, tokenPrivileges, 0, null, null).ThrowOnError(nameof(PInvoke.AdjustTokenPrivileges));
             }
         }
-
-        static void EnablePrivilege(string name)
+        finally
         {
-            var tokenPrivileges = new TOKEN_PRIVILEGES
-            {
-                PrivilegeCount = 1,
-            };
-            PInvoke.LookupPrivilegeValue(null, name, out tokenPrivileges.Privileges[0].Luid).ThrowOnError(nameof(PInvoke.LookupPrivilegeValue));
-            tokenPrivileges.Privileges[0].Attributes = TOKEN_PRIVILEGES_ATTRIBUTES.SE_PRIVILEGE_ENABLED;
+            token.Dispose();
+        }
+    }
 
-            using var currentProcess = PInvoke.GetCurrentProcess_SafeHandle();
-            PInvoke.OpenProcessToken(currentProcess, TOKEN_ACCESS_MASK.TOKEN_ADJUST_PRIVILEGES, out var token).ThrowOnError(nameof(PInvoke.OpenProcessToken));
-            try
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        Logger.Debug(GitVersionInformation.InformationalVersion);
+
+        // Cleanup any left-overs in case the previous instance crashed.
+        RegistryUtils.SetAllDevicesAsDetached();
+
+        // Non-interactive services have this disabled by default.
+        // We require it so the ConfigurationManager can change the driver.
+        EnablePrivilege("SeLoadDriverPrivilege");
+
+        TcpListener.Start();
+        while (true)
+        {
+            var tcpClient = await TcpListener.AcceptTcpClientAsync(stoppingToken);
+            var clientAddress = (tcpClient.Client.RemoteEndPoint as IPEndPoint)!.Address;
+            if (clientAddress.IsIPv4MappedToIPv6)
             {
-                unsafe
+                clientAddress = clientAddress.MapToIPv4();
+            }
+
+            _ = Task.Run(async () =>
+            {
+                Logger.Debug($"new connection from {clientAddress}");
+                try
                 {
-                    PInvoke.AdjustTokenPrivileges(token, false, tokenPrivileges, 0, null, null).ThrowOnError(nameof(PInvoke.AdjustTokenPrivileges));
+                    using var cancellationTokenRegistration = stoppingToken.Register(() => tcpClient.Close());
+                    using var serviceScope = ServiceScopeFactory.CreateScope();
+                    var clientContext = serviceScope.ServiceProvider.GetRequiredService<ClientContext>();
+                    clientContext.TcpClient = tcpClient;
+                    clientContext.ClientAddress = clientAddress;
+                    var connectedClient = serviceScope.ServiceProvider.GetRequiredService<ConnectedClient>();
+                    await connectedClient.RunAsync(stoppingToken);
                 }
-            }
-            finally
-            {
-                token.Dispose();
-            }
-        }
-
-        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
-        {
-            Logger.Debug(GitVersionInformation.InformationalVersion);
-
-            // Cleanup any left-overs in case the previous instance crashed.
-            RegistryUtils.SetAllDevicesAsDetached();
-
-            // Non-interactive services have this disabled by default.
-            // We require it so the ConfigurationManager can change the driver.
-            EnablePrivilege("SeLoadDriverPrivilege");
-
-            TcpListener.Start();
-            while (true)
-            {
-                var tcpClient = await TcpListener.AcceptTcpClientAsync(stoppingToken);
-                var clientAddress = (tcpClient.Client.RemoteEndPoint as IPEndPoint)!.Address;
-                if (clientAddress.IsIPv4MappedToIPv6)
+                finally
                 {
-                    clientAddress = clientAddress.MapToIPv4();
+                    Logger.Debug("connection closed");
                 }
-
-                _ = Task.Run(async () =>
-                {
-                    Logger.Debug($"new connection from {clientAddress}");
-                    try
-                    {
-                        using var cancellationTokenRegistration = stoppingToken.Register(() => tcpClient.Close());
-                        using var serviceScope = ServiceScopeFactory.CreateScope();
-                        var clientContext = serviceScope.ServiceProvider.GetRequiredService<ClientContext>();
-                        clientContext.TcpClient = tcpClient;
-                        clientContext.ClientAddress = clientAddress;
-                        var connectedClient = serviceScope.ServiceProvider.GetRequiredService<ConnectedClient>();
-                        await connectedClient.RunAsync(stoppingToken);
-                    }
-                    finally
-                    {
-                        Logger.Debug("connection closed");
-                    }
-                }, stoppingToken);
-            }
+            }, stoppingToken);
         }
     }
 }
