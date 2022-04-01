@@ -6,6 +6,7 @@ using System;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
+using System.Threading;
 using Microsoft.Win32.SafeHandles;
 using Windows.Win32;
 using Windows.Win32.Devices.DeviceAndDriverInstallation;
@@ -67,6 +68,11 @@ namespace UsbIpServer
                     reboot = true;
                 }
             }
+
+            // For some devices (Google Pixel) it takes a while before the driver can be set again.
+            // 200 ms seems to work, so delay for 500 ms for good measure...
+            Thread.Sleep(TimeSpan.FromMilliseconds(500));
+
             unsafe
             {
                 // Now we can update the driver.
@@ -134,6 +140,11 @@ namespace UsbIpServer
                     reboot = true;
                 }
             }
+
+            // For some devices (Google Pixel) it takes a while before the driver can be set again.
+            // 200 ms seems to work, so delay for 500 ms for good measure...
+            Thread.Sleep(TimeSpan.FromMilliseconds(500));
+
             unsafe
             {
                 // Now we let Windows install the default PnP driver.
