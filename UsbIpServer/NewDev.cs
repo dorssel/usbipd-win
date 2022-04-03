@@ -12,7 +12,7 @@ using Windows.Win32;
 using Windows.Win32.Devices.DeviceAndDriverInstallation;
 using Windows.Win32.Foundation;
 
-namespace UsbIpServer;
+namespace Usbipd;
 
 static class NewDev
 {

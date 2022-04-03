@@ -4,7 +4,7 @@
 
 using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using UsbIpServer;
+using Usbipd;
 
 namespace UnitTests;
 

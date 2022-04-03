@@ -6,7 +6,7 @@ using System;
 using System.Net;
 using Microsoft.Extensions.Logging;
 
-namespace UsbIpServer;
+namespace Usbipd;
 
 static partial class LogEvents
 {

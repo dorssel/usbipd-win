@@ -11,13 +11,13 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using UsbIpServer;
+using Usbipd;
 using Windows.Win32.Devices.Usb;
 using Windows.Win32.Foundation;
-using static UsbIpServer.Interop.Linux;
-using static UsbIpServer.Interop.UsbIp;
-using static UsbIpServer.Interop.VBoxUsb;
-using static UsbIpServer.Tools;
+using static Usbipd.Interop.Linux;
+using static Usbipd.Interop.UsbIp;
+using static Usbipd.Interop.VBoxUsb;
+using static Usbipd.Tools;
 
 namespace UnitTests;
 

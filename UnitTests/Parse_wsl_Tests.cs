@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using UsbIpServer;
+using Usbipd;
 
 namespace UnitTests;
 

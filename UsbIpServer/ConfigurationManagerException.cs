@@ -8,7 +8,7 @@ using Windows.Win32;
 using Windows.Win32.Devices.DeviceAndDriverInstallation;
 using Windows.Win32.Foundation;
 
-namespace UsbIpServer;
+namespace Usbipd;
 
 public sealed class ConfigurationManagerException : Win32Exception
 {

@@ -5,7 +5,7 @@
 using System.CommandLine.IO;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
-using UsbIpServer;
+using Usbipd;
 
 namespace UnitTests;
 

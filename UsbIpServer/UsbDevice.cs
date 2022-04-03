@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 
-namespace UsbIpServer;
+namespace Usbipd;
 
 /// <summary>
 /// All data concerning a USB device that can be handled one way or another, including:

@@ -22,9 +22,9 @@ using Windows.Win32;
 using Windows.Win32.Devices.DeviceAndDriverInstallation;
 using Windows.Win32.Foundation;
 
-using static UsbIpServer.Interop.UsbIp;
+using static Usbipd.Interop.UsbIp;
 
-namespace UsbIpServer;
+namespace Usbipd;
 
 sealed class ConnectedClient
 {

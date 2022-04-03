@@ -9,10 +9,10 @@ using System.Runtime.InteropServices;
 using System.ServiceProcess;
 using System.Threading.Tasks;
 
-using static UsbIpServer.Interop.VBoxUsbMon;
-using static UsbIpServer.Tools;
+using static Usbipd.Interop.VBoxUsbMon;
+using static Usbipd.Tools;
 
-namespace UsbIpServer;
+namespace Usbipd;
 
 sealed class VBoxUsbMon : IDisposable
 {

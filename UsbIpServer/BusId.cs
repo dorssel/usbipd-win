@@ -5,7 +5,7 @@
 using System;
 using System.Text.RegularExpressions;
 
-namespace UsbIpServer;
+namespace Usbipd;
 
 readonly record struct BusId
     : IComparable<BusId>

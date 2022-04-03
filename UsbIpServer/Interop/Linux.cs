@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: GPL-2.0-only
 
-namespace UsbIpServer.Interop;
+namespace Usbipd.Interop;
 
 static class Linux
 {

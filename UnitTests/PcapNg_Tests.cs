@@ -9,8 +9,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
-using UsbIpServer;
-using static UsbIpServer.Interop.UsbIp;
+using Usbipd;
+using static Usbipd.Interop.UsbIp;
 
 namespace UnitTests;
 

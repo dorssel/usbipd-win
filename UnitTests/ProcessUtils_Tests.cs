@@ -7,7 +7,7 @@ using System.ComponentModel;
 using System.IO;
 using System.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using UsbIpServer;
+using Usbipd;
 
 namespace UnitTests;
 

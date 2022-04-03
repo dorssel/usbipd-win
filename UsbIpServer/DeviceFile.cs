@@ -14,7 +14,7 @@ using Windows.Win32.Foundation;
 using Windows.Win32.Storage.FileSystem;
 using Windows.Win32.System.IO;
 
-namespace UsbIpServer;
+namespace Usbipd;
 
 sealed class DeviceFile : IDisposable
 {

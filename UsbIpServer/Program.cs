@@ -18,14 +18,14 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading;
-using static UsbIpServer.ConsoleTools;
+using static Usbipd.ConsoleTools;
 
 [assembly: CLSCompliant(true)]
 
 [assembly: InternalsVisibleTo("UnitTests")]
 [assembly: InternalsVisibleTo("DynamicProxyGenAssembly2")]
 
-namespace UsbIpServer;
+namespace Usbipd;
 
 static class Program
 {

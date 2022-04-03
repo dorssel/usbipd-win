@@ -7,7 +7,7 @@ using System.ComponentModel;
 using System.IO;
 using System.Net;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using UsbIpServer;
+using Usbipd;
 using Windows.Win32;
 using Windows.Win32.System.Ioctl;
 

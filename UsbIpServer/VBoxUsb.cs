@@ -10,10 +10,10 @@ using System.Net;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
-using static UsbIpServer.Interop.VBoxUsb;
-using static UsbIpServer.Tools;
+using static Usbipd.Interop.VBoxUsb;
+using static Usbipd.Tools;
 
-namespace UsbIpServer;
+namespace Usbipd;
 
 static class VBoxUsb
 {

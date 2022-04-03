@@ -6,7 +6,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace UsbIpServer;
+namespace Usbipd;
 
 sealed class Lock : IDisposable
 {

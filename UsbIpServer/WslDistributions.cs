@@ -16,7 +16,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace UsbIpServer;
+namespace Usbipd;
 
 sealed partial record WslDistributions(IEnumerable<WslDistributions.Distribution> Distributions, IPAddress? HostAddress);
 
