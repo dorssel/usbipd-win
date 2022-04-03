@@ -60,7 +60,7 @@ sealed class PcapNg
         }
     }
 
-    static byte ConvertType(UsbSupTransferType type)
+    internal static byte ConvertType(UsbSupTransferType type)
     {
         return type switch
         {
