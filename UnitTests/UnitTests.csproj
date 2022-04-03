@@ -32,7 +32,7 @@ SPDX-License-Identifier: GPL-2.0-only
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\UsbIpServer\UsbIpServer.csproj" />
+    <ProjectReference Include="..\Usbipd\Usbipd.csproj" />
   </ItemGroup>
 
 </Project>
