@@ -3,7 +3,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -11,6 +13,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Usbipd;
 using static Usbipd.Interop.UsbIp;
+using static Usbipd.Interop.VBoxUsb;
 
 namespace UnitTests;
 
@@ -113,6 +116,48 @@ sealed class PcapNg_Tests
         var pcapNg = new PcapNg(mockConfiguration.Object, MockLogger);
         pcapNg.Dispose();
         pcapNg.Dispose();
+    }
+
+    sealed class TypeData
+    {
+        static readonly Dictionary<UsbSupTransferType, byte> _KnownGood = new()
+        {
+            { UsbSupTransferType.USBSUP_TRANSFER_TYPE_ISOC, 0 },
+            { UsbSupTransferType.USBSUP_TRANSFER_TYPE_INTR, 1 },
+            { UsbSupTransferType.USBSUP_TRANSFER_TYPE_MSG, 2 },
+            { UsbSupTransferType.USBSUP_TRANSFER_TYPE_BULK, 3 },
+        };
+
+        static readonly List<UsbSupTransferType> _Invalid = new()
+        {
+            UsbSupTransferType.USBSUP_TRANSFER_TYPE_CTRL,
+            (UsbSupTransferType)0xbaadf00d,
+        };
+
+        public static IEnumerable<object[]> KnownGood
+        {
+            get => from value in _KnownGood select new object[] { value.Key, value.Value };
+        }
+
+        public static IEnumerable<object[]> Invalid
+        {
+            get => from value in _Invalid select new object[] { value };
+        }
+    }
+
+
+    [TestMethod]
+    [DynamicData(nameof(TypeData.KnownGood), typeof(TypeData))]
+    public void ConvertType_Success(UsbSupTransferType from, byte to)
+    {
+        Assert.AreEqual(to, PcapNg.ConvertType(from));
+    }
+
+    [TestMethod]
+    [DynamicData(nameof(TypeData.Invalid), typeof(TypeData))]
+    public void ConvertType_Invalid(UsbSupTransferType from)
+    {
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => PcapNg.ConvertType(from));
     }
 
     [TestMethod]
@@ -245,6 +290,7 @@ sealed class PcapNg_Tests
     {
         using var mockConfiguration = new MockConfiguration(TemporaryPath);
         using var pcapNg = new PcapNg(mockConfiguration.Object, MockLogger);
+        pcapNg.DumpPacketNonIsoRequest(new(), new(), null);
         Thread.Sleep(TimeSpan.FromSeconds(6));
     }
 }
