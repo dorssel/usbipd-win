@@ -11,7 +11,7 @@ using System.Security.Principal;
 using Microsoft.Win32;
 using Windows.Win32;
 
-namespace UsbIpServer;
+namespace Usbipd;
 
 static class RegistryUtils
 {

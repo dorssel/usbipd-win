@@ -6,7 +6,7 @@ using System;
 using System.Net;
 using System.Net.Sockets;
 
-namespace UsbIpServer;
+namespace Usbipd;
 
 sealed class ClientContext : IDisposable
 {

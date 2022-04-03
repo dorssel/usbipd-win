@@ -5,8 +5,8 @@
 using System.IO;
 using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using UsbIpServer;
-using static UsbIpServer.Interop.Linux;
+using Usbipd;
+using static Usbipd.Interop.Linux;
 
 namespace UnitTests;
 

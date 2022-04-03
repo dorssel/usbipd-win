@@ -21,11 +21,10 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Hosting.WindowsServices;
 using Microsoft.Extensions.Logging;
 using Windows.Win32.Security;
-using static UsbIpServer.ConsoleTools;
-using Automation = Usbipd.Automation;
-using ExitCode = UsbIpServer.Program.ExitCode;
+using static Usbipd.ConsoleTools;
+using ExitCode = Usbipd.Program.ExitCode;
 
-namespace UsbIpServer;
+namespace Usbipd;
 
 interface ICommandHandlers
 {
@@ -200,7 +199,7 @@ sealed class CommandHandlers : ICommandHandlers
             return ExitCode.AccessDenied;
         }
 
-        using var mutex = new Mutex(true, UsbIpServer.Server.SingletonMutexName, out var createdNew);
+        using var mutex = new Mutex(true, Usbipd.Server.SingletonMutexName, out var createdNew);
         if (!createdNew)
         {
             console.ReportError("Another instance is already running.");
@@ -218,7 +217,7 @@ sealed class CommandHandlers : ICommandHandlers
                 {
                     // EventLog defaults to Warning, which is OK for .NET components,
                     //      but we want to specifically log Information from our own component.
-                    defaultConfig.Add($"Logging:EventLog:LogLevel:{nameof(UsbIpServer)}", "Information");
+                    defaultConfig.Add($"Logging:EventLog:LogLevel:{nameof(Usbipd)}", "Information");
                 }
                 else
                 {

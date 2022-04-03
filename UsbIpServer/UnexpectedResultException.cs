@@ -4,7 +4,7 @@
 
 using System;
 
-namespace UsbIpServer;
+namespace Usbipd;
 
 public sealed class UnexpectedResultException : Exception
 {

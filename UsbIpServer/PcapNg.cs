@@ -12,10 +12,10 @@ using System.Threading.Channels;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using static UsbIpServer.Interop.UsbIp;
-using static UsbIpServer.Interop.VBoxUsb;
+using static Usbipd.Interop.UsbIp;
+using static Usbipd.Interop.VBoxUsb;
 
-namespace UsbIpServer;
+namespace Usbipd;
 
 sealed class PcapNg
     : IDisposable

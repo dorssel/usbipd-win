@@ -17,12 +17,12 @@ using Microsoft.Extensions.Logging;
 using Windows.Win32;
 using Windows.Win32.Devices.Usb;
 
-using static UsbIpServer.Interop.Linux;
-using static UsbIpServer.Interop.UsbIp;
-using static UsbIpServer.Interop.VBoxUsb;
-using static UsbIpServer.Tools;
+using static Usbipd.Interop.Linux;
+using static Usbipd.Interop.UsbIp;
+using static Usbipd.Interop.VBoxUsb;
+using static Usbipd.Tools;
 
-namespace UsbIpServer;
+namespace Usbipd;
 
 sealed class AttachedClient
 {

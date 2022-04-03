@@ -6,7 +6,7 @@ using System;
 using System.Runtime.InteropServices;
 using Windows.Win32;
 
-namespace UsbIpServer.Interop;
+namespace Usbipd.Interop;
 
 static class VBoxUsb
 {

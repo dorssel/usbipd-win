@@ -11,7 +11,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Windows.Win32.Devices.Usb;
 
-namespace UsbIpServer.Interop;
+namespace Usbipd.Interop;
 
 static class UsbIp
 {

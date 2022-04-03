@@ -11,14 +11,14 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using UsbIpServer.Interop;
+using Usbipd.Interop;
 using Windows.Win32;
 using Windows.Win32.Devices.Usb;
-using static UsbIpServer.Interop.UsbIp;
-using static UsbIpServer.Interop.WinSDK;
-using static UsbIpServer.Tools;
+using static Usbipd.Interop.UsbIp;
+using static Usbipd.Interop.WinSDK;
+using static Usbipd.Tools;
 
-namespace UsbIpServer;
+namespace Usbipd;
 
 sealed partial record ExportedDevice(string InstanceId, BusId BusId, Linux.UsbDeviceSpeed Speed,
     ushort VendorId, ushort ProductId, ushort BcdDevice,

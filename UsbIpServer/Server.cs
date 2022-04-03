@@ -13,9 +13,9 @@ using Microsoft.Extensions.Logging;
 using Windows.Win32;
 using Windows.Win32.Security;
 
-using static UsbIpServer.Interop.UsbIp;
+using static Usbipd.Interop.UsbIp;
 
-namespace UsbIpServer;
+namespace Usbipd;
 
 sealed class Server : BackgroundService
 {

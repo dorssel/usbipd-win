@@ -9,9 +9,9 @@ using System.Linq;
 using System.Text;
 using Microsoft.Win32;
 using static System.CommandLine.IO.StandardStreamWriter;
-using static UsbIpServer.Interop.VBoxUsbMon;
+using static Usbipd.Interop.VBoxUsbMon;
 
-namespace UsbIpServer;
+namespace Usbipd;
 
 static class ConsoleTools
 {

@@ -12,11 +12,11 @@ using System.Threading.Tasks;
 using Windows.Win32.Devices.Usb;
 using Windows.Win32.Foundation;
 
-using static UsbIpServer.Interop.Linux;
-using static UsbIpServer.Interop.UsbIp;
-using static UsbIpServer.Interop.VBoxUsb;
+using static Usbipd.Interop.Linux;
+using static Usbipd.Interop.UsbIp;
+using static Usbipd.Interop.VBoxUsb;
 
-namespace UsbIpServer;
+namespace Usbipd;
 
 static class Tools
 {

@@ -7,7 +7,7 @@ using System.Runtime.InteropServices;
 using Windows.Win32;
 using Windows.Win32.Devices.Usb;
 
-namespace UsbIpServer.Interop;
+namespace Usbipd.Interop;
 
 /// <summary>
 /// The remaining Windows SDK stuff that is not yet exposed by CsWin32.

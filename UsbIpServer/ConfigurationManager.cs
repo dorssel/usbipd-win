@@ -12,9 +12,9 @@ using System.Text.RegularExpressions;
 using Windows.Win32;
 using Windows.Win32.Devices.DeviceAndDriverInstallation;
 using Windows.Win32.Devices.Properties;
-using static UsbIpServer.Interop.WinSDK;
+using static Usbipd.Interop.WinSDK;
 
-namespace UsbIpServer;
+namespace Usbipd;
 
 static class ConfigurationManager
 {
