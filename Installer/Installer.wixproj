@@ -22,7 +22,7 @@ SPDX-License-Identifier: GPL-2.0-only
     <OutputType>Package</OutputType>
     <OutputName>usbipd-win</OutputName>
     <DefineSolutionProperties>false</DefineSolutionProperties>
-    <PublishDir>..\UsbIpServer\bin\publish</PublishDir>
+    <PublishDir>..\Usbipd\bin\publish</PublishDir>
     <PowerShellDir>..\Usbipd.PowerShell\bin\$(Configuration)\netstandard2.0\win</PowerShellDir>
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
@@ -53,7 +53,7 @@ SPDX-License-Identifier: GPL-2.0-only
       <SuppressRootDirectory>true</SuppressRootDirectory>
       <SuppressCOM>true</SuppressCOM>
       <SuppressRegistry>true</SuppressRegistry>
-      <ComponentGroupName>UsbIpServer</ComponentGroupName>
+      <ComponentGroupName>Usbipd</ComponentGroupName>
       <PreprocessorVariable>var.PublishDir</PreprocessorVariable>
       <Transforms>HarvestTransform.xslt</Transforms>
     </HarvestDirectory>
@@ -121,10 +121,10 @@ SPDX-License-Identifier: GPL-2.0-only
     </CreateProperty>
   </Target>
   <PropertyGroup>
-    <PreBuildEvent>del /s /q "$(ProjectDir)..\UsbIpServer\bin\publish" &gt; NUL:
-rmdir /s /q "$(ProjectDir)..\UsbIpServer\bin\publish" &gt; NUL:
-dotnet publish --nologo --no-restore --no-build --configuration $(Configuration) $(ProjectDir)..\UsbIpServer
-del /s "$(ProjectDir)..\UsbIpServer\bin\publish\System.CommandLine.resources.dll"</PreBuildEvent>
+    <PreBuildEvent>del /s /q "$(ProjectDir)..\Usbipd\bin\publish" &gt; NUL:
+rmdir /s /q "$(ProjectDir)..\Usbipd\bin\publish" &gt; NUL:
+dotnet publish --nologo --no-restore --no-build --configuration $(Configuration) $(ProjectDir)..\Usbipd
+del /s "$(ProjectDir)..\Usbipd\bin\publish\System.CommandLine.resources.dll"</PreBuildEvent>
   </PropertyGroup>
   <Import Project="..\InstallerDependencies\obj\InstallerDependencies.csproj.nuget.g.targets" Condition="Exists('..\InstallerDependencies\obj\InstallerDependencies.csproj.nuget.g.targets')" />
 </Project>
