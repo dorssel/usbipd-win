@@ -45,7 +45,7 @@ jobs:
     - name: Build (Installer)
       run: msbuild Installer
     - name: Upload Installer Artifact
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: msi-installer
         path: "Installer/bin/release/*.msi"
