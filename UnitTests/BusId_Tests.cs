@@ -143,4 +143,13 @@ sealed class BusId_Tests
         var result = BusId.Parse(left).CompareTo(BusId.Parse(right));
         Assert.AreEqual(expected, result);
     }
+
+    [DataTestMethod]
+    [DynamicData(nameof(BusIdData.Valid), typeof(BusIdData))]
+    public void ToStringValid(string text)
+    {
+        var busId = BusId.Parse(text);
+        var result = busId.ToString();
+        Assert.AreEqual(text, result);
+    }
 }

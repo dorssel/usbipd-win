@@ -304,4 +304,14 @@ static class ConsoleTools
         }
         return true;
     }
+
+    public static bool CheckNoStub(VidPid vidPid, IConsole console)
+    {
+        if (vidPid == VidPid.Stub)
+        {
+            console.ReportError($"Manipulating the USBIP stub devices is not supported; use the original device VID:PID.");
+            return false;
+        }
+        return true;
+    }
 }
