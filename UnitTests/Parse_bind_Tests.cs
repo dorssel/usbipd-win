@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Usbipd;
+using Usbipd.Automation;
 
 namespace UnitTests;
 

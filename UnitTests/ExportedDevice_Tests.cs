@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Usbipd;
+using Usbipd.Automation;
 using static Usbipd.Interop.Linux;
 
 namespace UnitTests;

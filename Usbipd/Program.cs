@@ -18,6 +18,7 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading;
+using Usbipd.Automation;
 using static Usbipd.ConsoleTools;
 
 [assembly: CLSCompliant(true)]

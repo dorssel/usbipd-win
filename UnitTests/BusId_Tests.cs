@@ -6,7 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Usbipd;
+using Usbipd.Automation;
 
 namespace UnitTests;
 
@@ -142,6 +142,38 @@ sealed class BusId_Tests
     {
         var result = BusId.Parse(left).CompareTo(BusId.Parse(right));
         Assert.AreEqual(expected, result);
+    }
+
+    [DataTestMethod]
+    [DynamicData(nameof(BusIdData.Compare), typeof(BusIdData))]
+    public void LessThan(string left, string right, int expected)
+    {
+        var result = BusId.Parse(left) < BusId.Parse(right);
+        Assert.AreEqual(expected < 0, result);
+    }
+
+    [DataTestMethod]
+    [DynamicData(nameof(BusIdData.Compare), typeof(BusIdData))]
+    public void LessThanOrEqual(string left, string right, int expected)
+    {
+        var result = BusId.Parse(left) <= BusId.Parse(right);
+        Assert.AreEqual(expected <= 0, result);
+    }
+
+    [DataTestMethod]
+    [DynamicData(nameof(BusIdData.Compare), typeof(BusIdData))]
+    public void GreaterThan(string left, string right, int expected)
+    {
+        var result = BusId.Parse(left) > BusId.Parse(right);
+        Assert.AreEqual(expected > 0, result);
+    }
+
+    [DataTestMethod]
+    [DynamicData(nameof(BusIdData.Compare), typeof(BusIdData))]
+    public void GreaterThanOrEqual(string left, string right, int expected)
+    {
+        var result = BusId.Parse(left) >= BusId.Parse(right);
+        Assert.AreEqual(expected >= 0, result);
     }
 
     [DataTestMethod]

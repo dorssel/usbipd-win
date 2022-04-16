@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Usbipd;
+using Usbipd.Automation;
 
 namespace UnitTests;
 
@@ -142,6 +142,38 @@ sealed class VidPid_Tests
     }
 
     [DataTestMethod]
+    [DynamicData(nameof(VidPidData.Compare), typeof(VidPidData))]
+    public void LessThan(string left, string right, int expected)
+    {
+        var result = VidPid.Parse(left) < VidPid.Parse(right);
+        Assert.AreEqual(expected < 0, result);
+    }
+
+    [DataTestMethod]
+    [DynamicData(nameof(VidPidData.Compare), typeof(VidPidData))]
+    public void LessThanOrEqual(string left, string right, int expected)
+    {
+        var result = VidPid.Parse(left) <= VidPid.Parse(right);
+        Assert.AreEqual(expected <= 0, result);
+    }
+
+    [DataTestMethod]
+    [DynamicData(nameof(VidPidData.Compare), typeof(VidPidData))]
+    public void GreaterThan(string left, string right, int expected)
+    {
+        var result = VidPid.Parse(left) > VidPid.Parse(right);
+        Assert.AreEqual(expected > 0, result);
+    }
+
+    [DataTestMethod]
+    [DynamicData(nameof(VidPidData.Compare), typeof(VidPidData))]
+    public void GreaterThanOrEqual(string left, string right, int expected)
+    {
+        var result = VidPid.Parse(left) >= VidPid.Parse(right);
+        Assert.AreEqual(expected >= 0, result);
+    }
+
+    [DataTestMethod]
     [DynamicData(nameof(VidPidData.Valid), typeof(VidPidData))]
     public void ToStringValid(string text)
     {
@@ -220,12 +252,5 @@ sealed class VidPid_Tests
         var expectedPid = ushort.Parse(text.Split("PID_")[1][..4], NumberStyles.AllowHexSpecifier);
         Assert.AreEqual(expectedVid, vidPid.Vid);
         Assert.AreEqual(expectedPid, vidPid.Pid);
-    }
-
-    [TestMethod]
-    public void StubValue()
-    {
-        Assert.AreEqual(0x80EE, VidPid.Stub.Vid);
-        Assert.AreEqual(0xCAFE, VidPid.Stub.Pid);
     }
 }

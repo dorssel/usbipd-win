@@ -5,9 +5,9 @@
 using System;
 using System.Text.RegularExpressions;
 
-namespace Usbipd;
+namespace Usbipd.Automation;
 
-readonly record struct BusId
+public readonly record struct BusId
     : IComparable<BusId>
 {
     public ushort Bus { get; init; }
@@ -49,6 +49,26 @@ readonly record struct BusId
     #region IComparable<BusId>
 
     public readonly int CompareTo(BusId other) => ((uint)Bus << 16 | Port).CompareTo((uint)other.Bus << 16 | other.Port);
+
+    public static bool operator <(BusId left, BusId right)
+    {
+        return left.CompareTo(right) < 0;
+    }
+
+    public static bool operator <=(BusId left, BusId right)
+    {
+        return left.CompareTo(right) <= 0;
+    }
+
+    public static bool operator >(BusId left, BusId right)
+    {
+        return left.CompareTo(right) > 0;
+    }
+
+    public static bool operator >=(BusId left, BusId right)
+    {
+        return left.CompareTo(right) >= 0;
+    }
 
     #endregion
 }

@@ -21,6 +21,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Hosting.WindowsServices;
 using Microsoft.Extensions.Logging;
+using Usbipd.Automation;
 using Windows.Win32.Security;
 using static Usbipd.ConsoleTools;
 using ExitCode = Usbipd.Program.ExitCode;
@@ -57,7 +58,7 @@ sealed class CommandHandlers : ICommandHandlers
         {
             return Array.Empty<UsbDevice>();
         }
-        var devices = UsbDevice.GetAll().Where(d => VidPid.FromHardwareOrInstanceId(d.InstanceId) == vidPid);
+        var devices = UsbDevice.GetAll().Where(d => d.HardwareId == vidPid);
         if (!devices.Any())
         {
             console.ReportError($"No devices found with hardware-id '{vidPid}'.");
@@ -71,7 +72,7 @@ sealed class CommandHandlers : ICommandHandlers
         {
             return null;
         }
-        var devices = UsbDevice.GetAll().Where(d => d.BusId.HasValue && (VidPid.FromHardwareOrInstanceId(d.InstanceId) == vidPid));
+        var devices = UsbDevice.GetAll().Where(d => d.BusId.HasValue && (d.HardwareId == vidPid));
         if (!devices.Any())
         {
             console.ReportError($"There is no device with hardware-id '{vidPid}'.");
@@ -116,7 +117,7 @@ sealed class CommandHandlers : ICommandHandlers
     {
         var allDevices = UsbDevice.GetAll();
         console.WriteLine("Connected:");
-        console.WriteLine($"{"BUSID",-5}  {"DEVICE",-60}  STATE");
+        console.WriteLine($"{"BUSID",-5}  {"VID:PID",-9}  {"DEVICE",-60}  STATE");
         foreach (var device in allDevices.Where(d => d.BusId.HasValue).OrderBy(d => d.BusId.GetValueOrDefault()))
         {
             Debug.Assert(device.BusId.HasValue);
@@ -135,6 +136,7 @@ sealed class CommandHandlers : ICommandHandlers
             }
             // NOTE: Strictly speaking, both Bus and Port can be > 99. If you have one of those, you win a prize!
             console.Write($"{device.BusId.Value,-5}  ");
+            console.Write($"{device.HardwareId,-9}  ");
             console.WriteTruncated(device.Description, 60, true);
             console.WriteLine($"  {state}");
         }
@@ -678,7 +680,7 @@ sealed class CommandHandlers : ICommandHandlers
             return ExitCode.Failure;
         }
 
-        console.WriteLine($"{"BUSID",-5}  {"DEVICE",-60}  STATE");
+        console.WriteLine($"{"BUSID",-5}  {"VID:PID",-9}  {"DEVICE",-60}  STATE");
         foreach (var device in UsbDevice.GetAll().Where(d => d.BusId.HasValue).OrderBy(d => d.BusId))
         {
             string state;
@@ -699,6 +701,7 @@ sealed class CommandHandlers : ICommandHandlers
             }
             // NOTE: Strictly speaking, both Bus and Port can be > 99. If you have one of those, you win a prize!
             console.Write($"{device.BusId,-5}  ");
+            console.Write($"{device.HardwareId,-9}  ");
             console.WriteTruncated(device.Description, 60, true);
             console.WriteLine($"  {state}");
         }
@@ -722,7 +725,7 @@ sealed class CommandHandlers : ICommandHandlers
         }
         catch (UnexpectedResultException) { }
 
-        var devices = new List<Automation.Device>();
+        var devices = new List<Device>();
         foreach (var device in UsbDevice.GetAll().OrderBy(d => d.InstanceId))
         {
             devices.Add(new()
@@ -730,7 +733,7 @@ sealed class CommandHandlers : ICommandHandlers
                 InstanceId = device.InstanceId,
                 Description = device.Description,
                 IsForced = device.IsForced,
-                BusId = device.BusId?.ToString(),
+                BusId = device.BusId,
                 PersistedGuid = device.Guid,
                 StubInstanceId = device.StubInstanceId,
                 ClientIPAddress = device.IPAddress,
@@ -738,7 +741,7 @@ sealed class CommandHandlers : ICommandHandlers
             });
         }
 
-        var state = new Automation.State()
+        var state = new State()
         {
             Devices = devices,
         };

@@ -6,9 +6,9 @@ using System;
 using System.Globalization;
 using System.Text.RegularExpressions;
 
-namespace Usbipd;
+namespace Usbipd.Automation;
 
-readonly record struct VidPid
+public readonly record struct VidPid
     : IComparable<VidPid>
 {
     public ushort Vid { get; init; }
@@ -66,11 +66,29 @@ readonly record struct VidPid
         };
     }
 
-    public static readonly VidPid Stub = FromHardwareOrInstanceId(Interop.VBoxUsb.StubHardwareId);
-
     #region IComparable<VidPid>
 
     public readonly int CompareTo(VidPid other) => ((uint)Vid << 16 | Pid).CompareTo((uint)other.Vid << 16 | other.Pid);
+
+    public static bool operator <(VidPid left, VidPid right)
+    {
+        return left.CompareTo(right) < 0;
+    }
+
+    public static bool operator <=(VidPid left, VidPid right)
+    {
+        return left.CompareTo(right) <= 0;
+    }
+
+    public static bool operator >(VidPid left, VidPid right)
+    {
+        return left.CompareTo(right) > 0;
+    }
+
+    public static bool operator >=(VidPid left, VidPid right)
+    {
+        return left.CompareTo(right) >= 0;
+    }
 
     #endregion
 }
