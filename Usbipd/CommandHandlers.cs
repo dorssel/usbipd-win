@@ -639,13 +639,13 @@ sealed class CommandHandlers : ICommandHandlers
         return ExitCode.Success;
     }
 
-    async Task<ExitCode> ICommandHandlers.WslAttach(VidPid vidPid, string? distribution, IConsole console, CancellationToken cancellationToken)
+    async Task<ExitCode> ICommandHandlers.WslAttach(VidPid vidPid, bool autoAttach, string? distribution, IConsole console, CancellationToken cancellationToken)
     {
         if (GetBusIdByHardwareId(vidPid, console) is not BusId busId)
         {
             return ExitCode.Failure;
         }
-        return await ((ICommandHandlers)this).WslAttach(busId, distribution, console, cancellationToken);
+        return await ((ICommandHandlers)this).WslAttach(busId, autoAttach, distribution, console, cancellationToken);
     }
 
     static ExitCode WslDetach(IEnumerable<UsbDevice> devices, IConsole console)

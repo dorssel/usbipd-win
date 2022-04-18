@@ -34,7 +34,7 @@ sealed class Parse_wsl_attach_Tests
     }
 
     [TestMethod]
-    public void BusIdSuccessWithDistribution()
+    public void BusIdSuccessWithAutoAttach()
     {
         var mock = CreateMock();
         mock.Setup(m => m.WslAttach(It.Is<BusId>(busId => busId == TestBusId), true, null,
@@ -44,7 +44,7 @@ sealed class Parse_wsl_attach_Tests
     }
 
     [TestMethod]
-    public void BusIdSuccessWithUsbipPath()
+    public void BusIdSuccessWithDistribution()
     {
         var mock = CreateMock();
         mock.Setup(m => m.WslAttach(It.Is<BusId>(busId => busId == TestBusId), false, It.Is<string>(distribution => distribution == TestDistribution),
@@ -77,7 +77,7 @@ sealed class Parse_wsl_attach_Tests
     public void HardwareIdSuccess()
     {
         var mock = CreateMock();
-        mock.Setup(m => m.WslAttach(It.Is<VidPid>(vidPid => vidPid == TestHardwareId), null, null,
+        mock.Setup(m => m.WslAttach(It.Is<VidPid>(vidPid => vidPid == TestHardwareId), false, null,
             It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Success));
 
         Test(ExitCode.Success, mock, "wsl", "attach", "--hardware-id", TestHardwareId.ToString());
@@ -87,7 +87,7 @@ sealed class Parse_wsl_attach_Tests
     public void HardwareIdFailure()
     {
         var mock = CreateMock();
-        mock.Setup(m => m.WslAttach(It.Is<VidPid>(vidPid => vidPid == TestHardwareId), null, null,
+        mock.Setup(m => m.WslAttach(It.Is<VidPid>(vidPid => vidPid == TestHardwareId), false, null,
             It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Failure));
 
         Test(ExitCode.Failure, mock, "wsl", "attach", "--hardware-id", TestHardwareId.ToString());
@@ -97,7 +97,7 @@ sealed class Parse_wsl_attach_Tests
     public void HardwareIdCanceled()
     {
         var mock = CreateMock();
-        mock.Setup(m => m.WslAttach(It.Is<VidPid>(vidPid => vidPid == TestHardwareId), null, null,
+        mock.Setup(m => m.WslAttach(It.Is<VidPid>(vidPid => vidPid == TestHardwareId), false, null,
             It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Throws<OperationCanceledException>();
 
         Test(ExitCode.Canceled, mock, "wsl", "attach", "--hardware-id", TestHardwareId.ToString());
