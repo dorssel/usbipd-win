@@ -39,4 +39,10 @@ SPDX-License-Identifier: GPL-2.0-only
     <ProjectReference Include="..\Usbipd.Automation\Usbipd.Automation.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="wsl-scripts\auto-attach.sh">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

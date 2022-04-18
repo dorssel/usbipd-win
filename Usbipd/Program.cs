@@ -395,7 +395,16 @@ static class Program
             rootCommand.AddCommand(wslCommand);
             {
                 //
-                //  wsl attach [--busid <BUSID>]
+                //  wsl attach [--auto-attach]
+                //
+                var autoAttachOption = new Option(
+                    aliases: new[] { "--auto-attach", "-a" }
+                )
+                {
+                    Description = "Automatically re-attach when the device is detached or unplugged",
+                };
+                //
+                //  wsl attach --busid <BUSID>
                 //
                 var busIdOption = new Option<BusId>(
                     aliases: new[] { "--busid", "-b" },
@@ -452,10 +461,10 @@ static class Program
                     + "\n"
                     + OneOfRequiredText(busIdOption, hardwareIdOption))
                 {
+                    autoAttachOption,
                     busIdOption,
                     distributionOption,
                     hardwareIdOption,
-                    usbipPathOption,
                 };
                 attachCommand.AddValidator(commandResult =>
                 {
@@ -467,8 +476,8 @@ static class Program
                     {
                         invocationContext.ExitCode = (int)(
                             await commandHandlers.WslAttach(invocationContext.ParseResult.GetValueForOption(busIdOption),
+                                invocationContext.ParseResult.HasOption(autoAttachOption),
                                 invocationContext.ParseResult.GetValueForOption(distributionOption),
-                                invocationContext.ParseResult.GetValueForOption(usbipPathOption),
                                 invocationContext.Console, invocationContext.GetCancellationToken())
                             );
                     }
@@ -476,8 +485,8 @@ static class Program
                     {
                         invocationContext.ExitCode = (int)(
                             await commandHandlers.WslAttach(invocationContext.ParseResult.GetValueForOption(hardwareIdOption),
+                                invocationContext.ParseResult.HasOption(autoAttachOption),
                                 invocationContext.ParseResult.GetValueForOption(distributionOption),
-                                invocationContext.ParseResult.GetValueForOption(usbipPathOption),
                                 invocationContext.Console, invocationContext.GetCancellationToken())
                             );
                     }
