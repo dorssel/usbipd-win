@@ -9,6 +9,7 @@ using System.Security;
 using System.Security.AccessControl;
 using System.Security.Principal;
 using Microsoft.Win32;
+using Usbipd.Automation;
 using Windows.Win32;
 
 namespace Usbipd;

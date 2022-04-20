@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.CommandLine;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
@@ -20,6 +21,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Hosting.WindowsServices;
 using Microsoft.Extensions.Logging;
+using Usbipd.Automation;
 using Windows.Win32.Security;
 using static Usbipd.ConsoleTools;
 using ExitCode = Usbipd.Program.ExitCode;
@@ -29,15 +31,19 @@ namespace Usbipd;
 interface ICommandHandlers
 {
     public Task<ExitCode> Bind(BusId busId, bool force, IConsole console, CancellationToken cancellationToken);
+    public Task<ExitCode> Bind(VidPid vidPid, bool force, IConsole console, CancellationToken cancellationToken);
     public Task<ExitCode> License(IConsole console, CancellationToken cancellationToken);
     public Task<ExitCode> List(IConsole console, CancellationToken cancellationToken);
     public Task<ExitCode> Server(string[] args, IConsole console, CancellationToken cancellationToken);
     public Task<ExitCode> Unbind(BusId busId, IConsole console, CancellationToken cancellationToken);
     public Task<ExitCode> Unbind(Guid guid, IConsole console, CancellationToken cancellationToken);
+    public Task<ExitCode> Unbind(VidPid vidPid, IConsole console, CancellationToken cancellationToken);
     public Task<ExitCode> UnbindAll(IConsole console, CancellationToken cancellationToken);
 
     public Task<ExitCode> WslAttach(BusId busId, string? distribution, string? usbipPath, IConsole console, CancellationToken cancellationToken);
+    public Task<ExitCode> WslAttach(VidPid vidPid, string? distribution, string? usbipPath, IConsole console, CancellationToken cancellationToken);
     public Task<ExitCode> WslDetach(BusId busId, IConsole console, CancellationToken cancellationToken);
+    public Task<ExitCode> WslDetach(VidPid vidPid, IConsole console, CancellationToken cancellationToken);
     public Task<ExitCode> WslDetachAll(IConsole console, CancellationToken cancellationToken);
     public Task<ExitCode> WslList(IConsole console, CancellationToken cancellationToken);
 
@@ -46,6 +52,42 @@ interface ICommandHandlers
 
 sealed class CommandHandlers : ICommandHandlers
 {
+    static IEnumerable<UsbDevice> GetDevicesByHardwareId(VidPid vidPid, IConsole console)
+    {
+        if (!CheckNoStub(vidPid, console))
+        {
+            return Array.Empty<UsbDevice>();
+        }
+        var devices = UsbDevice.GetAll().Where(d => d.HardwareId == vidPid);
+        if (!devices.Any())
+        {
+            console.ReportError($"No devices found with hardware-id '{vidPid}'.");
+        }
+        return devices;
+    }
+
+    static BusId? GetBusIdByHardwareId(VidPid vidPid, IConsole console)
+    {
+        if (!CheckNoStub(vidPid, console))
+        {
+            return null;
+        }
+        var devices = UsbDevice.GetAll().Where(d => d.BusId.HasValue && (d.HardwareId == vidPid));
+        if (!devices.Any())
+        {
+            console.ReportError($"There is no device with hardware-id '{vidPid}'.");
+            return null;
+        }
+        if (devices.Count() > 1)
+        {
+            console.ReportError($"Multiple devices with hardware-id '{vidPid}' were found; disambiguate by using '--busid'.");
+            return null;
+        }
+        var busId = devices.Single().BusId;
+        console.ReportInfo($"Device with hardware-id '{vidPid}' found at busid '{busId}'.");
+        return busId;
+    }
+
     Task<ExitCode> ICommandHandlers.License(IConsole console, CancellationToken cancellationToken)
     {
         // 70 leads (approximately) to the GPL default.
@@ -75,7 +117,7 @@ sealed class CommandHandlers : ICommandHandlers
     {
         var allDevices = UsbDevice.GetAll();
         console.WriteLine("Connected:");
-        console.WriteLine($"{"BUSID",-5}  {"DEVICE",-60}  STATE");
+        console.WriteLine($"{"BUSID",-5}  {"VID:PID",-9}  {"DEVICE",-60}  STATE");
         foreach (var device in allDevices.Where(d => d.BusId.HasValue).OrderBy(d => d.BusId.GetValueOrDefault()))
         {
             Debug.Assert(device.BusId.HasValue);
@@ -94,6 +136,7 @@ sealed class CommandHandlers : ICommandHandlers
             }
             // NOTE: Strictly speaking, both Bus and Port can be > 99. If you have one of those, you win a prize!
             console.Write($"{device.BusId.Value,-5}  ");
+            console.Write($"{device.HardwareId,-9}  ");
             console.WriteTruncated(device.Description, 60, true);
             console.WriteLine($"  {state}");
         }
@@ -190,6 +233,15 @@ sealed class CommandHandlers : ICommandHandlers
         return Task.FromResult(Bind(busId, false, force, console));
     }
 
+    Task<ExitCode> ICommandHandlers.Bind(VidPid vidPid, bool force, IConsole console, CancellationToken cancellationToken)
+    {
+        if (GetBusIdByHardwareId(vidPid, console) is not BusId busId)
+        {
+            return Task.FromResult(ExitCode.Failure);
+        }
+        return Task.FromResult(Bind(busId, false, force, console));
+    }
+
     async Task<ExitCode> ICommandHandlers.Server(string[] args, IConsole console, CancellationToken cancellationToken)
     {
         // Pre-conditions that may fail due to user mistakes. Fail gracefully...
@@ -282,6 +334,52 @@ sealed class CommandHandlers : ICommandHandlers
         return Task.FromResult(ExitCode.Success);
     }
 
+    static ExitCode Unbind(IEnumerable<UsbDevice> devices, IConsole console)
+    {
+        // Unbind acts as a cleanup and has to support partially failed binds.
+
+        if (!devices.Any())
+        {
+            // This would result in a no-op, which may not be what the user intended.
+            return ExitCode.Failure;
+        }
+        if (!CheckWriteAccess(console))
+        {
+            // We don't actually know if there is anything to clean up, but if there is
+            // then administrator privileges are required.
+            return ExitCode.AccessDenied;
+        }
+        var reboot = false;
+        var driverError = false;
+        foreach (var device in devices)
+        {
+            if (device.Guid is not null)
+            {
+                RegistryUtils.StopSharingDevice(device.Guid.Value);
+            }
+            try
+            {
+                if (NewDev.UnforceVBoxDriver(device.InstanceId))
+                {
+                    reboot = true;
+                }
+            }
+            catch (Exception ex) when (ex is Win32Exception || ex is ConfigurationManagerException)
+            {
+                driverError = true;
+            }
+        }
+        if (driverError)
+        {
+            console.ReportError("Not all drivers could be restored.");
+        }
+        if (reboot)
+        {
+            console.ReportRebootRequired();
+        }
+        return ExitCode.Success;
+    }
+
     Task<ExitCode> ICommandHandlers.Unbind(Guid guid, IConsole console, CancellationToken cancellationToken)
     {
         var device = RegistryUtils.GetBoundDevices().Where(d => d.Guid.HasValue && d.Guid.Value == guid).SingleOrDefault();
@@ -290,27 +388,27 @@ sealed class CommandHandlers : ICommandHandlers
             console.ReportError($"There is no device with guid '{guid:D}'.");
             return Task.FromResult(ExitCode.Failure);
         }
-        if (!CheckWriteAccess(console))
-        {
-            return Task.FromResult(ExitCode.AccessDenied);
-        }
-        RegistryUtils.StopSharingDevice(guid);
-        if (NewDev.UnforceVBoxDriver(device.InstanceId))
-        {
-            console.ReportRebootRequired();
-        }
-        return Task.FromResult(ExitCode.Success);
+        return Task.FromResult(Unbind(new[] { device }, console));
+    }
+
+    Task<ExitCode> ICommandHandlers.Unbind(VidPid vidPid, IConsole console, CancellationToken cancellationToken)
+    {
+        return Task.FromResult(Unbind(GetDevicesByHardwareId(vidPid, console), console));
     }
 
     Task<ExitCode> ICommandHandlers.UnbindAll(IConsole console, CancellationToken cancellationToken)
     {
+        // UnbindAll() is even more special. It will also delete corrupt registry entries and
+        // also removes stub drivers for devices that are neither shared nor connected.
+        // Therefore, UnbindAll() cannot use the generic Unbind() helper.
+
         if (!CheckWriteAccess(console))
         {
             return Task.FromResult(ExitCode.AccessDenied);
         }
         RegistryUtils.StopSharingAllDevices();
         var reboot = false;
-        var error = false;
+        var driverError = false;
         foreach (var originalDeviceId in ConfigurationManager.GetOriginalDeviceIdsWithVBoxDriver())
         {
             try
@@ -320,12 +418,12 @@ sealed class CommandHandlers : ICommandHandlers
                     reboot = true;
                 }
             }
-            catch (ConfigurationManagerException)
+            catch (Exception ex) when (ex is Win32Exception || ex is ConfigurationManagerException)
             {
-                error = true;
+                driverError = true;
             }
         }
-        if (error)
+        if (driverError)
         {
             console.ReportError("Not all drivers could be restored.");
         }
@@ -512,12 +610,41 @@ sealed class CommandHandlers : ICommandHandlers
                 cancellationToken);
             if (wslResult != 0)
             {
-                console.ReportError($"Failed to attach device with BUSID '{busId}'.");
+                console.ReportError($"Failed to attach device with busid '{busId}'.");
                 return ExitCode.Failure;
             }
         }
 
         return ExitCode.Success;
+    }
+
+    async Task<ExitCode> ICommandHandlers.WslAttach(VidPid vidPid, string? distribution, string? usbipPath, IConsole console, CancellationToken cancellationToken)
+    {
+        if (GetBusIdByHardwareId(vidPid, console) is not BusId busId)
+        {
+            return ExitCode.Failure;
+        }
+        return await ((ICommandHandlers)this).WslAttach(busId, distribution, usbipPath, console, cancellationToken);
+    }
+
+    static ExitCode WslDetach(IEnumerable<UsbDevice> devices, IConsole console)
+    {
+        var error = false;
+        foreach (var device in devices)
+        {
+            if (!device.Guid.HasValue || device.IPAddress is null)
+            {
+                // Not an error, just let the user know they just executed a no-op.
+                console.ReportInfo($"Device with busid '{device.BusId}' was already not attached.");
+                continue;
+            }
+            if (!RegistryUtils.SetDeviceAsDetached(device.Guid.Value))
+            {
+                console.ReportError($"Failed to detach device with busid '{device.BusId}'.");
+                error = true;
+            }
+        }
+        return error ? ExitCode.Failure : ExitCode.Success;
     }
 
     Task<ExitCode> ICommandHandlers.WslDetach(BusId busId, IConsole console, CancellationToken cancellationToken)
@@ -528,18 +655,12 @@ sealed class CommandHandlers : ICommandHandlers
             console.ReportError($"There is no device with busid '{busId}'.");
             return Task.FromResult(ExitCode.Failure);
         }
-        if (!device.Guid.HasValue || device.IPAddress is null)
-        {
-            // Not an error, just let the user know they just executed a no-op.
-            console.ReportInfo($"Device with busid '{busId}' was already not attached.");
-            return Task.FromResult(ExitCode.Success);
-        }
-        if (!RegistryUtils.SetDeviceAsDetached(device.Guid.Value))
-        {
-            console.ReportError($"Failed to detach device with BUSID '{busId}'.");
-            return Task.FromResult(ExitCode.Failure);
-        }
-        return Task.FromResult(ExitCode.Success);
+        return Task.FromResult(WslDetach(new[] { device }, console));
+    }
+
+    Task<ExitCode> ICommandHandlers.WslDetach(VidPid vidPid, IConsole console, CancellationToken cancellationToken)
+    {
+        return Task.FromResult(WslDetach(GetDevicesByHardwareId(vidPid, console), console));
     }
 
     Task<ExitCode> ICommandHandlers.WslDetachAll(IConsole console, CancellationToken cancellationToken)
@@ -559,7 +680,7 @@ sealed class CommandHandlers : ICommandHandlers
             return ExitCode.Failure;
         }
 
-        console.WriteLine($"{"BUSID",-5}  {"DEVICE",-60}  STATE");
+        console.WriteLine($"{"BUSID",-5}  {"VID:PID",-9}  {"DEVICE",-60}  STATE");
         foreach (var device in UsbDevice.GetAll().Where(d => d.BusId.HasValue).OrderBy(d => d.BusId))
         {
             string state;
@@ -580,6 +701,7 @@ sealed class CommandHandlers : ICommandHandlers
             }
             // NOTE: Strictly speaking, both Bus and Port can be > 99. If you have one of those, you win a prize!
             console.Write($"{device.BusId,-5}  ");
+            console.Write($"{device.HardwareId,-9}  ");
             console.WriteTruncated(device.Description, 60, true);
             console.WriteLine($"  {state}");
         }
@@ -603,7 +725,7 @@ sealed class CommandHandlers : ICommandHandlers
         }
         catch (UnexpectedResultException) { }
 
-        var devices = new List<Automation.Device>();
+        var devices = new List<Device>();
         foreach (var device in UsbDevice.GetAll().OrderBy(d => d.InstanceId))
         {
             devices.Add(new()
@@ -611,7 +733,7 @@ sealed class CommandHandlers : ICommandHandlers
                 InstanceId = device.InstanceId,
                 Description = device.Description,
                 IsForced = device.IsForced,
-                BusId = device.BusId?.ToString(),
+                BusId = device.BusId,
                 PersistedGuid = device.Guid,
                 StubInstanceId = device.StubInstanceId,
                 ClientIPAddress = device.IPAddress,
@@ -619,7 +741,7 @@ sealed class CommandHandlers : ICommandHandlers
             });
         }
 
-        var state = new Automation.State()
+        var state = new State()
         {
             Devices = devices,
         };

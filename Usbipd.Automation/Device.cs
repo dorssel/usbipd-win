@@ -14,14 +14,38 @@ public sealed class Device
     [DataMember]
     public string InstanceId { get; init; } = string.Empty;
 
+    public VidPid HardwareId
+    {
+        get
+        {
+            try
+            {
+                return VidPid.FromHardwareOrInstanceId(InstanceId);
+            }
+            catch (FormatException)
+            {
+                return new VidPid();
+            }
+        }
+    }
+
     [DataMember]
     public string Description { get; init; } = string.Empty;
 
     [DataMember]
     public bool IsForced { get; init; }
 
-    [DataMember]
-    public string? BusId { get; init; }
+    /// <summary>
+    /// Serialization for <see cref="BusId"/>.
+    /// </summary>
+    [DataMember(Name = nameof(BusId))]
+    string? _BusId;
+
+    public BusId? BusId
+    {
+        get => Automation.BusId.TryParse(_BusId ?? string.Empty, out var busId) ? busId : null;
+        init => _BusId = value?.ToString();
+    }
 
     [DataMember]
     public Guid? PersistedGuid { get; init; }
@@ -30,7 +54,7 @@ public sealed class Device
     public string? StubInstanceId { get; init; }
 
     /// <summary>
-    /// Serialization for <see cref="IPAddress"/>.
+    /// Serialization for <see cref="ClientIPAddress"/>.
     /// </summary>
     [DataMember(Name = nameof(ClientIPAddress))]
     string? _ClientIPAddress;

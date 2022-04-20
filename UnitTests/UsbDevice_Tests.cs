@@ -6,6 +6,7 @@ using System;
 using System.Net;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Usbipd;
+using Usbipd.Automation;
 
 namespace UnitTests;
 

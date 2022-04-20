@@ -18,6 +18,7 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading;
+using Usbipd.Automation;
 using static Usbipd.ConsoleTools;
 
 [assembly: CLSCompliant(true)]
@@ -60,6 +61,16 @@ static class Program
                 (argumentResult.Parent as OptionResult)?.Token.Value ?? string.Empty, typeof(Guid));
         }
         return guid;
+    }
+
+    static VidPid ParseVidPid(ArgumentResult argumentResult)
+    {
+        if (!VidPid.TryParse(argumentResult.Tokens[0].Value, out var vidPid))
+        {
+            argumentResult.ErrorMessage = LocalizationResources.Instance.ArgumentConversionCannotParseForOption(argumentResult.Tokens[0].Value,
+                (argumentResult.Parent as OptionResult)?.Token.Value ?? string.Empty, typeof(VidPid));
+        }
+        return vidPid;
     }
 
     static string OneOfRequiredText(params Option[] options)
@@ -126,14 +137,13 @@ static class Program
 
         {
             //
-            //  bind --busid <BUSID>
+            //  bind [--busid <BUSID>]
             //
             var busIdOption = new Option<BusId>(
                 aliases: new[] { "--busid", "-b" },
                 parseArgument: ParseBusId
             )
             {
-                IsRequired = true,
                 ArgumentHelpName = "BUSID",
                 Description = "Share device having <BUSID>",
             }.AddCompletions(completionContext => CompletionGuard(completionContext, () =>
@@ -148,24 +158,55 @@ static class Program
                 Description = "Force binding; the host cannot use the device",
             };
             //
+            //  bind [--hardware-id <VID>:<PID>]
+            //
+            var hardwareIdOption = new Option<VidPid>(
+                // NOTE: the alias '-h' is already for '--help'
+                aliases: new[] { "--hardware-id", "-i" },
+                parseArgument: ParseVidPid
+            )
+            {
+                ArgumentHelpName = "VID:PID",
+                Description = "Share device having <VID>:<PID>",
+            }.AddCompletions(completionContext => CompletionGuard(completionContext, () =>
+                UsbDevice.GetAll().Where(d => d.BusId.HasValue).GroupBy(d => d.HardwareId).Select(g => g.Key.ToString())));
+            //
             //  bind
             //
             var bindCommand = new Command("bind", "Bind device\0"
                 + "Registers a single USB device for sharing, so it can be "
                 + "attached to other machines. Unless the --force option is used, "
                 + "shared devices remain available to the host "
-                + "until they are attached to another machine.")
+                + "until they are attached to another machine.\n"
+                + "\n"
+                + OneOfRequiredText(busIdOption, hardwareIdOption))
             {
                 busIdOption,
                 forceOption,
+                hardwareIdOption,
             };
+            bindCommand.AddValidator(commandResult =>
+            {
+                ValidateOneOf(commandResult, busIdOption, hardwareIdOption);
+            });
             bindCommand.SetHandler(async (InvocationContext invocationContext) =>
             {
-                invocationContext.ExitCode = (int)(
-                    await commandHandlers.Bind(invocationContext.ParseResult.GetValueForOption(busIdOption),
-                        invocationContext.ParseResult.HasOption(forceOption),
-                        invocationContext.Console, invocationContext.GetCancellationToken())
-                    );
+                if (invocationContext.ParseResult.HasOption(busIdOption))
+                {
+                    invocationContext.ExitCode = (int)(
+                        await commandHandlers.Bind(invocationContext.ParseResult.GetValueForOption(busIdOption),
+                            invocationContext.ParseResult.HasOption(forceOption),
+                            invocationContext.Console, invocationContext.GetCancellationToken())
+                        );
+                }
+                else
+                {
+                    invocationContext.ExitCode = (int)(
+                        await commandHandlers.Bind(invocationContext.ParseResult.GetValueForOption(hardwareIdOption),
+                            invocationContext.ParseResult.HasOption(forceOption),
+                            invocationContext.Console, invocationContext.GetCancellationToken())
+                        );
+                }
             });
             rootCommand.AddCommand(bindCommand);
         }
@@ -277,22 +318,36 @@ static class Program
             }.AddCompletions(completionContext => CompletionGuard(completionContext, () =>
                 RegistryUtils.GetBoundDevices().Where(d => !d.BusId.HasValue).Select(d => d.Guid.GetValueOrDefault().ToString("D"))));
             //
+            //  unbind [--hardware-id <VID>:<PID>]
+            //
+            var hardwareIdOption = new Option<VidPid>(
+                // NOTE: the alias '-h' is already for '--help'
+                aliases: new[] { "--hardware-id", "-i" },
+                parseArgument: ParseVidPid
+            )
+            {
+                ArgumentHelpName = "VID:PID",
+                Description = "Stop sharing all devices having <VID>:<PID>",
+            }.AddCompletions(completionContext => CompletionGuard(completionContext, () =>
+                UsbDevice.GetAll().GroupBy(d => d.HardwareId).Select(g => g.Key.ToString())));
+            //
             //  unbind
             //
             var unbindCommand = new Command("unbind", "Unbind device\0"
-                + "Unregisters one (or all) USB devices for sharing. If the device is currently "
+                + "Unregisters one or more USB devices for sharing. If the device is currently "
                 + "attached to another machine, it will immediately be detached and it becomes available to the "
                 + "host again; the remote machine will see this as a surprise removal event.\n"
                 + "\n"
-                + OneOfRequiredText(allOption, busIdOption, guidOption))
+                + OneOfRequiredText(allOption, busIdOption, guidOption, hardwareIdOption))
             {
                 allOption,
                 busIdOption,
                 guidOption,
+                hardwareIdOption,
             };
             unbindCommand.AddValidator(commandResult =>
             {
-                ValidateOneOf(commandResult, allOption, busIdOption, guidOption);
+                ValidateOneOf(commandResult, allOption, busIdOption, guidOption, hardwareIdOption);
             });
             unbindCommand.SetHandler(async (InvocationContext invocationContext) =>
             {
@@ -309,10 +364,17 @@ static class Program
                             invocationContext.Console, invocationContext.GetCancellationToken())
                         );
                 }
-                else
+                else if (invocationContext.ParseResult.HasOption(guidOption))
                 {
                     invocationContext.ExitCode = (int)(
                         await commandHandlers.Unbind(invocationContext.ParseResult.GetValueForOption(guidOption),
+                            invocationContext.Console, invocationContext.GetCancellationToken())
+                        );
+                }
+                else
+                {
+                    invocationContext.ExitCode = (int)(
+                        await commandHandlers.Unbind(invocationContext.ParseResult.GetValueForOption(hardwareIdOption),
                             invocationContext.Console, invocationContext.GetCancellationToken())
                         );
                 }
@@ -333,14 +395,13 @@ static class Program
             rootCommand.AddCommand(wslCommand);
             {
                 //
-                //  wsl attach --busid <BUSID>
+                //  wsl attach [--busid <BUSID>]
                 //
                 var busIdOption = new Option<BusId>(
                     aliases: new[] { "--busid", "-b" },
                     parseArgument: ParseBusId
                 )
                 {
-                    IsRequired = true,
                     ArgumentHelpName = "BUSID",
                     Description = "Attach device having <BUSID>",
                 }.AddCompletions(completionContext => CompletionGuard(completionContext, () =>
@@ -356,6 +417,19 @@ static class Program
                     Description = "Name of the WSL distribution to attach to",
                 }.AddCompletions(completionContext => CompletionGuard(completionContext, () =>
                     WslDistributions.CreateAsync(CancellationToken.None).Result?.Distributions.Select(d => d.Name)));
+                //
+                //  wsl attach [--hardware-id <VID>:<PID>]
+                //
+                var hardwareIdOption = new Option<VidPid>(
+                    // NOTE: the alias '-h' is already for '--help'
+                    aliases: new[] { "--hardware-id", "-i" },
+                    parseArgument: ParseVidPid
+                )
+                {
+                    ArgumentHelpName = "VID:PID",
+                    Description = "Attach device having <VID>:<PID>",
+                }.AddCompletions(completionContext => CompletionGuard(completionContext, () =>
+                    UsbDevice.GetAll().Where(d => d.BusId.HasValue).GroupBy(d => d.HardwareId).Select(g => g.Key.ToString())));
                 //
                 //  wsl attach --usbip-path <PATH>
                 //
@@ -374,21 +448,39 @@ static class Program
                     + "\n"
                     + "The first time a device is attached this command will include a 'bind', for "
                     + "which administrator privileges are required. Subsequent attaches can be "
-                    + "done with standard user privileges."
-                    )
+                    + "done with standard user privileges.\n"
+                    + "\n"
+                    + OneOfRequiredText(busIdOption, hardwareIdOption))
                 {
                     busIdOption,
                     distributionOption,
+                    hardwareIdOption,
                     usbipPathOption,
                 };
+                attachCommand.AddValidator(commandResult =>
+                {
+                    ValidateOneOf(commandResult, busIdOption, hardwareIdOption);
+                });
                 attachCommand.SetHandler(async (InvocationContext invocationContext) =>
                 {
-                    invocationContext.ExitCode = (int)(
-                        await commandHandlers.WslAttach(invocationContext.ParseResult.GetValueForOption(busIdOption),
-                            invocationContext.ParseResult.GetValueForOption(distributionOption),
-                            invocationContext.ParseResult.GetValueForOption(usbipPathOption),
-                            invocationContext.Console, invocationContext.GetCancellationToken())
-                        );
+                    if (invocationContext.ParseResult.HasOption(busIdOption))
+                    {
+                        invocationContext.ExitCode = (int)(
+                            await commandHandlers.WslAttach(invocationContext.ParseResult.GetValueForOption(busIdOption),
+                                invocationContext.ParseResult.GetValueForOption(distributionOption),
+                                invocationContext.ParseResult.GetValueForOption(usbipPathOption),
+                                invocationContext.Console, invocationContext.GetCancellationToken())
+                            );
+                    }
+                    else
+                    {
+                        invocationContext.ExitCode = (int)(
+                            await commandHandlers.WslAttach(invocationContext.ParseResult.GetValueForOption(hardwareIdOption),
+                                invocationContext.ParseResult.GetValueForOption(distributionOption),
+                                invocationContext.ParseResult.GetValueForOption(usbipPathOption),
+                                invocationContext.Console, invocationContext.GetCancellationToken())
+                            );
+                    }
                 });
                 wslCommand.AddCommand(attachCommand);
             }
@@ -415,21 +507,35 @@ static class Program
                 }.AddCompletions(completionContext => CompletionGuard(completionContext, () =>
                     UsbDevice.GetAll().Where(d => d.BusId.HasValue).Select(d => d.BusId.GetValueOrDefault().ToString())));
                 //
+                //  wsl detach [--hardware-id <VID>:<PID>]
+                //
+                var hardwareIdOption = new Option<VidPid>(
+                    // NOTE: the alias '-h' is already for '--help'
+                    aliases: new[] { "--hardware-id", "-i" },
+                    parseArgument: ParseVidPid
+                )
+                {
+                    ArgumentHelpName = "VID:PID",
+                    Description = "Detach all devices having <VID>:<PID>",
+                }.AddCompletions(completionContext => CompletionGuard(completionContext, () =>
+                    UsbDevice.GetAll().Where(d => d.BusId.HasValue).GroupBy(d => d.HardwareId).Select(g => g.Key.ToString())));
+                //
                 //  wsl detach
                 //
                 var detachCommand = new Command("detach", "Detach a USB device from a WSL instance\0"
-                    + "Detaches one (or all) USB devices. The WSL instance sees this as a surprise "
+                    + "Detaches one or more USB devices. The WSL instance sees this as a surprise "
                     + "removal event. A detached device becomes available again in Windows, "
                     + "unless it was bound using the --force option.\n"
                     + "\n"
-                    + OneOfRequiredText(allOption, busIdOption))
+                    + OneOfRequiredText(allOption, busIdOption, hardwareIdOption))
                 {
                     allOption,
                     busIdOption,
+                    hardwareIdOption,
                 };
                 detachCommand.AddValidator(commandResult =>
                 {
-                    ValidateOneOf(commandResult, allOption, busIdOption);
+                    ValidateOneOf(commandResult, allOption, busIdOption, hardwareIdOption);
                 });
                 detachCommand.SetHandler(async (InvocationContext invocationContext) =>
                 {
@@ -439,10 +545,17 @@ static class Program
                             await commandHandlers.WslDetachAll(invocationContext.Console, invocationContext.GetCancellationToken())
                             );
                     }
-                    else
+                    else if (invocationContext.ParseResult.HasOption(busIdOption))
                     {
                         invocationContext.ExitCode = (int)(
                             await commandHandlers.WslDetach(invocationContext.ParseResult.GetValueForOption(busIdOption),
+                                invocationContext.Console, invocationContext.GetCancellationToken())
+                            );
+                    }
+                    else
+                    {
+                        invocationContext.ExitCode = (int)(
+                            await commandHandlers.WslDetach(invocationContext.ParseResult.GetValueForOption(hardwareIdOption),
                                 invocationContext.Console, invocationContext.GetCancellationToken())
                             );
                     }

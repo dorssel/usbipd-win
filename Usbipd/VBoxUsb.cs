@@ -9,7 +9,7 @@ using System.IO;
 using System.Net;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
-
+using Usbipd.Automation;
 using static Usbipd.Interop.VBoxUsb;
 using static Usbipd.Tools;
 

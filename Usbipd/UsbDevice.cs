@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using Usbipd.Automation;
 
 namespace Usbipd;
 
@@ -21,6 +22,21 @@ sealed partial record UsbDevice(string InstanceId, string Description, bool IsFo
 
 sealed partial record UsbDevice
 {
+    public VidPid HardwareId
+    {
+        get
+        {
+            try
+            {
+                return VidPid.FromHardwareOrInstanceId(InstanceId);
+            }
+            catch (FormatException)
+            {
+                return new VidPid();
+            }
+        }
+    }
+
     /// <summary>
     /// Gets all devices, either bound or connected.
     /// </summary>

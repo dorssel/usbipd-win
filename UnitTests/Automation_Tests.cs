@@ -5,7 +5,6 @@
 using System;
 using System.Net;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Usbipd;
 using Usbipd.Automation;
 
 namespace UnitTests;
@@ -38,6 +37,7 @@ sealed class Automation_Tests
     {
         var device = new Device();
         Assert.AreEqual(string.Empty, device.InstanceId);
+        Assert.AreEqual(new VidPid(), device.HardwareId);
         Assert.AreEqual(string.Empty, device.Description);
         Assert.IsFalse(device.IsForced);
         Assert.IsNull(device.BusId);
@@ -61,6 +61,19 @@ sealed class Automation_Tests
             InstanceId = testInstanceId,
         };
         Assert.AreEqual(testInstanceId, device.InstanceId);
+    }
+
+    [TestMethod]
+    public void Device_HardwareId()
+    {
+        VidPid testHardwareId = new() { Vid = 0x1234, Pid = 0xcdef };
+        var testInstanceId = $"***VID_{testHardwareId.Vid:X4}&PID_{testHardwareId.Pid:X4}***";
+
+        var device = new Device()
+        {
+            InstanceId = testInstanceId,
+        };
+        Assert.AreEqual(testHardwareId, device.HardwareId);
     }
 
     [TestMethod]
@@ -92,9 +105,9 @@ sealed class Automation_Tests
 
         var device = new Device()
         {
-            BusId = testBusId.ToString(),
+            BusId = testBusId,
         };
-        Assert.AreEqual(testBusId.ToString(), device.BusId);
+        Assert.AreEqual(testBusId, device.BusId);
         Assert.IsTrue(device.IsConnected);
     }
 

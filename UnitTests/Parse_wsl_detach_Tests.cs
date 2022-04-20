@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Usbipd;
+using Usbipd.Automation;
 
 namespace UnitTests;
 
@@ -19,6 +20,7 @@ sealed class Parse_wsl_detach_Tests
     : ParseTestBase
 {
     static readonly BusId TestBusId = BusId.Parse("3-42");
+    static readonly VidPid TestHardwareId = VidPid.Parse("0123:cdef");
 
     [TestMethod]
     public void AllSuccess()
@@ -81,6 +83,36 @@ sealed class Parse_wsl_detach_Tests
     }
 
     [TestMethod]
+    public void HardwareIdSuccess()
+    {
+        var mock = CreateMock();
+        mock.Setup(m => m.WslDetach(It.Is<VidPid>(vidPid => vidPid == TestHardwareId),
+            It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Success));
+
+        Test(ExitCode.Success, mock, "wsl", "detach", "--hardware-id", TestHardwareId.ToString());
+    }
+
+    [TestMethod]
+    public void HardwareIdFailure()
+    {
+        var mock = CreateMock();
+        mock.Setup(m => m.WslDetach(It.Is<VidPid>(vidPid => vidPid == TestHardwareId),
+            It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Failure));
+
+        Test(ExitCode.Failure, mock, "wsl", "detach", "--hardware-id", TestHardwareId.ToString());
+    }
+
+    [TestMethod]
+    public void HardwareIdCanceled()
+    {
+        var mock = CreateMock();
+        mock.Setup(m => m.WslDetach(It.Is<VidPid>(vidPid => vidPid == TestHardwareId),
+            It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Throws<OperationCanceledException>();
+
+        Test(ExitCode.Canceled, mock, "wsl", "detach", "--hardware-id", TestHardwareId.ToString());
+    }
+
+    [TestMethod]
     public void Help()
     {
         Test(ExitCode.Success, "wsl", "detach", "--help");
@@ -99,6 +131,18 @@ sealed class Parse_wsl_detach_Tests
     }
 
     [TestMethod]
+    public void AllAndHardwareId()
+    {
+        Test(ExitCode.ParseError, "wsl", "detach", "--all", "--hardware-id", TestHardwareId.ToString());
+    }
+
+    [TestMethod]
+    public void BusIdAndHardwareId()
+    {
+        Test(ExitCode.ParseError, "wsl", "detach", "--busid", TestBusId.ToString(), "--hardware-id", TestHardwareId.ToString());
+    }
+
+    [TestMethod]
     public void AllWithArgument()
     {
         Test(ExitCode.ParseError, "wsl", "detach", "--all=argument");
@@ -111,9 +155,21 @@ sealed class Parse_wsl_detach_Tests
     }
 
     [TestMethod]
+    public void HardwareIdArgumentMissing()
+    {
+        Test(ExitCode.ParseError, "wsl", "detach", "--hardware-id");
+    }
+
+    [TestMethod]
     public void BusIdArgumentInvalid()
     {
         Test(ExitCode.ParseError, "wsl", "detach", "--busid", "not-a-busid");
+    }
+
+    [TestMethod]
+    public void HardwareIdArgumentInvalid()
+    {
+        Test(ExitCode.ParseError, "wsl", "detach", "--hardware-id", "not-a-hardware-id");
     }
 
     [TestMethod]

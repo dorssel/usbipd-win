@@ -11,6 +11,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Usbipd.Automation;
 using Usbipd.Interop;
 using Windows.Win32;
 using Windows.Win32.Devices.Usb;

@@ -8,6 +8,7 @@ using System.CommandLine;
 using System.Linq;
 using System.Text;
 using Microsoft.Win32;
+using Usbipd.Automation;
 using static System.CommandLine.IO.StandardStreamWriter;
 using static Usbipd.Interop.VBoxUsbMon;
 
@@ -300,6 +301,16 @@ static class ConsoleTools
         if (!RegistryUtils.HasWriteAccess())
         {
             console.ReportError("Access denied; this operation requires administrator privileges.");
+            return false;
+        }
+        return true;
+    }
+
+    public static bool CheckNoStub(VidPid vidPid, IConsole console)
+    {
+        if (vidPid == VidPid.FromHardwareOrInstanceId(Interop.VBoxUsb.StubHardwareId))
+        {
+            console.ReportError($"Manipulating the USBIP stub devices is not supported; use the original device VID:PID.");
             return false;
         }
         return true;

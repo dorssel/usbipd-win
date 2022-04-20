@@ -5,6 +5,7 @@
 using System;
 using System.Net;
 using Microsoft.Extensions.Logging;
+using Usbipd.Automation;
 
 namespace Usbipd;
 
