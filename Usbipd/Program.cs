@@ -168,10 +168,8 @@ static class Program
             {
                 ArgumentHelpName = "VID:PID",
                 Description = "Share device having <VID>:<PID>",
-            };
-            // TODO: completion
-            //.AddCompletions(completionContext => CompletionGuard(completionContext, () =>
-            // RegistryUtils.GetBoundDevices().Where(d => !d.BusId.HasValue).Select(d => d.Guid.GetValueOrDefault().ToString("D"))));
+            }.AddCompletions(completionContext => CompletionGuard(completionContext, () =>
+                UsbDevice.GetAll().Where(d => d.BusId.HasValue).GroupBy(d => d.HardwareId).Select(g => g.Key.ToString())));
             //
             //  bind
             //
@@ -330,10 +328,8 @@ static class Program
             {
                 ArgumentHelpName = "VID:PID",
                 Description = "Stop sharing all devices having <VID>:<PID>",
-            };
-            // TODO: completion
-            //.AddCompletions(completionContext => CompletionGuard(completionContext, () =>
-            // RegistryUtils.GetBoundDevices().Where(d => !d.BusId.HasValue).Select(d => d.Guid.GetValueOrDefault().ToString("D"))));
+            }.AddCompletions(completionContext => CompletionGuard(completionContext, () =>
+                UsbDevice.GetAll().GroupBy(d => d.HardwareId).Select(g => g.Key.ToString())));
             //
             //  unbind
             //
@@ -422,7 +418,7 @@ static class Program
                 }.AddCompletions(completionContext => CompletionGuard(completionContext, () =>
                     WslDistributions.CreateAsync(CancellationToken.None).Result?.Distributions.Select(d => d.Name)));
                 //
-                //  bind [--hardware-id <VID>:<PID>]
+                //  wsl attach [--hardware-id <VID>:<PID>]
                 //
                 var hardwareIdOption = new Option<VidPid>(
                     // NOTE: the alias '-h' is already for '--help'
@@ -432,10 +428,8 @@ static class Program
                 {
                     ArgumentHelpName = "VID:PID",
                     Description = "Attach device having <VID>:<PID>",
-                };
-                // TODO: completion
-                //.AddCompletions(completionContext => CompletionGuard(completionContext, () =>
-                // RegistryUtils.GetBoundDevices().Where(d => !d.BusId.HasValue).Select(d => d.Guid.GetValueOrDefault().ToString("D"))));
+                }.AddCompletions(completionContext => CompletionGuard(completionContext, () =>
+                    UsbDevice.GetAll().Where(d => d.BusId.HasValue).GroupBy(d => d.HardwareId).Select(g => g.Key.ToString())));
                 //
                 //  wsl attach --usbip-path <PATH>
                 //
@@ -523,10 +517,8 @@ static class Program
                 {
                     ArgumentHelpName = "VID:PID",
                     Description = "Detach all devices having <VID>:<PID>",
-                };
-                // TODO: completion
-                //.AddCompletions(completionContext => CompletionGuard(completionContext, () =>
-                // RegistryUtils.GetBoundDevices().Where(d => !d.BusId.HasValue).Select(d => d.Guid.GetValueOrDefault().ToString("D"))));
+                }.AddCompletions(completionContext => CompletionGuard(completionContext, () =>
+                    UsbDevice.GetAll().Where(d => d.BusId.HasValue).GroupBy(d => d.HardwareId).Select(g => g.Key.ToString())));
                 //
                 //  wsl detach
                 //
