@@ -410,6 +410,7 @@ static class ConfigurationManager
             }
             catch (ConfigurationManagerException) { }
             catch (Win32Exception) { }
+            catch (AggregateException ex) when (ex.InnerException is Win32Exception) { }
 
             // This is the reverse of what the constructor accomplished.
             PInvoke.CM_Setup_DevNode(DeviceNode, PInvoke.CM_SETUP_DEVNODE_READY);
