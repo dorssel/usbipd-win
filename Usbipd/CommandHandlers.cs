@@ -53,40 +53,49 @@ interface ICommandHandlers
 
 sealed class CommandHandlers : ICommandHandlers
 {
-    static IEnumerable<UsbDevice> GetDevicesByHardwareId(VidPid vidPid, IConsole console)
+    static IEnumerable<UsbDevice> GetDevicesByHardwareId(VidPid vidPid, bool connectedOnly, IConsole console)
     {
         if (!CheckNoStub(vidPid, console))
         {
             return Array.Empty<UsbDevice>();
         }
-        var devices = UsbDevice.GetAll().Where(d => d.HardwareId == vidPid);
+        var devices = UsbDevice.GetAll().Where(d => (d.HardwareId == vidPid) && (!connectedOnly || d.BusId.HasValue));
         if (!devices.Any())
         {
             console.ReportError($"No devices found with hardware-id '{vidPid}'.");
+        }
+        else
+        {
+            foreach (var device in devices)
+            {
+                if (device.BusId.HasValue)
+                {
+                    console.ReportInfo($"Device with hardware-id '{vidPid}' found at busid '{device.BusId.Value}'.");
+                }
+                else if (device.Guid.HasValue)
+                {
+                    console.ReportInfo($"Persisted device with hardware-id '{vidPid}' found at guid '{device.Guid.Value:D}'.");
+                }
+            }
         }
         return devices;
     }
 
     static BusId? GetBusIdByHardwareId(VidPid vidPid, IConsole console)
     {
-        if (!CheckNoStub(vidPid, console))
+        var devices = GetDevicesByHardwareId(vidPid, true, console);
+        switch (devices.Take(2).Count())
         {
-            return null;
+            case 0:
+                // Already reported.
+                return null;
+            case 1:
+                return devices.Single().BusId;
+            case 2:
+            default:
+                console.ReportError($"Multiple devices with hardware-id '{vidPid}' were found; disambiguate by using '--busid'.");
+                return null;
         }
-        var devices = UsbDevice.GetAll().Where(d => d.BusId.HasValue && (d.HardwareId == vidPid));
-        if (!devices.Any())
-        {
-            console.ReportError($"There is no device with hardware-id '{vidPid}'.");
-            return null;
-        }
-        if (devices.Count() > 1)
-        {
-            console.ReportError($"Multiple devices with hardware-id '{vidPid}' were found; disambiguate by using '--busid'.");
-            return null;
-        }
-        var busId = devices.Single().BusId;
-        console.ReportInfo($"Device with hardware-id '{vidPid}' found at busid '{busId}'.");
-        return busId;
     }
 
     Task<ExitCode> ICommandHandlers.License(IConsole console, CancellationToken cancellationToken)
@@ -394,7 +403,7 @@ sealed class CommandHandlers : ICommandHandlers
 
     Task<ExitCode> ICommandHandlers.Unbind(VidPid vidPid, IConsole console, CancellationToken cancellationToken)
     {
-        return Task.FromResult(Unbind(GetDevicesByHardwareId(vidPid, console), console));
+        return Task.FromResult(Unbind(GetDevicesByHardwareId(vidPid, false, console), console));
     }
 
     Task<ExitCode> ICommandHandlers.UnbindAll(IConsole console, CancellationToken cancellationToken)
@@ -447,6 +456,18 @@ sealed class CommandHandlers : ICommandHandlers
 
     async Task<ExitCode> ICommandHandlers.WslAttach(BusId busId, bool autoAttach, string? distribution, IConsole console, CancellationToken cancellationToken)
     {
+        var device = UsbDevice.GetAll().Where(d => d.BusId.HasValue && d.BusId.Value == busId).SingleOrDefault();
+        if (device is null)
+        {
+            console.ReportError($"There is no device with busid '{busId}'.");
+            return ExitCode.Failure;
+        }
+        if (device.IPAddress is not null)
+        {
+            console.ReportError($"Device with busid '{busId}' is already attached to a client.");
+            return ExitCode.Failure;
+        }
+
         if (await GetDistributionsAsync(console, cancellationToken) is not WslDistributions distros)
         {
             return ExitCode.Failure;
@@ -681,7 +702,13 @@ sealed class CommandHandlers : ICommandHandlers
 
     Task<ExitCode> ICommandHandlers.WslDetach(VidPid vidPid, IConsole console, CancellationToken cancellationToken)
     {
-        return Task.FromResult(WslDetach(GetDevicesByHardwareId(vidPid, console), console));
+        var devices = GetDevicesByHardwareId(vidPid, true, console);
+        if (!devices.Any())
+        {
+            // This would result in a no-op, which may not be what the user intended.
+            return Task.FromResult(ExitCode.Failure);
+        }
+        return Task.FromResult(WslDetach(devices, console));
     }
 
     Task<ExitCode> ICommandHandlers.WslDetachAll(IConsole console, CancellationToken cancellationToken)
