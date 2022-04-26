@@ -33,3 +33,6 @@
 *.inf   text
 *.sys   binary
 *.cer   binary
+
+# Linux scripts
+*.sh   text eol=lf

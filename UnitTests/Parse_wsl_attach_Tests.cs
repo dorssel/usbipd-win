@@ -22,53 +22,42 @@ sealed class Parse_wsl_attach_Tests
     static readonly BusId TestBusId = BusId.Parse("3-42");
     static readonly VidPid TestHardwareId = VidPid.Parse("0123:cdef");
     const string TestDistribution = "Test Distribution";
-    const string TestUsbipPath = "/Test/Path/To/usbip";
 
     [TestMethod]
     public void BusIdSuccess()
     {
         var mock = CreateMock();
-        mock.Setup(m => m.WslAttach(It.Is<BusId>(busId => busId == TestBusId), null, null,
+        mock.Setup(m => m.WslAttach(It.Is<BusId>(busId => busId == TestBusId), false, null,
             It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Success));
 
         Test(ExitCode.Success, mock, "wsl", "attach", "--busid", TestBusId.ToString());
     }
 
     [TestMethod]
+    public void BusIdSuccessWithAutoAttach()
+    {
+        var mock = CreateMock();
+        mock.Setup(m => m.WslAttach(It.Is<BusId>(busId => busId == TestBusId), true, null,
+            It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Success));
+
+        Test(ExitCode.Success, mock, "wsl", "attach", "--busid", TestBusId.ToString(), "--auto-attach");
+    }
+
+    [TestMethod]
     public void BusIdSuccessWithDistribution()
     {
         var mock = CreateMock();
-        mock.Setup(m => m.WslAttach(It.Is<BusId>(busId => busId == TestBusId), It.Is<string>(distribution => distribution == TestDistribution), null,
+        mock.Setup(m => m.WslAttach(It.Is<BusId>(busId => busId == TestBusId), false, It.Is<string>(distribution => distribution == TestDistribution),
             It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Success));
 
         Test(ExitCode.Success, mock, "wsl", "attach", "--busid", TestBusId.ToString(), "--distribution", TestDistribution);
     }
 
     [TestMethod]
-    public void BusIdSuccessWithUsbipPath()
-    {
-        var mock = CreateMock();
-        mock.Setup(m => m.WslAttach(It.Is<BusId>(busId => busId == TestBusId), null, It.Is<string>(usbipPath => usbipPath == TestUsbipPath),
-            It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Success));
-
-        Test(ExitCode.Success, mock, "wsl", "attach", "--busid", TestBusId.ToString(), "--usbip-path", TestUsbipPath);
-    }
-
-    [TestMethod]
-    public void BusIdSuccessWithDistributionAndUsbipPath()
-    {
-        var mock = CreateMock();
-        mock.Setup(m => m.WslAttach(It.Is<BusId>(busId => busId == TestBusId), It.Is<string>(distribution => distribution == TestDistribution), It.Is<string>(usbipPath => usbipPath == TestUsbipPath),
-            It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Success));
-
-        Test(ExitCode.Success, mock, "wsl", "attach", "--busid", TestBusId.ToString(), "--distribution", TestDistribution, "--usbip-path", TestUsbipPath);
-    }
-
-    [TestMethod]
     public void BusIdFailure()
     {
         var mock = CreateMock();
-        mock.Setup(m => m.WslAttach(It.Is<BusId>(busId => busId == TestBusId), null, null,
+        mock.Setup(m => m.WslAttach(It.Is<BusId>(busId => busId == TestBusId), false, null,
             It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Failure));
 
         Test(ExitCode.Failure, mock, "wsl", "attach", "--busid", TestBusId.ToString());
@@ -78,7 +67,7 @@ sealed class Parse_wsl_attach_Tests
     public void BusIdCanceled()
     {
         var mock = CreateMock();
-        mock.Setup(m => m.WslAttach(It.Is<BusId>(busId => busId == TestBusId), null, null,
+        mock.Setup(m => m.WslAttach(It.Is<BusId>(busId => busId == TestBusId), false, null,
             It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Throws<OperationCanceledException>();
 
         Test(ExitCode.Canceled, mock, "wsl", "attach", "--busid", TestBusId.ToString());
@@ -88,7 +77,7 @@ sealed class Parse_wsl_attach_Tests
     public void HardwareIdSuccess()
     {
         var mock = CreateMock();
-        mock.Setup(m => m.WslAttach(It.Is<VidPid>(vidPid => vidPid == TestHardwareId), null, null,
+        mock.Setup(m => m.WslAttach(It.Is<VidPid>(vidPid => vidPid == TestHardwareId), false, null,
             It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Success));
 
         Test(ExitCode.Success, mock, "wsl", "attach", "--hardware-id", TestHardwareId.ToString());
@@ -98,7 +87,7 @@ sealed class Parse_wsl_attach_Tests
     public void HardwareIdFailure()
     {
         var mock = CreateMock();
-        mock.Setup(m => m.WslAttach(It.Is<VidPid>(vidPid => vidPid == TestHardwareId), null, null,
+        mock.Setup(m => m.WslAttach(It.Is<VidPid>(vidPid => vidPid == TestHardwareId), false, null,
             It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Failure));
 
         Test(ExitCode.Failure, mock, "wsl", "attach", "--hardware-id", TestHardwareId.ToString());
@@ -108,7 +97,7 @@ sealed class Parse_wsl_attach_Tests
     public void HardwareIdCanceled()
     {
         var mock = CreateMock();
-        mock.Setup(m => m.WslAttach(It.Is<VidPid>(vidPid => vidPid == TestHardwareId), null, null,
+        mock.Setup(m => m.WslAttach(It.Is<VidPid>(vidPid => vidPid == TestHardwareId), false, null,
             It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Throws<OperationCanceledException>();
 
         Test(ExitCode.Canceled, mock, "wsl", "attach", "--hardware-id", TestHardwareId.ToString());

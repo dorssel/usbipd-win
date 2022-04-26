@@ -14,6 +14,7 @@ using System.Linq;
 using System.Runtime.Serialization.Json;
 using System.Security.Principal;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
@@ -40,8 +41,8 @@ interface ICommandHandlers
     public Task<ExitCode> Unbind(VidPid vidPid, IConsole console, CancellationToken cancellationToken);
     public Task<ExitCode> UnbindAll(IConsole console, CancellationToken cancellationToken);
 
-    public Task<ExitCode> WslAttach(BusId busId, string? distribution, string? usbipPath, IConsole console, CancellationToken cancellationToken);
-    public Task<ExitCode> WslAttach(VidPid vidPid, string? distribution, string? usbipPath, IConsole console, CancellationToken cancellationToken);
+    public Task<ExitCode> WslAttach(BusId busId, bool autoAttach, string? distribution, IConsole console, CancellationToken cancellationToken);
+    public Task<ExitCode> WslAttach(VidPid vidPid, bool autoAttach, string? distribution, IConsole console, CancellationToken cancellationToken);
     public Task<ExitCode> WslDetach(BusId busId, IConsole console, CancellationToken cancellationToken);
     public Task<ExitCode> WslDetach(VidPid vidPid, IConsole console, CancellationToken cancellationToken);
     public Task<ExitCode> WslDetachAll(IConsole console, CancellationToken cancellationToken);
@@ -444,7 +445,7 @@ sealed class CommandHandlers : ICommandHandlers
         return distributions;
     }
 
-    async Task<ExitCode> ICommandHandlers.WslAttach(BusId busId, string? distribution, string? usbipPath, IConsole console, CancellationToken cancellationToken)
+    async Task<ExitCode> ICommandHandlers.WslAttach(BusId busId, bool autoAttach, string? distribution, IConsole console, CancellationToken cancellationToken)
     {
         if (await GetDistributionsAsync(console, cancellationToken) is not WslDistributions distros)
         {
@@ -530,8 +531,6 @@ sealed class CommandHandlers : ICommandHandlers
             return bindResult;
         }
 
-        usbipPath ??= "usbip";
-
         // 6) WSL kernel must be USBIP capable.
 
         {
@@ -559,7 +558,7 @@ sealed class CommandHandlers : ICommandHandlers
             var wslResult = await ProcessUtils.RunCapturedProcessAsync(
                 WslDistributions.WslPath,
                 (distribution is not null ? new[] { "--distribution", distribution } : Enumerable.Empty<string>()).Concat(
-                    new[] { "--user", "root", "--", usbipPath, "version" }),
+                    new[] { "--user", "root", "--", "usbip", "version" }),
                 Encoding.UTF8, cancellationToken);
             // Expected output:
             //
@@ -600,13 +599,13 @@ sealed class CommandHandlers : ICommandHandlers
             }
         }
 
-        // Finally, call 'usbip attach'.
-
+        // Finally, call 'usbip attach', or run the auto-attach.sh script.
+        if (!autoAttach)
         {
             var wslResult = await ProcessUtils.RunUncapturedProcessAsync(
                 WslDistributions.WslPath,
                 (distribution is not null ? new[] { "--distribution", distribution } : Enumerable.Empty<string>()).Concat(
-                    new[] { "--user", "root", "--", usbipPath, "attach", $"--remote={distros.HostAddress}", $"--busid={busId}" }),
+                    new[] { "--user", "root", "--", "usbip", "attach", $"--remote={distros.HostAddress}", $"--busid={busId}" }),
                 cancellationToken);
             if (wslResult != 0)
             {
@@ -614,17 +613,39 @@ sealed class CommandHandlers : ICommandHandlers
                 return ExitCode.Failure;
             }
         }
+        else
+        {
+            var scriptWindowsPath = Path.Combine(Path.GetDirectoryName(Environment.ProcessPath)!, "wsl-scripts", "auto-attach.sh");
+            if (!Regex.IsMatch(Path.GetPathRoot(scriptWindowsPath)!, "[a-zA-Z]:\\\\"))
+            {
+                console.ReportError($"Option '--auto-attach' requires that this software is installed on a local drive.");
+                return ExitCode.Failure;
+            }
+            var driveLetter = scriptWindowsPath[0..1].ToLowerInvariant();
+            var scriptLinuxPath = Path.Combine(@"\mnt", driveLetter, Path.GetRelativePath(Path.GetPathRoot(scriptWindowsPath)!, scriptWindowsPath)).Replace('\\', '/');
+
+            console.ReportInfo("Starting endless attach loop; press Ctrl+C to quit.");
+
+            await ProcessUtils.RunUncapturedProcessAsync(
+                WslDistributions.WslPath,
+                (distribution is not null ? new[] { "--distribution", distribution } : Enumerable.Empty<string>()).Concat(
+                    new[] { "--user", "root", "--", "bash", scriptLinuxPath, distros.HostAddress.ToString(), busId.ToString() }),
+                cancellationToken);
+            // This process always ends in failure, as it is supposed to run an endless loop.
+            // This may be intended by the user (Ctrl+C, WSL shutdown), others may be real errors.
+            // There is no way to tell the difference...
+        }
 
         return ExitCode.Success;
     }
 
-    async Task<ExitCode> ICommandHandlers.WslAttach(VidPid vidPid, string? distribution, string? usbipPath, IConsole console, CancellationToken cancellationToken)
+    async Task<ExitCode> ICommandHandlers.WslAttach(VidPid vidPid, bool autoAttach, string? distribution, IConsole console, CancellationToken cancellationToken)
     {
         if (GetBusIdByHardwareId(vidPid, console) is not BusId busId)
         {
             return ExitCode.Failure;
         }
-        return await ((ICommandHandlers)this).WslAttach(busId, distribution, usbipPath, console, cancellationToken);
+        return await ((ICommandHandlers)this).WslAttach(busId, autoAttach, distribution, console, cancellationToken);
     }
 
     static ExitCode WslDetach(IEnumerable<UsbDevice> devices, IConsole console)
