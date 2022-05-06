@@ -49,9 +49,7 @@ is_attached() {
 
     # We enumerate all currently attached USBIP devices. Note that we cannot simply
     # enumerate /var/run/vhci_hcd/port*, as those are not removed when a device is detached.
-    while read -r line; do
-        read -a strarr <<< "$line"
-
+    {
         # Expected format:
         # hub port sta spd dev      sockfd local_busid
         # hs  0000 006 002 00040002 000003 1-1
@@ -62,29 +60,34 @@ is_attached() {
         # ss  0010 004 000 00000000 000000 0-0
         # ...
 
-        local SOCKFD=$((${strarr[5]}))
-        if [[ $SOCKFD == 0 ]]; then
-            # No device on this port.
-            continue
-        fi
-        local PORT=$((${strarr[1]}))
+        read # skip headers
+        while read -r line; do
+            read -a strarr <<< "$line"
 
-        # Now figure out if this is the target device or not.
+            local SOCKFD=$((10#${strarr[5]}))
+            if [[ $SOCKFD == 0 ]]; then
+                # No device on this port.
+                continue
+            fi
+            local PORT=$((10#${strarr[1]}))
 
-        read -a strarr < /var/run/vhci_hcd/port$PORT
+            # Now figure out if this is the target device or not.
 
-        # Expected format:
-        # 172.21.0.1 3240 4-2
+            read -a strarr < /var/run/vhci_hcd/port$PORT
 
-        local REMOTE_IP=${strarr[0]}
-        local REMOTE_PORT=${strarr[1]}
-        local REMOTE_BUSID=${strarr[2]}
+            # Expected format:
+            # 172.21.0.1 3240 4-2
 
-        if [[ "$REMOTE_IP" == "$HOST" && "$REMOTE_BUSID" == "$BUSID" ]]; then
-            # Found it.
-            return 0
-        fi
-    done < /sys/devices/platform/vhci_hcd.0/status
+            local REMOTE_IP=${strarr[0]}
+            local REMOTE_PORT=${strarr[1]}
+            local REMOTE_BUSID=${strarr[2]}
+
+            if [[ "$REMOTE_IP" == "$HOST" && "$REMOTE_BUSID" == "$BUSID" ]]; then
+                # Found it.
+                return 0
+            fi
+        done
+    } < /sys/devices/platform/vhci_hcd.0/status
 
     # None of the devices matched the target device.
     return 1
