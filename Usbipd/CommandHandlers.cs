@@ -462,7 +462,8 @@ sealed class CommandHandlers : ICommandHandlers
             console.ReportError($"There is no device with busid '{busId}'.");
             return ExitCode.Failure;
         }
-        if (device.IPAddress is not null)
+        // We allow auto-attach on devices that are already attached.
+        if (!autoAttach && (device.IPAddress is not null))
         {
             console.ReportError($"Device with busid '{busId}' is already attached to a client.");
             return ExitCode.Failure;
