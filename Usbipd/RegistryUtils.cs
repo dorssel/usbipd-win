@@ -29,12 +29,18 @@ static class RegistryUtils
 
     static RegistryKey BaseKey(bool writable) => (writable ? WritableBaseKey : ReadOnlyBaseKey).Value;
 
+    const string ApplicationFolderName = "APPLICATIONFOLDER";
     const string DevicesName = "Devices";
     const string InstanceIdName = "InstanceId";
     const string DescriptionName = "Description";
     const string AttachedName = "Attached";
     const string BusIdName = "BusId";
     const string IPAddressName = "IPAddress";
+
+    /// <summary>
+    /// <see langword="null"/> if not installed
+    /// </summary>
+    public static string? InstallationFolder { get; } = Registry.LocalMachine.OpenSubKey(DevicesRegistryPath, false)?.GetValue(ApplicationFolderName) as string;
 
     static RegistryKey GetDevicesKey(bool writable)
     {
