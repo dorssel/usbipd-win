@@ -26,7 +26,7 @@ SPDX-License-Identifier: GPL-2.0-only
     <PackageVersion Include="Moq" Version="4.17.2" />
     <PackageVersion Include="MSTest.TestAdapter" Version="2.2.10" />
     <PackageVersion Include="MSTest.TestFramework" Version="2.2.10" />
-    <PackageVersion Include="System.IO.Pipelines" Version="6.0.2" />
+    <PackageVersion Include="System.IO.Pipelines" Version="6.0.3" />
     <PackageVersion Include="coverlet.collector" Version="3.1.2" />
   </ItemGroup>
 </Project>
