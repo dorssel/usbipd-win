@@ -4,10 +4,7 @@ SPDX-FileCopyrightText: 2021 Frans van Dorsselaer
 
 SPDX-License-Identifier: GPL-2.0-only
 -->
-<!--
-  NOTE: Since .NET SDK 6.0.300, the version number is no longer picked up from global.json ... SDK bug?
-  -->
-<Project Sdk="Microsoft.Build.NoTargets/3.4.0">
+<Project Sdk="Microsoft.Build.NoTargets">
 
   <PropertyGroup>
     <!-- This project is not really C#, so disable all analyzers. -->
