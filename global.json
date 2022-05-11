@@ -1,17 +1,10 @@
-/*
- * SPDX-FileCopyrightText: 2021 Frans van Dorsselaer
- *
- * SPDX-License-Identifier: GPL-2.0-only
- */
 {
   "sdk": {
     "version": "6.0.300",
     "allowPrerelease": false,
     "rollForward": "latestFeature"
-  } /*,
-  * NOTE: Since .NET SDK 6.0.300, the version number is no longer picked up by 'dotnet restore' ... SDK bug?
+  },
   "msbuild-sdks": {
     "Microsoft.Build.NoTargets": "3.4.0"
   }
-  */
 }
