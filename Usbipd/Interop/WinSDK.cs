@@ -11,30 +11,11 @@ namespace Usbipd.Interop;
 
 /// <summary>
 /// The remaining Windows SDK stuff that is not yet exposed by CsWin32.
-/// usbioctl.h is not yet scraped by win32metadata.
+/// usbioctl.h is not yet fully scraped by win32metadata.
 /// See: https://github.com/microsoft/win32metadata/issues/691
 /// </summary>
 static class WinSDK
 {
-    public enum IoControl : uint
-    {
-        /// <summary>WinSDK: usbioctl.h</summary>
-        IOCTL_USB_GET_DESCRIPTOR_FROM_NODE_CONNECTION = (PInvoke.FILE_DEVICE_USB << 16) | (PInvoke.FILE_ANY_ACCESS << 14)
-            | (PInvoke.USB_GET_DESCRIPTOR_FROM_NODE_CONNECTION << 2) | (PInvoke.METHOD_BUFFERED),
-
-        /// <summary>WinSDK: usbioctl.h</summary>
-        IOCTL_USB_GET_NODE_CONNECTION_INFORMATION_EX = (PInvoke.FILE_DEVICE_USB << 16) | (PInvoke.FILE_ANY_ACCESS << 14)
-            | (PInvoke.USB_GET_NODE_CONNECTION_INFORMATION_EX << 2) | (PInvoke.METHOD_BUFFERED),
-
-        /// <summary>WinSDK: usbioctl.h</summary>
-        IOCTL_USB_GET_NODE_CONNECTION_INFORMATION_EX_V2 = (PInvoke.FILE_DEVICE_USB << 16) | (PInvoke.FILE_ANY_ACCESS << 14)
-            | (PInvoke.USB_GET_NODE_CONNECTION_INFORMATION_EX_V2 << 2) | (PInvoke.METHOD_BUFFERED),
-
-        /// <summary>WinSDK: usbioctl.h</summary>
-        IOCTL_USB_HUB_CYCLE_PORT = (PInvoke.FILE_DEVICE_USB << 16) | (PInvoke.FILE_ANY_ACCESS << 14)
-            | (PInvoke.USB_HUB_CYCLE_PORT << 2) | (PInvoke.METHOD_BUFFERED),
-    }
-
     /// <summary>WinSDK: usbioctl.h: USB_DESCRIPTOR_REQUEST</summary>
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct UsbDescriptorRequest

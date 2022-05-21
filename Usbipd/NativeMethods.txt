@@ -30,8 +30,7 @@ MAX_PATH
 AdjustTokenPrivileges
 CreateFile
 DeviceIoControl
-// See: https://github.com/microsoft/win32metadata/issues/826
-// DiInstallDevice
+DiInstallDevice
 GetCurrentProcess
 GetTokenInformation
 LookupPrivilegeValue
@@ -114,3 +113,8 @@ FILE_ANY_ACCESS
 FILE_WRITE_ACCESS
 
 TOKEN_ELEVATION_TYPE
+
+IOCTL_USB_GET_DESCRIPTOR_FROM_NODE_CONNECTION
+IOCTL_USB_GET_NODE_CONNECTION_INFORMATION_EX
+IOCTL_USB_GET_NODE_CONNECTION_INFORMATION_EX_V2
+IOCTL_USB_HUB_CYCLE_PORT

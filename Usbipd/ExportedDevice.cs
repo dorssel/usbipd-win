@@ -99,12 +99,12 @@ sealed partial record ExportedDevice
             }
         };
         StructToBytes(request, buf);
-        await hub.IoControlAsync(IoControl.IOCTL_USB_GET_DESCRIPTOR_FROM_NODE_CONNECTION, buf, buf);
+        await hub.IoControlAsync(PInvoke.IOCTL_USB_GET_DESCRIPTOR_FROM_NODE_CONNECTION, buf, buf);
         BytesToStruct(buf.AsSpan(Marshal.SizeOf<UsbDescriptorRequest>()), out USB_CONFIGURATION_DESCRIPTOR configuration);
         buf = new byte[Marshal.SizeOf<UsbDescriptorRequest>() + configuration.wTotalLength];
         request.SetupPacket.wLength = configuration.wTotalLength;
         StructToBytes(request, buf);
-        await hub.IoControlAsync(IoControl.IOCTL_USB_GET_DESCRIPTOR_FROM_NODE_CONNECTION, buf, buf);
+        await hub.IoControlAsync(PInvoke.IOCTL_USB_GET_DESCRIPTOR_FROM_NODE_CONNECTION, buf, buf);
 
         var offset = Marshal.SizeOf<UsbDescriptorRequest>();
         while (offset < buf.Length)
@@ -141,7 +141,7 @@ sealed partial record ExportedDevice
         {
             var data = new UsbNodeConnectionInformationEx() { ConnectionIndex = device.BusId.Value.Port };
             var buf = StructToBytes(data);
-            await hubFile.IoControlAsync(IoControl.IOCTL_USB_GET_NODE_CONNECTION_INFORMATION_EX, buf, buf);
+            await hubFile.IoControlAsync(PInvoke.IOCTL_USB_GET_NODE_CONNECTION_INFORMATION_EX, buf, buf);
             BytesToStruct(buf, out data);
 
             var speed = MapWindowsSpeedToLinuxSpeed((USB_DEVICE_SPEED)data.Speed);
@@ -153,7 +153,7 @@ sealed partial record ExportedDevice
                 SupportedUsbProtocols = UsbProtocols.Usb110 | UsbProtocols.Usb200 | UsbProtocols.Usb300,
             };
             var buf2 = StructToBytes(data2);
-            await hubFile.IoControlAsync(IoControl.IOCTL_USB_GET_NODE_CONNECTION_INFORMATION_EX_V2, buf2, buf2);
+            await hubFile.IoControlAsync(PInvoke.IOCTL_USB_GET_NODE_CONNECTION_INFORMATION_EX_V2, buf2, buf2);
             BytesToStruct(buf2, out data2);
 
             if ((data2.SupportedUsbProtocols & UsbProtocols.Usb300) != 0)
