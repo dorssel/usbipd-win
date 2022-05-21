@@ -12,7 +12,6 @@ using Microsoft.Win32.SafeHandles;
 using Windows.Win32;
 using Windows.Win32.Foundation;
 using Windows.Win32.Storage.FileSystem;
-using Windows.Win32.System.IO;
 
 namespace Usbipd;
 
@@ -51,7 +50,7 @@ sealed class DeviceFile : IDisposable
         return (HANDLE)FileHandle.DangerousGetHandle();
     }
 
-    Task<uint> IoControlAsync(uint ioControlCode, byte[]? input, byte[]? output, bool exactOutput = true)
+    public Task<uint> IoControlAsync(uint ioControlCode, byte[]? input, byte[]? output, bool exactOutput = true)
     {
         var taskCompletionSource = new TaskCompletionSource<uint>();
 
@@ -81,7 +80,7 @@ sealed class DeviceFile : IDisposable
             fixed (byte* pInput = input, pOutput = output)
             {
                 if (!PInvoke.DeviceIoControl(FileHandle, ioControlCode, pInput, (uint)(input?.Length ?? 0),
-                    pOutput, (uint)(output?.Length ?? 0), null, (OVERLAPPED*)nativeOverlapped))
+                    pOutput, (uint)(output?.Length ?? 0), null, nativeOverlapped))
                 {
                     var errorCode = (WIN32_ERROR)Marshal.GetLastWin32Error();
                     if (errorCode != WIN32_ERROR.ERROR_IO_PENDING)

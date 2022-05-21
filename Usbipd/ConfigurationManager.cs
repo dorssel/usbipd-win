@@ -350,8 +350,10 @@ static class ConfigurationManager
             var friendlyName = "USBIP Shared Device";
             fixed (char* pValue = friendlyName)
             {
-                DEVPROPKEY devPropKey = PInvoke.DEVPKEY_Device_FriendlyName;
-                PInvoke.CM_Set_DevNode_Property(deviceNode, &devPropKey, PInvoke.DEVPROP_TYPE_STRING, (byte*)pValue, (uint)(friendlyName.Length + 1) * sizeof(char), 0).ThrowOnError(nameof(PInvoke.CM_Set_DevNode_Property));
+                fixed (DEVPROPKEY* pDevPropKey = &PInvoke.DEVPKEY_Device_FriendlyName)
+                {
+                    PInvoke.CM_Set_DevNode_Property(deviceNode, pDevPropKey, PInvoke.DEVPROP_TYPE_STRING, (byte*)pValue, (uint)(friendlyName.Length + 1) * sizeof(char), 0).ThrowOnError(nameof(PInvoke.CM_Set_DevNode_Property));
+                }
             }
         }
     }
@@ -406,7 +408,7 @@ static class ConfigurationManager
 
                 var data = new UsbCyclePortParams() { ConnectionIndex = busId.Port };
                 var buf = Tools.StructToBytes(data);
-                hubFile.IoControlAsync(IoControl.IOCTL_USB_HUB_CYCLE_PORT, buf, buf).Wait();
+                hubFile.IoControlAsync(PInvoke.IOCTL_USB_HUB_CYCLE_PORT, buf, buf).Wait();
             }
             catch (ConfigurationManagerException) { }
             catch (Win32Exception) { }

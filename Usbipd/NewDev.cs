@@ -5,9 +5,7 @@
 using System;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
-using System.Runtime.Versioning;
 using System.Threading;
-using Microsoft.Win32.SafeHandles;
 using Windows.Win32;
 using Windows.Win32.Devices.DeviceAndDriverInstallation;
 using Windows.Win32.Foundation;
@@ -16,42 +14,13 @@ namespace Usbipd;
 
 static class NewDev
 {
-    sealed class SafeDeviceInfoSet : SafeHandleZeroOrMinusOneIsInvalid
-    {
-        public unsafe SafeDeviceInfoSet(void* handle)
-            : base(true)
-        {
-            SetHandle((IntPtr)handle);
-        }
-
-        public static unsafe implicit operator void*(SafeDeviceInfoSet deviceInfoSet) =>
-            deviceInfoSet.IsClosed || deviceInfoSet.IsInvalid ? PInvoke.INVALID_HANDLE_VALUE.Value.ToPointer() : deviceInfoSet.handle.ToPointer();
-
-        protected override bool ReleaseHandle()
-        {
-            unsafe
-            {
-                return PInvoke.SetupDiDestroyDeviceInfoList(handle.ToPointer());
-            }
-        }
-    }
-
-    static class NativeMethods
-    {
-        // NOTE: Workaround for https://github.com/microsoft/win32metadata/issues/826
-        [DllImport("NewDev", ExactSpelling = true, SetLastError = true)]
-        [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
-        [SupportedOSPlatform("windows6.0.6000")]
-        internal static extern unsafe BOOL DiInstallDevice(HWND hwndParent, void* DeviceInfoSet, SP_DEVINFO_DATA* DeviceInfoData, [Optional] SP_DRVINFO_DATA_V2_W* DriverInfoData, uint Flags, [Optional] BOOL* NeedReboot);
-    }
-
     public static bool ForceVBoxDriver(string originalInstanceId)
     {
         BOOL reboot = false;
         unsafe
         {
             // First, we must set a NULL driver to clear any existing Device Setup Class.
-            using var deviceInfoSet = new SafeDeviceInfoSet(PInvoke.SetupDiCreateDeviceInfoList((Guid*)null, default));
+            using var deviceInfoSet = PInvoke.SetupDiCreateDeviceInfoList((Guid?)null, default);
             if (deviceInfoSet.IsInvalid)
             {
                 throw new Win32Exception(nameof(PInvoke.SetupDiCreateDeviceInfoList));
@@ -62,7 +31,7 @@ static class NewDev
             };
             PInvoke.SetupDiOpenDeviceInfo(deviceInfoSet, originalInstanceId, default, 0, &deviceInfoData).ThrowOnError(nameof(PInvoke.SetupDiOpenDeviceInfo));
             BOOL tmpReboot;
-            NativeMethods.DiInstallDevice(default, deviceInfoSet, &deviceInfoData, null, PInvoke.DIIDFLAG_INSTALLNULLDRIVER, &tmpReboot).ThrowOnError(nameof(PInvoke.DIIDFLAG_INSTALLNULLDRIVER));
+            PInvoke.DiInstallDevice(default, deviceInfoSet, deviceInfoData, null, PInvoke.DIIDFLAG_INSTALLNULLDRIVER, &tmpReboot).ThrowOnError(nameof(PInvoke.DIIDFLAG_INSTALLNULLDRIVER));
             if (tmpReboot)
             {
                 reboot = true;
@@ -76,7 +45,7 @@ static class NewDev
         unsafe
         {
             // Now we can update the driver.
-            using var deviceInfoSet = new SafeDeviceInfoSet(PInvoke.SetupDiCreateDeviceInfoList((Guid*)null, default));
+            using var deviceInfoSet = PInvoke.SetupDiCreateDeviceInfoList((Guid?)null, default);
             if (deviceInfoSet.IsInvalid)
             {
                 throw new Win32Exception(nameof(PInvoke.SetupDiCreateDeviceInfoList));
@@ -101,7 +70,8 @@ static class NewDev
             };
             PInvoke.SetupDiEnumDriverInfo(deviceInfoSet, deviceInfoData, (uint)SETUP_DI_BUILD_DRIVER_DRIVER_TYPE.SPDIT_CLASSDRIVER, 0, ref driverInfoData).ThrowOnError(nameof(PInvoke.SetupDiEnumDriverInfo));
             BOOL tmpReboot;
-            NativeMethods.DiInstallDevice(default, deviceInfoSet, &deviceInfoData, &driverInfoData, 0, &tmpReboot).ThrowOnError(nameof(NativeMethods.DiInstallDevice));
+            // NOTE: Workaround for https://github.com/microsoft/win32metadata/issues/903
+            PInvoke.DiInstallDevice(default, (HDEVINFO)deviceInfoSet.DangerousGetHandle(), &deviceInfoData, (SP_DRVINFO_DATA_V2_A*)&driverInfoData, 0, &tmpReboot).ThrowOnError(nameof(PInvoke.DiInstallDevice));
             if (tmpReboot)
             {
                 reboot = true;
@@ -123,7 +93,7 @@ static class NewDev
         unsafe
         {
             // First, we must set a NULL driver, just in case no default driver exists.
-            using var deviceInfoSet = new SafeDeviceInfoSet(PInvoke.SetupDiCreateDeviceInfoList((Guid*)null, default));
+            using var deviceInfoSet = PInvoke.SetupDiCreateDeviceInfoList((Guid?)null, default);
             if (deviceInfoSet.IsInvalid)
             {
                 throw new Win32Exception(nameof(PInvoke.SetupDiCreateDeviceInfoList));
@@ -134,7 +104,7 @@ static class NewDev
             };
             PInvoke.SetupDiOpenDeviceInfo(deviceInfoSet, originalInstanceId, default, 0, &deviceInfoData).ThrowOnError(nameof(PInvoke.SetupDiOpenDeviceInfo));
             BOOL tmpReboot;
-            NativeMethods.DiInstallDevice(default, deviceInfoSet, &deviceInfoData, null, PInvoke.DIIDFLAG_INSTALLNULLDRIVER, &tmpReboot).ThrowOnError(nameof(PInvoke.DIIDFLAG_INSTALLNULLDRIVER));
+            PInvoke.DiInstallDevice(default, deviceInfoSet, deviceInfoData, null, PInvoke.DIIDFLAG_INSTALLNULLDRIVER, &tmpReboot).ThrowOnError(nameof(PInvoke.DIIDFLAG_INSTALLNULLDRIVER));
             if (tmpReboot)
             {
                 reboot = true;
@@ -149,7 +119,7 @@ static class NewDev
         {
             // Now we let Windows install the default PnP driver.
             // We don't fail if no such driver can be found.
-            using var deviceInfoSet = new SafeDeviceInfoSet(PInvoke.SetupDiCreateDeviceInfoList((Guid*)null, default));
+            using var deviceInfoSet = PInvoke.SetupDiCreateDeviceInfoList((Guid?)null, default);
             if (deviceInfoSet.IsInvalid)
             {
                 throw new Win32Exception(nameof(PInvoke.SetupDiCreateDeviceInfoList));
@@ -162,7 +132,7 @@ static class NewDev
             try
             {
                 BOOL tmpReboot;
-                NativeMethods.DiInstallDevice(default, deviceInfoSet, &deviceInfoData, null, 0, &tmpReboot).ThrowOnError(nameof(NativeMethods.DiInstallDevice));
+                PInvoke.DiInstallDevice(default, deviceInfoSet, deviceInfoData, null, 0, &tmpReboot).ThrowOnError(nameof(PInvoke.DiInstallDevice));
                 if (tmpReboot)
                 {
                     reboot = true;
