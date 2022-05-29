@@ -615,8 +615,7 @@ sealed class CommandHandlers : ICommandHandlers
         {
             var wslResult = await ProcessUtils.RunCapturedProcessAsync(
                 WslDistributions.WslPath,
-                (distribution is not null ? new[] { "--distribution", distribution } : Enumerable.Empty<string>()).Concat(
-                    new[] { "--user", "root", "--", "cat", "/sys/devices/platform/vhci_hcd.0/status" }),
+                new[] { "--distribution", distroData.Name, "--user", "root", "--", "cat", "/sys/devices/platform/vhci_hcd.0/status" },
                 Encoding.UTF8, cancellationToken);
             // Expected output:
             //
@@ -636,8 +635,7 @@ sealed class CommandHandlers : ICommandHandlers
         {
             var wslResult = await ProcessUtils.RunCapturedProcessAsync(
                 WslDistributions.WslPath,
-                (distribution is not null ? new[] { "--distribution", distribution } : Enumerable.Empty<string>()).Concat(
-                    new[] { "--user", "root", "--", "usbip", "version" }),
+                new[] { "--distribution", distroData.Name, "--user", "root", "--", "usbip", "version" },
                 Encoding.UTF8, cancellationToken);
             // Expected output:
             //
@@ -668,8 +666,7 @@ sealed class CommandHandlers : ICommandHandlers
             {
                 var wslResult = await ProcessUtils.RunCapturedProcessAsync(
                     WslDistributions.WslPath,
-                    (distribution is not null ? new[] { "--distribution", distribution } : Enumerable.Empty<string>()).Concat(
-                        new[] { "--user", "root", "--", "bash", "-c", $"echo < /dev/tcp/{distros.HostAddress}/{Interop.UsbIp.USBIP_PORT}" }),
+                    new[] { "--distribution", distroData.Name, "--user", "root", "--", "bash", "-c", $"echo < /dev/tcp/{distros.HostAddress}/{Interop.UsbIp.USBIP_PORT}" },
                     Encoding.UTF8, linkedTokenSource.Token);
             }
             catch (OperationCanceledException) when (timeoutTokenSource.IsCancellationRequested)
@@ -683,8 +680,7 @@ sealed class CommandHandlers : ICommandHandlers
         {
             var wslResult = await ProcessUtils.RunUncapturedProcessAsync(
                 WslDistributions.WslPath,
-                (distribution is not null ? new[] { "--distribution", distribution } : Enumerable.Empty<string>()).Concat(
-                    new[] { "--user", "root", "--", "usbip", "attach", $"--remote={distros.HostAddress}", $"--busid={busId}" }),
+                new[] { "--distribution", distroData.Name, "--user", "root", "--", "usbip", "attach", $"--remote={distros.HostAddress}", $"--busid={busId}" },
                 cancellationToken);
             if (wslResult != 0)
             {
@@ -707,8 +703,7 @@ sealed class CommandHandlers : ICommandHandlers
 
             await ProcessUtils.RunUncapturedProcessAsync(
                 WslDistributions.WslPath,
-                (distribution is not null ? new[] { "--distribution", distribution } : Enumerable.Empty<string>()).Concat(
-                    new[] { "--user", "root", "--", "bash", scriptLinuxPath, distros.HostAddress.ToString(), busId.ToString() }),
+                new[] { "--distribution", distroData.Name, "--user", "root", "--", "bash", scriptLinuxPath, distros.HostAddress.ToString(), busId.ToString() },
                 cancellationToken);
             // This process always ends in failure, as it is supposed to run an endless loop.
             // This may be intended by the user (Ctrl+C, WSL shutdown), others may be real errors.
