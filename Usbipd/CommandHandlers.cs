@@ -479,29 +479,81 @@ sealed class CommandHandlers : ICommandHandlers
             return ExitCode.Failure;
         }
 
-        // Make sure the distro is running before we attach. While WSL is capable of
-        // starting on the fly when wsl.exe is invoked, that will cause confusing behavior
-        // where we might attach a USB device to WSL, then immediately detach it when the
-        // WSL VM is shutdown shortly afterwards.
-        var distroData = distribution is not null ? distros.LookupByName(distribution) : distros.DefaultDistribution;
-
         // The order of the following checks is important, as later checks can only succeed if earlier checks already passed.
 
         // 1) Distro must exist
 
-        if (distroData is null)
-        {
-            console.ReportError(distribution is not null
-                ? $"The WSL distribution '{distribution}' does not exist."
-                : "No default WSL distribution exists."
-            );
-            return ExitCode.Failure;
-        }
+        // Figure out which distribution to use. WSL can be in many states:
+        // (a) not installed at all (already handled by GetDistributionsAsync above)
+        // (b) installed but, with 0 distributions (error)
+        // (c) 1 distribution, but it is not marked as default (warning)
+        // (d) 1 distribution, correctly marked as default (ok)
+        // (e) more than 1 distribution, none marked as default (error, or warning when using --distribution)
+        // (f) more than 1 distribution, one of which is default (ok)
+        // This is administered by WSL in HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Lxss.
+        //
+        // We provide enough instructions to the user how to fix whatever
+        // error/warning we give. Or else we get flooded with "it doesn't work" issues...
 
-        if ((distros.Distributions.Count() > 1) && (distribution is null))
+        WslDistributions.Distribution distroData;
+        if (distribution is null)
         {
-            // This helps out users that may not be aware that they have more than one and have the default set to the "wrong" one.
-            console.ReportInfo($"Using default distribution '{distroData.Name}'.");
+            // The user did not specifically provide the --distribution option.
+            switch (distros.Distributions.Count())
+            {
+                case 0:
+                    // case (b)
+                    console.ReportError("There are no WSL distributions installed; see https://docs.microsoft.com/windows/wsl/basic-commands#install on how to install one.");
+                    return ExitCode.Failure;
+                case 1:
+                    if (distros.DefaultDistribution is null)
+                    {
+                        // case (c)
+                        // This can happen if the user removed the default distribution.
+                        distroData = distros.Distributions.Single();
+                        console.ReportWarning($"Using the only available WSL distribution '{distroData.Name}', but it should have been set as default; " +
+                            "see https://docs.microsoft.com/windows/wsl/basic-commands#set-default-linux-distribution on how to fix this.");
+                    }
+                    else
+                    {
+                        // case (d)
+                        distroData = distros.DefaultDistribution;
+                    }
+                    break;
+                default:
+                    if (distros.DefaultDistribution is null)
+                    {
+                        // case (e)
+                        // This can happen if the user removed the default distribution.
+                        console.ReportError("More than one WSL distribution is available, but none is set as default; " +
+                            "see https://docs.microsoft.com/windows/wsl/basic-commands#set-default-linux-distribution on how to fix this.");
+                        return ExitCode.Failure;
+                    }
+                    else
+                    {
+                        // case (f)
+                        distroData = distros.DefaultDistribution;
+                        // This helps out users that may not be aware that they have more than one and have the default set to the "wrong" one.
+                        console.ReportInfo($"Using default WSL distribution '{distroData.Name}'; specify the '--distribution' option to select a different one.");
+                    }
+                    break;
+            }
+        }
+        else if (distros.LookupByName(distribution) is WslDistributions.Distribution selectedDistroData)
+        {
+            distroData = selectedDistroData;
+            if (distros.DefaultDistribution is null)
+            {
+                // case (c/e)
+                console.ReportWarning("No WSL distribution is set as default; " +
+                    "see https://docs.microsoft.com/windows/wsl/basic-commands#set-default-linux-distribution on how to fix this.");
+            }
+        }
+        else
+        {
+            console.ReportError($"The WSL distribution '{distribution}' does not exist; " +
+                "see https://docs.microsoft.com/windows/wsl/basic-commands#list-installed-linux-distributions.");
+            return ExitCode.Failure;
         }
 
         // 2) Distro must be correct WSL version
@@ -509,13 +561,13 @@ sealed class CommandHandlers : ICommandHandlers
         switch (distroData.Version)
         {
             case 1:
-                console.ReportError($"The specified WSL distribution is using WSL 1, but WSL 2 is required. Learn how to upgrade at {WslDistributions.SetWslVersionUrl}.");
+                console.ReportError($"The selected WSL distribution is using WSL 1, but WSL 2 is required. Learn how to upgrade at {WslDistributions.SetWslVersionUrl}.");
                 return ExitCode.Failure;
             case 2:
                 // Supported
                 break;
             default:
-                console.ReportError($"The specified WSL distribution is using unsupported WSL {distroData.Version}, but WSL 2 is required.");
+                console.ReportError($"The selected WSL distribution is using unsupported WSL {distroData.Version}, but WSL 2 is required.");
                 return ExitCode.Failure;
         }
 
@@ -523,7 +575,12 @@ sealed class CommandHandlers : ICommandHandlers
 
         if (!distroData.IsRunning)
         {
-            console.ReportError($"The specified WSL distribution is not running.");
+            // Make sure the distro is running before we attach. While WSL is capable of
+            // starting on the fly when wsl.exe is invoked, that will cause confusing behavior
+            // where we might attach a USB device to WSL, then immediately detach it when the
+            // WSL VM is shutdown shortly afterwards.
+
+            console.ReportError($"The selected WSL distribution is not running; keep a command prompt to the distribution open to leave it running.");
             return ExitCode.Failure;
         }
 
@@ -543,7 +600,7 @@ sealed class CommandHandlers : ICommandHandlers
 
         if (distroData.IPAddress is null)
         {
-            console.ReportError($"The specified WSL distribution cannot be reached via the WSL virtual switch; try restarting the WSL distribution.");
+            console.ReportError($"The selected WSL distribution cannot be reached via the WSL virtual switch; try restarting the WSL distribution.");
             return ExitCode.Failure;
         }
 
