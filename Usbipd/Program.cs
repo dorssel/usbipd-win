@@ -48,7 +48,7 @@ static class Program
         if (!BusId.TryParse(argumentResult.Tokens[0].Value, out var busId))
         {
             argumentResult.ErrorMessage = LocalizationResources.Instance.ArgumentConversionCannotParseForOption(argumentResult.Tokens[0].Value,
-                (argumentResult.Parent as OptionResult)?.Token.Value ?? string.Empty, typeof(BusId));
+                (argumentResult.Parent as OptionResult)?.Token?.Value ?? string.Empty, typeof(BusId));
         }
         return busId;
     }
@@ -58,7 +58,7 @@ static class Program
         if (!Guid.TryParse(argumentResult.Tokens[0].Value, out var guid))
         {
             argumentResult.ErrorMessage = LocalizationResources.Instance.ArgumentConversionCannotParseForOption(argumentResult.Tokens[0].Value,
-                (argumentResult.Parent as OptionResult)?.Token.Value ?? string.Empty, typeof(Guid));
+                (argumentResult.Parent as OptionResult)?.Token?.Value ?? string.Empty, typeof(Guid));
         }
         return guid;
     }
@@ -68,7 +68,7 @@ static class Program
         if (!VidPid.TryParse(argumentResult.Tokens[0].Value, out var vidPid))
         {
             argumentResult.ErrorMessage = LocalizationResources.Instance.ArgumentConversionCannotParseForOption(argumentResult.Tokens[0].Value,
-                (argumentResult.Parent as OptionResult)?.Token.Value ?? string.Empty, typeof(VidPid));
+                (argumentResult.Parent as OptionResult)?.Token?.Value ?? string.Empty, typeof(VidPid));
         }
         return vidPid;
     }
@@ -130,9 +130,9 @@ static class Program
     internal static ExitCode Run(IConsole? optionalTestConsole, ICommandHandlers commandHandlers, params string[] args)
     {
         var rootCommand = new RootCommand("Shares locally connected USB devices to other machines, including Hyper-V guests and WSL 2.");
-        rootCommand.SetHandler((IConsole console, HelpBuilder helpBuilder) =>
+        rootCommand.SetHandler((invocationContext) =>
         {
-            helpBuilder.Write(rootCommand, console.Out.CreateTextWriter());
+            invocationContext.HelpBuilder.Write(rootCommand, invocationContext.Console.Out.CreateTextWriter());
         });
 
         {
@@ -151,11 +151,12 @@ static class Program
             //
             //  bind [--force]
             //
-            var forceOption = new Option(
+            var forceOption = new Option<bool>(
                 aliases: new[] { "--force", "-f" }
             )
             {
                 Description = "Force binding; the host cannot use the device",
+                Arity = ArgumentArity.Zero,
             };
             //
             //  bind [--hardware-id <VID>:<PID>]
@@ -189,7 +190,7 @@ static class Program
             {
                 ValidateOneOf(commandResult, busIdOption, hardwareIdOption);
             });
-            bindCommand.SetHandler(async (InvocationContext invocationContext) =>
+            bindCommand.SetHandler(async (invocationContext) =>
             {
                 if (invocationContext.ParseResult.HasOption(busIdOption))
                 {
@@ -216,7 +217,7 @@ static class Program
             //
             var licenseCommand = new Command("license", "Display license information\0"
                 + "Displays license information.");
-            licenseCommand.SetHandler(async (InvocationContext invocationContext) =>
+            licenseCommand.SetHandler(async (invocationContext) =>
             {
                 invocationContext.ExitCode = (int)(
                     await commandHandlers.License(invocationContext.Console, invocationContext.GetCancellationToken())
@@ -230,7 +231,7 @@ static class Program
             //
             var listCommand = new Command("list", "List USB devices\0"
                 + "Lists currently connected USB devices as well as USB devices that are shared but are not currently connected.");
-            listCommand.SetHandler(async (InvocationContext invocationContext) =>
+            listCommand.SetHandler(async (invocationContext) =>
             {
                 invocationContext.ExitCode = (int)(
                     await commandHandlers.List(invocationContext.Console, invocationContext.GetCancellationToken())
@@ -260,7 +261,7 @@ static class Program
             {
                 keyValueArgument,
             };
-            serverCommand.SetHandler(async (InvocationContext invocationContext) =>
+            serverCommand.SetHandler(async (invocationContext) =>
             {
                 invocationContext.ExitCode = (int)await commandHandlers.Server(
                     invocationContext.ParseResult.GetValueForArgument(keyValueArgument) ?? Array.Empty<string>(),
@@ -274,7 +275,7 @@ static class Program
             //
             var stateCommand = new Command("state", "Output state in JSON\0"
                 + "Outputs the current state of all USB devices in machine-readable JSON suitable for scripted automation.");
-            stateCommand.SetHandler(async (InvocationContext invocationContext) =>
+            stateCommand.SetHandler(async (invocationContext) =>
             {
                 invocationContext.ExitCode = (int)(
                     await commandHandlers.State(
@@ -287,11 +288,12 @@ static class Program
             //
             //  unbind [--all]
             //
-            var allOption = new Option(
+            var allOption = new Option<bool>(
                 aliases: new[] { "--all", "-a" }
             )
             {
                 Description = "Stop sharing all devices",
+                Arity = ArgumentArity.Zero,
             };
             //
             //  unbind [--busid <BUSID>]
@@ -349,7 +351,7 @@ static class Program
             {
                 ValidateOneOf(commandResult, allOption, busIdOption, guidOption, hardwareIdOption);
             });
-            unbindCommand.SetHandler(async (InvocationContext invocationContext) =>
+            unbindCommand.SetHandler(async (invocationContext) =>
             {
                 if (invocationContext.ParseResult.HasOption(allOption))
                 {
@@ -387,21 +389,22 @@ static class Program
             //
             var wslCommand = new Command("wsl", "Convenience commands for WSL\0"
                 + "Convenience commands for attaching and detaching devices to Windows Subsystem for Linux.");
-            wslCommand.SetHandler((IConsole console, HelpBuilder helpBuilder) =>
+            wslCommand.SetHandler((invocationContext) =>
             {
                 // 'wsl' always expects a subcommand. Without a subcommand, just act as if '--help' was provided.
-                helpBuilder.Write(wslCommand, console.Out.CreateTextWriter());
+                invocationContext.HelpBuilder.Write(wslCommand, invocationContext.Console.Out.CreateTextWriter());
             });
             rootCommand.AddCommand(wslCommand);
             {
                 //
                 //  wsl attach [--auto-attach]
                 //
-                var autoAttachOption = new Option(
+                var autoAttachOption = new Option<bool>(
                     aliases: new[] { "--auto-attach", "-a" }
                 )
                 {
                     Description = "Automatically re-attach when the device is detached or unplugged",
+                    Arity = ArgumentArity.Zero,
                 };
                 //
                 //  wsl attach --busid <BUSID>
@@ -470,7 +473,7 @@ static class Program
                 {
                     ValidateOneOf(commandResult, busIdOption, hardwareIdOption);
                 });
-                attachCommand.SetHandler(async (InvocationContext invocationContext) =>
+                attachCommand.SetHandler(async (invocationContext) =>
                 {
                     if (invocationContext.ParseResult.HasOption(busIdOption))
                     {
@@ -497,11 +500,12 @@ static class Program
                 //
                 //  wsl detach [--all]
                 //
-                var allOption = new Option(
+                var allOption = new Option<bool>(
                     aliases: new[] { "--all", "-a" }
                 )
                 {
                     Description = "Detach all devices",
+                    Arity = ArgumentArity.Zero,
                 };
                 //
                 //  wsl detach [--busid <BUSID>]
@@ -546,7 +550,7 @@ static class Program
                 {
                     ValidateOneOf(commandResult, allOption, busIdOption, hardwareIdOption);
                 });
-                detachCommand.SetHandler(async (InvocationContext invocationContext) =>
+                detachCommand.SetHandler(async (invocationContext) =>
                 {
                     if (invocationContext.ParseResult.HasOption(allOption))
                     {
@@ -577,7 +581,7 @@ static class Program
                 //
                 var listCommand = new Command("list", "List USB devices\0"
                     + "Lists all USB devices that are available for being attached to a WSL instance.");
-                listCommand.SetHandler(async (InvocationContext invocationContext) =>
+                listCommand.SetHandler(async (invocationContext) =>
                 {
                     invocationContext.ExitCode = (int)(
                         await commandHandlers.WslList(invocationContext.Console, invocationContext.GetCancellationToken())
