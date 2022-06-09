@@ -29,17 +29,47 @@ namespace Usbipd;
 
 sealed class ConnectedClient
 {
+    private static int getFromEnv( string variableName, int default_value=0 )
+    {
+        string? value;
+        int r;
+
+        value = Environment.GetEnvironmentVariable(variableName);
+        if( value == null ) return default_value;
+
+        try {
+            r = Int32.Parse(value);
+        }
+        catch (FormatException)
+        {
+            r = default_value;
+        }
+
+        return r;
+    }
+
     public ConnectedClient(ILogger<ConnectedClient> logger, ClientContext clientContext, IServiceProvider serviceProvider)
     {
         Logger = logger;
         ClientContext = clientContext;
         ServiceProvider = serviceProvider;
 
+        int tcpKeepAliveInterval;
+        int tcpKeepAliveRetryCount;
+        int tcpKeepAliveTime;
+
+        tcpKeepAliveInterval   = ConnectedClient.getFromEnv("WINUSBIPD_TCP_KEEP_ALIVE_INTERVAL",1);
+        tcpKeepAliveRetryCount = ConnectedClient.getFromEnv("WINUSBIPD_TCP_KEEP_ALIVE_RETRY_COUNT",5);
+        tcpKeepAliveTime       = ConnectedClient.getFromEnv("WINUSBIPD_TCP_KEEP_ALIVE_TIME",10);
+        Logger.Debug($"tcpKeepAliveInterval={tcpKeepAliveInterval}\n");
+        Logger.Debug($"tcpKeepAliveRetryCount={tcpKeepAliveRetryCount}\n");
+        Logger.Debug($"tcpKeepAliveTime={tcpKeepAliveTime}\n");
+
         var client = clientContext.TcpClient;
         client.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
-        client.Client.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.TcpKeepAliveInterval, 1);
-        client.Client.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.TcpKeepAliveRetryCount, 5);
-        client.Client.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.TcpKeepAliveTime, 10);
+        client.Client.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.TcpKeepAliveInterval, tcpKeepAliveInterval);
+        client.Client.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.TcpKeepAliveRetryCount, tcpKeepAliveRetryCount);
+        client.Client.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.TcpKeepAliveTime, tcpKeepAliveTime);
 
         Stream = client.GetStream();
     }
