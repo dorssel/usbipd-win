@@ -59,8 +59,8 @@ sealed class ConnectedClient
         int tcpKeepAliveTime;
 
         tcpKeepAliveInterval   = ConnectedClient.getFromEnv("WINUSBIPD_TCP_KEEP_ALIVE_INTERVAL",1);
-        tcpKeepAliveRetryCount = ConnectedClient.getFromEnv("WINUSBIPD_TCP_KEEP_ALIVE_RETRY_COUNT",5);
-        tcpKeepAliveTime       = ConnectedClient.getFromEnv("WINUSBIPD_TCP_KEEP_ALIVE_TIME",10);
+        tcpKeepAliveRetryCount = ConnectedClient.getFromEnv("WINUSBIPD_TCP_KEEP_ALIVE_RETRY_COUNT",10);
+        tcpKeepAliveTime       = ConnectedClient.getFromEnv("WINUSBIPD_TCP_KEEP_ALIVE_TIME",30);
         Logger.Debug($"tcpKeepAliveInterval={tcpKeepAliveInterval}\n");
         Logger.Debug($"tcpKeepAliveRetryCount={tcpKeepAliveRetryCount}\n");
         Logger.Debug($"tcpKeepAliveTime={tcpKeepAliveTime}\n");
