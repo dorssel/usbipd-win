@@ -19,7 +19,7 @@
 *.sln   text
 
 *.csproj   text
-*.cs       text
+*.cs       text eol=crlf
 *.props    text
 
 *.wixproj   text
