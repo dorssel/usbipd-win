@@ -104,45 +104,59 @@ SPDX-License-Identifier: GPL-2.0-only
             ActionText and Error tables.
             -->
             <UIRef Id="WixUI_ErrorProgressText" />
-    
+
             <Dialog Id="_Exit" Width="$(var.WizardW)" Height="$(var.WizardH)" Title="$(var.WizardTitle)">
                 <!-- dialog -->
                 <Control Id="BannerBitmap" Type="Bitmap" X="$(var.BannerBitmapX)" Y="$(var.BannerBitmapY)" Width="$(var.BannerBitmapW)" Height="$(var.BannerBitmapH)" TabSkip="yes" Text="banner.png" />
 
                 <!-- wizard -->
                 <Control Id="BottomLine" Type="Line" X="0" Y="$(var.WizardLineY)" Width="$(var.WizardLineW)" Height="0" />
-                <Control Id="Back" Type="PushButton" X="$(var.WizardButtonX1)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
-                         Disabled="yes"
-                         Text="$(var.ButtonBackText)" />
-                <Control Id="Close" Type="PushButton" X="$(var.WizardButtonX2)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
-                         Cancel="yes"
-                         Default="yes"
-                         Text="$(var.ButtonCloseText)">
+                <Control
+                    Id="Back" Type="PushButton" X="$(var.WizardButtonX1)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
+                    Disabled="yes"
+                    Text="$(var.ButtonBackText)"
+                    />
+                <Control
+                    Id="Close" Type="PushButton" X="$(var.WizardButtonX2)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
+                    Cancel="yes"
+                    Default="yes"
+                    Text="$(var.ButtonCloseText)"
+                    >
                     <Publish Event="EndDialog" Value="Exit">1</Publish>
                 </Control>
-                <Control Id="Cancel" Type="PushButton" X="$(var.WizardButtonX3)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
-                         Disabled="yes"
-                         Text="$(var.ButtonCancelText)">
-                </Control>
+                <Control
+                    Id="Cancel" Type="PushButton" X="$(var.WizardButtonX3)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
+                    Disabled="yes"
+                    Text="$(var.ButtonCancelText)"
+                    />
 
                 <!-- content -->
-                <Control Id="Title" Type="Text" X="$(var.TitleX)" Y="$(var.TitleY)" Width="$(var.TitleW)" Height="$(var.TitleH)" NoPrefix="yes" TabSkip="yes"
-                         Text="{\Title}Completed" />
+                <Control
+                    Id="Title" Type="Text" X="$(var.TitleX)" Y="$(var.TitleY)" Width="$(var.TitleW)" Height="$(var.TitleH)" NoPrefix="yes" TabSkip="yes"
+                    Text="{\Title}Completed" />
 
-                <Control Id="InstallContent" Type="Text" X="$(var.ContentX)" Y="$(var.ContentY)" Width="$(var.ContentW)" Height="52" NoPrefix="yes" TabSkip="yes" Hidden="yes"
-                         Text="{\Body}[ProductName] was installed successfully.">
+                <Control
+                    Id="InstallContent" Type="Text" X="$(var.ContentX)" Y="$(var.ContentY)" Width="$(var.ContentW)" Height="52" NoPrefix="yes" TabSkip="yes" Hidden="yes"
+                    Text="{\Body}[ProductName] was installed successfully."
+                    >
                     <Condition Action="show">InstallMode = "" OR InstallMode = "Install" OR InstallMode = "Resume"</Condition>
                 </Control>
-                <Control Id="UpdateContent" Type="Text" X="$(var.ContentX)" Y="$(var.ContentY)" Width="$(var.ContentW)" Height="52" NoPrefix="yes" TabSkip="yes" Hidden="yes"
-                         Text="{\Body}[ProductName] was updated successfully.">
+                <Control
+                    Id="UpdateContent" Type="Text" X="$(var.ContentX)" Y="$(var.ContentY)" Width="$(var.ContentW)" Height="52" NoPrefix="yes" TabSkip="yes" Hidden="yes"
+                    Text="{\Body}[ProductName] was updated successfully."
+                    >
                     <Condition Action="show">InstallMode = "Update"</Condition>
                 </Control>
-                <Control Id="RepairContent" Type="Text" X="$(var.ContentX)" Y="$(var.ContentY)" Width="$(var.ContentW)" Height="52" NoPrefix="yes" TabSkip="yes" Hidden="yes"
-                         Text="{\Body}[ProductName] was repaired successfully.">
+                <Control
+                    Id="RepairContent" Type="Text" X="$(var.ContentX)" Y="$(var.ContentY)" Width="$(var.ContentW)" Height="52" NoPrefix="yes" TabSkip="yes" Hidden="yes"
+                    Text="{\Body}[ProductName] was repaired successfully."
+                    >
                     <Condition Action="show">InstallMode = "Repair"</Condition>
                 </Control>
-                <Control Id="RemoveContent" Type="Text" X="$(var.ContentX)" Y="$(var.ContentY)" Width="$(var.ContentW)" Height="52" NoPrefix="yes" TabSkip="yes" Hidden="yes"
-                         Text="{\Body}[ProductName] was removed successfully.">
+                <Control
+                    Id="RemoveContent" Type="Text" X="$(var.ContentX)" Y="$(var.ContentY)" Width="$(var.ContentW)" Height="52" NoPrefix="yes" TabSkip="yes" Hidden="yes"
+                    Text="{\Body}[ProductName] was removed successfully."
+                    >
                     <Condition Action="show">InstallMode = "Remove"</Condition>
                 </Control>
             </Dialog>
@@ -153,26 +167,35 @@ SPDX-License-Identifier: GPL-2.0-only
 
                 <!-- wizard -->
                 <Control Id="BottomLine" Type="Line" X="0" Y="$(var.WizardLineY)" Width="$(var.WizardLineW)" Height="0" />
-                <Control Id="Back" Type="PushButton" X="$(var.WizardButtonX1)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
-                         Disabled="yes"
-                         Text="$(var.ButtonBackText)" />
-                <Control Id="Close" Type="PushButton" X="$(var.WizardButtonX2)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
-                         Cancel="yes"
-                         Default="yes"
-                         Text="$(var.ButtonCloseText)">
+                <Control
+                    Id="Back" Type="PushButton" X="$(var.WizardButtonX1)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
+                    Disabled="yes"
+                    Text="$(var.ButtonBackText)"
+                    />
+                <Control
+                    Id="Close" Type="PushButton" X="$(var.WizardButtonX2)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
+                    Cancel="yes"
+                    Default="yes"
+                    Text="$(var.ButtonCloseText)"
+                    >
                     <Publish Event="EndDialog" Value="Exit">1</Publish>
                 </Control>
-                <Control Id="Cancel" Type="PushButton" X="$(var.WizardButtonX3)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
-                         Disabled="yes"
-                         Text="$(var.ButtonCancelText)">
-                </Control>
+                <Control
+                    Id="Cancel" Type="PushButton" X="$(var.WizardButtonX3)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
+                    Disabled="yes"
+                    Text="$(var.ButtonCancelText)"
+                    />
 
                 <!-- content -->
-                <Control Id="Title" Type="Text" X="$(var.TitleX)" Y="$(var.TitleY)" Width="$(var.TitleW)" Height="$(var.TitleH)" NoPrefix="yes" TabSkip="yes"
-                         Text="{\Title}Canceled" />
+                <Control
+                    Id="Title" Type="Text" X="$(var.TitleX)" Y="$(var.TitleY)" Width="$(var.TitleW)" Height="$(var.TitleH)" NoPrefix="yes" TabSkip="yes"
+                    Text="{\Title}Canceled"
+                    />
 
-                <Control Id="Content" Type="Text" X="$(var.ContentX)" Y="$(var.ContentY)" Width="$(var.ContentW)" Height="52" TabSkip="yes"
-                         Text="{\Body}Your computer was not modified." NoPrefix="yes" />
+                <Control
+                    Id="Content" Type="Text" X="$(var.ContentX)" Y="$(var.ContentY)" Width="$(var.ContentW)" Height="52" TabSkip="yes"
+                    Text="{\Body}Your computer was not modified." NoPrefix="yes"
+                    />
             </Dialog>
 
             <Dialog Id="_FatalError" Width="$(var.WizardW)" Height="$(var.WizardH)" Title="$(var.WizardTitle)">
@@ -181,26 +204,35 @@ SPDX-License-Identifier: GPL-2.0-only
 
                 <!-- wizard -->
                 <Control Id="BottomLine" Type="Line" X="0" Y="$(var.WizardLineY)" Width="$(var.WizardLineW)" Height="0" />
-                <Control Id="Back" Type="PushButton" X="$(var.WizardButtonX1)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
-                         Disabled="yes"
-                         Text="$(var.ButtonBackText)" />
-                <Control Id="Close" Type="PushButton" X="$(var.WizardButtonX2)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
-                         Cancel="yes"
-                         Default="yes"
-                         Text="$(var.ButtonCloseText)">
+                <Control
+                    Id="Back" Type="PushButton" X="$(var.WizardButtonX1)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
+                    Disabled="yes"
+                    Text="$(var.ButtonBackText)"
+                    />
+                <Control
+                    Id="Close" Type="PushButton" X="$(var.WizardButtonX2)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
+                    Cancel="yes"
+                    Default="yes"
+                    Text="$(var.ButtonCloseText)"
+                    >
                     <Publish Event="EndDialog" Value="Exit">1</Publish>
                 </Control>
-                <Control Id="Cancel" Type="PushButton" X="$(var.WizardButtonX3)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
-                         Disabled="yes"
-                         Text="$(var.ButtonCancelText)">
-                </Control>
+                <Control
+                    Id="Cancel" Type="PushButton" X="$(var.WizardButtonX3)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
+                    Disabled="yes"
+                    Text="$(var.ButtonCancelText)"
+                    />
 
                 <!-- content -->
-                <Control Id="Title" Type="Text" X="$(var.TitleX)" Y="$(var.TitleY)" Width="$(var.TitleW)" Height="$(var.TitleH)" NoPrefix="yes" TabSkip="yes"
-                         Text="{\Title}Unsuccessful" />
+                <Control
+                    Id="Title" Type="Text" X="$(var.TitleX)" Y="$(var.TitleY)" Width="$(var.TitleW)" Height="$(var.TitleH)" NoPrefix="yes" TabSkip="yes"
+                    Text="{\Title}Unsuccessful"
+                    />
 
-                <Control Id="Content" Type="Text" X="$(var.ContentX)" Y="$(var.ContentY)" Width="$(var.ContentW)" Height="52" TabSkip="yes"
-                         Text="{\Body}The operation ended prematurely because of an error. Your computer was not modified." NoPrefix="yes" />
+                <Control
+                    Id="Content" Type="Text" X="$(var.ContentX)" Y="$(var.ContentY)" Width="$(var.ContentW)" Height="52" TabSkip="yes"
+                    Text="{\Body}The operation ended prematurely because of an error. Your computer was not modified." NoPrefix="yes"
+                    />
             </Dialog>
 
             <Dialog Id="Install" Width="$(var.WizardW)" Height="$(var.WizardH)" Title="$(var.WizardTitle)">
@@ -209,33 +241,45 @@ SPDX-License-Identifier: GPL-2.0-only
 
                 <!-- wizard -->
                 <Control Id="BottomLine" Type="Line" X="0" Y="$(var.WizardLineY)" Width="$(var.WizardLineW)" Height="0" />
-                <Control Id="Back" Type="PushButton" X="$(var.WizardButtonX1)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
-                         Disabled="yes"
-                         Text="$(var.ButtonBackText)" />
-                <Control Id="Install" Type="PushButton" X="$(var.WizardButtonX2)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
-                         ElevationShield="yes"
-                         Default="yes"
-                         Text="$(var.ButtonInstallText)">
+                <Control
+                    Id="Back" Type="PushButton" X="$(var.WizardButtonX1)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
+                    Disabled="yes"
+                    Text="$(var.ButtonBackText)"
+                    />
+                <Control
+                    Id="Install" Type="PushButton" X="$(var.WizardButtonX2)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
+                    ElevationShield="yes"
+                    Default="yes"
+                    Text="$(var.ButtonInstallText)"
+                    >
                     <Publish Property="InstallMode" Value="Install">1</Publish>
                     <Publish Event="EndDialog" Value="Return">1</Publish>
                 </Control>
-                <Control Id="Cancel" Type="PushButton" X="$(var.WizardButtonX3)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
-                         Cancel="yes"
-                         Text="$(var.ButtonCancelText)">
+                <Control
+                    Id="Cancel" Type="PushButton" X="$(var.WizardButtonX3)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
+                    Cancel="yes"
+                    Text="$(var.ButtonCancelText)"
+                    >
                     <Publish Event="EndDialog" Value="Exit">1</Publish>
                 </Control>
 
                 <!-- content -->
-                <Control Id="Title" Type="Text" X="$(var.TitleX)" Y="$(var.TitleY)" Width="$(var.TitleW)" Height="$(var.TitleH)" TabSkip="yes"
-                         Text="{\Title}Install [ProductName]" NoPrefix="yes" />
+                <Control
+                    Id="Title" Type="Text" X="$(var.TitleX)" Y="$(var.TitleY)" Width="$(var.TitleW)" Height="$(var.TitleH)" TabSkip="yes"
+                    Text="{\Title}Install [ProductName]" NoPrefix="yes"
+                    />
 
-                <Control Id="Content" Type="Text" X="$(var.ContentX)" Y="$(var.ContentY)" Width="$(var.ContentW)" Height="52" TabSkip="yes"
-                         Text="{\Body}This wizard will install [ProductName] on this computer." NoPrefix="yes" />
+                <Control
+                    Id="Content" Type="Text" X="$(var.ContentX)" Y="$(var.ContentY)" Width="$(var.ContentW)" Height="52" TabSkip="yes"
+                    Text="{\Body}This wizard will install [ProductName] on this computer." NoPrefix="yes"
+                    />
 
-                <Control Id="License" Type="Hyperlink" X="30" Y="202" Width="310" Height="24"
-                         ToolTip ="Open the license in your browser"
-                         Text="{\Caption}Copyright © $(var.Year)
-Published under the terms of the &lt;a href=&quot;https://www.gnu.org/licenses/gpl-2.0.html&quot;>GNU General Public License, version 2&lt;/a>." />
+                <Control
+                    Id="License" Type="Hyperlink" X="30" Y="202" Width="310" Height="24"
+                    ToolTip ="Open the license in your browser"
+                    Text="{\Caption}Copyright © $(var.Year)
+Published under the terms of the &lt;a href=&quot;https://www.gnu.org/licenses/gpl-2.0.html&quot;>GNU General Public License, version 2&lt;/a>."
+                    />
             </Dialog>
 
             <Dialog Id="Update" Width="$(var.WizardW)" Height="$(var.WizardH)" Title="$(var.WizardTitle)">
@@ -244,28 +288,38 @@ Published under the terms of the &lt;a href=&quot;https://www.gnu.org/licenses/g
 
                 <!-- wizard -->
                 <Control Id="BottomLine" Type="Line" X="0" Y="$(var.WizardLineY)" Width="$(var.WizardLineW)" Height="0" />
-                <Control Id="Back" Type="PushButton" X="$(var.WizardButtonX1)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
-                         Disabled="yes"
-                         Text="$(var.ButtonBackText)" />
-                <Control Id="Update" Type="PushButton" X="$(var.WizardButtonX2)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
-                         ElevationShield="yes"
-                         Default="yes"
-                         Text="$(var.ButtonUpdateText)">
+                <Control
+                    Id="Back" Type="PushButton" X="$(var.WizardButtonX1)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
+                    Disabled="yes"
+                    Text="$(var.ButtonBackText)"
+                    />
+                <Control
+                    Id="Update" Type="PushButton" X="$(var.WizardButtonX2)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
+                    ElevationShield="yes"
+                    Default="yes"
+                    Text="$(var.ButtonUpdateText)"
+                    >
                     <Publish Property="InstallMode" Value="Update">1</Publish>
                     <Publish Event="EndDialog" Value="Return">1</Publish>
                 </Control>
-                <Control Id="Cancel" Type="PushButton" X="$(var.WizardButtonX3)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
-                         Cancel="yes"
-                         Text="$(var.ButtonCancelText)">
+                <Control
+                    Id="Cancel" Type="PushButton" X="$(var.WizardButtonX3)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
+                    Cancel="yes"
+                    Text="$(var.ButtonCancelText)"
+                    >
                     <Publish Event="EndDialog" Value="Exit">1</Publish>
                 </Control>
 
                 <!-- content -->
-                <Control Id="Title" Type="Text" X="$(var.TitleX)" Y="$(var.TitleY)" Width="$(var.TitleW)" Height="$(var.TitleH)" TabSkip="yes"
-                         Text="{\Title}Update [ProductName]" NoPrefix="yes" />
+                <Control
+                    Id="Title" Type="Text" X="$(var.TitleX)" Y="$(var.TitleY)" Width="$(var.TitleW)" Height="$(var.TitleH)" TabSkip="yes"
+                    Text="{\Title}Update [ProductName]" NoPrefix="yes"
+                    />
 
-                <Control Id="Content" Type="Text" X="$(var.ContentX)" Y="$(var.ContentY)" Width="$(var.ContentW)" Height="52" TabSkip="yes"
-                         Text="{\Body}This wizard will update the current installation of [ProductName]." NoPrefix="yes" />
+                <Control
+                    Id="Content" Type="Text" X="$(var.ContentX)" Y="$(var.ContentY)" Width="$(var.ContentW)" Height="52" TabSkip="yes"
+                    Text="{\Body}This wizard will update the current installation of [ProductName]." NoPrefix="yes"
+                    />
             </Dialog>
 
             <Dialog Id="Resume" Width="$(var.WizardW)" Height="$(var.WizardH)" Title="$(var.WizardTitle)">
@@ -274,28 +328,38 @@ Published under the terms of the &lt;a href=&quot;https://www.gnu.org/licenses/g
 
                 <!-- wizard -->
                 <Control Id="BottomLine" Type="Line" X="0" Y="$(var.WizardLineY)" Width="$(var.WizardLineW)" Height="0" />
-                <Control Id="Back" Type="PushButton" X="$(var.WizardButtonX1)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
-                         Disabled="yes"
-                         Text="$(var.ButtonBackText)" />
-                <Control Id="Resume" Type="PushButton" X="$(var.WizardButtonX2)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
-                         ElevationShield="yes"
-                         Default="yes"
-                         Text="$(var.ButtonResumeText)">
+                <Control
+                    Id="Back" Type="PushButton" X="$(var.WizardButtonX1)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
+                    Disabled="yes"
+                    Text="$(var.ButtonBackText)"
+                    />
+                <Control
+                    Id="Resume" Type="PushButton" X="$(var.WizardButtonX2)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
+                    ElevationShield="yes"
+                    Default="yes"
+                    Text="$(var.ButtonResumeText)"
+                    >
                     <Publish Property="InstallMode" Value="Resume">1</Publish>
                     <Publish Event="EndDialog" Value="Return">1</Publish>
                 </Control>
-                <Control Id="Cancel" Type="PushButton" X="$(var.WizardButtonX3)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
-                         Cancel="yes"
-                         Text="$(var.ButtonCancelText)">
+                <Control
+                    Id="Cancel" Type="PushButton" X="$(var.WizardButtonX3)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
+                    Cancel="yes"
+                    Text="$(var.ButtonCancelText)"
+                    >
                     <Publish Property="ConfirmCancel" Value="1">1</Publish>
                     <Publish Event="EndDialog" Value="Exit">1</Publish>
                 </Control>
 
                 <!-- content -->
-                <Control Id="Title" Type="Text" X="$(var.TitleX)" Y="$(var.TitleY)" Width="$(var.TitleW)" Height="$(var.TitleH)" TabSkip="yes"
-                         Text="{\Title}Resume installation" NoPrefix="yes" />
-                <Control Id="Content" Type="Text" X="$(var.ContentX)" Y="$(var.ContentY)" Width="$(var.ContentW)" Height="52" TabSkip="yes"
-                         Text="{\Body}This wizard will complete the installation of [ProductName]." NoPrefix="yes" />
+                <Control
+                    Id="Title" Type="Text" X="$(var.TitleX)" Y="$(var.TitleY)" Width="$(var.TitleW)" Height="$(var.TitleH)" TabSkip="yes"
+                    Text="{\Title}Resume installation" NoPrefix="yes"
+                    />
+                <Control
+                    Id="Content" Type="Text" X="$(var.ContentX)" Y="$(var.ContentY)" Width="$(var.ContentW)" Height="52" TabSkip="yes"
+                    Text="{\Body}This wizard will complete the installation of [ProductName]." NoPrefix="yes"
+                    />
             </Dialog>
 
             <Dialog Id="Maintenance" Width="$(var.WizardW)" Height="$(var.WizardH)" Title="$(var.WizardTitle)">
@@ -304,24 +368,34 @@ Published under the terms of the &lt;a href=&quot;https://www.gnu.org/licenses/g
 
                 <!-- wizard -->
                 <Control Id="BottomLine" Type="Line" X="0" Y="$(var.WizardLineY)" Width="$(var.WizardLineW)" Height="0" />
-                <Control Id="Back" Type="PushButton" X="$(var.WizardButtonX1)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
-                         Disabled="yes"
-                         Text="$(var.ButtonBackText)" />
-                <Control Id="Next" Type="PushButton" X="$(var.WizardButtonX2)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
-                         Disabled="yes"
-                         Text="$(var.ButtonNextText)" />
-                <Control Id="Cancel" Type="PushButton" X="$(var.WizardButtonX3)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
-                         Cancel="yes"
-                         Text="$(var.ButtonCancelText)">
+                <Control
+                    Id="Back" Type="PushButton" X="$(var.WizardButtonX1)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
+                    Disabled="yes"
+                    Text="$(var.ButtonBackText)"
+                    />
+                <Control
+                    Id="Next" Type="PushButton" X="$(var.WizardButtonX2)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
+                    Disabled="yes"
+                    Text="$(var.ButtonNextText)"
+                    />
+                <Control
+                    Id="Cancel" Type="PushButton" X="$(var.WizardButtonX3)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
+                    Cancel="yes"
+                    Text="$(var.ButtonCancelText)"
+                    >
                     <Publish Event="EndDialog" Value="Exit">1</Publish>
                 </Control>
 
                 <!-- content -->
-                <Control Id="Title" Type="Text" X="$(var.TitleX)" Y="$(var.TitleY)" Width="$(var.TitleW)" Height="$(var.TitleH)" TabSkip="yes"
-                         Text="{\Title}Maintenance of [ProductName]" NoPrefix="yes" />
+                <Control
+                    Id="Title" Type="Text" X="$(var.TitleX)" Y="$(var.TitleY)" Width="$(var.TitleW)" Height="$(var.TitleH)" TabSkip="yes"
+                    Text="{\Title}Maintenance of [ProductName]" NoPrefix="yes"
+                    />
 
-                <Control Id="Content" Type="Text" X="$(var.ContentX)" Y="$(var.ContentY)" Width="$(var.ContentW)" Height="13" TabSkip="yes"
-                         Text="{\Body}These actions manage the current installation of [ProductName]." NoPrefix="yes" />
+                <Control
+                    Id="Content" Type="Text" X="$(var.ContentX)" Y="$(var.ContentY)" Width="$(var.ContentW)" Height="13" TabSkip="yes"
+                    Text="{\Body}These actions manage the current installation of [ProductName]." NoPrefix="yes"
+                    />
 
                 <Control Id="Repair" Type="PushButton" X="30" Y="110" Width="$(var.ButtonW)" Height="$(var.ButtonH)" Text="{\Caption}&amp;Repair">
                     <Publish Property="InstallMode" Value="Repair">1</Publish>
@@ -329,16 +403,20 @@ Published under the terms of the &lt;a href=&quot;https://www.gnu.org/licenses/g
                     <Publish Event="Reinstall" Value="All">1</Publish>
                     <Publish Event="EndDialog" Value="Return">1</Publish>
                 </Control>
-                <Control Id="RepairText" Type="Text" X="30" Y="130" Width="310" Height="26" NoPrefix="yes" TabSkip="yes"
-                         Text="{\Body}Repairs errors by fixing missing and corrupt files, shortcuts, and registry entries." />
+                <Control
+                    Id="RepairText" Type="Text" X="30" Y="130" Width="310" Height="26" NoPrefix="yes" TabSkip="yes"
+                    Text="{\Body}Repairs errors by fixing missing and corrupt files, shortcuts, and registry entries."
+                    />
 
                 <Control Id="Remove" Type="PushButton" ElevationShield="yes" X="30" Y="179" Width="$(var.ButtonW)" Height="$(var.ButtonH)" Text="{\Caption}&amp;Uninstall">
                     <Publish Property="InstallMode" Value="Remove">1</Publish>
                     <Publish Event="Remove" Value="All">1</Publish>
                     <Publish Event="EndDialog" Value="Return">1</Publish>
                 </Control>
-                <Control Id="RemoveText" Type="Text" X="30" Y="199" Width="310" Height="13" NoPrefix="yes" TabSkip="yes"
-                         Text="{\Body}Removes [ProductName] from your computer." />
+                <Control
+                    Id="RemoveText" Type="Text" X="30" Y="199" Width="310" Height="13" NoPrefix="yes" TabSkip="yes"
+                    Text="{\Body}Removes [ProductName] from your computer."
+                    />
             </Dialog>
 
             <Dialog Id="Progress" Width="$(var.WizardW)" Height="$(var.WizardH)" Title="$(var.WizardTitle)" Modeless="yes">
@@ -347,54 +425,75 @@ Published under the terms of the &lt;a href=&quot;https://www.gnu.org/licenses/g
 
                 <!-- wizard -->
                 <Control Id="BottomLine" Type="Line" X="0" Y="$(var.WizardLineY)" Width="$(var.WizardLineW)" Height="0" />
-                <Control Id="Back" Type="PushButton" X="$(var.WizardButtonX1)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
-                         Disabled="yes"
-                         Text="$(var.ButtonBackText)" />
-                <Control Id="Close" Type="PushButton" X="$(var.WizardButtonX2)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
-                         Disabled="yes"
-                         Text="$(var.ButtonNextText)">
-                </Control>
-                <Control Id="Cancel" Type="PushButton" X="$(var.WizardButtonX3)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
-                         Cancel="yes"
-                         Text="$(var.ButtonCancelText)">
+                <Control
+                    Id="Back" Type="PushButton" X="$(var.WizardButtonX1)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
+                    Disabled="yes"
+                    Text="$(var.ButtonBackText)"
+                    />
+                <Control
+                    Id="Close" Type="PushButton" X="$(var.WizardButtonX2)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
+                    Disabled="yes"
+                    Text="$(var.ButtonNextText)"
+                    />
+                <Control
+                    Id="Cancel" Type="PushButton" X="$(var.WizardButtonX3)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
+                    Cancel="yes"
+                    Text="$(var.ButtonCancelText)"
+                    >
                     <Publish Property="ConfirmCancel" Value="1">1</Publish>
                     <Publish Event="EndDialog" Value="Exit">1</Publish>
                 </Control>
 
                 <!-- content -->
-                <Control Id="InstallTitle" Type="Text" X="$(var.TitleX)" Y="$(var.TitleY)" Width="$(var.TitleW)" Height="$(var.TitleH)" NoPrefix="yes" Hidden="yes" TabSkip="yes"
-                         Text="{\Title}Installing [ProductName]">
+                <Control
+                    Id="InstallTitle" Type="Text" X="$(var.TitleX)" Y="$(var.TitleY)" Width="$(var.TitleW)" Height="$(var.TitleH)" NoPrefix="yes" Hidden="yes" TabSkip="yes"
+                    Text="{\Title}Installing [ProductName]"
+                    >
                     <Condition Action="show">InstallMode = "" OR InstallMode = "Install" OR InstallMode = "Resume"</Condition>
                 </Control>
-                <Control Id="InstallContent" Type="Text" X="$(var.ContentX)" Y="$(var.ContentY)" Width="$(var.ContentW)" Height="13" NoPrefix="yes" Hidden="yes" TabSkip="yes"
-                         Text="{\Body}Please wait while this wizard installs [ProductName].">
+                <Control
+                    Id="InstallContent" Type="Text" X="$(var.ContentX)" Y="$(var.ContentY)" Width="$(var.ContentW)" Height="13" NoPrefix="yes" Hidden="yes" TabSkip="yes"
+                    Text="{\Body}Please wait while this wizard installs [ProductName]."
+                    >
                     <Condition Action="show">InstallMode = "" OR InstallMode = "Install" OR InstallMode = "Resume"</Condition>
                 </Control>
 
-                <Control Id="UpdateTitle" Type="Text" X="$(var.TitleX)" Y="$(var.TitleY)" Width="$(var.TitleW)" Height="$(var.TitleH)" NoPrefix="yes" Hidden="yes" TabSkip="yes"
-                         Text="{\Title}Updating [ProductName]">
+                <Control
+                    Id="UpdateTitle" Type="Text" X="$(var.TitleX)" Y="$(var.TitleY)" Width="$(var.TitleW)" Height="$(var.TitleH)" NoPrefix="yes" Hidden="yes" TabSkip="yes"
+                    Text="{\Title}Updating [ProductName]"
+                    >
                     <Condition Action="show">InstallMode = "Update"</Condition>
                 </Control>
-                <Control Id="UpdateContent" Type="Text" X="$(var.ContentX)" Y="$(var.ContentY)" Width="$(var.ContentW)" Height="13" NoPrefix="yes" Hidden="yes" TabSkip="yes"
-                         Text="{\Body}Please wait while this wizard updates [ProductName].">
+                <Control
+                    Id="UpdateContent" Type="Text" X="$(var.ContentX)" Y="$(var.ContentY)" Width="$(var.ContentW)" Height="13" NoPrefix="yes" Hidden="yes" TabSkip="yes"
+                    Text="{\Body}Please wait while this wizard updates [ProductName]."
+                    >
                     <Condition Action="show">InstallMode = "Update"</Condition>
                 </Control>
-                
-                <Control Id="RepairTitle" Type="Text" X="$(var.TitleX)" Y="$(var.TitleY)" Width="$(var.TitleW)" Height="$(var.TitleH)" NoPrefix="yes" Hidden="yes" TabSkip="yes"
-                         Text="{\Title}Repairing [ProductName]">
+
+                <Control
+                    Id="RepairTitle" Type="Text" X="$(var.TitleX)" Y="$(var.TitleY)" Width="$(var.TitleW)" Height="$(var.TitleH)" NoPrefix="yes" Hidden="yes" TabSkip="yes"
+                    Text="{\Title}Repairing [ProductName]"
+                    >
                     <Condition Action="show">InstallMode = "Repair"</Condition>
                 </Control>
-                <Control Id="RepairContent" Type="Text" X="$(var.ContentX)" Y="$(var.ContentY)" Width="$(var.ContentW)" Height="13" NoPrefix="yes" Hidden="yes" TabSkip="yes"
-                         Text="{\Body}Please wait while this wizard repairs [ProductName].">
+                <Control
+                    Id="RepairContent" Type="Text" X="$(var.ContentX)" Y="$(var.ContentY)" Width="$(var.ContentW)" Height="13" NoPrefix="yes" Hidden="yes" TabSkip="yes"
+                    Text="{\Body}Please wait while this wizard repairs [ProductName]."
+                    >
                     <Condition Action="show">InstallMode = "Repair"</Condition>
                 </Control>
 
-                <Control Id="RemoveTitle" Type="Text" X="$(var.TitleX)" Y="$(var.TitleY)" Width="$(var.TitleW)" Height="$(var.TitleH)" NoPrefix="yes" Hidden="yes" TabSkip="yes"
-                         Text="{\Title}Removing [ProductName]">
+                <Control
+                    Id="RemoveTitle" Type="Text" X="$(var.TitleX)" Y="$(var.TitleY)" Width="$(var.TitleW)" Height="$(var.TitleH)" NoPrefix="yes" Hidden="yes" TabSkip="yes"
+                    Text="{\Title}Removing [ProductName]"
+                    >
                     <Condition Action="show">InstallMode = "Remove"</Condition>
                 </Control>
-                <Control Id="RemoveContent" Type="Text" X="$(var.ContentX)" Y="$(var.ContentY)" Width="$(var.ContentW)" Height="13" NoPrefix="yes" Hidden="yes" TabSkip="yes"
-                         Text="{\Body}Please wait while this wizard removes [ProductName].">
+                <Control
+                    Id="RemoveContent" Type="Text" X="$(var.ContentX)" Y="$(var.ContentY)" Width="$(var.ContentW)" Height="13" NoPrefix="yes" Hidden="yes" TabSkip="yes"
+                    Text="{\Body}Please wait while this wizard removes [ProductName]."
+                    >
                     <Condition Action="show">InstallMode = "Remove"</Condition>
                 </Control>
 
@@ -402,8 +501,10 @@ Published under the terms of the &lt;a href=&quot;https://www.gnu.org/licenses/g
                     <Subscribe Event="SetProgress" Attribute="Progress" />
                 </Control>
 
-                <Control Id="StatusLabel" Type="Text" X="30" Y="140" Width="50" Height="13" TabSkip="yes"
-                         Text="{\Body}Status:" NoPrefix="yes" />
+                <Control
+                    Id="StatusLabel" Type="Text" X="30" Y="140" Width="50" Height="13" TabSkip="yes"
+                    Text="{\Body}Status:" NoPrefix="yes"
+                    />
                 <Control Id="ActionText" Type="Text" X="80" Y="140" Width="260" Height="13" NoPrefix="yes" NoWrap="yes" TabSkip="yes">
                     <Subscribe Event="ActionText" Attribute="Text" />
                 </Control>
@@ -456,27 +557,37 @@ Published under the terms of the &lt;a href=&quot;https://www.gnu.org/licenses/g
 
                 <!-- wizard -->
                 <Control Id="BottomLine" Type="Line" X="0" Y="$(var.WizardLineY)" Width="$(var.WizardLineW)" Height="0" />
-                <Control Id="Back" Type="PushButton" X="$(var.WizardButtonX1)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
-                         Disabled="yes"
-                         Text="$(var.ButtonBackText)" />
-                <Control Id="Next" Type="PushButton" X="$(var.WizardButtonX2)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
-                         Default="yes"
-                         Text="$(var.ButtonNextText)">
+                <Control
+                    Id="Back" Type="PushButton" X="$(var.WizardButtonX1)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
+                    Disabled="yes"
+                    Text="$(var.ButtonBackText)"
+                    />
+                <Control
+                    Id="Next" Type="PushButton" X="$(var.WizardButtonX2)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
+                    Default="yes"
+                    Text="$(var.ButtonNextText)"
+                    >
                     <Publish Event="RMShutdownAndRestart" Value="0">RMOption = "UseRM"</Publish>
                     <Publish Event="EndDialog" Value="Return">1</Publish>
                 </Control>
-                <Control Id="Cancel" Type="PushButton" X="$(var.WizardButtonX3)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
-                         Cancel="yes"
-                         Text="$(var.ButtonCancelText)">
+                <Control
+                    Id="Cancel" Type="PushButton" X="$(var.WizardButtonX3)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
+                    Cancel="yes"
+                    Text="$(var.ButtonCancelText)"
+                    >
                     <Publish Property="ConfirmCancel" Value="1">1</Publish>
                     <Publish Event="EndDialog" Value="Exit">1</Publish>
                 </Control>
 
                 <!-- content -->
-                <Control Id="Title" Type="Text" X="$(var.TitleX)" Y="$(var.TitleY)" Width="$(var.TitleW)" Height="$(var.TitleH)" TabSkip="yes"
-                         Text="{\Title}Files in use" NoPrefix="yes" />
-                <Control Id="Content" Type="Text" X="$(var.ContentX)" Y="$(var.ContentY)" Width="$(var.ContentW)" Height="13" TabSkip="yes"
-                         Text="{\Body}The following applications should be closed before continuing:" NoPrefix="yes" />
+                <Control
+                    Id="Title" Type="Text" X="$(var.TitleX)" Y="$(var.TitleY)" Width="$(var.TitleW)" Height="$(var.TitleH)" TabSkip="yes"
+                    Text="{\Title}Files in use" NoPrefix="yes"
+                    />
+                <Control
+                    Id="Content" Type="Text" X="$(var.ContentX)" Y="$(var.ContentY)" Width="$(var.ContentW)" Height="13" TabSkip="yes"
+                    Text="{\Body}The following applications should be closed before continuing:" NoPrefix="yes"
+                    />
                 <Control Id="List" Type="ListBox" X="30" Y="100" Width="310" Height="80" Property="FileInUseProcess" Text="{\Caption}" />
                 <Control Id="ShutdownOption" Type="RadioButtonGroup" X="30" Y="180" Width="310" Height="36" Property="RMOption">
                     <RadioButtonGroup Property="RMOption">
@@ -495,28 +606,38 @@ Published under the terms of the &lt;a href=&quot;https://www.gnu.org/licenses/g
 
                 <!-- wizard -->
                 <Control Id="BottomLine" Type="Line" X="0" Y="$(var.WizardLineY)" Width="$(var.WizardLineW)" Height="0" />
-                <Control Id="Retry" Type="PushButton" X="$(var.WizardButtonX1)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
-                         Default="yes"
-                         Text="$(var.ButtonRetryText)">
+                <Control
+                    Id="Retry" Type="PushButton" X="$(var.WizardButtonX1)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
+                    Default="yes"
+                    Text="$(var.ButtonRetryText)"
+                    >
                     <Publish Event="EndDialog" Value="Retry">1</Publish>
                 </Control>
-                <Control Id="Ignore" Type="PushButton" X="$(var.WizardButtonX2)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
-                         Default="yes"
-                         Text="$(var.ButtonIgnoreText)">
+                <Control
+                    Id="Ignore" Type="PushButton" X="$(var.WizardButtonX2)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
+                    Default="yes"
+                    Text="$(var.ButtonIgnoreText)"
+                    >
                     <Publish Event="EndDialog" Value="Ignore">1</Publish>
                 </Control>
-                <Control Id="Cancel" Type="PushButton" X="$(var.WizardButtonX3)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
-                         Cancel="yes"
-                         Text="$(var.ButtonCancelText)">
+                <Control
+                    Id="Cancel" Type="PushButton" X="$(var.WizardButtonX3)" Y="$(var.WizardButtonY)" Width="$(var.ButtonW)" Height="$(var.ButtonH)"
+                    Cancel="yes"
+                    Text="$(var.ButtonCancelText)"
+                    >
                     <Publish Property="ConfirmCancel" Value="1">1</Publish>
                     <Publish Event="EndDialog" Value="Exit">1</Publish>
                 </Control>
 
                 <!-- content -->
-                <Control Id="Title" Type="Text" X="$(var.TitleX)" Y="$(var.TitleY)" Width="$(var.TitleW)" Height="$(var.TitleH)" TabSkip="yes"
-                         Text="{\Title}Files in use" NoPrefix="yes" />
-                <Control Id="Content" Type="Text" X="$(var.ContentX)" Y="$(var.ContentY)" Width="$(var.ContentW)" Height="13" TabSkip="yes"
-                         Text="{\Body}The following applications should be closed before continuing:" NoPrefix="yes" />
+                <Control
+                    Id="Title" Type="Text" X="$(var.TitleX)" Y="$(var.TitleY)" Width="$(var.TitleW)" Height="$(var.TitleH)" TabSkip="yes"
+                    Text="{\Title}Files in use" NoPrefix="yes"
+                    />
+                <Control
+                    Id="Content" Type="Text" X="$(var.ContentX)" Y="$(var.ContentY)" Width="$(var.ContentW)" Height="13" TabSkip="yes"
+                    Text="{\Body}The following applications should be closed before continuing:" NoPrefix="yes"
+                    />
                 <Control Id="List" Type="ListBox" X="30" Y="100" Width="310" Height="116" Property="FileInUseProcess" Text="{\Caption}" />
             </Dialog>
         </UI>
