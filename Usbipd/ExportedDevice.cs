@@ -179,7 +179,7 @@ sealed partial record ExportedDevice
             {
                 // This may or may not fail if the device is disabled.
                 // Failure is not fatal, it just means that the export data will not contain
-                // the interface list, which only makes the identification of the 
+                // the interface list, which only makes the identification of the
                 // device by the user a little more difficult.
                 interfaces = await GetInterfacesAsync(hubFile, device.BusId.Value.Port);
             }

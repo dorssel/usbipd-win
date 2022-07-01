@@ -365,7 +365,7 @@ static class ConfigurationManager
         : IDisposable
     {
         public RestartingDevice(string instanceId)
-             : this(Locate_DevNode(instanceId, true))
+            : this(Locate_DevNode(instanceId, true))
         {
         }
 
