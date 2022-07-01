@@ -39,5 +39,6 @@ jobs:
           VALIDATE_ALL_CODEBASE: true
           # COPYING.md is the verbatim GPL text, which does not pass
           FILTER_REGEX_EXCLUDE: COPYING.md
+          VALIDATE_JSCPD: false # Way too sensitive
           DEFAULT_BRANCH: master
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
