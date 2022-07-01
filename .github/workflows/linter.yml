@@ -3,8 +3,17 @@
 # SPDX-License-Identifier: GPL-2.0-only
 
 ---
-
+#################################
+#################################
+## Super Linter GitHub Actions ##
+#################################
+#################################
 name: Lint Code Base
+
+#
+# Documentation:
+# https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions
+#
 
 on:
   push:
@@ -14,17 +23,21 @@ on:
 
 jobs:
   lint:
+    name: Lint Code Base
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout
+      - name: Checkout Code
         uses: actions/checkout@v3
         with:
           # Full git history is needed to get a proper list of changed files within `super-linter`
           fetch-depth: 0
 
-      - name: Lint
+      - name: Lint Code Base
         uses: github/super-linter@v4
         env:
           VALIDATE_ALL_CODEBASE: true
+          # COPYING.md is the verbatim GPL text, which does not pass
+          FILTER_REGEX_EXCLUDE: COPYING.md
           DEFAULT_BRANCH: master
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
