@@ -15,3 +15,11 @@ DISABLE:
 SHOW_ELAPSED_TIME: true
 FILEIO_REPORTER: false
 # DISABLE_ERRORS: true # Uncomment if you want MegaLinter to detect errors but not block CI to pass
+XML_XMLLINT_FILE_EXTENSIONS:
+  - .xml
+  - .xslt
+  - .csproj
+  - .props
+  - .pubxml
+  - .wixproj
+  - .wxs

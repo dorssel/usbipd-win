@@ -1,9 +1,0 @@
-// SPDX-FileCopyrightText: 2021 Frans van Dorsselaer
-//
-// SPDX-License-Identifier: GPL-2.0-only
-
-{
-    "default": true,
-    // determined by GitHub editor (166) and allowing for diff/patch decoration
-    "MD013": { "line_length": 160 }
-}
