@@ -3,6 +3,8 @@
 # SPDX-License-Identifier: GPL-2.0-only
 
 ---
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+
 name: REUSE
 
 on:

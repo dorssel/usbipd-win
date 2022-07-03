@@ -8,16 +8,17 @@ SPDX-License-Identifier: GPL-2.0-only
 
 ## Supported Versions
 
-For each listed major.minor version, only the latest release contains all the security fixes,
-i.e. the release with the highest 'x' in 'major.minor.x'.
+For each supported major.minor.patch version, only the latest release for the listed major version contains the latest security fixes;
+i.e., the release with the highest 'x.y' in 'major.x.y'.
 
 Please consult [Issues](https://github.com/dorssel/usbipd-win/issues) for any known outstanding security
 vulnerabilities in the latest releases.
 
 | Version | Supported          |
-| ------- | ------------------ |
-| 1.0.x   | :white_check_mark: |
-| < 1.0   | :x:                |
+|---------|--------------------|
+| 2.x.y   | :heavy_check_mark: |
+| 1.x.y   | :x:                |
+| 0.x.y   | :x:                |
 
 ## Reporting a Vulnerability
 
