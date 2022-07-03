@@ -11,7 +11,7 @@
 # ENABLE_LINTERS: # If you use ENABLE_LINTERS variable, all other linters will be disabled by default
 DISABLE:
   - COPYPASTE # Comment to enable checks of excessive copy-pastes
-  # - SPELL # Uncomment to disable checks of spelling mistakes
+  - SPELL # Comment to enable checks of spelling mistakes
 SHOW_ELAPSED_TIME: true
 FILEIO_REPORTER: false
 # DISABLE_ERRORS: true # Uncomment if you want MegaLinter to detect errors but not block CI to pass
@@ -24,4 +24,4 @@ XML_XMLLINT_FILE_EXTENSIONS:
   - .wixproj
   - .wxs
 # Exclude verbatim copies of external sources that are not under our control.
-FILTER_REGEX_EXCLUDE: COPYING.md
+FILTER_REGEX_EXCLUDE: COPYING\.md|LICENSES/|Drivers/VBoxUSB/|Drivers/VBoxUSBMon/
