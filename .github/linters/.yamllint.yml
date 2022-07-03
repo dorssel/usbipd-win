@@ -7,6 +7,11 @@
 extends: default
 
 rules:
+
   truthy:
     # Allow GitHub actions to use "on:" without quotes.
     check-keys: false
+
+  line-length:
+    # Determined by GitHub editor (166) and allowing for diff/patch decoration.
+    max: 160
