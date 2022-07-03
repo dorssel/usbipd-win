@@ -8,7 +8,7 @@ SPDX-License-Identifier: GPL-2.0-only
 
 [![Build](https://github.com/dorssel/usbipd-win/workflows/Build/badge.svg?branch=master)](https://github.com/dorssel/usbipd-win/actions?query=workflow%3ABuild+branch%3Amaster)
 [![CodeQL](https://github.com/dorssel/usbipd-win/workflows/CodeQL/badge.svg?branch=master)](https://github.com/dorssel/usbipd-win/actions?query=workflow%3ACodeQL+branch%3Amaster)
-[![Markdown](https://github.com/dorssel/usbipd-win/workflows/Markdown/badge.svg?branch=master)](https://github.com/dorssel/usbipd-win/actions?query=workflow%3AMarkdown+branch%3Amaster)
+[![MegaLinter](https://github.com/dorssel/usbipd-win/workflows/MegaLinter/badge.svg?branch=master)](https://github.com/dorssel/usbipd-win/actions?query=workflow%3AMegaLinter+branch%3Amaster)
 [![REUSE status](https://api.reuse.software/badge/github.com/dorssel/usbipd-win)](https://api.reuse.software/info/github.com/dorssel/usbipd-win)
 [![codecov](https://codecov.io/gh/dorssel/usbipd-win/branch/master/graph/badge.svg?token=L0QI0AZRJI)](https://codecov.io/gh/dorssel/usbipd-win)
 
