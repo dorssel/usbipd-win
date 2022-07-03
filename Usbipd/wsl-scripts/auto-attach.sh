@@ -17,25 +17,25 @@ LAST_ERROR=""
 LAST_REPORTED_ERROR=""
 
 report_attached() {
-    local OLD_ATTACHED=$(($IS_ATTACHED))
+    local OLD_ATTACHED=$((IS_ATTACHED))
     IS_ATTACHED=$(($1))
 
-    if [[ $IS_ATTACHED != $OLD_ATTACHED ]]; then
-        if [[ $IS_ATTACHED == 1 ]]; then
+    if ((IS_ATTACHED != OLD_ATTACHED)); then
+        if ((IS_ATTACHED == 1)); then
             echo "Attached"
         else
             echo "Detached"
         fi
         LAST_REPORTED_ERROR=""
     fi
-    if [[ $IS_ATTACHED == 0 && "$LAST_REPORTED_ERROR" != "$LAST_ERROR" ]]; then
+    if ((IS_ATTACHED == 0)) && [[ "$LAST_REPORTED_ERROR" != "$LAST_ERROR" ]]; then
         echo "$LAST_ERROR"
         LAST_REPORTED_ERROR="$LAST_ERROR"
     fi
 }
 
 try_attach() {
-    LAST_ERROR=`usbip attach --remote="$HOST" --busid="$BUSID" 2>&1` || return 1
+    LAST_ERROR=$(usbip attach --remote="$HOST" --busid="$BUSID" 2>&1) || return 1
     LAST_ERROR=""
     return 0
 }
@@ -60,12 +60,12 @@ is_attached() {
         # ss  0010 004 000 00000000 000000 0-0
         # ...
 
-        read # skip headers
+        read -r # skip headers
         while read -r line; do
-            read -a strarr <<< "$line"
+            read -r -a strarr <<<"$line"
 
             local SOCKFD=$((10#${strarr[5]}))
-            if [[ $SOCKFD == 0 ]]; then
+            if ((SOCKFD == 0)); then
                 # No device on this port.
                 continue
             fi
@@ -73,13 +73,13 @@ is_attached() {
 
             # Now figure out if this is the target device or not.
 
-            read -a strarr < /var/run/vhci_hcd/port$PORT
+            read -r -a strarr </var/run/vhci_hcd/port$PORT
 
             # Expected format:
             # 172.21.0.1 3240 4-2
 
             local REMOTE_IP=${strarr[0]}
-            local REMOTE_PORT=${strarr[1]}
+            # local REMOTE_PORT=${strarr[1]}
             local REMOTE_BUSID=${strarr[2]}
 
             if [[ "$REMOTE_IP" == "$HOST" && "$REMOTE_BUSID" == "$BUSID" ]]; then
@@ -87,7 +87,7 @@ is_attached() {
                 return 0
             fi
         done
-    } < /sys/devices/platform/vhci_hcd.0/status
+    } </sys/devices/platform/vhci_hcd.0/status
 
     # None of the devices matched the target device.
     return 1
@@ -96,11 +96,10 @@ is_attached() {
 sleep() {
     local SECONDS=$(($1))
     # sleep without creating a new process
-    read -t $SECONDS < /proc/self/fd/1 || :
+    read -r -t $SECONDS </proc/self/fd/1 || :
 }
 
-while :
-do
+while :; do
     if is_attached; then
         report_attached 1
     else

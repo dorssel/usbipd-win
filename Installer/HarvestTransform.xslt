@@ -5,10 +5,11 @@ SPDX-FileCopyrightText: 2020 Frans van Dorsselaer
 SPDX-License-Identifier: GPL-2.0-only
 -->
 <xsl:stylesheet
-  xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
-  xmlns:wix="http://schemas.microsoft.com/wix/2006/wi"
-  version="1.0"
-  exclude-result-prefixes="xsl">
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+    xmlns:wix="http://schemas.microsoft.com/wix/2006/wi"
+    version="1.0"
+    exclude-result-prefixes="xsl"
+    >
 
     <!-- copy everything -->
     <xsl:template match="@*|node()">

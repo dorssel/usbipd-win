@@ -1,0 +1,19 @@
+# SPDX-FileCopyrightText: 2022 Frans van Dorsselaer
+#
+# SPDX-License-Identifier: GPL-2.0-only
+
+---
+extends: default
+
+rules:
+  truthy:
+    # Allow GitHub actions to use "on:" without quotes.
+    check-keys: false
+
+  line-length:
+    # Determined by GitHub editor (166) and allowing for diff/patch decoration.
+    max: 160
+
+  comments:
+    # YAML enforces 1 space instead of 2
+    min-spaces-from-content: 1

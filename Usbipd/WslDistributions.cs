@@ -131,7 +131,7 @@ sealed partial record WslDistributions
                             // ...
                             //
                             // We are interested in all entries like:
-                            // 
+                            //
                             //            |-- 127.0.0.1
                             //               /32 host LOCAL
                             //

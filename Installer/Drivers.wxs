@@ -4,8 +4,10 @@ SPDX-FileCopyrightText: 2020 Frans van Dorsselaer
 
 SPDX-License-Identifier: GPL-2.0-only
 -->
-<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
-     xmlns:difx="http://schemas.microsoft.com/wix/DifxAppExtension">
+<Wix
+    xmlns="http://schemas.microsoft.com/wix/2006/wi"
+    xmlns:difx="http://schemas.microsoft.com/wix/DifxAppExtension"
+    >
     <Fragment>
         <DirectoryRef Id="APPLICATIONFOLDER">
             <Directory Id="Drivers" Name="Drivers" />

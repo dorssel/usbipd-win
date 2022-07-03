@@ -192,7 +192,7 @@ static class ConfigurationManager
 
         try
         {
-            // The FriendlyName (if it exists) is usefull for USB\COMPOSITE, but the Description is not.
+            // The FriendlyName (if it exists) is useful for USB\COMPOSITE, but the Description is not.
             // So, if FriendlyName exists, we start the list with that.
             var friendlyName = ((string)Get_DevNode_Property(deviceNode, PInvoke.DEVPKEY_Device_FriendlyName)).Trim();
             if (!string.IsNullOrEmpty(friendlyName))
@@ -365,7 +365,7 @@ static class ConfigurationManager
         : IDisposable
     {
         public RestartingDevice(string instanceId)
-             : this(Locate_DevNode(instanceId, true))
+            : this(Locate_DevNode(instanceId, true))
         {
         }
 
