@@ -169,6 +169,7 @@ static class UsbIp
     static void ReverseEndianness(this ref UsbIpHeader header)
     {
         // The first 40 bytes of UsbIpHeader are always 10 4-byte integers.
+        // nosemgrep: memory-marshal-create-span
         MemoryMarshal.Cast<UsbIpHeader, int>(MemoryMarshal.CreateSpan(ref header, 1))[0..10].ReverseEndianness();
     }
 
