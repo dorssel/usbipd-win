@@ -33,6 +33,7 @@ SPDX-License-Identifier: GPL-2.0-only
     <Cultures>en-US</Cultures>
     <SuppressAllWarnings>False</SuppressAllWarnings>
     <Pedantic>True</Pedantic>
+    <SuppressIces>ICE30</SuppressIces>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x64' ">
     <OutputPath>bin\$(Configuration)\</OutputPath>
@@ -41,6 +42,7 @@ SPDX-License-Identifier: GPL-2.0-only
     <SuppressAllWarnings>False</SuppressAllWarnings>
     <Pedantic>True</Pedantic>
     <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
+    <SuppressIces>ICE30</SuppressIces>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Drivers.wxs" />
