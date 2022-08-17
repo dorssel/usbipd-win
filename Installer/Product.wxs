@@ -69,6 +69,19 @@ SPDX-License-Identifier: GPL-2.0-only
         </Property>
 
         <!--
+        Detect if we are on Windows 10 or later.
+        NOTE: We cannot use VersionNT, as msiexec.exe on Windows 10 always runs in Windows 8.1 compatibility mode.
+        -->
+        <Property Id="WINDOWS_10_OR_HIGHER">
+            <RegistrySearch Id="CurrentMajorVersionNumber"
+                            Root="HKLM"
+                            Key="SOFTWARE\Microsoft\Windows NT\CurrentVersion"
+                            Name="CurrentMajorVersionNumber"
+                            Type="raw"
+                            />
+        </Property>
+
+        <!--
         If the product is currently installed and the APPLICATIONFOLDER has not been set yet, then preserve the current installation directory.
         This allows users to:
         a) specify a non-default installation location on first install, which is then preserved when updating using defaults.

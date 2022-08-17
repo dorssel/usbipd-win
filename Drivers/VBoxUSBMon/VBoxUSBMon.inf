@@ -29,7 +29,7 @@ Signature="$Windows NT$"
 Class=System
 ClassGuid={4d36e97d-e325-11ce-bfc1-08002be10318}
 Provider=%ORACLE%
-DriverVer = 03/22/2022,6.1.34.636 ; r150636
+DriverVer = 07/19/2022,6.1.36.2435 ; r152435
 DriverPackageType=KernelService
 CatalogFile=VBoxUSBMon.cat
 

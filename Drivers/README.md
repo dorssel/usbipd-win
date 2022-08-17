@@ -6,7 +6,7 @@ SPDX-License-Identifier: GPL-2.0-only
 
 # Declaration of License Compliance
 
-These drivers are from a binary distribution of VirtualBox, version 6.1.34, provided
+These drivers are from a binary distribution of VirtualBox, version 6.1.36, provided
 by Oracle Corporation, subject to the terms and conditions of the
 [GNU General Public License, version 2](https://www.gnu.org/licenses/old-licenses/gpl-2.0.html).
 
