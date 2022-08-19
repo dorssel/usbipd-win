@@ -9,7 +9,6 @@ using System.CommandLine;
 using System.CommandLine.Builder;
 using System.CommandLine.Completions;
 using System.CommandLine.Help;
-using System.CommandLine.Invocation;
 using System.CommandLine.IO;
 using System.CommandLine.Parsing;
 using System.Diagnostics;
