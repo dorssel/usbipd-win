@@ -8,6 +8,7 @@ using System.ComponentModel;
 using System.IO;
 using System.IO.Pipelines;
 using System.Linq;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -42,13 +43,25 @@ sealed class Tools_Tests
     [TestMethod]
     public void ReadExactlyAsync_EndOfStream()
     {
+        using var memoryStream = new MemoryStream();
+        var buf = new byte[TestStreamBytes.Length];
+        var exception = Assert.ThrowsException<AggregateException>(() =>
+        {
+            memoryStream.ReadExactlyAsync(buf, CancellationToken.None).Wait();
+        });
+        Assert.IsInstanceOfType(exception.InnerException, typeof(EndOfStreamException));
+    }
+
+    [TestMethod]
+    public void ReadExactlyAsync_ProtocolViolation()
+    {
         using var memoryStream = new MemoryStream(TestStreamBytes);
         var buf = new byte[TestStreamBytes.Length + 1];
         var exception = Assert.ThrowsException<AggregateException>(() =>
         {
             memoryStream.ReadExactlyAsync(buf, CancellationToken.None).Wait();
         });
-        Assert.IsInstanceOfType(exception.InnerException, typeof(EndOfStreamException));
+        Assert.IsInstanceOfType(exception.InnerException, typeof(ProtocolViolationException));
     }
 
     [TestMethod]

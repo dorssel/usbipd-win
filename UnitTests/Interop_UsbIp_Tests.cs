@@ -5,6 +5,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -89,6 +90,17 @@ sealed class Interop_UsbIp_Tests
     }
 
     [TestMethod]
+    public void ReadUsbIpHeaderAsync_Empty()
+    {
+        using var memoryStream = new MemoryStream();
+        var exception = Assert.ThrowsException<AggregateException>(() =>
+        {
+            memoryStream.ReadUsbIpHeaderAsync(CancellationToken.None).Wait();
+        });
+        Assert.IsInstanceOfType(exception.InnerException, typeof(EndOfStreamException));
+    }
+
+    [TestMethod]
     public void ReadUsbIpHeaderAsync_Short()
     {
         using var memoryStream = new MemoryStream(TestUsbIpHeaderBytes[0..^1]);
@@ -96,7 +108,7 @@ sealed class Interop_UsbIp_Tests
         {
             memoryStream.ReadUsbIpHeaderAsync(CancellationToken.None).Wait();
         });
-        Assert.IsInstanceOfType(exception.InnerException, typeof(EndOfStreamException));
+        Assert.IsInstanceOfType(exception.InnerException, typeof(ProtocolViolationException));
     }
 
     [TestMethod]
@@ -135,6 +147,17 @@ sealed class Interop_UsbIp_Tests
     }
 
     [TestMethod]
+    public void ReadUsbIpIsoPacketDescriptorsAsync_Empty()
+    {
+        using var memoryStream = new MemoryStream();
+        var exception = Assert.ThrowsException<AggregateException>(() =>
+        {
+            memoryStream.ReadUsbIpIsoPacketDescriptorsAsync(1, CancellationToken.None).Wait();
+        });
+        Assert.IsInstanceOfType(exception.InnerException, typeof(EndOfStreamException));
+    }
+
+    [TestMethod]
     public void ReadUsbIpIsoPacketDescriptorsAsync_Short()
     {
         using var memoryStream = new MemoryStream(TestUsbIpIsoPacketDescriptorBytes[0..^1]);
@@ -142,7 +165,7 @@ sealed class Interop_UsbIp_Tests
         {
             memoryStream.ReadUsbIpIsoPacketDescriptorsAsync(1, CancellationToken.None).Wait();
         });
-        Assert.IsInstanceOfType(exception.InnerException, typeof(EndOfStreamException));
+        Assert.IsInstanceOfType(exception.InnerException, typeof(ProtocolViolationException));
     }
 
     [TestMethod]
@@ -171,7 +194,7 @@ sealed class Interop_UsbIp_Tests
         {
             memoryStream.ReadUsbIpIsoPacketDescriptorsAsync(2, CancellationToken.None).Wait();
         });
-        Assert.IsInstanceOfType(exception.InnerException, typeof(EndOfStreamException));
+        Assert.IsInstanceOfType(exception.InnerException, typeof(ProtocolViolationException));
     }
 
     [TestMethod]
