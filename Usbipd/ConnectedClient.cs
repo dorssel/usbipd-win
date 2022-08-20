@@ -35,13 +35,7 @@ sealed class ConnectedClient
         ClientContext = clientContext;
         ServiceProvider = serviceProvider;
 
-        var client = clientContext.TcpClient;
-        client.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
-        client.Client.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.TcpKeepAliveInterval, 1);
-        client.Client.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.TcpKeepAliveRetryCount, 5);
-        client.Client.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.TcpKeepAliveTime, 10);
-
-        Stream = client.GetStream();
+        Stream = clientContext.TcpClient.GetStream();
     }
 
     readonly ILogger Logger;
@@ -262,7 +256,7 @@ sealed class ConnectedClient
                 try
                 {
                     // We'll do our best to report back to the client, but if that
-                    // fails we'll report the *original* exception.
+                    // fails we'll throw the *original* exception.
                     await SendOpCodeAsync(OpCode.OP_REP_IMPORT, status);
                 }
 #pragma warning disable CA1031 // Do not catch general exception types

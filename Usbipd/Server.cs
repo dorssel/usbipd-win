@@ -5,12 +5,14 @@
 using System;
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Windows.Win32;
+using Windows.Win32.Networking.WinSock;
 using Windows.Win32.Security;
 
 using static Usbipd.Interop.UsbIp;
@@ -83,6 +85,36 @@ sealed class Server : BackgroundService
         // Non-interactive services have this disabled by default.
         // We require it so the ConfigurationManager can change the driver.
         EnablePrivilege("SeLoadDriverPrivilege");
+
+        // All client sockets will inherit these. Formally, these options have to
+        // be set before the socket reaches connected state, including Accept().
+#if false
+        TcpListener.Server.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
+        try
+        {
+            // NOTE: This way of settings keepalive options only exists from Windows 10 1709 onward.
+            TcpListener.Server.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.TcpKeepAliveInterval, 1 /* s */);
+            TcpListener.Server.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.TcpKeepAliveTime, 10 /* s */);
+            TcpListener.Server.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.TcpKeepAliveRetryCount, 5);
+        }
+        catch (SocketException)
+#endif
+        {
+            // This always works (on Windows, not on Linux, but we are Windows-only anyway).
+            // It is required to support pre-Windows 10 1709.
+            //
+            // NOTE:
+            // TcpKeepAliveRetryCount cannot be configured this way at all. It is fixed at 10, so we use 500 ms.
+            // This ensures the best compatibility with the original values: 10 seconds delay before
+            // keepalives are sent at all, followed by 5 seconds of retry.
+            var keepAlive = new tcp_keepalive()
+            {
+                onoff = 1,
+                keepaliveinterval = 500 /* ms */,
+                keepalivetime = 10_000 /* ms */,
+            };
+            TcpListener.Server.IOControl(IOControlCode.KeepAliveValues, MemoryMarshal.AsBytes(new[] { keepAlive }.AsSpan()).ToArray(), null);
+        }
 
         TcpListener.Start();
         while (true)
