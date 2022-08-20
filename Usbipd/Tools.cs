@@ -6,6 +6,7 @@ using System;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
+using System.Net;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -28,7 +29,15 @@ static class Tools
             var readCount = await stream.ReadAsync(buf[^remain..], cancellationToken);
             if (readCount == 0)
             {
-                throw new EndOfStreamException();
+                if (remain == buf.Length)
+                {
+                    // This looks like a normal client disconnect (hang up)
+                    throw new EndOfStreamException();
+                }
+                else
+                {
+                    throw new ProtocolViolationException($"client disconnect in the middle of a message, received {buf.Length - remain} from {buf.Length} bytes");
+                }
             }
             remain -= readCount;
         }

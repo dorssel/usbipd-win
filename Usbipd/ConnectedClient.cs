@@ -51,18 +51,31 @@ sealed class ConnectedClient
 
     public async Task RunAsync(CancellationToken cancellationToken)
     {
-        var opCode = await RecvOpCodeAsync(cancellationToken);
-        Logger.Debug($"Received opcode: {opCode}");
-        switch (opCode)
+        try
         {
-            case OpCode.OP_REQ_DEVLIST:
-                await HandleRequestDeviceListAsync(cancellationToken);
-                break;
-            case OpCode.OP_REQ_IMPORT:
-                await HandleRequestImportAsync(cancellationToken);
-                break;
-            default:
-                throw new ProtocolViolationException($"unexpected opcode {opCode}");
+            var opCode = await RecvOpCodeAsync(cancellationToken);
+            Logger.Debug($"Received opcode: {opCode}");
+            switch (opCode)
+            {
+                case OpCode.OP_REQ_DEVLIST:
+                    await HandleRequestDeviceListAsync(cancellationToken);
+                    break;
+                case OpCode.OP_REQ_IMPORT:
+                    await HandleRequestImportAsync(cancellationToken);
+                    break;
+                default:
+                    throw new ProtocolViolationException($"unexpected opcode {opCode}");
+            }
+        }
+        catch (Exception ex)
+        {
+            // EndOfStream is client hang ups and OperationCanceled is detachments;
+            // neither are an error but part of normal functionality.
+            if (!(ex is EndOfStreamException || ex is OperationCanceledException))
+            {
+                Logger.ClientError(ex);
+            }
+            throw;
         }
     }
 
@@ -240,19 +253,21 @@ sealed class ConnectedClient
                 catch (ConfigurationManagerException) { }
             }
         }
-        catch (Exception ex)
+        catch
         {
-            // EndOfStream is client hang ups and OperationCanceled is detachments
-            if (!(ex is EndOfStreamException || ex is OperationCanceledException))
-            {
-                Logger.ClientError(ex);
-            }
-
 #pragma warning disable CA1508 // Avoid dead conditional code (false positive)
             if (status != Status.ST_OK)
 #pragma warning restore CA1508 // Avoid dead conditional code
             {
-                await SendOpCodeAsync(OpCode.OP_REP_IMPORT, status);
+                try
+                {
+                    // We'll do our best to report back to the client, but if that
+                    // fails we'll report the *original* exception.
+                    await SendOpCodeAsync(OpCode.OP_REP_IMPORT, status);
+                }
+#pragma warning disable CA1031 // Do not catch general exception types
+                catch { }
+#pragma warning restore CA1031 // Do not catch general exception types
             }
             throw;
         }

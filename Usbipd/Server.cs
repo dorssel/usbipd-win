@@ -107,6 +107,11 @@ sealed class Server : BackgroundService
                     var connectedClient = serviceScope.ServiceProvider.GetRequiredService<ConnectedClient>();
                     await connectedClient.RunAsync(stoppingToken);
                 }
+                catch (Exception ex)
+                {
+                    Logger.Debug($"connection close: {ex.Message}");
+                    throw;
+                }
                 finally
                 {
                     Logger.Debug("connection closed");
