@@ -2,12 +2,8 @@
 //
 // SPDX-License-Identifier: GPL-2.0-only
 
-using System;
 using System.ComponentModel;
-using System.IO;
 using System.Net;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Usbipd;
 using Windows.Win32;
 using Windows.Win32.System.Ioctl;
 

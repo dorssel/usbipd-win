@@ -280,7 +280,7 @@ sealed class ConnectedClient
         var version = BinaryPrimitives.ReadUInt16BigEndian(buf.AsSpan(0));
         if (version != USBIP_VERSION)
         {
-            throw new ProtocolViolationException($"version mismatch: expected {USBIP_VERSION >> 8}.{USBIP_VERSION & 0xff}, got {version >> 8}.{version & 0xff}");
+            throw new ProtocolViolationException($"USB/IP protocol version mismatch: expected {USBIP_VERSION.UsbIpVersionToVersion()}, got {version.UsbIpVersionToVersion()}");
         }
 
         var opCode = (OpCode)BinaryPrimitives.ReadUInt16BigEndian(buf.AsSpan(2));

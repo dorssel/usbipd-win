@@ -153,4 +153,14 @@ static class Tools
             return UsbSupTransferType.USBSUP_TRANSFER_TYPE_BULK;
         }
     }
+
+    public static Version UsbIpVersionToVersion(this ushort usbipVersion)
+    {
+        // See: https://www.kernel.org/doc/html/latest/usb/usbip_protocol.html
+        //
+        // (ushort)0x0111 -> 1.1.1
+        // (ushort)0x0abc -> 10.11.12
+        // (ushort)0xffff -> 255.15.15
+        return new Version(usbipVersion >> 8, (usbipVersion >> 4) & 0xf, usbipVersion & 0xf);
+    }
 }

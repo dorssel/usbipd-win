@@ -2,11 +2,7 @@
 //
 // SPDX-License-Identifier: GPL-2.0-only
 
-using System;
-using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Usbipd.Automation;
 
 namespace UnitTests;

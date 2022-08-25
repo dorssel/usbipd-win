@@ -2,16 +2,8 @@
 //
 // SPDX-License-Identifier: GPL-2.0-only
 
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Moq;
-using Usbipd;
 using static Usbipd.Interop.UsbIp;
 using static Usbipd.Interop.VBoxUsb;
 

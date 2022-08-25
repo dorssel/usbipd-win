@@ -15,7 +15,11 @@ namespace Usbipd.Interop;
 
 static class UsbIp
 {
-    /// <summary>UsbIp: tools/configure.ac</summary>
+    /// <summary>
+    /// UsbIp: tools/configure.ac
+    /// <para/>
+    /// See <see href="https://www.kernel.org/doc/html/latest/usb/usbip_protocol.html">USB/IP protocol</see> and <see cref="Tools.UsbIpVersionToVersion(ushort)"/>.
+    /// </summary>
     public const ushort USBIP_VERSION = 0x0111;
 
     /// <summary>UsbIp: tools/usbip_common.h</summary>
