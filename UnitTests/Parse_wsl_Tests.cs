@@ -2,9 +2,6 @@
 //
 // SPDX-License-Identifier: GPL-2.0-only
 
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Usbipd;
-
 namespace UnitTests;
 
 using ExitCode = Program.ExitCode;

@@ -3,9 +3,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 using System.CommandLine.IO;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Moq;
-using Usbipd;
 
 namespace UnitTests;
 

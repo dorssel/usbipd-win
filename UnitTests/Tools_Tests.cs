@@ -2,17 +2,9 @@
 //
 // SPDX-License-Identifier: GPL-2.0-only
 
-using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.IO;
 using System.IO.Pipelines;
-using System.Linq;
 using System.Net;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Usbipd;
 using Windows.Win32.Devices.Usb;
 using Windows.Win32.Foundation;
 using static Usbipd.Interop.Linux;
@@ -291,5 +283,19 @@ sealed class Tools_Tests
         var submit = new UsbIpHeaderCmdSubmit();
         var type = basic.EndpointType(submit);
         Assert.AreEqual(UsbSupTransferType.USBSUP_TRANSFER_TYPE_BULK, type);
+    }
+
+    [TestMethod]
+    [DataRow((ushort)0x0000, "0.0.0")]
+    [DataRow((ushort)0x0001, "0.0.1")]
+    [DataRow((ushort)0x0010, "0.1.0")]
+    [DataRow((ushort)0x0100, "1.0.0")]
+    [DataRow((ushort)0x1000, "16.0.0")]
+    [DataRow((ushort)0x0123, "1.2.3")]
+    [DataRow((ushort)0xffff, "255.15.15")]
+    public void UsbIpVersionToVersion(ushort usbipVersion, string expected)
+    {
+        Assert.AreEqual(Version.Parse(expected), usbipVersion.UsbIpVersionToVersion());
+        Assert.AreEqual(expected, usbipVersion.UsbIpVersionToVersion().ToString());
     }
 }

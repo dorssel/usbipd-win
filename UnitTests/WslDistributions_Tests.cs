@@ -2,14 +2,8 @@
 //
 // SPDX-License-Identifier: GPL-2.0-only
 
-using System;
 using System.Buffers.Binary;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Net;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Usbipd;
 
 namespace UnitTests;
 
@@ -95,7 +89,7 @@ sealed class WslDistributions_Tests
         static (IPAddress address, IPAddress mask) FromCIDR(string cidr)
         {
             var cidrParts = cidr.Split('/');
-            return (IPAddress.Parse(cidrParts[0]), new IPAddress(BinaryPrimitives.ReverseEndianness((uint)(-1L << (32 - int.Parse(cidrParts[1]))))));
+            return (IPAddress.Parse(cidrParts[0]), new IPAddress(BinaryPrimitives.ReverseEndianness(unchecked((uint)(-1L << (32 - int.Parse(cidrParts[1])))))));
         }
 
         public static IEnumerable<object[]> TestData
