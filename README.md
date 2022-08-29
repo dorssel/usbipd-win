@@ -11,6 +11,7 @@ SPDX-License-Identifier: GPL-2.0-only
 [![MegaLinter](https://github.com/dorssel/usbipd-win/workflows/MegaLinter/badge.svg?branch=master)](https://github.com/dorssel/usbipd-win/actions?query=workflow%3AMegaLinter+branch%3Amaster)
 [![REUSE status](https://api.reuse.software/badge/github.com/dorssel/usbipd-win)](https://api.reuse.software/info/github.com/dorssel/usbipd-win)
 [![codecov](https://codecov.io/gh/dorssel/usbipd-win/branch/master/graph/badge.svg?token=L0QI0AZRJI)](https://codecov.io/gh/dorssel/usbipd-win)
+[![GitHub all releases](https://img.shields.io/github/downloads/dorssel/usbipd-win/total?logo=github)](https://github.com/dorssel/usbipd-win/releases)
 
 Windows software for sharing locally connected USB devices to other machines, including Hyper-V guests and WSL 2.
 
