@@ -8,6 +8,7 @@ using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -23,13 +24,15 @@ sealed class Server : BackgroundService
 {
     public const string SingletonMutexName = @"Global\usbipd-{A8256F62-728F-49B0-82BB-E5E48F83D28F}";
 
-    public Server(ILogger<Server> logger, IServiceScopeFactory serviceScopeFactory, PcapNg _)
+    public Server(ILogger<Server> logger, IConfiguration config, IServiceScopeFactory serviceScopeFactory, PcapNg _)
     {
         Logger = logger;
+        Configuration = config;
         ServiceScopeFactory = serviceScopeFactory;
     }
 
     readonly ILogger Logger;
+    readonly IConfiguration Configuration;
     readonly IServiceScopeFactory ServiceScopeFactory;
     readonly TcpListener TcpListener = TcpListener.Create(USBIP_PORT);
 
@@ -104,14 +107,26 @@ sealed class Server : BackgroundService
             // It is required to support pre-Windows 10 1709.
             //
             // NOTE:
-            // TcpKeepAliveRetryCount cannot be configured this way at all. It is fixed at 10, so we use 500 ms.
+            // TcpKeepAliveRetryCount cannot be configured this way at all. It is fixed at 10, so we use a default of 500 ms.
             // This ensures the best compatibility with the original values: 10 seconds delay before
             // keepalives are sent at all, followed by 5 seconds of retry.
+
+            if (!uint.TryParse(Configuration["usbipd:TcpKeepAliveInterval"], out var tcpKeepAliveInterval))
+            {
+                tcpKeepAliveInterval = 500; /* ms, default */
+            }
+            if (!uint.TryParse(Configuration["usbipd:TcpKeepAliveTime"], out var tcpKeepAliveTime))
+            {
+                tcpKeepAliveTime = 10_000; /* ms, default */
+            }
+            Logger.Debug($"usbipd:TcpKeepAliveInterval = {tcpKeepAliveInterval} ms");
+            Logger.Debug($"usbipd:TcpKeepAliveTime = {tcpKeepAliveTime} ms");
+
             var keepAlive = new tcp_keepalive()
             {
                 onoff = 1,
-                keepaliveinterval = 500 /* ms */,
-                keepalivetime = 10_000 /* ms */,
+                keepaliveinterval = tcpKeepAliveInterval,
+                keepalivetime = tcpKeepAliveTime,
             };
             TcpListener.Server.IOControl(IOControlCode.KeepAliveValues, MemoryMarshal.AsBytes(new[] { keepAlive }.AsSpan()).ToArray(), null);
         }
