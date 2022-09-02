@@ -33,8 +33,7 @@ static class ConfigurationManager
         {
             fixed (char* pInstanceId = instanceId)
             {
-                uint deviceNode;
-                PInvoke.CM_Locate_DevNode(&deviceNode, (ushort*)pInstanceId, present ? PInvoke.CM_LOCATE_DEVNODE_NORMAL : PInvoke.CM_LOCATE_DEVNODE_PHANTOM).ThrowOnError(nameof(PInvoke.CM_Locate_DevNode));
+                PInvoke.CM_Locate_DevNode(out var deviceNode, pInstanceId, present ? PInvoke.CM_LOCATE_DEVNODE_NORMAL : PInvoke.CM_LOCATE_DEVNODE_PHANTOM).ThrowOnError(nameof(PInvoke.CM_Locate_DevNode));
                 return deviceNode;
             }
         }
@@ -46,13 +45,11 @@ static class ConfigurationManager
         {
             fixed (char* pDeviceId = deviceId)
             {
-                uint bufferLen;
-                var guid = interfaceClassGuid;
-                PInvoke.CM_Get_Device_Interface_List_Size(&bufferLen, &guid, (ushort*)pDeviceId, flags).ThrowOnError(nameof(PInvoke.CM_Get_Device_Interface_List_Size));
+                PInvoke.CM_Get_Device_Interface_List_Size(out var bufferLen, interfaceClassGuid, pDeviceId, flags).ThrowOnError(nameof(PInvoke.CM_Get_Device_Interface_List_Size));
                 var deviceInterfaceList = new string('\0', (int)bufferLen);
                 fixed (char* buffer = deviceInterfaceList)
                 {
-                    PInvoke.CM_Get_Device_Interface_List(&guid, (ushort*)pDeviceId, buffer, bufferLen, flags).ThrowOnError(nameof(PInvoke.CM_Get_Device_Interface_List_Size));
+                    PInvoke.CM_Get_Device_Interface_List(interfaceClassGuid, pDeviceId, buffer, bufferLen, flags).ThrowOnError(nameof(PInvoke.CM_Get_Device_Interface_List_Size));
                 }
                 return deviceInterfaceList.Split('\0', StringSplitOptions.RemoveEmptyEntries);
             }
