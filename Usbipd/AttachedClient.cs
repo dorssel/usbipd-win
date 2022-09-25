@@ -257,7 +257,10 @@ sealed class AttachedClient
                 : UsbSupXferFlags.USBSUP_FLAG_NONE,
             error = UsbSupError.USBSUP_XFER_OK,
             len = submit.transfer_buffer_length,
-            numIsoPkts = 0, // number_of_packets == 0 here
+            // USBIP documentation states that for non-ISO transfers number_of_packets shall be -1,
+            // but e.g. Linux ans some clients use 0. VBoxUsb requires 0 here.
+            // We simply ignore number_of_packets.
+            numIsoPkts = 0,
             aIsoPkts = new UsbSupIsoPkt[8], // unused, but must be present for VBoxUsb
         };
 
@@ -409,7 +412,11 @@ sealed class AttachedClient
                     status = -(int)ConvertError(urb.error),
                     actual_length = (int)urb.len,
                     start_frame = 0, // shall be 0 for non-ISO
-                    number_of_packets = unchecked((int)0xffffffff), // shall be 0xffffffff for non-ISO
+                    // USBIP documentation states that for non-ISO transfers this shall be -1.
+                    // Linux accepts that, but some clients that use 0 in submit also expect 0 in return.
+                    // So, we copy the request value to accommodate those while still being compliant for
+                    // clients that follow the spec, i.e. if they submit -1 as documented we'll return that too.
+                    number_of_packets = submit.number_of_packets,
                     error_count = 0,
                 },
             };
