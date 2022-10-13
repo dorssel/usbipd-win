@@ -24,7 +24,7 @@ jobs:
           fetch-depth: 0
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v3.0.1
+        uses: actions/setup-dotnet@v3.0.2
 
       - name: Cache
         uses: actions/cache@v3
