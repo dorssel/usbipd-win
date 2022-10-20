@@ -131,6 +131,8 @@ sealed class CommandHandlers : ICommandHandlers
         foreach (var device in allDevices.Where(d => d.BusId.HasValue).OrderBy(d => d.BusId.GetValueOrDefault()))
         {
             Debug.Assert(device.BusId.HasValue);
+            var hardwareId = device.HardwareId;
+            string description = UsbIds.GetProductName(hardwareId.Vid, hardwareId.Pid, device.Description);
             string state;
             if (device.IPAddress is not null)
             {
@@ -147,7 +149,7 @@ sealed class CommandHandlers : ICommandHandlers
             // NOTE: Strictly speaking, both Bus and Port can be > 99. If you have one of those, you win a prize!
             console.Write($"{device.BusId.Value,-5}  ");
             console.Write($"{device.HardwareId,-9}  ");
-            console.WriteTruncated(device.Description, 60, true);
+            console.WriteTruncated(description, 60, true);
             console.WriteLine($"  {state}");
         }
         console.WriteLine(string.Empty);
@@ -157,8 +159,10 @@ sealed class CommandHandlers : ICommandHandlers
         foreach (var device in allDevices.Where(d => !d.BusId.HasValue && d.Guid.HasValue).OrderBy(d => d.Guid.GetValueOrDefault()))
         {
             Debug.Assert(device.Guid.HasValue);
+            var hardwareId = device.HardwareId;
+            string description = UsbIds.GetProductName(hardwareId.Vid, hardwareId.Pid, device.Description);
             console.Write($"{device.Guid.Value,-36:D}  ");
-            console.WriteTruncated(device.Description, 60, false);
+            console.WriteTruncated(description, 60, false);
             console.WriteLine(string.Empty);
         }
         console.WriteLine(string.Empty);

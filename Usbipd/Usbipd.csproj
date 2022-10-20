@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <!--
 SPDX-FileCopyrightText: 2020 Frans van Dorsselaer
 
@@ -36,6 +36,9 @@ SPDX-License-Identifier: GPL-2.0-only
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="usb.ids">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="wsl-scripts\auto-attach.sh">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
