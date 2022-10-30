@@ -11,7 +11,7 @@ SPDX-License-Identifier: GPL-2.0-only
 
     <!-- Usbipd -->
     <PackageVersion Include="Microsoft.Extensions.Hosting.WindowsServices" Version="6.0.1" />
-    <PackageVersion Include="Microsoft.Windows.CsWin32" Version="0.2.63-beta" />
+    <PackageVersion Include="Microsoft.Windows.CsWin32" Version="0.2.104-beta" />
     <PackageVersion Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
 
     <!-- Usbipd.PowerShell -->
@@ -27,6 +27,6 @@ SPDX-License-Identifier: GPL-2.0-only
     <PackageVersion Include="MSTest.TestAdapter" Version="2.2.10" />
     <PackageVersion Include="MSTest.TestFramework" Version="2.2.10" />
     <PackageVersion Include="System.IO.Pipelines" Version="6.0.3" />
-    <PackageVersion Include="coverlet.collector" Version="3.1.2" />
+    <PackageVersion Include="coverlet.collector" Version="3.2.0" />
   </ItemGroup>
 </Project>
