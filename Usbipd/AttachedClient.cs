@@ -450,6 +450,10 @@ sealed class AttachedClient
         // We return to the caller, so that the next request can be handled. As a result, multiple requests
         // can be outstanding (either for the same, or for multiple endpoints). Requests are completed
         // asynchronously and in any order, but the replies for each endpoint are sent to the client in original order.
+
+        // HACK: separate requests to see if it avoids BSOD
+        // See: https://github.com/dorssel/usbipd-win/issues/461#issuecomment-1294450328
+        await Task.Delay(TimeSpan.FromMilliseconds(5), cancellationToken);
     }
 
     async Task HandleUnlinkAsync(UsbIpHeaderBasic basic, UsbIpHeaderCmdUnlink unlink, CancellationToken cancellationToken)
