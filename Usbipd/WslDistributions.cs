@@ -15,6 +15,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration.Ini;
 
 namespace Usbipd;
 
@@ -48,6 +49,28 @@ sealed partial record WslDistributions
         return (rawHost & rawMask) == (rawInstance & rawMask);
     }
 
+    public static string GetVMSwitchName()
+    {
+        string vmSwitchName = "WSL";
+        string wslConfigFilePath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        string wslConfigFileName = ".wslconfig";
+        string vmSwitchSectionKey = "wsl2:vmSwitch";
+
+        var wslConfigFilePathName = Path.Join(wslConfigFilePath, wslConfigFileName);
+        if (File.Exists(wslConfigFilePathName))
+        {
+            using var fileStream = File.OpenRead(wslConfigFilePathName);
+            //using IConfigurationBuilder.AddIniFile() would throw compile error IL2026.
+            //IL2026: Members attributed with RequiresUnreferencedCode may break when trimming.
+            var dict = IniStreamConfigurationProvider.Read(fileStream);
+            string? vmSwitchConfigName;
+            if (dict.TryGetValue(vmSwitchSectionKey, out vmSwitchConfigName))
+                if (!string.IsNullOrWhiteSpace(vmSwitchConfigName))
+                    vmSwitchName = vmSwitchConfigName;
+        }
+        return vmSwitchName;
+    }
+
     /// <summary>
     /// Returns null if WSL 2 is not even installed.
     /// </summary>
@@ -65,7 +88,7 @@ sealed partial record WslDistributions
 
         // The WSL switch only exists if at least one WSL 2 instance is running.
         var wslHost = NetworkInterface.GetAllNetworkInterfaces()
-            .FirstOrDefault(nic => nic.Name.Contains("WSL", StringComparison.OrdinalIgnoreCase))?.GetIPProperties().UnicastAddresses
+            .FirstOrDefault(nic => nic.Name.Contains(GetVMSwitchName(), StringComparison.OrdinalIgnoreCase))?.GetIPProperties().UnicastAddresses
             .FirstOrDefault(ip => ip.Address.AddressFamily == AddressFamily.InterNetwork);
 
         var distros = new List<Distribution>();
