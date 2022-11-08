@@ -1,5 +1,6 @@
 ﻿// SPDX-FileCopyrightText: Microsoft Corporation
 // SPDX-FileCopyrightText: 2021 Frans van Dorsselaer
+// SPDX-FileCopyrightText: 2022 Ye Jun Huang
 //
 // SPDX-License-Identifier: GPL-2.0-only
 
@@ -15,6 +16,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration.Ini;
 
 namespace Usbipd;
 
@@ -25,6 +27,8 @@ sealed partial record WslDistributions
     public const string InstallWslUrl = "https://aka.ms/installwsl";
     public const string SetWslVersionUrl = "https://docs.microsoft.com/windows/wsl/basic-commands#set-wsl-version-to-1-or-2";
     public const string WslWikiUrl = "https://github.com/dorssel/usbipd-win/wiki/WSL-support";
+    public const string WslConfigFileName = ".wslconfig";
+    public const string VmSwitchSectionKey = "wsl2:vmSwitch";
 
     public static readonly string WslPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "wsl.exe");
 
@@ -48,6 +52,29 @@ sealed partial record WslDistributions
         return (rawHost & rawMask) == (rawInstance & rawMask);
     }
 
+    public static string GetVMSwitchName()
+    {
+        var vmSwitchName = "WSL";
+        var wslConfigFilePath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+
+        var wslConfigFilePathName = Path.Join(wslConfigFilePath, WslConfigFileName);
+        if (File.Exists(wslConfigFilePathName))
+        {
+            using var fileStream = File.OpenRead(wslConfigFilePathName);
+            //using IConfigurationBuilder.AddIniFile() would throw compile error IL2026.
+            //IL2026: Members attributed with RequiresUnreferencedCode may break when trimming.
+            var dict = IniStreamConfigurationProvider.Read(fileStream);
+            if (dict.TryGetValue(VmSwitchSectionKey, out var vmSwitchConfigName))
+            {
+                if (!string.IsNullOrWhiteSpace(vmSwitchConfigName))
+                {
+                    vmSwitchName = vmSwitchConfigName;
+                }
+            }
+        }
+        return vmSwitchName;
+    }
+
     /// <summary>
     /// Returns null if WSL 2 is not even installed.
     /// </summary>
@@ -65,7 +92,7 @@ sealed partial record WslDistributions
 
         // The WSL switch only exists if at least one WSL 2 instance is running.
         var wslHost = NetworkInterface.GetAllNetworkInterfaces()
-            .FirstOrDefault(nic => nic.Name.Contains("WSL", StringComparison.OrdinalIgnoreCase))?.GetIPProperties().UnicastAddresses
+            .FirstOrDefault(nic => nic.Name.Contains(GetVMSwitchName(), StringComparison.OrdinalIgnoreCase))?.GetIPProperties().UnicastAddresses
             .FirstOrDefault(ip => ip.Address.AddressFamily == AddressFamily.InterNetwork);
 
         var distros = new List<Distribution>();

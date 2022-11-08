@@ -13,6 +13,7 @@ SPDX-License-Identifier: GPL-2.0-only
     <PackageVersion Include="Microsoft.Extensions.Hosting.WindowsServices" Version="6.0.1" />
     <PackageVersion Include="Microsoft.Windows.CsWin32" Version="0.2.104-beta" />
     <PackageVersion Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.Ini" Version="6.0.0" />
 
     <!-- Usbipd.PowerShell -->
     <PackageVersion Include="Microsoft.Win32.Registry" Version="5.0.0" />
