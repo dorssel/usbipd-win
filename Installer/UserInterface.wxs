@@ -2,7 +2,7 @@
 <!--
 SPDX-FileCopyrightText: 2020 Frans van Dorsselaer
 
-SPDX-License-Identifier: GPL-2.0-only
+SPDX-License-Identifier: GPL-3.0-only
 -->
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
     <Fragment>
@@ -278,7 +278,7 @@ SPDX-License-Identifier: GPL-2.0-only
                     Id="License" Type="Hyperlink" X="30" Y="202" Width="310" Height="24"
                     ToolTip ="Open the license in your browser"
                     Text="{\Caption}Copyright © $(var.Year)
-Published under the terms of the &lt;a href=&quot;https://www.gnu.org/licenses/gpl-2.0.html&quot;>GNU General Public License, version 2&lt;/a>."
+Published under the terms of the &lt;a href=&quot;https://www.gnu.org/licenses/gpl-3.0.html&quot;>GNU General Public License, version 3&lt;/a>."
                     />
             </Dialog>
 

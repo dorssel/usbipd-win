@@ -2,7 +2,7 @@
 // SPDX-FileCopyrightText: 2021 Frans van Dorsselaer
 // SPDX-FileCopyrightText: 2022 Ye Jun Huang
 //
-// SPDX-License-Identifier: GPL-2.0-only
+// SPDX-License-Identifier: GPL-3.0-only
 
 using System;
 using System.Collections.Generic;
