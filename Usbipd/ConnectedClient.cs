@@ -105,7 +105,7 @@ sealed class ConnectedClient
         BusId busId;
         {
             var buf = new byte[SYSFS_BUS_ID_SIZE];
-            await Stream.ReadExactlyAsync(buf, cancellationToken);
+            await Stream.ReadMessageAsync(buf, cancellationToken);
             if (!BusId.TryParse(Encoding.UTF8.GetString(buf.TakeWhile(b => b != 0).ToArray()), out busId))
             {
                 await SendOpCodeAsync(OpCode.OP_REP_IMPORT, Status.ST_NODEV);
@@ -249,9 +249,7 @@ sealed class ConnectedClient
         }
         catch
         {
-#pragma warning disable CA1508 // Avoid dead conditional code (false positive)
             if (status != Status.ST_OK)
-#pragma warning restore CA1508 // Avoid dead conditional code
             {
                 try
                 {
@@ -259,9 +257,7 @@ sealed class ConnectedClient
                     // fails we'll throw the *original* exception.
                     await SendOpCodeAsync(OpCode.OP_REP_IMPORT, status);
                 }
-#pragma warning disable CA1031 // Do not catch general exception types
                 catch { }
-#pragma warning restore CA1031 // Do not catch general exception types
             }
             throw;
         }
@@ -274,7 +270,7 @@ sealed class ConnectedClient
     async Task<OpCode> RecvOpCodeAsync(CancellationToken cancellationToken)
     {
         var buf = new byte[8];
-        await Stream.ReadExactlyAsync(buf, cancellationToken);
+        await Stream.ReadMessageAsync(buf, cancellationToken);
 
         // marshal and validate
         var version = BinaryPrimitives.ReadUInt16BigEndian(buf.AsSpan(0));

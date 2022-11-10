@@ -21,25 +21,31 @@ namespace Usbipd;
 
 static class Tools
 {
-    public static async Task ReadExactlyAsync(this Stream stream, Memory<byte> buf, CancellationToken cancellationToken)
+    /// <summary>
+    /// Slight variation on <see cref="Stream.ReadExactlyAsync(Memory{byte}, CancellationToken)" />.
+    /// <para/>
+    /// Throws <see cref="ProtocolViolationException"/> instead of <see cref="EndOfStreamException"/>
+    /// if at least 1 byte was read, but end-of-stream is reached before reading the entire buffer.
+    /// </summary>
+    /// <exception cref="EndOfStreamException">If no bytes at all were read.</exception>
+    /// <exception cref="ProtocolViolationException">If at least 1 byte was read, but not the entire buffer.</exception>
+    public static async Task ReadMessageAsync(this Stream stream, Memory<byte> buf, CancellationToken cancellationToken)
     {
-        var remain = buf.Length;
-        while (remain > 0)
+        if (buf.IsEmpty)
         {
-            var readCount = await stream.ReadAsync(buf[^remain..], cancellationToken);
-            if (readCount == 0)
+            return;
+        }
+        var rlen = await stream.ReadAtLeastAsync(buf, 1, true, cancellationToken);
+        if (rlen < buf.Length)
+        {
+            try
             {
-                if (remain == buf.Length)
-                {
-                    // This looks like a normal client disconnect (hang up)
-                    throw new EndOfStreamException();
-                }
-                else
-                {
-                    throw new ProtocolViolationException($"client disconnect in the middle of a message, received {buf.Length - remain} from {buf.Length} bytes");
-                }
+                await stream.ReadExactlyAsync(buf[rlen..], cancellationToken);
             }
-            remain -= readCount;
+            catch (EndOfStreamException)
+            {
+                throw new ProtocolViolationException($"client disconnect in the middle of a message");
+            }
         }
     }
 

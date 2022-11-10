@@ -87,7 +87,7 @@ sealed class AttachedClient
         var buf = new byte[submit.transfer_buffer_length];
         if (basic.direction == UsbIpDir.USBIP_DIR_OUT)
         {
-            await Stream.ReadExactlyAsync(buf, cancellationToken);
+            await Stream.ReadMessageAsync(buf, cancellationToken);
         }
 
         var packetDescriptors = await Stream.ReadUsbIpIsoPacketDescriptorsAsync(submit.number_of_packets, cancellationToken);
@@ -282,7 +282,7 @@ sealed class AttachedClient
 
         if (basic.direction == UsbIpDir.USBIP_DIR_OUT)
         {
-            await Stream.ReadExactlyAsync(buf.AsMemory()[payloadOffset..], cancellationToken);
+            await Stream.ReadMessageAsync(buf.AsMemory()[payloadOffset..], cancellationToken);
         }
 
         // We now have received the entire SUBMIT request:
@@ -395,9 +395,7 @@ sealed class AttachedClient
                         StructToBytes(configuration, buf.AsSpan(payloadOffset));
                     }
                 }
-#pragma warning disable CA1031 // Do not catch general exception types
                 catch { }
-#pragma warning restore CA1031 // Do not catch general exception types
             }
 
             var header = new UsbIpHeader

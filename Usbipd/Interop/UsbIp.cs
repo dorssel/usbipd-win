@@ -183,7 +183,7 @@ static class UsbIp
     public static async Task<UsbIpHeader> ReadUsbIpHeaderAsync(this Stream stream, CancellationToken cancellationToken)
     {
         var bytes = new byte[Unsafe.SizeOf<UsbIpHeader>()];
-        await stream.ReadExactlyAsync(bytes, cancellationToken);
+        await stream.ReadMessageAsync(bytes, cancellationToken);
         MemoryMarshal.AsRef<UsbIpHeader>(bytes).ReverseEndianness();
         return MemoryMarshal.AsRef<UsbIpHeader>(bytes);
     }
@@ -194,7 +194,7 @@ static class UsbIp
     public static async Task<UsbIpIsoPacketDescriptor[]> ReadUsbIpIsoPacketDescriptorsAsync(this Stream stream, int count, CancellationToken cancellationToken)
     {
         var bytes = new byte[count * Unsafe.SizeOf<UsbIpIsoPacketDescriptor>()];
-        await stream.ReadExactlyAsync(bytes, cancellationToken);
+        await stream.ReadMessageAsync(bytes, cancellationToken);
         MemoryMarshal.Cast<byte, int>(bytes).ReverseEndianness();
         return MemoryMarshal.Cast<byte, UsbIpIsoPacketDescriptor>(bytes).ToArray();
     }

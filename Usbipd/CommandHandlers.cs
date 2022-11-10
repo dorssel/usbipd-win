@@ -102,20 +102,23 @@ sealed class CommandHandlers : ICommandHandlers
     {
         // 70 leads (approximately) to the GPL default.
         var width = console.IsOutputRedirected ? 70 : Console.WindowWidth;
-        foreach (var line in Wrap($"{Program.Product} {GitVersionInformation.MajorMinorPatch}\n"
-            + $"{Program.Copyright}\n"
-            + "\n"
-            + "This program is free software: you can redistribute it and/or modify "
-            + "it under the terms of the GNU General Public License as published by "
-            + "the Free Software Foundation, version 3.\n"
-            + "\n"
-            + "This program is distributed in the hope that it will be useful, "
-            + "but WITHOUT ANY WARRANTY; without even the implied warranty of "
-            + "MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the "
-            + "GNU General Public License for more details.\n"
-            + "\n"
-            + "You should have received a copy of the GNU General Public License "
-            + "along with this program. If not, see <https://www.gnu.org/licenses/>.\n"
+        foreach (var line in Wrap($"""
+            {Program.Product} {GitVersionInformation.MajorMinorPatch}
+            {Program.Copyright}
+
+            This program is free software: you can redistribute it and/or modify \
+            it under the terms of the GNU General Public License as published by \
+            the Free Software Foundation, version 3.
+
+            This program is distributed in the hope that it will be useful, \
+            but WITHOUT ANY WARRANTY; without even the implied warranty of \
+            MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the \
+            GNU General Public License for more details.
+
+            You should have received a copy of the GNU General Public License \
+            along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+            """.Replace("\r\n", "\n").Replace("\\\n", "")
             , width))
         {
             console.WriteLine(line);
@@ -274,7 +277,7 @@ sealed class CommandHandlers : ICommandHandlers
             .UseWindowsService()
             .ConfigureAppConfiguration((context, builder) =>
             {
-                var defaultConfig = new Dictionary<string, string>();
+                var defaultConfig = new Dictionary<string, string?>();
                 if (WindowsServiceHelpers.IsWindowsService())
                 {
                     // EventLog defaults to Warning, which is OK for .NET components,
@@ -642,9 +645,7 @@ sealed class CommandHandlers : ICommandHandlers
             //    usbip (usbip-utils 2.0)
             //
             // NOTE: The package name and version varies.
-#pragma warning disable CA1508 // Avoid dead conditional code (false positive)
             if (wslResult.ExitCode != 0 || !wslResult.StandardOutput.StartsWith("usbip ("))
-#pragma warning restore CA1508 // Avoid dead conditional code
             {
                 console.ReportError($"WSL 'usbip' client not correctly installed. See {WslDistributions.WslWikiUrl} for the latest instructions.");
                 return ExitCode.Failure;

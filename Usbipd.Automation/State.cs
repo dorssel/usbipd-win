@@ -2,11 +2,8 @@
 //
 // SPDX-License-Identifier: GPL-3.0-only
 
-using System;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
-
-[assembly: CLSCompliant(false)]
 
 namespace Usbipd.Automation;
 
