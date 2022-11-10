@@ -12,6 +12,8 @@
 DISABLE:
   - COPYPASTE # Comment to enable checks of excessive copy-pastes
   - SPELL # Comment to enable checks of spelling mistakes
+DISABLE_LINTERS:
+  - CSHARP_DOTNET_FORMAT # Not compatible with .NET 7 (yet)
 SHOW_ELAPSED_TIME: true
 FILEIO_REPORTER: false
 # DISABLE_ERRORS: true # Uncomment if you want MegaLinter to detect errors but not block CI to pass
