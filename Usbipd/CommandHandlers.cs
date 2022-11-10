@@ -274,7 +274,7 @@ sealed class CommandHandlers : ICommandHandlers
             .UseWindowsService()
             .ConfigureAppConfiguration((context, builder) =>
             {
-                var defaultConfig = new Dictionary<string, string>();
+                var defaultConfig = new Dictionary<string, string?>();
                 if (WindowsServiceHelpers.IsWindowsService())
                 {
                     // EventLog defaults to Warning, which is OK for .NET components,
