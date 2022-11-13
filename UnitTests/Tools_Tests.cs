@@ -33,6 +33,13 @@ sealed class Tools_Tests
     }
 
     [TestMethod]
+    public void ReadMessageAsync_Nothing()
+    {
+        using var memoryStream = new MemoryStream(TestStreamBytes);
+        memoryStream.ReadMessageAsync(Array.Empty<byte>(), CancellationToken.None).Wait();
+    }
+
+    [TestMethod]
     public void ReadMessageAsync_EndOfStream()
     {
         using var memoryStream = new MemoryStream();

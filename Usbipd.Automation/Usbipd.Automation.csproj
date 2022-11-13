@@ -6,10 +6,10 @@ SPDX-License-Identifier: GPL-3.0-only
 -->
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <IsTrimmable>false</IsTrimmable>
-  </PropertyGroup>
-
   <Import Project="..\NetStandard.props" />
+
+  <ItemGroup>
+    <PackageReference Include="System.Text.Json" />
+  </ItemGroup>
 
 </Project>

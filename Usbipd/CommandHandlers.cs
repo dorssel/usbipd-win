@@ -8,12 +8,12 @@ using System.Collections.Generic;
 using System.CommandLine;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
-using System.Runtime.Serialization.Json;
 using System.Security.Principal;
 using System.Text;
+using System.Text.Encodings.Web;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -814,8 +814,6 @@ sealed class CommandHandlers : ICommandHandlers
         return ExitCode.Success;
     }
 
-    [UnconditionalSuppressMessage("Trimming", "IL2026:Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code",
-        Justification = "Only basic types are used; all required members are accessed (and therefore not trimmed away).")]
     async Task<ExitCode> ICommandHandlers.State(IConsole console, CancellationToken cancellationToken)
     {
         Console.SetError(TextWriter.Null);
@@ -848,14 +846,14 @@ sealed class CommandHandlers : ICommandHandlers
             Devices = devices,
         };
 
-        using var memoryStream = new MemoryStream();
+        var context = new StateSerializerContext(new()
         {
-            using var writer = JsonReaderWriterFactory.CreateJsonWriter(memoryStream, Encoding.UTF8, false, true);
-            var serializer = new DataContractJsonSerializer(state.GetType());
-            serializer.WriteObject(writer, state);
-        }
+            Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+            WriteIndented = true,
+        });
+        var json = JsonSerializer.Serialize(state, context.State);
 
-        Console.Write(Encoding.UTF8.GetString(memoryStream.ToArray()));
+        Console.Write(json);
         return ExitCode.Success;
     }
 }

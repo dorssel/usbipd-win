@@ -18,6 +18,18 @@ sealed class BusId_Tests
         Assert.AreEqual(0, busId.Port);
     }
 
+    [TestMethod]
+    public void JsonConstructor()
+    {
+        const ushort testBus = 1;
+        const ushort testPort = 42;
+
+        var busId = new BusId(testBus, testPort);
+
+        Assert.AreEqual(testBus, busId.Bus);
+        Assert.AreEqual(testPort, busId.Port);
+    }
+
     sealed class BusIdData
     {
         static readonly string[] _Invalid = new[]

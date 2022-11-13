@@ -172,7 +172,7 @@ sealed class AttachedClient
             }
 
             // Continue when all ioctls *and* their continuations have been completed.
-            var replyTask = Task.WhenAll(ioctls).ContinueWith(byte[](task, _) =>
+            var replyTask = Task.WhenAll(ioctls).ContinueWith(byte[] (task, _) =>
             {
                 // The pending request is now completed; no need to support UNLINK any longer.
                 PendingSubmits.TryRemove(basic.seqnum, out var _);
@@ -370,7 +370,7 @@ sealed class AttachedClient
         // At this point we have initiated the ioctl (and possibly awaited it for special cases).
         // Now we schedule a continuation to create the response once the ioctl completes.
 
-        var replyTask = ioctl.ContinueWith(byte[](task, _) =>
+        var replyTask = ioctl.ContinueWith(byte[] (task, _) =>
         {
             if (pending)
             {

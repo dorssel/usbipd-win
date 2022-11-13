@@ -2,14 +2,21 @@
 //
 // SPDX-License-Identifier: GPL-3.0-only
 
+using System;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
+using System.Text.Json.Serialization;
 
 namespace Usbipd.Automation;
 
 [DataContract]
-public sealed class State
+public sealed partial class State
 {
+    public State() : this(Array.Empty<Device>()) { }
+
+    [JsonConstructor]
+    public State(IReadOnlyCollection<Device> devices) => (Devices) = (devices);
+
     /// <summary>
     /// Serialization for <see cref="Devices" />.
     /// </summary>
