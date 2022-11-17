@@ -19,6 +19,35 @@ sealed class Automation_Tests
     static readonly IPAddress TestClientIPAddress = IPAddress.Parse("1.2.3.4");
     const string TestClientWslInstance = "testClientWslInstance";
 
+    static readonly Device TestDevice = new(TestInstanceId, TestDescription, true, TestBusId, TestPersistedGuid, TestStubInstanceId, TestClientIPAddress, TestClientWslInstance);
+    readonly Device[] TestDevices = new[] { TestDevice, new() };
+    const string TestJson = """
+        {
+            "Devices": [
+                {
+                    "BusId": "1-42",
+                    "ClientIPAddress": "1.2.3.4",
+                    "ClientWslInstance": "testClientWslInstance",
+                    "Description": "testDescription",
+                    "InstanceId": "testInstanceId\\***VID_1234&PID_CDEF***",
+                    "IsForced": true,
+                    "PersistedGuid": "ad9d8376-6284-495e-a80b-ff1826d7447d",
+                    "StubInstanceId": "testStubInstanceId"
+                },
+                {
+                    "BusId": null,
+                    "ClientIPAddress": null,
+                    "ClientWslInstance": null,
+                    "Description": "",
+                    "InstanceId": "",
+                    "IsForced": false,
+                    "PersistedGuid": null,
+                    "StubInstanceId": null
+                }
+            ]
+        }
+        """;
+
     [TestMethod]
     public void State_Constructor()
     {
@@ -28,41 +57,26 @@ sealed class Automation_Tests
     [TestMethod]
     public void State_Devices()
     {
-        var state = new State()
-        {
-            Devices = new Device[]
-            {
-                new(),
-                new(),
-            },
-        };
+        var state = new State(TestDevices);
         Assert.AreEqual(2, state.Devices.Count);
     }
 
     [TestMethod]
     public void State_DataContract_Serialize()
     {
-        var state = new State();
+        var state = new State(TestDevices);
         var json = JsonHelpers.DataContractSerialize(state);
         json = JsonHelpers.NormalizePretty(json);
-        Assert.AreEqual("""
-            {
-                "Devices": []
-            }
-            """, json);
+        Assert.AreEqual(TestJson, json);
     }
 
     [TestMethod]
     public void State_JsonSerializer_Serialize()
     {
-        var state = new State();
+        var state = new State(TestDevices);
         var json = JsonHelpers.TextJsonSerialize(state, StateSerializerContext.Default.State);
         json = JsonHelpers.NormalizePretty(json);
-        Assert.AreEqual("""
-            {
-                "Devices": []
-            }
-            """, json);
+        Assert.AreEqual(TestJson, json);
     }
 
     [TestMethod]

@@ -77,6 +77,7 @@ public sealed partial class Device
     string? _ClientIPAddress;
 
     [JsonPropertyOrder(2)]
+    [JsonConverter(typeof(NullableIPAddressJsonConverter))]
     public IPAddress? ClientIPAddress
     {
         get => IPAddress.TryParse(_ClientIPAddress, out var clientIPAddress) ? clientIPAddress : null;
