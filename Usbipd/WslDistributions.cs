@@ -75,6 +75,15 @@ sealed partial record WslDistributions
         return vmSwitchName;
     }
 
+    [GeneratedRegex(@"^  NAME +STATE +VERSION *$")]
+    private static partial Regex WslListHeaderRegex();
+
+    [GeneratedRegex(@"^( |\*) (.+) +([a-zA-Z]+) +([0-9])+ *$")]
+    private static partial Regex WslListDistroRegex();
+
+    [GeneratedRegex(@"\|--\s+(\S+)\s+/32 host LOCAL")]
+    private static partial Regex LocalAddressRegex();
+
     /// <summary>
     /// Returns null if WSL 2 is not even installed.
     /// </summary>
@@ -113,14 +122,14 @@ sealed partial record WslDistributions
                 var details = detailsResult.StandardOutput.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
 
                 // Sanity check
-                if (!Regex.IsMatch(details.FirstOrDefault() ?? string.Empty, "^  NAME +STATE +VERSION *$"))
+                if (!WslListHeaderRegex().IsMatch(details.FirstOrDefault() ?? string.Empty))
                 {
                     throw new UnexpectedResultException($"WSL failed to parse distributions: {detailsResult.StandardOutput}");
                 }
 
                 foreach (var line in details.Skip(1))
                 {
-                    var match = Regex.Match(line, @"^( |\*) (.+) +([a-zA-Z]+) +([0-9])+ *$");
+                    var match = WslListDistroRegex().Match(line);
                     if (!match.Success)
                     {
                         throw new UnexpectedResultException($"WSL failed to parse distributions: {detailsResult.StandardOutput}");
@@ -162,7 +171,7 @@ sealed partial record WslDistributions
                             //
                             // These are the interface addresses.
 
-                            for (match = Regex.Match(ipResult.StandardOutput, @"\|--\s+(\S+)\s+/32 host LOCAL"); match.Success; match = match.NextMatch())
+                            for (match = LocalAddressRegex().Match(ipResult.StandardOutput); match.Success; match = match.NextMatch())
                             {
                                 if (!IPAddress.TryParse(match.Groups[1].Value, out var wslInstance))
                                 {

@@ -51,7 +51,7 @@ interface ICommandHandlers
     public Task<ExitCode> State(IConsole console, CancellationToken cancellationToken);
 }
 
-sealed class CommandHandlers : ICommandHandlers
+sealed partial class CommandHandlers : ICommandHandlers
 {
     static IEnumerable<UsbDevice> GetDevicesByHardwareId(VidPid vidPid, bool connectedOnly, IConsole console)
     {
@@ -264,7 +264,7 @@ sealed class CommandHandlers : ICommandHandlers
             return ExitCode.AccessDenied;
         }
 
-        using var mutex = new Mutex(true, Usbipd.Server.SingletonMutexName, out var createdNew);
+        using var mutex = new Mutex(true, Server.SingletonMutexName, out var createdNew);
         if (!createdNew)
         {
             console.ReportError("Another instance is already running.");
@@ -456,6 +456,9 @@ sealed class CommandHandlers : ICommandHandlers
         }
         return distributions;
     }
+
+    [GeneratedRegex(@"^[a-zA-Z]:\\")]
+    private static partial Regex LocalDriveRegex();
 
     async Task<ExitCode> ICommandHandlers.WslAttach(BusId busId, bool autoAttach, string? distribution, IConsole console, CancellationToken cancellationToken)
     {
@@ -692,7 +695,7 @@ sealed class CommandHandlers : ICommandHandlers
         else
         {
             var scriptWindowsPath = Path.Combine(Path.GetDirectoryName(Environment.ProcessPath)!, "wsl-scripts", "auto-attach.sh");
-            if (!Regex.IsMatch(Path.GetPathRoot(scriptWindowsPath)!, "[a-zA-Z]:\\\\"))
+            if (!LocalDriveRegex().IsMatch(Path.GetPathRoot(scriptWindowsPath) ?? string.Empty))
             {
                 console.ReportError($"Option '--auto-attach' requires that this software is installed on a local drive.");
                 return ExitCode.Failure;
