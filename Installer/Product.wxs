@@ -103,6 +103,21 @@ SPDX-License-Identifier: GPL-3.0-only
             <ComponentGroupRef Id="Usbipd" />
             <ComponentRef Id="usbipd.exe" />
             <Feature
+                Id="UCRT"
+                Level="1"
+                AllowAdvertise="no"
+                Display="expand"
+                Absent="allow"
+                Title="Universal C Runtime."
+                Description="Required only if not already installed as a Windows Update."
+                >
+                <!--
+                Windows 10 / Server 2016 or higher always uses the system UCRT.
+                -->
+                <Condition Level="0">WINDOWS_10_OR_HIGHER</Condition>
+                <ComponentGroupRef Id="UCRT" />
+            </Feature>
+            <Feature
                 Id="Drivers"
                 Level="1"
                 AllowAdvertise="no"

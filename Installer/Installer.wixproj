@@ -24,12 +24,13 @@ SPDX-License-Identifier: GPL-3.0-only
     <DefineSolutionProperties>false</DefineSolutionProperties>
     <PublishDir>..\Usbipd\bin\publish</PublishDir>
     <PowerShellDir>..\Usbipd.PowerShell\bin\$(Configuration)\netstandard2.0\win</PowerShellDir>
+    <UcrtDir>$(MSBuildProgramFiles32)\Windows Kits\10\Redist\10.0.22621.0\ucrt\DLLs\x64</UcrtDir>
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x64' ">
     <OutputPath>bin\$(Configuration)\</OutputPath>
-    <DefineConstants>Debug;PublishDir=$(PublishDir);PowerShellDir=$(PowerShellDir);DriversDir=$(ProjectDir)..\Drivers;Year=$([System.DateTime]::UtcNow.ToString("yyyy"))</DefineConstants>
+    <DefineConstants>Debug;PublishDir=$(PublishDir);UcrtDir=$(UcrtDir);PowerShellDir=$(PowerShellDir);DriversDir=$(ProjectDir)..\Drivers;Year=$([System.DateTime]::UtcNow.ToString("yyyy"))</DefineConstants>
     <Cultures>en-US</Cultures>
     <SuppressAllWarnings>False</SuppressAllWarnings>
     <Pedantic>True</Pedantic>
@@ -37,7 +38,7 @@ SPDX-License-Identifier: GPL-3.0-only
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x64' ">
     <OutputPath>bin\$(Configuration)\</OutputPath>
-    <DefineConstants>PublishDir=$(PublishDir);PowerShellDir=$(PowerShellDir);DriversDir=$(ProjectDir)..\Drivers;Year=$([System.DateTime]::UtcNow.ToString("yyyy"))</DefineConstants>
+    <DefineConstants>PublishDir=$(PublishDir);UcrtDir=$(UcrtDir);PowerShellDir=$(PowerShellDir);DriversDir=$(ProjectDir)..\Drivers;Year=$([System.DateTime]::UtcNow.ToString("yyyy"))</DefineConstants>
     <Cultures>en-US</Cultures>
     <SuppressAllWarnings>False</SuppressAllWarnings>
     <Pedantic>True</Pedantic>
@@ -66,6 +67,14 @@ SPDX-License-Identifier: GPL-3.0-only
       <SuppressRegistry>true</SuppressRegistry>
       <ComponentGroupName>PowerShell</ComponentGroupName>
       <PreprocessorVariable>var.PowerShellDir</PreprocessorVariable>
+    </HarvestDirectory>
+    <HarvestDirectory Include="$(UcrtDir)" Visible="false">
+      <DirectoryRefId>APPLICATIONFOLDER</DirectoryRefId>
+      <SuppressRootDirectory>true</SuppressRootDirectory>
+      <SuppressCOM>true</SuppressCOM>
+      <SuppressRegistry>true</SuppressRegistry>
+      <ComponentGroupName>UCRT</ComponentGroupName>
+      <PreprocessorVariable>var.UcrtDir</PreprocessorVariable>
     </HarvestDirectory>
   </ItemGroup>
   <ItemGroup>
