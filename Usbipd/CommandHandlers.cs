@@ -856,7 +856,8 @@ sealed partial class CommandHandlers : ICommandHandlers
         });
         var json = JsonSerializer.Serialize(state, context.State);
 
-        Console.Write(json);
+        // Need to add newline, to fix PowerShell 3.0 (the default on Server 2012)
+        Console.WriteLine(json);
         return ExitCode.Success;
     }
 }
