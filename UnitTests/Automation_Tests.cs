@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 using System.Net;
+using System.Text.Json;
 using Usbipd.Automation;
 
 namespace UnitTests;
@@ -209,5 +210,127 @@ sealed class Automation_Tests
         };
         Assert.AreEqual(TestClientWslInstance, device.ClientWslInstance);
         Assert.IsTrue(device.IsWslAttached);
+    }
+
+    [TestMethod]
+    public void NullableBusIdJsonConverter_Read_Valid()
+    {
+        var reader = new Utf8JsonReader("\"1-42\""u8);
+        reader.Read();
+
+        var converter = new NullableBusIdJsonConverter();
+        var busId = converter.Read(ref reader, typeof(string), JsonSerializerOptions.Default);
+        Assert.AreEqual(new BusId(1, 42), busId);
+    }
+
+    [TestMethod]
+    public void NullableBusIdJsonConverter_Read_Invalid()
+    {
+        var converter = new NullableBusIdJsonConverter();
+        Assert.ThrowsException<FormatException>(() =>
+        {
+            var reader = new Utf8JsonReader("\"xxx\""u8);
+            reader.Read();
+
+            _ = converter.Read(ref reader, typeof(string), JsonSerializerOptions.Default);
+        });
+    }
+
+    [TestMethod]
+    public void NullableBusIdJsonConverter_Read_Null()
+    {
+        var reader = new Utf8JsonReader("null"u8);
+        reader.Read();
+
+        var converter = new NullableBusIdJsonConverter();
+        var busId = converter.Read(ref reader, typeof(string), JsonSerializerOptions.Default);
+        Assert.IsNull(busId);
+    }
+
+    [TestMethod]
+    public void NullableBusIdJsonConverter_Write_Valid()
+    {
+        using var memoryStream = new MemoryStream();
+        var writer = new Utf8JsonWriter(memoryStream, new() { SkipValidation = true });
+        {
+            var converter = new NullableBusIdJsonConverter();
+            converter.Write(writer, new(1, 42), JsonSerializerOptions.Default);
+        }
+        writer.Flush();
+        CollectionAssert.AreEqual("\"1-42\""u8.ToArray(), memoryStream.ToArray());
+    }
+
+    [TestMethod]
+    public void NullableBusIdJsonConverter_Write_Null()
+    {
+        using var memoryStream = new MemoryStream();
+        var writer = new Utf8JsonWriter(memoryStream, new() { SkipValidation = true });
+        {
+            var converter = new NullableBusIdJsonConverter();
+            converter.Write(writer, null, JsonSerializerOptions.Default);
+        }
+        writer.Flush();
+        CollectionAssert.AreEqual("null"u8.ToArray(), memoryStream.ToArray());
+    }
+
+    [TestMethod]
+    public void NullableIPAddressJsonConverter_Read_Valid()
+    {
+        var reader = new Utf8JsonReader("\"1.2.3.4\""u8);
+        reader.Read();
+
+        var converter = new NullableIPAddressJsonConverter();
+        var address = converter.Read(ref reader, typeof(string), JsonSerializerOptions.Default);
+        Assert.AreEqual(IPAddress.Parse("1.2.3.4"), address);
+    }
+
+    [TestMethod]
+    public void NullableIPAddressJsonConverter_Read_Invalid()
+    {
+        var converter = new NullableIPAddressJsonConverter();
+        Assert.ThrowsException<FormatException>(() =>
+        {
+            var reader = new Utf8JsonReader("\"xxx\""u8);
+            reader.Read();
+
+            _ = converter.Read(ref reader, typeof(string), JsonSerializerOptions.Default);
+        });
+    }
+
+    [TestMethod]
+    public void NullableIPAddressJsonConverter_Read_Null()
+    {
+        var reader = new Utf8JsonReader("null"u8);
+        reader.Read();
+
+        var converter = new NullableIPAddressJsonConverter();
+        var address = converter.Read(ref reader, typeof(string), JsonSerializerOptions.Default);
+        Assert.IsNull(address);
+    }
+
+    [TestMethod]
+    public void NullableIPAddressJsonConverter_Write_Valid()
+    {
+        using var memoryStream = new MemoryStream();
+        var writer = new Utf8JsonWriter(memoryStream, new() { SkipValidation = true });
+        {
+            var converter = new NullableIPAddressJsonConverter();
+            converter.Write(writer, IPAddress.Parse("1.2.3.4"), JsonSerializerOptions.Default);
+        }
+        writer.Flush();
+        CollectionAssert.AreEqual("\"1.2.3.4\""u8.ToArray(), memoryStream.ToArray());
+    }
+
+    [TestMethod]
+    public void NullableIPAddressJsonConverter_Write_Null()
+    {
+        using var memoryStream = new MemoryStream();
+        var writer = new Utf8JsonWriter(memoryStream, new() { SkipValidation = true });
+        {
+            var converter = new NullableIPAddressJsonConverter();
+            converter.Write(writer, null, JsonSerializerOptions.Default);
+        }
+        writer.Flush();
+        CollectionAssert.AreEqual("null"u8.ToArray(), memoryStream.ToArray());
     }
 }

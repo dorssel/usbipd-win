@@ -25,6 +25,7 @@ public class NullableBusIdJsonConverter : JsonConverter<BusId?>
         if (value is null)
         {
             writer.WriteNullValue();
+            return;
         }
 
         writer.WriteStringValue(value.ToString());

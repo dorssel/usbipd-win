@@ -26,6 +26,7 @@ public class NullableIPAddressJsonConverter : JsonConverter<IPAddress?>
         if (value is null)
         {
             writer.WriteNullValue();
+            return;
         }
 
         writer.WriteStringValue(value?.ToString());
