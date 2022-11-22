@@ -8,4 +8,5 @@ packages/
 .vs/
 .vscode/
 *.user
+*.lutconfig
 launchSettings.json

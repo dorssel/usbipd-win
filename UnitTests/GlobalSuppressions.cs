@@ -11,3 +11,4 @@ using System.Diagnostics.CodeAnalysis;
 
 [assembly: SuppressMessage("Reliability", "CA2007:Consider calling ConfigureAwait on the awaited task", Justification = "there is never a synchronization context")]
 [assembly: SuppressMessage("Performance", "CA1812:Internal class is never instantiated", Justification = "we use internal test classes")]
+[assembly: SuppressMessage("Trimming", "IL2026:Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code", Justification = "Some unit tests require reflection")]

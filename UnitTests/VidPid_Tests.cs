@@ -19,6 +19,18 @@ sealed class VidPid_Tests
         Assert.AreEqual(0, vidPid.Pid);
     }
 
+    [TestMethod]
+    public void JsonConstructor()
+    {
+        const ushort testVid = 0x1234;
+        const ushort testPid = 0xcdef;
+
+        var vidPid = new VidPid(testVid, testPid);
+
+        Assert.AreEqual(testVid, vidPid.Vid);
+        Assert.AreEqual(testPid, vidPid.Pid);
+    }
+
     sealed class VidPidData
     {
         static readonly string[] _Invalid = new[]

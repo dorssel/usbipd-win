@@ -14,6 +14,7 @@ SPDX-License-Identifier: GPL-3.0-only
 
   <ItemGroup>
     <None Include="$(PkgMicrosoft_Win32_Registry)\runtimes\$(RuntimeIdentifier)\lib\$(TargetFramework)\Microsoft.Win32.Registry.dll" CopyToOutputDirectory="PreserveNewest" Visible="false" />
+    <None Include="$(PkgSystem_Text_Json)\lib\$(TargetFramework)\System.Text.Json.dll" CopyToOutputDirectory="PreserveNewest" Visible="false" />
   </ItemGroup>
   
   <ItemGroup>
@@ -21,6 +22,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <PackageReference Include="PowerShellStandard.Library">
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
+    <PackageReference Include="System.Text.Json" GeneratePathProperty="true" />
   </ItemGroup>
   
   <ItemGroup>

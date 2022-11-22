@@ -17,7 +17,7 @@ using static Usbipd.Interop.WinSDK;
 
 namespace Usbipd;
 
-static class ConfigurationManager
+static partial class ConfigurationManager
 {
     public static void ThrowOnError(this CONFIGRET configRet, string function)
     {
@@ -145,10 +145,13 @@ static class ConfigurationManager
         return hubs;
     }
 
+    [GeneratedRegex(@"^Port_#([0-9]{4}).Hub_#([0-9]{4})$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+    private static partial Regex LocationInfoRegex();
+
     public static BusId GetBusId(uint deviceNode)
     {
         var locationInfo = (string)Get_DevNode_Property(deviceNode, PInvoke.DEVPKEY_Device_LocationInfo);
-        var match = Regex.Match(locationInfo, "^Port_#([0-9]{4}).Hub_#([0-9]{4})$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+        var match = LocationInfoRegex().Match(locationInfo);
         if (!match.Success)
         {
             // We want users to report this one.

@@ -23,41 +23,48 @@ sealed class Tools_Tests
     };
 
     [TestMethod]
-    public void ReadExactlyAsync_Success()
+    public void ReadMessageAsync_Success()
     {
         using var memoryStream = new MemoryStream(TestStreamBytes);
         var buf = new byte[TestStreamBytes.Length - 1];
-        memoryStream.ReadExactlyAsync(buf, CancellationToken.None).Wait();
+        memoryStream.ReadMessageAsync(buf, CancellationToken.None).Wait();
         Assert.AreEqual(TestStreamBytes.Length - 1, memoryStream.Position);
         Assert.IsTrue(buf.SequenceEqual(TestStreamBytes[0..^1]));
     }
 
     [TestMethod]
-    public void ReadExactlyAsync_EndOfStream()
+    public void ReadMessageAsync_Nothing()
+    {
+        using var memoryStream = new MemoryStream(TestStreamBytes);
+        memoryStream.ReadMessageAsync(Array.Empty<byte>(), CancellationToken.None).Wait();
+    }
+
+    [TestMethod]
+    public void ReadMessageAsync_EndOfStream()
     {
         using var memoryStream = new MemoryStream();
         var buf = new byte[TestStreamBytes.Length];
         var exception = Assert.ThrowsException<AggregateException>(() =>
         {
-            memoryStream.ReadExactlyAsync(buf, CancellationToken.None).Wait();
+            memoryStream.ReadMessageAsync(buf, CancellationToken.None).Wait();
         });
         Assert.IsInstanceOfType(exception.InnerException, typeof(EndOfStreamException));
     }
 
     [TestMethod]
-    public void ReadExactlyAsync_ProtocolViolation()
+    public void ReadMessageAsync_ProtocolViolation()
     {
         using var memoryStream = new MemoryStream(TestStreamBytes);
         var buf = new byte[TestStreamBytes.Length + 1];
         var exception = Assert.ThrowsException<AggregateException>(() =>
         {
-            memoryStream.ReadExactlyAsync(buf, CancellationToken.None).Wait();
+            memoryStream.ReadMessageAsync(buf, CancellationToken.None).Wait();
         });
         Assert.IsInstanceOfType(exception.InnerException, typeof(ProtocolViolationException));
     }
 
     [TestMethod]
-    public void ReadExactlyAsync_Parts()
+    public void ReadMessageAsync_Parts()
     {
         var pipe = new Pipe();
         using var readStream = pipe.Reader.AsStream();
@@ -65,7 +72,7 @@ sealed class Tools_Tests
 
         var buf = new byte[TestStreamBytes.Length - 1];
         writeStream.Write(TestStreamBytes.AsSpan(0, 1));
-        var task = readStream.ReadExactlyAsync(buf, CancellationToken.None);
+        var task = readStream.ReadMessageAsync(buf, CancellationToken.None);
         task.Wait(100);
         Assert.AreEqual(TaskStatus.WaitingForActivation, task.Status);
         writeStream.Write(TestStreamBytes.AsSpan(1));

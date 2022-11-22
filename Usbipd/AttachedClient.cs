@@ -87,7 +87,7 @@ sealed class AttachedClient
         var buf = new byte[submit.transfer_buffer_length];
         if (basic.direction == UsbIpDir.USBIP_DIR_OUT)
         {
-            await Stream.ReadExactlyAsync(buf, cancellationToken);
+            await Stream.ReadMessageAsync(buf, cancellationToken);
         }
 
         var packetDescriptors = await Stream.ReadUsbIpIsoPacketDescriptorsAsync(submit.number_of_packets, cancellationToken);
@@ -172,7 +172,7 @@ sealed class AttachedClient
             }
 
             // Continue when all ioctls *and* their continuations have been completed.
-            var replyTask = Task.WhenAll(ioctls).ContinueWith(byte[](task, _) =>
+            var replyTask = Task.WhenAll(ioctls).ContinueWith(byte[] (task, _) =>
             {
                 // The pending request is now completed; no need to support UNLINK any longer.
                 PendingSubmits.TryRemove(basic.seqnum, out var _);
@@ -282,7 +282,7 @@ sealed class AttachedClient
 
         if (basic.direction == UsbIpDir.USBIP_DIR_OUT)
         {
-            await Stream.ReadExactlyAsync(buf.AsMemory()[payloadOffset..], cancellationToken);
+            await Stream.ReadMessageAsync(buf.AsMemory()[payloadOffset..], cancellationToken);
         }
 
         // We now have received the entire SUBMIT request:
@@ -370,7 +370,7 @@ sealed class AttachedClient
         // At this point we have initiated the ioctl (and possibly awaited it for special cases).
         // Now we schedule a continuation to create the response once the ioctl completes.
 
-        var replyTask = ioctl.ContinueWith(byte[](task, _) =>
+        var replyTask = ioctl.ContinueWith(byte[] (task, _) =>
         {
             if (pending)
             {
@@ -395,9 +395,7 @@ sealed class AttachedClient
                         StructToBytes(configuration, buf.AsSpan(payloadOffset));
                     }
                 }
-#pragma warning disable CA1031 // Do not catch general exception types
                 catch { }
-#pragma warning restore CA1031 // Do not catch general exception types
             }
 
             var header = new UsbIpHeader

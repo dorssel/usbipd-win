@@ -240,7 +240,7 @@ sealed class PcapNg
         {
             await Stream.WriteAsync(CreateSectionHeaderBlock(), CancellationToken.None);
             await Stream.WriteAsync(CreateInterfaceDescriptionBlock(), CancellationToken.None);
-            bool needFlush = true;
+            var needFlush = true;
             while (true)
             {
                 using var flushTimer = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);

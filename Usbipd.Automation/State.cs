@@ -5,14 +5,18 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
-
-[assembly: CLSCompliant(false)]
+using System.Text.Json.Serialization;
 
 namespace Usbipd.Automation;
 
 [DataContract]
-public sealed class State
+public sealed partial class State
 {
+    public State() : this(Array.Empty<Device>()) { }
+
+    [JsonConstructor]
+    public State(IReadOnlyCollection<Device> devices) => (Devices) = (devices);
+
     /// <summary>
     /// Serialization for <see cref="Devices" />.
     /// </summary>

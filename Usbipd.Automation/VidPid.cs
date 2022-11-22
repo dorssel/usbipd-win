@@ -4,6 +4,7 @@
 
 using System;
 using System.Globalization;
+using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 
 namespace Usbipd.Automation;
@@ -11,6 +12,9 @@ namespace Usbipd.Automation;
 public readonly record struct VidPid
     : IComparable<VidPid>
 {
+    [JsonConstructor]
+    public VidPid(ushort vid, ushort pid) => (Vid, Pid) = (vid, pid);
+
     public ushort Vid { get; init; }
     public ushort Pid { get; init; }
 

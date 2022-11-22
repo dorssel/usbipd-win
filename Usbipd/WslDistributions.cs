@@ -75,6 +75,15 @@ sealed partial record WslDistributions
         return vmSwitchName;
     }
 
+    [GeneratedRegex(@"^  NAME +STATE +VERSION *$")]
+    private static partial Regex WslListHeaderRegex();
+
+    [GeneratedRegex(@"^( |\*) (.+) +([a-zA-Z]+) +([0-9])+ *$")]
+    private static partial Regex WslListDistroRegex();
+
+    [GeneratedRegex(@"\|--\s+(\S+)\s+/32 host LOCAL")]
+    private static partial Regex LocalAddressRegex();
+
     /// <summary>
     /// Returns null if WSL 2 is not even installed.
     /// </summary>
@@ -113,14 +122,14 @@ sealed partial record WslDistributions
                 var details = detailsResult.StandardOutput.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
 
                 // Sanity check
-                if (!Regex.IsMatch(details.FirstOrDefault() ?? string.Empty, "^  NAME +STATE +VERSION *$"))
+                if (!WslListHeaderRegex().IsMatch(details.FirstOrDefault() ?? string.Empty))
                 {
                     throw new UnexpectedResultException($"WSL failed to parse distributions: {detailsResult.StandardOutput}");
                 }
 
                 foreach (var line in details.Skip(1))
                 {
-                    var match = Regex.Match(line, @"^( |\*) (.+) +([a-zA-Z]+) +([0-9])+ *$");
+                    var match = WslListDistroRegex().Match(line);
                     if (!match.Success)
                     {
                         throw new UnexpectedResultException($"WSL failed to parse distributions: {detailsResult.StandardOutput}");
@@ -136,9 +145,7 @@ sealed partial record WslDistributions
                         // We'll do our best to get the instance address on the WSL virtual switch, but we don't fail if we can't.
                         // We use 'cat /proc/net/fib_trie', where we assume 'cat' is available on all distributions and /proc/net/fib_trie is supported by the WSL kernel.
                         var ipResult = await ProcessUtils.RunCapturedProcessAsync(WslPath, new[] { "--distribution", name, "--", "cat", "/proc/net/fib_trie" }, Encoding.UTF8, cancellationToken);
-#pragma warning disable CA1508 // Avoid dead conditional code (false positive)
                         if (ipResult.ExitCode == 0)
-#pragma warning restore CA1508 // Avoid dead conditional code
                         {
                             // Example output:
                             //
@@ -164,7 +171,7 @@ sealed partial record WslDistributions
                             //
                             // These are the interface addresses.
 
-                            for (match = Regex.Match(ipResult.StandardOutput, @"\|--\s+(\S+)\s+/32 host LOCAL"); match.Success; match = match.NextMatch())
+                            for (match = LocalAddressRegex().Match(ipResult.StandardOutput); match.Success; match = match.NextMatch())
                             {
                                 if (!IPAddress.TryParse(match.Groups[1].Value, out var wslInstance))
                                 {
@@ -188,9 +195,7 @@ sealed partial record WslDistributions
                 // At least, that seems to be the case; it turns out that the wsl.exe command line interface isn't stable.
 
                 // Newer versions of wsl.exe support the --status command.
-#pragma warning disable CA1508 // Avoid dead conditional code (false positive)
                 if ((await ProcessUtils.RunCapturedProcessAsync(WslPath, new[] { "--status" }, Encoding.Unicode, cancellationToken)).ExitCode != 0)
-#pragma warning restore CA1508 // Avoid dead conditional code
                 {
                     // We conclude that WSL is indeed not installed at all.
                     return null;

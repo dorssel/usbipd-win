@@ -5,15 +5,26 @@
 using System;
 using System.Net;
 using System.Runtime.Serialization;
+using System.Text.Json.Serialization;
 
 namespace Usbipd.Automation;
 
 [DataContract]
-public sealed class Device
+public sealed partial class Device
 {
+    public Device() { }
+
+    [JsonConstructor]
+    public Device(string instanceId, string description, bool isForced, BusId? busId, Guid? persistedGuid, string? stubInstanceId,
+        IPAddress? clientIPAddress, string? clientWslInstance)
+        => (InstanceId, Description, IsForced, BusId, PersistedGuid, StubInstanceId, ClientIPAddress, ClientWslInstance)
+        = (instanceId, description, isForced, busId, persistedGuid, stubInstanceId, clientIPAddress, clientWslInstance);
+
     [DataMember]
+    [JsonPropertyOrder(5)]
     public string InstanceId { get; init; } = string.Empty;
 
+    [JsonIgnore]
     public VidPid HardwareId
     {
         get
@@ -30,9 +41,11 @@ public sealed class Device
     }
 
     [DataMember]
+    [JsonPropertyOrder(4)]
     public string Description { get; init; } = string.Empty;
 
     [DataMember]
+    [JsonPropertyOrder(6)]
     public bool IsForced { get; init; }
 
     /// <summary>
@@ -41,6 +54,8 @@ public sealed class Device
     [DataMember(Name = nameof(BusId))]
     string? _BusId;
 
+    [JsonPropertyOrder(1)]
+    [JsonConverter(typeof(NullableBusIdJsonConverter))]
     public BusId? BusId
     {
         get => Automation.BusId.TryParse(_BusId ?? string.Empty, out var busId) ? busId : null;
@@ -48,9 +63,11 @@ public sealed class Device
     }
 
     [DataMember]
+    [JsonPropertyOrder(7)]
     public Guid? PersistedGuid { get; init; }
 
     [DataMember]
+    [JsonPropertyOrder(8)]
     public string? StubInstanceId { get; init; }
 
     /// <summary>
@@ -59,6 +76,8 @@ public sealed class Device
     [DataMember(Name = nameof(ClientIPAddress))]
     string? _ClientIPAddress;
 
+    [JsonPropertyOrder(2)]
+    [JsonConverter(typeof(NullableIPAddressJsonConverter))]
     public IPAddress? ClientIPAddress
     {
         get => IPAddress.TryParse(_ClientIPAddress, out var clientIPAddress) ? clientIPAddress : null;
@@ -66,13 +85,18 @@ public sealed class Device
     }
 
     [DataMember]
+    [JsonPropertyOrder(3)]
     public string? ClientWslInstance { get; init; }
 
+    [JsonIgnore]
     public bool IsBound { get => PersistedGuid is not null; }
 
+    [JsonIgnore]
     public bool IsConnected { get => BusId is not null; }
 
+    [JsonIgnore]
     public bool IsAttached { get => ClientIPAddress is not null; }
 
+    [JsonIgnore]
     public bool IsWslAttached { get => ClientWslInstance is not null; }
 }

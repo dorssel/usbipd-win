@@ -8,12 +8,12 @@ using System.Collections.Generic;
 using System.CommandLine;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
-using System.Runtime.Serialization.Json;
 using System.Security.Principal;
 using System.Text;
+using System.Text.Encodings.Web;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -51,7 +51,7 @@ interface ICommandHandlers
     public Task<ExitCode> State(IConsole console, CancellationToken cancellationToken);
 }
 
-sealed class CommandHandlers : ICommandHandlers
+sealed partial class CommandHandlers : ICommandHandlers
 {
     static IEnumerable<UsbDevice> GetDevicesByHardwareId(VidPid vidPid, bool connectedOnly, IConsole console)
     {
@@ -102,20 +102,23 @@ sealed class CommandHandlers : ICommandHandlers
     {
         // 70 leads (approximately) to the GPL default.
         var width = console.IsOutputRedirected ? 70 : Console.WindowWidth;
-        foreach (var line in Wrap($"{Program.Product} {GitVersionInformation.MajorMinorPatch}\n"
-            + $"{Program.Copyright}\n"
-            + "\n"
-            + "This program is free software: you can redistribute it and/or modify "
-            + "it under the terms of the GNU General Public License as published by "
-            + "the Free Software Foundation, version 3.\n"
-            + "\n"
-            + "This program is distributed in the hope that it will be useful, "
-            + "but WITHOUT ANY WARRANTY; without even the implied warranty of "
-            + "MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the "
-            + "GNU General Public License for more details.\n"
-            + "\n"
-            + "You should have received a copy of the GNU General Public License "
-            + "along with this program. If not, see <https://www.gnu.org/licenses/>.\n"
+        foreach (var line in Wrap($"""
+            {Program.Product} {GitVersionInformation.MajorMinorPatch}
+            {Program.Copyright}
+
+            This program is free software: you can redistribute it and/or modify \
+            it under the terms of the GNU General Public License as published by \
+            the Free Software Foundation, version 3.
+
+            This program is distributed in the hope that it will be useful, \
+            but WITHOUT ANY WARRANTY; without even the implied warranty of \
+            MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the \
+            GNU General Public License for more details.
+
+            You should have received a copy of the GNU General Public License \
+            along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+            """.Replace("\r\n", "\n").Replace("\\\n", "")
             , width))
         {
             console.WriteLine(line);
@@ -261,7 +264,7 @@ sealed class CommandHandlers : ICommandHandlers
             return ExitCode.AccessDenied;
         }
 
-        using var mutex = new Mutex(true, Usbipd.Server.SingletonMutexName, out var createdNew);
+        using var mutex = new Mutex(true, Server.SingletonMutexName, out var createdNew);
         if (!createdNew)
         {
             console.ReportError("Another instance is already running.");
@@ -274,7 +277,7 @@ sealed class CommandHandlers : ICommandHandlers
             .UseWindowsService()
             .ConfigureAppConfiguration((context, builder) =>
             {
-                var defaultConfig = new Dictionary<string, string>();
+                var defaultConfig = new Dictionary<string, string?>();
                 if (WindowsServiceHelpers.IsWindowsService())
                 {
                     // EventLog defaults to Warning, which is OK for .NET components,
@@ -453,6 +456,9 @@ sealed class CommandHandlers : ICommandHandlers
         }
         return distributions;
     }
+
+    [GeneratedRegex(@"^[a-zA-Z]:\\")]
+    private static partial Regex LocalDriveRegex();
 
     async Task<ExitCode> ICommandHandlers.WslAttach(BusId busId, bool autoAttach, string? distribution, IConsole console, CancellationToken cancellationToken)
     {
@@ -642,9 +648,7 @@ sealed class CommandHandlers : ICommandHandlers
             //    usbip (usbip-utils 2.0)
             //
             // NOTE: The package name and version varies.
-#pragma warning disable CA1508 // Avoid dead conditional code (false positive)
             if (wslResult.ExitCode != 0 || !wslResult.StandardOutput.StartsWith("usbip ("))
-#pragma warning restore CA1508 // Avoid dead conditional code
             {
                 console.ReportError($"WSL 'usbip' client not correctly installed. See {WslDistributions.WslWikiUrl} for the latest instructions.");
                 return ExitCode.Failure;
@@ -691,7 +695,7 @@ sealed class CommandHandlers : ICommandHandlers
         else
         {
             var scriptWindowsPath = Path.Combine(Path.GetDirectoryName(Environment.ProcessPath)!, "wsl-scripts", "auto-attach.sh");
-            if (!Regex.IsMatch(Path.GetPathRoot(scriptWindowsPath)!, "[a-zA-Z]:\\\\"))
+            if (!LocalDriveRegex().IsMatch(Path.GetPathRoot(scriptWindowsPath) ?? string.Empty))
             {
                 console.ReportError($"Option '--auto-attach' requires that this software is installed on a local drive.");
                 return ExitCode.Failure;
@@ -813,8 +817,6 @@ sealed class CommandHandlers : ICommandHandlers
         return ExitCode.Success;
     }
 
-    [UnconditionalSuppressMessage("Trimming", "IL2026:Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code",
-        Justification = "Only basic types are used; all required members are accessed (and therefore not trimmed away).")]
     async Task<ExitCode> ICommandHandlers.State(IConsole console, CancellationToken cancellationToken)
     {
         Console.SetError(TextWriter.Null);
@@ -847,14 +849,15 @@ sealed class CommandHandlers : ICommandHandlers
             Devices = devices,
         };
 
-        using var memoryStream = new MemoryStream();
+        var context = new StateSerializerContext(new()
         {
-            using var writer = JsonReaderWriterFactory.CreateJsonWriter(memoryStream, Encoding.UTF8, false, true);
-            var serializer = new DataContractJsonSerializer(state.GetType());
-            serializer.WriteObject(writer, state);
-        }
+            Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+            WriteIndented = true,
+        });
+        var json = JsonSerializer.Serialize(state, context.State);
 
-        Console.Write(Encoding.UTF8.GetString(memoryStream.ToArray()));
+        // Need to add newline, to fix PowerShell 3.0 (the default on Server 2012)
+        Console.WriteLine(json);
         return ExitCode.Success;
     }
 }
