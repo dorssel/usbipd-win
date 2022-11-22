@@ -20,7 +20,11 @@ SPDX-License-Identifier: GPL-3.0-only
     <PackageVersion Include="PowerShellStandard.Library" Version="5.1.1" />
 
     <!-- Installer -->
-    <PackageVersion Include="WiX" Version="3.11.2" />
+    <PackageVersion Include="WixToolset.DifxApp.wixext" Version="4.0.0-preview.1" />
+    <PackageVersion Include="WixToolset.Firewall.wixext" Version="4.0.0-preview.1" />
+    <PackageVersion Include="WixToolset.Heat" Version="4.0.0-preview.1" />
+    <PackageVersion Include="WixToolset.UI.wixext" Version="4.0.0-preview.1" />
+    <PackageVersion Include="WixToolset.Util.wixext" Version="4.0.0-preview.1" />
 
     <!-- UnitTests -->
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.4.1" />

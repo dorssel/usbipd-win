@@ -47,14 +47,11 @@ jobs:
           # Not strictly required, but codecov upload fails often. Maybe this helps...
           token: ${{ secrets.CODECOV_TOKEN }}
 
-      - name: Setup MSBuild
-        uses: microsoft/setup-msbuild@v1
-
       - name: Build (Installer)
-        run: msbuild Installer
+        run: dotnet build --configuration Release Installer
 
       - name: Upload Installer Artifact
         uses: actions/upload-artifact@v3
         with:
           name: msi-installer
-          path: 'Installer/bin/release/*.msi'
+          path: 'Installer/bin/x64/release/*.msi'

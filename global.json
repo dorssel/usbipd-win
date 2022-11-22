@@ -5,6 +5,7 @@
     "rollForward": "latestFeature"
   },
   "msbuild-sdks": {
-    "Microsoft.Build.NoTargets": "3.7.0"
+    "Microsoft.Build.NoTargets": "3.7.0",
+    "WixToolset.Sdk": "4.0.0-preview.1"
   }
 }
