@@ -176,13 +176,28 @@ static partial class ConfigurationManager
         }
     }
 
+    static string? GetDeviceName(uint deviceNode)
+    {
+        try
+        {
+            return (Get_DevNode_Property(deviceNode, PInvoke.DEVPKEY_NAME) as string)?.Trim();
+        }
+        catch (ConfigurationManagerException)
+        {
+            // This can happen for devices without a driver *and* without a USB string table.
+            return null;
+        }
+    }
+
+    const string UnknownDevice = "Unknown device";
+
     public static string GetDescription(uint deviceNode)
     {
         var isCompositeDevice = Get_DevNode_Property(deviceNode, PInvoke.DEVPKEY_Device_CompatibleIds) is string[] compatibleIds && compatibleIds.Contains(@"USB\COMPOSITE");
         if (!isCompositeDevice)
         {
-            // NAME is FriendlyName (if it exists), or else it is Description
-            return ((string)Get_DevNode_Property(deviceNode, PInvoke.DEVPKEY_NAME)).Trim();
+            // NAME is FriendlyName (if it exists), or else it is Description (if it exists), or else UnknownDevice
+            return GetDeviceName(deviceNode) ?? UnknownDevice;
         }
 
         // For USB\COMPOSITE we need to add the descriptions of the direct children.
@@ -205,7 +220,7 @@ static partial class ConfigurationManager
 
         foreach (var childNode in EnumChildren(deviceNode))
         {
-            var name = ((string)Get_DevNode_Property(childNode, PInvoke.DEVPKEY_NAME)).Trim();
+            var name = (Get_DevNode_Property(childNode, PInvoke.DEVPKEY_NAME) as string)?.Trim();
             if (!string.IsNullOrEmpty(name) && descriptionSet.Add(name))
             {
                 descriptionList.Add(name);
@@ -217,7 +232,7 @@ static partial class ConfigurationManager
             // This can happen if the USB\COMPOSITE device does not have a FriendlyName and the
             // bus has not yet enumerated the children; for example, right after releasing the device
             // back to Windows. Just fall back to the non-descriptive name for USB\COMPOSITE.
-            return ((string)Get_DevNode_Property(deviceNode, PInvoke.DEVPKEY_NAME)).Trim();
+            return GetDeviceName(deviceNode) ?? UnknownDevice;
         }
 
         return string.Join(", ", descriptionList);
