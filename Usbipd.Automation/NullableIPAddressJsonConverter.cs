@@ -23,12 +23,14 @@ public class NullableIPAddressJsonConverter : JsonConverter<IPAddress?>
 
     public override void Write(Utf8JsonWriter writer, IPAddress? value, JsonSerializerOptions options)
     {
+        _ = writer ?? throw new ArgumentNullException(nameof(writer));
+
         if (value is null)
         {
             writer.WriteNullValue();
             return;
         }
 
-        writer.WriteStringValue(value?.ToString());
+        writer.WriteStringValue(value.ToString());
     }
 }

@@ -93,7 +93,9 @@ static class Program
         {
             return complete()?.Where(s => s.StartsWith(completionContext.WordToComplete)) ?? Array.Empty<string>();
         }
+#pragma warning disable CA1031 // Do not catch general exception types (justification: completions are supposed to help, not crash)
         catch
+#pragma warning restore CA1031 // Do not catch general exception types
         {
             return Array.Empty<string>();
         }

@@ -60,41 +60,43 @@ sealed partial class CommandHandlers : ICommandHandlers
             return Array.Empty<UsbDevice>();
         }
         var devices = UsbDevice.GetAll().Where(d => (d.HardwareId == vidPid) && (!connectedOnly || d.BusId.HasValue));
-        if (!devices.Any())
+        var found = false;
+        foreach (var device in devices)
+        {
+            if (device.BusId.HasValue)
+            {
+                found = true;
+                console.ReportInfo($"Device with hardware-id '{vidPid}' found at busid '{device.BusId.Value}'.");
+            }
+            else if (device.Guid.HasValue)
+            {
+                found = true;
+                console.ReportInfo($"Persisted device with hardware-id '{vidPid}' found at guid '{device.Guid.Value:D}'.");
+            }
+        }
+        if (!found)
         {
             console.ReportError($"No devices found with hardware-id '{vidPid}'.");
-        }
-        else
-        {
-            foreach (var device in devices)
-            {
-                if (device.BusId.HasValue)
-                {
-                    console.ReportInfo($"Device with hardware-id '{vidPid}' found at busid '{device.BusId.Value}'.");
-                }
-                else if (device.Guid.HasValue)
-                {
-                    console.ReportInfo($"Persisted device with hardware-id '{vidPid}' found at guid '{device.Guid.Value:D}'.");
-                }
-            }
         }
         return devices;
     }
 
     static BusId? GetBusIdByHardwareId(VidPid vidPid, IConsole console)
     {
-        var devices = GetDevicesByHardwareId(vidPid, true, console);
-        switch (devices.Take(2).Count())
+        try
         {
-            case 0:
+            var device = GetDevicesByHardwareId(vidPid, true, console).SingleOrDefault();
+            if (device is null)
+            {
                 // Already reported.
                 return null;
-            case 1:
-                return devices.Single().BusId;
-            case 2:
-            default:
-                console.ReportError($"Multiple devices with hardware-id '{vidPid}' were found; disambiguate by using '--busid'.");
-                return null;
+            }
+            return device.BusId;
+        }
+        catch (InvalidOperationException)
+        {
+            console.ReportError($"Multiple devices with hardware-id '{vidPid}' were found; disambiguate by using '--busid'.");
+            return null;
         }
     }
 
@@ -128,7 +130,7 @@ sealed partial class CommandHandlers : ICommandHandlers
 
     Task<ExitCode> ICommandHandlers.List(IConsole console, CancellationToken cancellationToken)
     {
-        var allDevices = UsbDevice.GetAll();
+        var allDevices = UsbDevice.GetAll().ToList();
         console.WriteLine("Connected:");
         console.WriteLine($"{"BUSID",-5}  {"VID:PID",-9}  {"DEVICE",-60}  STATE");
         foreach (var device in allDevices.Where(d => d.BusId.HasValue).OrderBy(d => d.BusId.GetValueOrDefault()))
@@ -351,7 +353,8 @@ sealed partial class CommandHandlers : ICommandHandlers
     {
         // Unbind acts as a cleanup and has to support partially failed binds.
 
-        if (!devices.Any())
+        var deviceList = devices.ToList();
+        if (!deviceList.Any())
         {
             // This would result in a no-op, which may not be what the user intended.
             return ExitCode.Failure;
@@ -364,7 +367,7 @@ sealed partial class CommandHandlers : ICommandHandlers
         }
         var reboot = false;
         var driverError = false;
-        foreach (var device in devices)
+        foreach (var device in deviceList)
         {
             if (device.Guid is not null)
             {
@@ -648,7 +651,9 @@ sealed partial class CommandHandlers : ICommandHandlers
             //    usbip (usbip-utils 2.0)
             //
             // NOTE: The package name and version varies.
+#pragma warning disable CA1508 // Avoid dead conditional code (false positive)
             if (wslResult.ExitCode != 0 || !wslResult.StandardOutput.StartsWith("usbip ("))
+#pragma warning restore CA1508 // Avoid dead conditional code
             {
                 console.ReportError($"WSL 'usbip' client not correctly installed. See {WslDistributions.WslWikiUrl} for the latest instructions.");
                 return ExitCode.Failure;
