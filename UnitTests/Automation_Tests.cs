@@ -251,7 +251,7 @@ sealed class Automation_Tests
     public void NullableBusIdJsonConverter_Write_Valid()
     {
         using var memoryStream = new MemoryStream();
-        var writer = new Utf8JsonWriter(memoryStream, new() { SkipValidation = true });
+        using var writer = new Utf8JsonWriter(memoryStream, new() { SkipValidation = true });
         {
             var converter = new NullableBusIdJsonConverter();
             converter.Write(writer, new(1, 42), JsonSerializerOptions.Default);
@@ -264,7 +264,7 @@ sealed class Automation_Tests
     public void NullableBusIdJsonConverter_Write_Null()
     {
         using var memoryStream = new MemoryStream();
-        var writer = new Utf8JsonWriter(memoryStream, new() { SkipValidation = true });
+        using var writer = new Utf8JsonWriter(memoryStream, new() { SkipValidation = true });
         {
             var converter = new NullableBusIdJsonConverter();
             converter.Write(writer, null, JsonSerializerOptions.Default);
@@ -312,7 +312,7 @@ sealed class Automation_Tests
     public void NullableIPAddressJsonConverter_Write_Valid()
     {
         using var memoryStream = new MemoryStream();
-        var writer = new Utf8JsonWriter(memoryStream, new() { SkipValidation = true });
+        using var writer = new Utf8JsonWriter(memoryStream, new() { SkipValidation = true });
         {
             var converter = new NullableIPAddressJsonConverter();
             converter.Write(writer, IPAddress.Parse("1.2.3.4"), JsonSerializerOptions.Default);
@@ -325,7 +325,7 @@ sealed class Automation_Tests
     public void NullableIPAddressJsonConverter_Write_Null()
     {
         using var memoryStream = new MemoryStream();
-        var writer = new Utf8JsonWriter(memoryStream, new() { SkipValidation = true });
+        using var writer = new Utf8JsonWriter(memoryStream, new() { SkipValidation = true });
         {
             var converter = new NullableIPAddressJsonConverter();
             converter.Write(writer, null, JsonSerializerOptions.Default);

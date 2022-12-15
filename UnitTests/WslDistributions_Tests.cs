@@ -68,7 +68,7 @@ sealed class WslDistributions_Tests
         Assert.IsNull(distro);
     }
 
-    class NetworkData
+    sealed class NetworkData
     {
         static readonly (string host, string client)[] SameNetworkData = new[]
         {

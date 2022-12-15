@@ -22,6 +22,8 @@ public class NullableBusIdJsonConverter : JsonConverter<BusId?>
 
     public override void Write(Utf8JsonWriter writer, BusId? value, JsonSerializerOptions options)
     {
+        _ = writer ?? throw new ArgumentNullException(nameof(writer));
+
         if (value is null)
         {
             writer.WriteNullValue();

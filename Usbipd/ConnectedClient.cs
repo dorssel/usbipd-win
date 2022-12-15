@@ -249,7 +249,9 @@ sealed class ConnectedClient
         }
         catch
         {
+#pragma warning disable CA1508 // Avoid dead conditional code (false positive)
             if (status != Status.ST_OK)
+#pragma warning restore CA1508 // Avoid dead conditional code
             {
                 try
                 {
@@ -257,7 +259,9 @@ sealed class ConnectedClient
                     // fails we'll throw the *original* exception.
                     await SendOpCodeAsync(OpCode.OP_REP_IMPORT, status);
                 }
+#pragma warning disable CA1031 // Do not catch general exception types
                 catch { }
+#pragma warning restore CA1031 // Do not catch general exception types
             }
             throw;
         }
