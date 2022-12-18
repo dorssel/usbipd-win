@@ -34,9 +34,7 @@ SPDX-License-Identifier: GPL-3.0-only
                 </Component>
                 <Component Id="VBoxUSB.inf">
                     <File Name="VBoxUSB.inf" />
-                    <!--
                     <difx:Driver AddRemovePrograms="no" PlugAndPlayPrompt="no" />
-                    -->
                 </Component>
             </Directory>
         </DirectoryRef>
@@ -55,9 +53,7 @@ SPDX-License-Identifier: GPL-3.0-only
                 </Component>
                 <Component Id="VBoxUSBMon.inf">
                     <File Name="VBoxUSBMon.inf" />
-                    <!--
                     <difx:Driver AddRemovePrograms="no" PlugAndPlayPrompt="no" />
-                    -->
                 </Component>
             </Directory>
         </DirectoryRef>
