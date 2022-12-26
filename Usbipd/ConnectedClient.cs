@@ -162,7 +162,11 @@ sealed class ConnectedClient
             }
 
             status = Status.ST_DEV_ERR;
+            var sw = new Stopwatch();
+            sw.Start();
             (var vboxDevice, ClientContext.AttachedDevice) = await VBoxUsb.ClaimDevice(device.BusId.Value);
+            sw.Stop();
+            Logger.Debug($"Claiming took {sw.ElapsedMilliseconds} ms");
 
             HCMNOTIFICATION notification = default;
             Logger.ClientAttach(ClientContext.ClientAddress, busId, device.InstanceId);

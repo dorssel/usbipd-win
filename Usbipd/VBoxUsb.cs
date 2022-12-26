@@ -77,7 +77,7 @@ static class VBoxUsb
             }
             catch (FileNotFoundException)
             {
-                if (sw.Elapsed > TimeSpan.FromSeconds(5))
+                if (sw.Elapsed > TimeSpan.FromSeconds(10))
                 {
                     throw;
                 }
