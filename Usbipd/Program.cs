@@ -220,14 +220,28 @@ static class Program
         }
         {
             //
+            //  list [--usbids]
+            //
+            var usbidsOption = new Option<bool>(
+                aliases: new[] { "--usbids", "-u" }
+            )
+            {
+                Description = "Show device description from Linux database",
+                Arity = ArgumentArity.Zero,
+            };
+            //
             //  list
             //
             var listCommand = new Command("list", "List USB devices\0"
-                + "Lists currently connected USB devices as well as USB devices that are shared but are not currently connected.");
+                + "Lists currently connected USB devices as well as USB devices that are shared but are not currently connected.")
+            {
+                usbidsOption,
+            };
             listCommand.SetHandler(async (invocationContext) =>
             {
                 invocationContext.ExitCode = (int)(
-                    await commandHandlers.List(invocationContext.Console, invocationContext.GetCancellationToken())
+                    await commandHandlers.List(invocationContext.ParseResult.HasOption(usbidsOption),
+                        invocationContext.Console, invocationContext.GetCancellationToken())
                     );
             });
             rootCommand.AddCommand(listCommand);
@@ -570,14 +584,28 @@ static class Program
             }
             {
                 //
+                //  wsl list [--usbids]
+                //
+                var usbidsOption = new Option<bool>(
+                    aliases: new[] { "--usbids", "-u" }
+                )
+                {
+                    Description = "Show device description from Linux database",
+                    Arity = ArgumentArity.Zero,
+                };
+                //
                 //  wsl list
                 //
                 var listCommand = new Command("list", "List USB devices\0"
-                    + "Lists all USB devices that are available for being attached to a WSL instance.");
+                    + "Lists all USB devices that are available for being attached to a WSL instance.")
+                {
+                    usbidsOption,
+                };
                 listCommand.SetHandler(async (invocationContext) =>
                 {
                     invocationContext.ExitCode = (int)(
-                        await commandHandlers.WslList(invocationContext.Console, invocationContext.GetCancellationToken())
+                        await commandHandlers.WslList(invocationContext.ParseResult.HasOption(usbidsOption),
+                            invocationContext.Console, invocationContext.GetCancellationToken())
                         );
                 });
                 wslCommand.AddCommand(listCommand);
