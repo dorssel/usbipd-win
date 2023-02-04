@@ -4,16 +4,18 @@ SPDX-FileCopyrightText: 2020 Frans van Dorsselaer
 
 SPDX-License-Identifier: GPL-3.0-only
 -->
-<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-    <Product
-        Id="$(var.ProductId)"
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+    <Package
+        ProductCode="$(var.ProductCode)"
         Name="usbipd-win"
         Language="1033"
         Version="$(var.GitVersion_MajorMinorPatch)"
         Manufacturer="Frans van Dorsselaer"
         UpgradeCode="{EA1D5623-E6A7-4E4A-9259-E3972226646F}"
+        InstallerVersion="500"
+        Compressed="yes"
+        Scope="perMachine"
         >
-        <Package InstallerVersion="500" Compressed="yes" InstallScope="perMachine" />
 
         <?ifdef Debug ?>
         <MediaTemplate EmbedCab="yes" CompressionLevel="none" />
@@ -33,9 +35,9 @@ SPDX-License-Identifier: GPL-3.0-only
             DowngradeErrorMessage="A newer version of [ProductName] is already installed."
             />
 
-        <Property Id="ARPURLINFOABOUT">https://github.com/dorssel/usbipd-win</Property>
-        <Property Id="ARPURLUPDATEINFO">https://github.com/dorssel/usbipd-win/releases</Property>
-        <Property Id="ARPHELPLINK">https://github.com/dorssel/usbipd-win/issues</Property>
+        <Property Id="ARPURLINFOABOUT" Value="https://github.com/dorssel/usbipd-win" />
+        <Property Id="ARPURLUPDATEINFO" Value="https://github.com/dorssel/usbipd-win/releases" />
+        <Property Id="ARPHELPLINK" Value="https://github.com/dorssel/usbipd-win/issues" />
 
         <Property Id="MSIDEPLOYMENTCOMPLIANT" Value="1" />
 
@@ -44,7 +46,14 @@ SPDX-License-Identifier: GPL-3.0-only
         Therefore, we must always overwrite all files, as the trimming may be different from one build to another.
         This is safe, since we only install files in our own dedicated application directory.
         -->
-        <SetProperty Action="SetREINSTALLMODE" Id="REINSTALLMODE" Value="amus" Before="CostInitialize" Sequence="first">NOT REINSTALLMODE</SetProperty>
+        <SetProperty
+            Action="SetREINSTALLMODE"
+            Id="REINSTALLMODE"
+            Value="amus"
+            Before="CostInitialize"
+            Sequence="first"
+            Condition="NOT REINSTALLMODE"
+            />
 
         <!--
         MSI specifies that TARGETDIR overrides the default installation location, and winget relies on that.
@@ -54,7 +63,14 @@ SPDX-License-Identifier: GPL-3.0-only
         https://docs.microsoft.com/en-us/windows/win32/msi/targetdir
         https://docs.microsoft.com/en-us/windows/win32/msi/changing-the-target-location-for-a-directory
         -->
-        <SetProperty Action="UseTARGETDIR" Id="APPLICATIONFOLDER" Value="[TARGETDIR]" Before="PreserveCurrentInstallationLocation" Sequence="first">TARGETDIR AND NOT APPLICATIONFOLDER</SetProperty>
+        <SetProperty
+            Action="UseTARGETDIR"
+            Id="APPLICATIONFOLDER"
+            Value="[TARGETDIR]"
+            Before="PreserveCurrentInstallationLocation"
+            Sequence="first"
+            Condition="TARGETDIR AND NOT APPLICATIONFOLDER"
+            />
 
         <!--
         Get the current installation location (if any).
@@ -87,7 +103,14 @@ SPDX-License-Identifier: GPL-3.0-only
         a) specify a non-default installation location on first install, which is then preserved when updating using defaults.
         b) specify APPLICATIONFOLDER (or TARGETDIR) when updating, which will change the installation directory.
         -->
-        <SetProperty Action="PreserveCurrentInstallationLocation" Id="APPLICATIONFOLDER" Value="[CURRENTINSTALLATIONLOCATION]" Before="CostInitialize" Sequence="first">CURRENTINSTALLATIONLOCATION AND NOT APPLICATIONFOLDER</SetProperty>
+        <SetProperty
+            Action="PreserveCurrentInstallationLocation"
+            Id="APPLICATIONFOLDER"
+            Value="[CURRENTINSTALLATIONLOCATION]"
+            Before="CostInitialize"
+            Sequence="first"
+            Condition="CURRENTINSTALLATIONLOCATION AND NOT APPLICATIONFOLDER"
+            />
 
         <SetProperty Id="ARPINSTALLLOCATION" Value="[APPLICATIONFOLDER]" After="CostFinalize" />
 
@@ -96,7 +119,7 @@ SPDX-License-Identifier: GPL-3.0-only
             Level="1"
             AllowAdvertise="no"
             Display="expand"
-            Absent="disallow"
+            AllowAbsent="no"
             Title="Server"
             Description="The user mode server application, installed as a service."
             >
@@ -107,20 +130,21 @@ SPDX-License-Identifier: GPL-3.0-only
                 Level="1"
                 AllowAdvertise="no"
                 Display="expand"
-                Absent="allow"
+                AllowAbsent="yes"
                 Title="Universal C Runtime."
                 Description="Required only if not already installed as a Windows Update."
                 >
                 <!--
                 Windows 10 / Server 2016 or higher always uses the system UCRT.
                 -->
-                <Condition Level="0">WINDOWS_10_OR_HIGHER</Condition>
+                <Level Value="0" Condition="WINDOWS_10_OR_HIGHER"/>
                 <ComponentGroupRef Id="UCRT" />
             </Feature>
             <Feature
                 Id="Drivers"
                 Level="1"
                 AllowAdvertise="no"
+                AllowAbsent="no"
                 Title="Drivers"
                 Description="The VirtualBox USB drivers."
                 >
@@ -131,7 +155,7 @@ SPDX-License-Identifier: GPL-3.0-only
                 Level="1"
                 AllowAdvertise="no"
                 Display="expand"
-                Absent="disallow"
+                AllowAbsent="yes"
                 Title="PowerShell Support"
                 Description="A loadable module for PowerShell."
                 >
@@ -140,15 +164,13 @@ SPDX-License-Identifier: GPL-3.0-only
         </Feature>
 
         <UIRef Id="UserInterface"/>
-    </Product>
+    </Package>
 
     <Fragment>
-        <Directory Id="TARGETDIR" Name="SourceDir">
-            <Directory Id="ProgramFiles64Folder">
-                <Directory Id="APPLICATIONFOLDER" Name="usbipd-win" FileSource="$(var.PublishDir)">
-                    <Directory Id="PowerShell" Name="PowerShell" FileSource="$(var.PowerShellDir)" />
-                </Directory>
+        <StandardDirectory Id="ProgramFiles64Folder">
+            <Directory Id="APPLICATIONFOLDER" Name="usbipd-win" FileSource="$(var.PublishDir)">
+                <Directory Id="PowerShell" Name="PowerShell" FileSource="$(var.PowerShellDir)" />
             </Directory>
-        </Directory>
+        </StandardDirectory>
     </Fragment>
 </Wix>

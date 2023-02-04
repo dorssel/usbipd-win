@@ -5,8 +5,8 @@ SPDX-FileCopyrightText: 2020 Frans van Dorsselaer
 SPDX-License-Identifier: GPL-3.0-only
 -->
 <Wix
-    xmlns="http://schemas.microsoft.com/wix/2006/wi"
-    xmlns:difx="http://schemas.microsoft.com/wix/DifxAppExtension"
+    xmlns="http://wixtoolset.org/schemas/v4/wxs"
+    xmlns:difx="http://wixtoolset.org/schemas/v4/wxs/difxapp"
     >
     <Fragment>
         <DirectoryRef Id="APPLICATIONFOLDER">
@@ -15,27 +15,25 @@ SPDX-License-Identifier: GPL-3.0-only
     </Fragment>
     <Fragment>
         <DirectoryRef Id="Drivers" FileSource="$(var.DriversDir)">
-            <Component>
-                <File Id="README.md" />
+            <Component Id="README.md">
+                <File Name="README.md" />
             </Component>
         </DirectoryRef>
     </Fragment>
     <Fragment>
         <DirectoryRef Id="Drivers" FileSource="$(var.DriversDir)">
             <Directory Id="VBoxUSB" Name="VBoxUSB">
-                <Component>
-                    <Condition>WINDOWS_10_OR_HIGHER</Condition>
-                    <File Id="VBoxUSB.cat" />
+                <Component Id="VBoxUSB.cat" Condition="WINDOWS_10_OR_HIGHER">
+                    <File Name="VBoxUSB.cat" />
                 </Component>
-                <Component Guid="{160CBFA1-3F76-440E-B587-641D67297588}">
-                    <Condition>NOT WINDOWS_10_OR_HIGHER</Condition>
+                <Component Id="VBoxUSB_Legacy.cat" Guid="{160CBFA1-3F76-440E-B587-641D67297588}" Condition="NOT WINDOWS_10_OR_HIGHER">
                     <File Id="VBoxUSB_Legacy.cat" Name="VBoxUSB.cat" Source="$(var.DriversDir)\VBoxUSB\VBoxUSB_Legacy.cat" KeyPath="yes" />
                 </Component>
-                <Component>
-                    <File Id="VBoxUSB.sys" />
+                <Component Id="VBoxUSB.sys" Bitness="always64">
+                    <File Name="VBoxUSB.sys" />
                 </Component>
                 <Component Id="VBoxUSB.inf">
-                    <File Id="VBoxUSB.inf" />
+                    <File Name="VBoxUSB.inf" />
                     <difx:Driver AddRemovePrograms="no" PlugAndPlayPrompt="no" />
                 </Component>
             </Directory>
@@ -44,19 +42,17 @@ SPDX-License-Identifier: GPL-3.0-only
     <Fragment>
         <DirectoryRef Id="Drivers" FileSource="$(var.DriversDir)">
             <Directory Id="VBoxUSBMon" Name="VBoxUSBMon">
-                <Component>
-                    <Condition>WINDOWS_10_OR_HIGHER</Condition>
-                    <File Id="VBoxUSBMon.cat" />
+                <Component Id="VBoxUSBMon.cat" Condition="WINDOWS_10_OR_HIGHER">
+                    <File Name="VBoxUSBMon.cat" ShortName="VBoxMon1.cat" />
                 </Component>
-                <Component Guid="{90DA5BCB-01CB-4CDA-813D-062C95AACA84}">
-                    <Condition>NOT WINDOWS_10_OR_HIGHER</Condition>
-                    <File Id="VBoxUSBMon_Legacy.cat" Name="VBoxUSBMon.cat" Source="$(var.DriversDir)\VBoxUSBMon\VBoxUSBMon_Legacy.cat" KeyPath="yes" />
+                <Component Id="VBoxUSBMon_Legacy.cat" Guid="{90DA5BCB-01CB-4CDA-813D-062C95AACA84}" Condition="NOT WINDOWS_10_OR_HIGHER">
+                    <File Id="VBoxUSBMon_Legacy.cat" Name="VBoxUSBMon.cat" ShortName="VBoxMon2.cat" Source="$(var.DriversDir)\VBoxUSBMon\VBoxUSBMon_Legacy.cat" KeyPath="yes" />
                 </Component>
-                <Component>
-                    <File Id="VBoxUSBMon.sys" />
+                <Component Id="VBoxUSBMon.sys" Bitness="always64">
+                    <File Name="VBoxUSBMon.sys" />
                 </Component>
                 <Component Id="VBoxUSBMon.inf">
-                    <File Id="VBoxUSBMon.inf" />
+                    <File Name="VBoxUSBMon.inf" />
                     <difx:Driver AddRemovePrograms="no" PlugAndPlayPrompt="no" />
                 </Component>
             </Directory>

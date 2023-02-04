@@ -1,55 +1,24 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <!--
 SPDX-FileCopyrightText: 2020 Frans van Dorsselaer
 
 SPDX-License-Identifier: GPL-3.0-only
 -->
-<Project ToolsVersion="Current" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project Sdk="WixToolset.Sdk">
   <PropertyGroup>
-    <TargetFramework>net6.0-windows8.0</TargetFramework>
-    <BaseIntermediateOutputPath>obj</BaseIntermediateOutputPath>
-    <IntermediateOutputPath>$(BaseIntermediateOutputPath)\$(Configuration)\</IntermediateOutputPath>
     <GenerateGitVersionInformation>false</GenerateGitVersionInformation>
     <UpdateAssemblyInfo>false</UpdateAssemblyInfo>
-    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
-  </PropertyGroup>
-  <Import Project="..\InstallerDependencies\obj\InstallerDependencies.csproj.nuget.g.props" Condition="Exists('..\InstallerDependencies\obj\InstallerDependencies.csproj.nuget.g.props')" />
-  <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Release</Configuration>
-    <Platform>x64</Platform>
-    <ProjectGuid>080ef94c-a8ec-4975-a697-bbf8c1a56055</ProjectGuid>
-    <SchemaVersion>2.0</SchemaVersion>
-    <OutputType>Package</OutputType>
     <OutputName>usbipd-win</OutputName>
-    <DefineSolutionProperties>false</DefineSolutionProperties>
     <PublishDir>..\Usbipd\bin\publish</PublishDir>
     <PowerShellDir>..\Usbipd.PowerShell\bin\$(Configuration)\netstandard2.0\win</PowerShellDir>
     <UcrtDir>$(MSBuildProgramFiles32)\Windows Kits\10\Redist\10.0.22621.0\ucrt\DLLs\x64</UcrtDir>
-    <NuGetPackageImportStamp>
-    </NuGetPackageImportStamp>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x64' ">
-    <OutputPath>bin\$(Configuration)\</OutputPath>
-    <DefineConstants>Debug;PublishDir=$(PublishDir);UcrtDir=$(UcrtDir);PowerShellDir=$(PowerShellDir);DriversDir=$(ProjectDir)..\Drivers;Year=$([System.DateTime]::UtcNow.ToString("yyyy"))</DefineConstants>
-    <Cultures>en-US</Cultures>
-    <SuppressAllWarnings>False</SuppressAllWarnings>
-    <Pedantic>True</Pedantic>
-    <SuppressIces>ICE30</SuppressIces>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x64' ">
-    <OutputPath>bin\$(Configuration)\</OutputPath>
-    <DefineConstants>PublishDir=$(PublishDir);UcrtDir=$(UcrtDir);PowerShellDir=$(PowerShellDir);DriversDir=$(ProjectDir)..\Drivers;Year=$([System.DateTime]::UtcNow.ToString("yyyy"))</DefineConstants>
-    <Cultures>en-US</Cultures>
-    <SuppressAllWarnings>False</SuppressAllWarnings>
-    <Pedantic>True</Pedantic>
-    <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
-    <SuppressIces>ICE30</SuppressIces>
+    <DefineConstants>PublishDir=$(PublishDir);UcrtDir=$(UcrtDir);PowerShellDir=$(PowerShellDir);DriversDir=..\Drivers;Year=$([System.DateTime]::UtcNow.ToString("yyyy"))</DefineConstants>
+    <!-- Suppress WIX1130: DifxApp Driver is deprecated -->
+    <!-- Suppress WIX1076: Allow components with with same target file, as they *are* mutually exclusive -->
+    <SuppressSpecificWarnings>1130;1076</SuppressSpecificWarnings>
+    <Pedantic>true</Pedantic>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Drivers.wxs" />
-    <Compile Include="Server.wxs" />
-    <Compile Include="Product.wxs" />
-    <Compile Include="UserInterface.wxs" />
     <Content Include="HarvestTransform.xslt" />
     <HarvestDirectory Include="$(PublishDir)" Visible="false">
       <DirectoryRefId>APPLICATIONFOLDER</DirectoryRefId>
@@ -78,33 +47,12 @@ SPDX-License-Identifier: GPL-3.0-only
     </HarvestDirectory>
   </ItemGroup>
   <ItemGroup>
-    <WixExtension Include="WixFirewallExtension">
-      <HintPath>$(WixExtDir)\WixFirewallExtension.dll</HintPath>
-      <Name>WixFirewallExtension</Name>
-    </WixExtension>
-    <WixExtension Include="WixDifxAppExtension">
-      <HintPath>$(WixExtDir)\WixDifxAppExtension.dll</HintPath>
-      <Name>WixDifxAppExtension</Name>
-    </WixExtension>
-    <WixLibrary Include="difxapp_x64">
-      <HintPath>$(WixExtDir)\difxapp_x64.wixlib</HintPath>
-      <Name>difxapp_x64</Name>
-    </WixLibrary>
-    <WixExtension Include="WixUIExtension">
-      <HintPath>$(WixExtDir)WixUIExtension.dll</HintPath>
-      <Name>WixUIExtension</Name>
-    </WixExtension>
-    <WixExtension Include="WixUtilExtension">
-      <HintPath>$(WixExtDir)\WixUtilExtension.dll</HintPath>
-      <Name>WixUtilExtension</Name>
-    </WixExtension>
+    <PackageReference Include="WixToolset.DifxApp.wixext" />
+    <PackageReference Include="WixToolset.Firewall.wixext" />
+    <PackageReference Include="Wixtoolset.Heat" />
+    <PackageReference Include="WixToolset.UI.wixext" />
+    <PackageReference Include="WixToolset.Util.wixext" />
   </ItemGroup>
-  <Import Project="$(WixTargetsPath)" Condition=" '$(WixTargetsPath)' != '' " />
-  <Target Name="BeforeBuild">
-    <MakeDir Directories="obj">
-    </MakeDir>
-  </Target>
-  <Target Name="EnsureWixToolsetInstalled" AfterTargets="BeforeBuild" />
   <Target Name="SetTarget" AfterTargets="GetVersion">
     <!--
     Now that we have determined the version, augment the OutputName to include the version number.
@@ -119,23 +67,26 @@ SPDX-License-Identifier: GPL-3.0-only
     <CreateProperty Value="$(TargetDir)$(TargetFileName)">
       <Output TaskParameter="Value" PropertyName="TargetPath" />
     </CreateProperty>
-    <CreateProperty Value="$(TargetName)$(TargetPdbExt)">
-      <Output TaskParameter="Value" PropertyName="TargetPdbName" />
+    <CreateProperty Value="$(TargetName).wixpdb">
+      <Output TaskParameter="Value" PropertyName="TargetPdbFileName" />
+    </CreateProperty>
+    <CreateProperty Value="$(TargetPdbDir)$(TargetPdbFileName)">
+      <Output TaskParameter="Value" PropertyName="TargetPdbPath" />
     </CreateProperty>
     <!--
-    This ensures that each x.y.z version has a different ProductId, so every update is a MajorUpgrade.
+    This ensures that each x.y.z version has a different ProductCode, so every update is a MajorUpgrade.
     It also ensures that 2 builds of the same x.y.z version will never be installed simultaneously.
     The alternative (WiX AllowSameVersionUpgrades) causes ICE61.
     -->
-    <CreateProperty Value="$(DefineConstants);ProductId=EA1D5623-E6A7-4E4A-9259-E39722$([System.Byte]::Parse($(GitVersion_Major)).ToString(X2))$([System.Byte]::Parse($(GitVersion_Minor)).ToString(X2))$([System.Byte]::Parse($(GitVersion_Patch)).ToString(X2))">
+    <CreateProperty Value="$(DefineConstants);ProductCode=EA1D5623-E6A7-4E4A-9259-E39722$([System.Byte]::Parse($(GitVersion_Major)).ToString(X2))$([System.Byte]::Parse($(GitVersion_Minor)).ToString(X2))$([System.Byte]::Parse($(GitVersion_Patch)).ToString(X2))">
       <Output TaskParameter="Value" PropertyName="DefineConstants" />
     </CreateProperty>
   </Target>
-  <PropertyGroup>
-    <PreBuildEvent>del /s /q "$(ProjectDir)..\Usbipd\bin\publish" &gt; NUL:
-rmdir /s /q "$(ProjectDir)..\Usbipd\bin\publish" &gt; NUL:
-dotnet publish --nologo --no-restore --no-build --configuration $(Configuration) $(ProjectDir)..\Usbipd
-del /s "$(ProjectDir)..\Usbipd\bin\publish\System.CommandLine.resources.dll"</PreBuildEvent>
-  </PropertyGroup>
-  <Import Project="..\InstallerDependencies\obj\InstallerDependencies.csproj.nuget.g.targets" Condition="Exists('..\InstallerDependencies\obj\InstallerDependencies.csproj.nuget.g.targets')" />
+  <Target Name="PublishUsbipd" BeforeTargets="BeforeBuild">
+    <Message Importance="high" Text="Publishing pre-built usbipd-win" />
+    <RemoveDir Directories="..\Usbipd\bin\publish" />
+    <MakeDir Directories="..\Usbipd\bin\publish" />
+    <Exec Command="dotnet publish --nologo --no-restore --no-build --configuration $(Configuration) ..\Usbipd" />
+    <Exec Command="del /s ..\Usbipd\bin\publish\System.CommandLine.resources.dll" />
+  </Target>
 </Project>
