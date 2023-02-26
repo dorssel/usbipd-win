@@ -7,7 +7,12 @@ SPDX-License-Identifier: GPL-3.0-only
 <Project Sdk="Microsoft.NET.Sdk">
 
   <Import Project="..\NetStandard.props" />
-  
+
+  <PropertyGroup>
+    <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+    <IsRoslynComponent>true</IsRoslynComponent>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" PrivateAssets="all" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" PrivateAssets="all" />
