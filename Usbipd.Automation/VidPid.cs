@@ -70,6 +70,10 @@ public readonly record struct VidPid
         };
     }
 
+    public string? Vendor => UsbIds.GetNames(this).Vendor;
+
+    public string? Product => UsbIds.GetNames(this).Product;
+
     #region IComparable<VidPid>
 
     public readonly int CompareTo(VidPid other) => ((uint)Vid << 16 | Pid).CompareTo((uint)other.Vid << 16 | other.Pid);

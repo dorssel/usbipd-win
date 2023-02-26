@@ -9,7 +9,15 @@ SPDX-License-Identifier: GPL-3.0-only
   <Import Project="..\NetStandard.props" />
 
   <ItemGroup>
+    <AdditionalFiles Include="usb.ids" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="System.Text.Json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\UsbIds\UsbIds.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
 </Project>

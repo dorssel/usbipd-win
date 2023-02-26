@@ -191,6 +191,34 @@ sealed class VidPid_Tests
         Assert.AreEqual(expected, result);
     }
 
+    [TestMethod]
+    public void VendorKnown()
+    {
+        var vidPid = new VidPid(0x8087, 0x0000);
+        Assert.IsNotNull(vidPid.Vendor);
+    }
+
+    [TestMethod]
+    public void VendorUnknown()
+    {
+        var vidPid = new VidPid(0x0000, 0x0000);
+        Assert.IsNull(vidPid.Vendor);
+    }
+
+    [TestMethod]
+    public void ProductKnown()
+    {
+        var vidPid = new VidPid(0x8087, 0x8001);
+        Assert.IsNotNull(vidPid.Product);
+    }
+
+    [TestMethod]
+    public void ProductUnknown()
+    {
+        var vidPid = new VidPid(0x8087, 0x0000);
+        Assert.IsNull(vidPid.Product);
+    }
+
     sealed class HardwareIdData
     {
         static readonly string[] _Invalid = new[]

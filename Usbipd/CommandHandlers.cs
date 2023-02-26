@@ -34,7 +34,7 @@ interface ICommandHandlers
     public Task<ExitCode> Bind(BusId busId, bool force, IConsole console, CancellationToken cancellationToken);
     public Task<ExitCode> Bind(VidPid vidPid, bool force, IConsole console, CancellationToken cancellationToken);
     public Task<ExitCode> License(IConsole console, CancellationToken cancellationToken);
-    public Task<ExitCode> List(IConsole console, CancellationToken cancellationToken);
+    public Task<ExitCode> List(bool usbids, IConsole console, CancellationToken cancellationToken);
     public Task<ExitCode> Server(string[] args, IConsole console, CancellationToken cancellationToken);
     public Task<ExitCode> Unbind(BusId busId, IConsole console, CancellationToken cancellationToken);
     public Task<ExitCode> Unbind(Guid guid, IConsole console, CancellationToken cancellationToken);
@@ -46,7 +46,7 @@ interface ICommandHandlers
     public Task<ExitCode> WslDetach(BusId busId, IConsole console, CancellationToken cancellationToken);
     public Task<ExitCode> WslDetach(VidPid vidPid, IConsole console, CancellationToken cancellationToken);
     public Task<ExitCode> WslDetachAll(IConsole console, CancellationToken cancellationToken);
-    public Task<ExitCode> WslList(IConsole console, CancellationToken cancellationToken);
+    public Task<ExitCode> WslList(bool usbids, IConsole console, CancellationToken cancellationToken);
 
     public Task<ExitCode> State(IConsole console, CancellationToken cancellationToken);
 }
@@ -128,7 +128,27 @@ sealed partial class CommandHandlers : ICommandHandlers
         return Task.FromResult(ExitCode.Success);
     }
 
-    Task<ExitCode> ICommandHandlers.List(IConsole console, CancellationToken cancellationToken)
+    static string GetDescription(UsbDevice device, bool usbids)
+    {
+        if (usbids)
+        {
+            var (Vendor, Product) = UsbIds.GetNames(device.HardwareId);
+            if (Vendor is not null)
+            {
+                return $"{Vendor}, {Product ?? ConfigurationManager.UnknownDevice}";
+            }
+            else
+            {
+                return ConfigurationManager.UnknownDevice;
+            }
+        }
+        else
+        {
+            return device.Description;
+        }
+    }
+
+    Task<ExitCode> ICommandHandlers.List(bool usbids, IConsole console, CancellationToken cancellationToken)
     {
         var allDevices = UsbDevice.GetAll().ToList();
         console.WriteLine("Connected:");
@@ -152,7 +172,7 @@ sealed partial class CommandHandlers : ICommandHandlers
             // NOTE: Strictly speaking, both Bus and Port can be > 99. If you have one of those, you win a prize!
             console.Write($"{device.BusId.Value,-5}  ");
             console.Write($"{device.HardwareId,-9}  ");
-            console.WriteTruncated(device.Description, 60, true);
+            console.WriteTruncated(GetDescription(device, usbids), 60, true);
             console.WriteLine($"  {state}");
         }
         console.WriteLine(string.Empty);
@@ -163,7 +183,7 @@ sealed partial class CommandHandlers : ICommandHandlers
         {
             Debug.Assert(device.Guid.HasValue);
             console.Write($"{device.Guid.Value,-36:D}  ");
-            console.WriteTruncated(device.Description, 60, false);
+            console.WriteTruncated(GetDescription(device, usbids), 60, false);
             console.WriteLine(string.Empty);
         }
         console.WriteLine(string.Empty);
@@ -783,7 +803,7 @@ sealed partial class CommandHandlers : ICommandHandlers
         return Task.FromResult(ExitCode.Success);
     }
 
-    async Task<ExitCode> ICommandHandlers.WslList(IConsole console, CancellationToken cancellationToken)
+    async Task<ExitCode> ICommandHandlers.WslList(bool usbids, IConsole console, CancellationToken cancellationToken)
     {
         if (await GetDistributionsAsync(console, cancellationToken) is not WslDistributions distros)
         {
@@ -812,7 +832,7 @@ sealed partial class CommandHandlers : ICommandHandlers
             // NOTE: Strictly speaking, both Bus and Port can be > 99. If you have one of those, you win a prize!
             console.Write($"{device.BusId,-5}  ");
             console.Write($"{device.HardwareId,-9}  ");
-            console.WriteTruncated(device.Description, 60, true);
+            console.WriteTruncated(GetDescription(device, usbids), 60, true);
             console.WriteLine($"  {state}");
         }
         console.WriteLine(string.Empty);

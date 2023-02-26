@@ -189,7 +189,7 @@ static partial class ConfigurationManager
         }
     }
 
-    const string UnknownDevice = "Unknown device";
+    public const string UnknownDevice = "Unknown device";
 
     public static string GetDescription(uint deviceNode)
     {
