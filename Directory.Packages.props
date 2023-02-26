@@ -17,7 +17,7 @@ SPDX-License-Identifier: GPL-3.0-only
 
     <!-- UsbIds -->
     <PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.3" />
-    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="4.4.0" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="4.5.0" />
 
     <!-- Usbipd.PowerShell -->
     <PackageVersion Include="Microsoft.Win32.Registry" Version="5.0.0" />
