@@ -28,7 +28,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <PackageVersion Include="WixToolset.Firewall.wixext" Version="4.0.0-rc.2" />
     <PackageVersion Include="WixToolset.Heat" Version="4.0.0-rc.2" />
     <PackageVersion Include="WixToolset.UI.wixext" Version="4.0.0-rc.2" />
-    <PackageVersion Include="WixToolset.Util.wixext" Version="4.0.0-rc.2" />
+    <PackageVersion Include="WixToolset.Util.wixext" Version="4.0.0-rc.3" />
 
     <!-- UnitTests -->
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.5.0" />
