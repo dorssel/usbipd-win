@@ -1,0 +1,32 @@
+# SPDX-FileCopyrightText: 2023 Frans van Dorsselaer
+#
+# SPDX-License-Identifier: GPL-3.0-only
+
+---
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+
+name: usb.ids
+
+on:
+  schedule:
+    - cron: '0 12 * * *'
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Check for new usb.ids
+        run: |
+          curl -o Usbipd.Automation/usb.ids http://www.linux-usb.org/usb.ids
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v4
+        with:
+          commit-message: 'Update usb.ids'
+          title: 'Update usb.ids'
+          branch: update-usbids
+          body: |
+            This is an automated pull request, updating `usb.ids` after a detected change.
+            Please review manually before merging.
