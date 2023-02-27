@@ -9,8 +9,8 @@
 #	The latest version can be obtained from
 #		http://www.linux-usb.org/usb.ids
 #
-# Version: 2022.12.15
-# Date:    2022-12-15 20:34:08
+# Version: 2023.01.16
+# Date:    2023-01-16 20:34:10
 #
 
 # Vendors, devices and interfaces. Please keep sorted.
@@ -17631,7 +17631,7 @@
 	3940  external DVD burner ECD819-SU3
 	3960  INIC-3639
 	3e40  ZALMAN ZM-VE350
-13fe  Kingston Technology Company Inc.
+13fe  Phison Electronics Corp.
 	1a00  512MB/1GB Flash Drive
 	1a23  512MB Flash Drive
 	1d00  DataTraveler 2.0 1GB/4GB Flash Drive / Patriot Xporter 4GB Flash Drive
