@@ -13,6 +13,8 @@ on:
   pull_request:
     branches: [master]
 
+permissions: read-all
+
 jobs:
   build:
     runs-on: windows-latest

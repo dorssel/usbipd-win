@@ -12,6 +12,8 @@ on:
   schedule:
     - cron: '0 12 * * *'
 
+permissions: read-all
+
 jobs:
   check:
     runs-on: ubuntu-latest
