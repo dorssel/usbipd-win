@@ -13,7 +13,7 @@ using Usbipd.Automation;
 using Windows.Win32;
 using Windows.Win32.Devices.DeviceAndDriverInstallation;
 using Windows.Win32.Devices.Properties;
-using static Usbipd.Interop.WinSDK;
+using Windows.Win32.Devices.Usb;
 
 namespace Usbipd;
 
@@ -56,12 +56,12 @@ static partial class ConfigurationManager
         }
     }
 
-    static unsafe object ConvertProperty(uint propertyType, byte* pBuffer, int propertyBufferSize)
+    static unsafe object ConvertProperty(DEVPROPTYPE propertyType, byte* pBuffer, int propertyBufferSize)
     {
         return propertyType switch
         {
-            PInvoke.DEVPROP_TYPE_STRING => new string((char*)pBuffer, 0, propertyBufferSize / sizeof(char)).TrimEnd('\0'),
-            PInvoke.DEVPROP_TYPE_STRING | PInvoke.DEVPROP_TYPEMOD_LIST => new string((char*)pBuffer, 0, propertyBufferSize / sizeof(char)).Split('\0', StringSplitOptions.RemoveEmptyEntries),
+            DEVPROPTYPE.DEVPROP_TYPE_STRING => new string((char*)pBuffer, 0, propertyBufferSize / sizeof(char)).TrimEnd('\0'),
+            DEVPROPTYPE.DEVPROP_TYPE_STRING | (DEVPROPTYPE)PInvoke.DEVPROP_TYPEMOD_LIST => new string((char*)pBuffer, 0, propertyBufferSize / sizeof(char)).Split('\0', StringSplitOptions.RemoveEmptyEntries),
             _ => throw new NotImplementedException($"property type {propertyType}"),
         };
     }
@@ -367,7 +367,7 @@ static partial class ConfigurationManager
             {
                 fixed (DEVPROPKEY* pDevPropKey = &PInvoke.DEVPKEY_Device_FriendlyName)
                 {
-                    PInvoke.CM_Set_DevNode_Property(deviceNode, pDevPropKey, PInvoke.DEVPROP_TYPE_STRING, (byte*)pValue, (uint)(friendlyName.Length + 1) * sizeof(char), 0).ThrowOnError(nameof(PInvoke.CM_Set_DevNode_Property));
+                    PInvoke.CM_Set_DevNode_Property(deviceNode, pDevPropKey, DEVPROPTYPE.DEVPROP_TYPE_STRING, (byte*)pValue, (uint)(friendlyName.Length + 1) * sizeof(char), 0).ThrowOnError(nameof(PInvoke.CM_Set_DevNode_Property));
                 }
             }
         }
@@ -421,7 +421,7 @@ static partial class ConfigurationManager
                 var hubInterfacePath = GetHubInterfacePath(DeviceNode);
                 using var hubFile = new DeviceFile(hubInterfacePath);
 
-                var data = new UsbCyclePortParams() { ConnectionIndex = busId.Port };
+                var data = new USB_CYCLE_PORT_PARAMS() { ConnectionIndex = busId.Port };
                 var buf = Tools.StructToBytes(data);
                 hubFile.IoControlAsync(PInvoke.IOCTL_USB_HUB_CYCLE_PORT, buf, buf).Wait();
             }

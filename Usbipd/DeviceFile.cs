@@ -19,7 +19,7 @@ sealed class DeviceFile : IDisposable
 {
     public DeviceFile(string fileName)
     {
-        FileHandle = PInvoke.CreateFile(fileName, FILE_ACCESS_FLAGS.FILE_READ_DATA | FILE_ACCESS_FLAGS.FILE_WRITE_DATA,
+        FileHandle = PInvoke.CreateFile(fileName, (uint)(FILE_ACCESS_RIGHTS.FILE_READ_DATA | FILE_ACCESS_RIGHTS.FILE_WRITE_DATA),
             FILE_SHARE_MODE.FILE_SHARE_READ | FILE_SHARE_MODE.FILE_SHARE_WRITE,
             null, FILE_CREATION_DISPOSITION.OPEN_EXISTING, FILE_FLAGS_AND_ATTRIBUTES.FILE_FLAG_OVERLAPPED, null);
 
