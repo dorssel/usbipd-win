@@ -3,53 +3,15 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 using System;
-using System.Runtime.InteropServices;
 using Windows.Win32;
-using Windows.Win32.Devices.Usb;
 
 namespace Usbipd.Interop;
 
 /// <summary>
-/// The remaining Windows SDK stuff that is not yet exposed by CsWin32.
-/// usbioctl.h is not yet fully scraped by win32metadata.
-/// See: https://github.com/microsoft/win32metadata/issues/691
+/// The remaining Windows SDK stuff that is not (yet?) exposed by CsWin32. Bitfields, for example.
 /// </summary>
 static class WinSDK
 {
-    /// <summary>WinSDK: usbioctl.h: USB_DESCRIPTOR_REQUEST</summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    public struct UsbDescriptorRequest
-    {
-        public uint ConnectionIndex;
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
-        public struct AnonymousSetupPacket
-        {
-            public byte bmRequest;
-            public byte bRequest;
-            public ushort wValue;
-            public ushort wIndex;
-            public ushort wLength;
-        }
-        public AnonymousSetupPacket SetupPacket;
-        /* UCHAR Data[0]; */
-    }
-
-    /// <summary>WinSDK: usbioctl.h: USB_NODE_CONNECTION_INFORMATION_EX</summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    public struct UsbNodeConnectionInformationEx
-    {
-        public uint ConnectionIndex;
-        public USB_DEVICE_DESCRIPTOR DeviceDescriptor;
-        public byte CurrentConfigurationValue;
-        /// <summary><see cref="Windows.Win32.Devices.Usb.USB_DEVICE_SPEED"/> as a <see cref="byte"/></summary>
-        public byte Speed;
-        public byte DeviceIsHub;
-        public ushort DeviceAddress;
-        public uint NumberOfOpenPipes;
-        public uint ConnectionStatus;
-        /* USB_PIPE_INFO PipeList[0]; */
-    }
-
     /// <summary>WinSDK: usbioctl.h: USB_PROTOCOLS</summary>
     [Flags]
     public enum UsbProtocols : uint
@@ -68,24 +30,6 @@ static class WinSDK
         DeviceIsSuperSpeedCapableOrHigher = (1 << 1),
         DeviceIsOperatingAtSuperSpeedPlusOrHigher = (1 << 2),
         DeviceIsSuperSpeedPlusCapableOrHigher = (1 << 3),
-    }
-
-    /// <summary>WinSDK: usbioctl.h: USB_NODE_CONNECTION_INFORMATION_EX_V2</summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    public struct UsbNodeConnectionInformationExV2
-    {
-        public uint ConnectionIndex;
-        public uint Length;
-        public UsbProtocols SupportedUsbProtocols;
-        public UsbNodeConnectionInformationExV2Flags Flags;
-    }
-
-    /// <summary>WinSDK: usbioctl.h: USB_CYCLE_PORT_PARAMS</summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    public struct UsbCyclePortParams
-    {
-        public uint ConnectionIndex;
-        public uint StatusReturned;
     }
 
     /// <summary>WinSDK: setupapi.h: ERROR_NO_DRIVER_SELECTED</summary>
