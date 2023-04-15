@@ -110,6 +110,11 @@ sealed partial record ExportedDevice
         while (offset < buf.Length)
         {
             BytesToStruct(buf.AsSpan(offset), out USB_COMMON_DESCRIPTOR common);
+            if (common.bLength == 0)
+            {
+                // Broken configuration; prevent endless loop.
+                break;
+            }
             if (common.bDescriptorType == PInvoke.USB_INTERFACE_DESCRIPTOR_TYPE)
             {
                 BytesToStruct(buf.AsSpan(offset), out USB_INTERFACE_DESCRIPTOR iface);
