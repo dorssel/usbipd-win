@@ -6,7 +6,7 @@ SPDX-License-Identifier: GPL-3.0-only
 
 # Declaration of License Compliance
 
-These drivers are from a binary distribution of VirtualBox, version 7.0.2, provided
+These drivers are from a binary distribution of VirtualBox, version 7.0.8, provided
 by Oracle Corporation, subject to the terms and conditions of the
 [GNU General Public License, version 3](https://www.gnu.org/licenses/gpl-3.0.html).
 
