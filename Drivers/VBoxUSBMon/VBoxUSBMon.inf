@@ -1,10 +1,10 @@
-; $Id: VBoxUSBMon.inf 153224 2022-08-22 17:43:14Z klaus $
+; $Id: VBoxUSBMon.inf 155564 2023-01-27 16:55:51Z klaus $
 ;; @file
 ; VBox USB Monitor driver - Installation file
 ;
 
 ;
-; Copyright (C) 2011-2022 Oracle and/or its affiliates.
+; Copyright (C) 2011-2023 Oracle and/or its affiliates.
 ;
 ; This file is part of VirtualBox base platform packages, as
 ; available from https://www.virtualbox.org.
@@ -39,31 +39,31 @@ Signature="$Windows NT$"
 Class=System
 ClassGuid={4d36e97d-e325-11ce-bfc1-08002be10318}
 Provider=%ORACLE%
-DriverVer = 10/19/2022,7.0.2.4219 ; r154219
+DriverVer = 04/17/2023,7.0.8.6879 ; r156879
 DriverPackageType=KernelService
 CatalogFile=VBoxUSBMon.cat
 
 [DestinationDirs]
 DefaultDestDir = 12
 
-[DefaultInstall.ntamd64]
+[DefaultInstall.NTAMD64]
 CopyFiles=VBoxUSBMon_CopyFiles
 
-[DefaultInstall.ntamd64.Services]
+[DefaultInstall.NTAMD64.Services]
 AddService=VBoxUSBMon,0x00000002,VBoxUSBMon_Service,VBoxUSBMon_AddEventLog
 
 ;; Cannot get this to work (same works fine for VBoxDrv):
 ;; [Manufacturer]
-;; %ORACLE%=Oracle,ntamd64
+;; %ORACLE%=VBoxUSBMon,NTAMD64
 ;;
 ;; ; Models section (referenced by [Manufacturer]).
-;; [Oracle.ntamd64]
-;; %VBoxUSBMon.DRVDESC%=VBoxUSBMonInstall,root\VBoxUSBMon
+;; [VBoxUSBMon.NTAMD64]
+;; %VBoxUSBMon.DRVDESC%=VBoxUSBMon_Install,root\VBoxUSBMon
 ;;
-;; [VBoxUSBMonInstall.ntamd64]
+;; [VBoxUSBMon_Install.NTAMD64]
 ;; CopyFiles=VBoxUSBMon_CopyFiles
 ;;
-;; [VBoxUSBMonInstall.ntamd64.Services]
+;; [VBoxUSBMon_Install.NTAMD64.Services]
 ;; AddService=VBoxUSBMon,0x00000002,VBoxUSBMon_Service,VBoxUSBMon_AddEventLog
 
 [SourceDisksFiles]
