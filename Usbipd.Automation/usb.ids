@@ -9,8 +9,8 @@
 #	The latest version can be obtained from
 #		http://www.linux-usb.org/usb.ids
 #
-# Version: 2023.04.23
-# Date:    2023-04-23 20:34:09
+# Version: 2023.04.28
+# Date:    2023-04-28 20:34:10
 #
 
 # Vendors, devices and interfaces. Please keep sorted.
@@ -22775,6 +22775,10 @@
 	1001  Piksi Multi
 2e95  SCUF Gaming
 	7725  Controller
+2ecc  ASR Microelectronics
+	2001  Smartphone (MTP)
+	2002  Smartphone (MTP + ADB)
+	2007  Smartphone (ADB Interface)
 2f76  KeyXentic Inc.
 	0905  KX905 Smart Terminal
 	0906  KX906 Smart Card Reader
