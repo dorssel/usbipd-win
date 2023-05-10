@@ -3,26 +3,79 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Management.Automation;
-using Microsoft.Win32;
+using System.Text;
+using System.Threading.Tasks;
+using System.Text.RegularExpressions;
 
 namespace Usbipd.PowerShell;
 
 static class Installation
 {
+    static string GetRegistryStringValue(string regOutput, string valueName)
+    {
+        // Example regOutput:
+        //
+        // HKEY_LOCAL_MACHINE\SOFTWARE\usbipd-win
+        //     APPLICATIONFOLDER    REG_SZ    C:\Program Files\usbipd-win\
+        //     Version REG_SZ       3.0.0
+        //
+        // HKEY_LOCAL_MACHINE\SOFTWARE\usbipd-win\Devices
+
+        var match = Regex.Match(regOutput, @$"^\s*{valueName}\s+REG_SZ\s+(.*)$", RegexOptions.Multiline);
+        if (!match.Success)
+        {
+            throw new ApplicationFailedException("usbipd-win is not installed.");
+        }
+        return match.Groups[1].Value.TrimEnd();
+    }
+
     public static string ExePath
     {
         get
         {
             // NOTE: User may be running 32-bit PowerShell, so we must explicitly ask for 64-bit registry.
-            using var root = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64);
+            var regExe = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "reg.exe");
 
-            string exeFile;
-            if (root.OpenSubKey(@"SOFTWARE\usbipd-win") is not RegistryKey key
-                || key.GetValue("APPLICATIONFOLDER") is not string applicationFolder
-                || !Version.TryParse(key.GetValue("Version") as string, out var version)
-                || !File.Exists(exeFile = Path.Combine(Path.GetFullPath(applicationFolder), "usbipd.exe")))
+            var startInfo = new ProcessStartInfo
+            {
+                FileName = regExe,
+                Arguments = @"query HKLM\SOFTWARE\usbipd-win /reg:64",
+                UseShellExecute = false,
+                StandardOutputEncoding = Encoding.UTF8,
+                StandardErrorEncoding = Encoding.UTF8,
+                RedirectStandardInput = true,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+            };
+
+            using var process = Process.Start(startInfo) ?? throw new ApplicationFailedException($"Cannot execute '{regExe}'.");
+            var stdout = string.Empty;
+            var stderr = string.Empty;
+
+            var captureTasks = new[]
+            {
+                Task.Run(async () => { stdout = await process.StandardOutput.ReadToEndAsync(); }),
+                Task.Run(async () => { stderr = await process.StandardError.ReadToEndAsync(); }),
+            };
+
+            process.WaitForExit();
+            Task.WhenAll(captureTasks).Wait();
+
+            if (process.ExitCode != 0)
+            {
+                throw new ApplicationFailedException($"reg.exe failed with exit code {process.ExitCode}.");
+            }
+            if (!string.IsNullOrEmpty(stderr))
+            {
+                throw new ApplicationFailedException($"reg.exe returned unexpected error text:\n\n{stderr}");
+            }
+
+            var applicationFolder = GetRegistryStringValue(stdout, "APPLICATIONFOLDER");
+            var exeFile = Path.Combine(Path.GetFullPath(applicationFolder), "usbipd.exe");
+            if (!Version.TryParse(GetRegistryStringValue(stdout, "Version"), out var version) || !File.Exists(exeFile))
             {
                 throw new ApplicationFailedException("usbipd-win is not installed.");
             }
