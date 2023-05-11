@@ -35,12 +35,7 @@ public class GetUsbipdDeviceCommand : Cmdlet
             Arguments = "state",
         };
 
-        using var process = Process.Start(startInfo);
-        if (process is null)
-        {
-            throw new ApplicationFailedException($"Cannot execute '{Installation.ExePath}'.");
-        }
-
+        using var process = Process.Start(startInfo) ?? throw new ApplicationFailedException($"Cannot execute '{Installation.ExePath}'.");
         var stdout = string.Empty;
         var stderr = string.Empty;
 
