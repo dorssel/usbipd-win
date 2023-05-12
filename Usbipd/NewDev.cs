@@ -70,8 +70,7 @@ static class NewDev
             };
             PInvoke.SetupDiEnumDriverInfo(deviceInfoSet, deviceInfoData, (uint)SETUP_DI_BUILD_DRIVER_DRIVER_TYPE.SPDIT_CLASSDRIVER, 0, ref driverInfoData).ThrowOnError(nameof(PInvoke.SetupDiEnumDriverInfo));
             BOOL tmpReboot;
-            // NOTE: Workaround for https://github.com/microsoft/win32metadata/issues/903
-            PInvoke.DiInstallDevice(default, (HDEVINFO)deviceInfoSet.DangerousGetHandle(), &deviceInfoData, (SP_DRVINFO_DATA_V2_A*)&driverInfoData, 0, &tmpReboot).ThrowOnError(nameof(PInvoke.DiInstallDevice));
+            PInvoke.DiInstallDevice(default, deviceInfoSet, deviceInfoData, driverInfoData, 0, &tmpReboot).ThrowOnError(nameof(PInvoke.DiInstallDevice));
             if (tmpReboot)
             {
                 reboot = true;
