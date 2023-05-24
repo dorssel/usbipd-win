@@ -348,23 +348,32 @@ sealed class AttachedClient
             }
             pending = true;
 
-            // Input or output, exceptions or not, this buffer must be locked until after the ioctl has completed.
-            var gcHandle = GCHandle.Alloc(buf, GCHandleType.Pinned);
-            try
+            if (buf.Length > 0)
             {
-                urb.buf = gcHandle.AddrOfPinnedObject();
+                // Input or output, exceptions or not, this buffer must be locked until after the ioctl has completed.
+                var gcHandle = GCHandle.Alloc(buf, GCHandleType.Pinned);
+                try
+                {
+                    urb.buf = gcHandle.AddrOfPinnedObject();
+                    StructToBytes(urb, bytes);
+                    ioctl = Device.IoControlAsync(SUPUSB_IOCTL.SEND_URB, bytes, bytes);
+                }
+                catch
+                {
+                    gcHandle.Free();
+                    throw;
+                }
+                _ = ioctl.ContinueWith((task) =>
+                {
+                    gcHandle.Free();
+                }, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+            }
+            else
+            {
+                urb.buf = IntPtr.Zero;
                 StructToBytes(urb, bytes);
                 ioctl = Device.IoControlAsync(SUPUSB_IOCTL.SEND_URB, bytes, bytes);
             }
-            catch
-            {
-                gcHandle.Free();
-                throw;
-            }
-            _ = ioctl.ContinueWith((task) =>
-            {
-                gcHandle.Free();
-            }, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
         }
 
         // At this point we have initiated the ioctl (and possibly awaited it for special cases).
