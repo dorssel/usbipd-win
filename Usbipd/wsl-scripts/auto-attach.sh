@@ -93,11 +93,13 @@ is_attached() {
     return 1
 }
 
-sleep() {
-    local SECONDS=$(($1))
+if [[ -t 0 ]]; then
     # sleep without creating a new process
-    read -r -t $SECONDS </proc/self/fd/1 || :
-}
+    sleep() {
+        local SECONDS=$(($1))
+        read -r -t $SECONDS || :
+    }
+fi
 
 while :; do
     if is_attached; then
