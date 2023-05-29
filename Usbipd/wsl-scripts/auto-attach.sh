@@ -93,13 +93,16 @@ is_attached() {
     return 1
 }
 
-if [[ -t 0 ]]; then
-    # sleep without creating a new process
-    sleep() {
-        local SECONDS=$(($1))
-        read -r -t $SECONDS || :
-    }
-fi
+sleep() {
+    local SECONDS=$(($1))
+    local ERROR=0
+    # attempt to sleep without creating a new process
+    read -t $SECONDS || ERROR=$?
+    if [[ $ERROR -le 128 && $ERROR -ne 0 ]]; then
+        # neither timeout nor success, use regular sleep instead
+        command sleep $SECONDS
+    fi
+}
 
 while :; do
     if is_attached; then
