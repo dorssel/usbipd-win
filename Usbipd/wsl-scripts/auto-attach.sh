@@ -97,7 +97,7 @@ sleep() {
     local SECONDS=$(($1))
     local ERROR=0
     # attempt to sleep without creating a new process
-    read -t $SECONDS || ERROR=$?
+    read -r -t $SECONDS || ERROR=$?
     if [[ $ERROR -le 128 && $ERROR -ne 0 ]]; then
         # neither timeout nor success, use regular sleep instead
         command sleep $SECONDS
