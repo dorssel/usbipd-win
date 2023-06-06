@@ -24,7 +24,7 @@ SPDX-License-Identifier: GPL-3.0-only
 
     <!-- Installer -->
     <PackageVersion Include="WixToolset.DifxApp.wixext" Version="4.0.0" />
-    <PackageVersion Include="WixToolset.Firewall.wixext" Version="4.0.0" />
+    <PackageVersion Include="WixToolset.Firewall.wixext" Version="4.0.1" />
     <PackageVersion Include="WixToolset.Heat" Version="4.0.0" />
     <PackageVersion Include="WixToolset.UI.wixext" Version="4.0.0" />
     <PackageVersion Include="WixToolset.Util.wixext" Version="4.0.0" />
