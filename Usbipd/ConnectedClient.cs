@@ -214,7 +214,7 @@ sealed class ConnectedClient
                         }
                         return (uint)WIN32_ERROR.ERROR_SUCCESS;
                     }, out var nintNotification).ThrowOnError(nameof(PInvoke.CM_Register_Notification));
-                    notification = (HCMNOTIFICATION)nintNotification;
+                    notification = nintNotification;
                 }
 
                 // Detect unbind.
