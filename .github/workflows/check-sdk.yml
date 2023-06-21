@@ -1,0 +1,32 @@
+# SPDX-FileCopyrightText: 2023 Frans van Dorsselaer
+#
+# SPDX-License-Identifier: GPL-3.0-only
+
+---
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+
+name: CheckSDK
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '4 6 * * *'
+
+permissions: read-all
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: martincostello/update-dotnet-sdk@v2
+
+        with:
+          labels: dependencies
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
