@@ -18,9 +18,8 @@ sealed class Automation_Tests
     static readonly Guid TestPersistedGuid = Guid.Parse("{AD9D8376-6284-495E-A80B-FF1826D7447D}");
     const string TestStubInstanceId = "testStubInstanceId";
     static readonly IPAddress TestClientIPAddress = IPAddress.Parse("1.2.3.4");
-    const string TestClientWslInstance = "testClientWslInstance";
 
-    static readonly Device TestDevice = new(TestInstanceId, TestDescription, true, TestBusId, TestPersistedGuid, TestStubInstanceId, TestClientIPAddress, TestClientWslInstance);
+    static readonly Device TestDevice = new(TestInstanceId, TestDescription, true, TestBusId, TestPersistedGuid, TestStubInstanceId, TestClientIPAddress, true);
     readonly Device[] TestDevices = new[] { TestDevice, new() };
     const string TestJson = """
         {
@@ -28,20 +27,20 @@ sealed class Automation_Tests
                 {
                     "BusId": "1-42",
                     "ClientIPAddress": "1.2.3.4",
-                    "ClientWslInstance": "testClientWslInstance",
                     "Description": "testDescription",
                     "InstanceId": "testInstanceId\\***VID_1234&PID_CDEF***",
                     "IsForced": true,
+                    "IsWslAttached": true,
                     "PersistedGuid": "ad9d8376-6284-495e-a80b-ff1826d7447d",
                     "StubInstanceId": "testStubInstanceId"
                 },
                 {
                     "BusId": null,
                     "ClientIPAddress": null,
-                    "ClientWslInstance": null,
                     "Description": "",
                     "InstanceId": "",
                     "IsForced": false,
+                    "IsWslAttached": false,
                     "PersistedGuid": null,
                     "StubInstanceId": null
                 }
@@ -92,17 +91,16 @@ sealed class Automation_Tests
         Assert.IsNull(device.PersistedGuid);
         Assert.IsNull(device.StubInstanceId);
         Assert.IsNull(device.ClientIPAddress);
-        Assert.IsNull(device.ClientWslInstance);
+        Assert.IsFalse(device.IsWslAttached);
         Assert.IsFalse(device.IsBound);
         Assert.IsFalse(device.IsConnected);
         Assert.IsFalse(device.IsAttached);
-        Assert.IsFalse(device.IsWslAttached);
     }
 
     [TestMethod]
     public void Device_JsonConstructor()
     {
-        var device = new Device(TestInstanceId, TestDescription, true, TestBusId, TestPersistedGuid, TestStubInstanceId, TestClientIPAddress, TestClientWslInstance);
+        var device = new Device(TestInstanceId, TestDescription, true, TestBusId, TestPersistedGuid, TestStubInstanceId, TestClientIPAddress, true);
         Assert.AreEqual(TestInstanceId, device.InstanceId);
         Assert.AreEqual(TestHardwareId, device.HardwareId);
         Assert.AreEqual(TestDescription, device.Description);
@@ -111,11 +109,10 @@ sealed class Automation_Tests
         Assert.AreEqual(TestPersistedGuid, device.PersistedGuid);
         Assert.AreEqual(TestStubInstanceId, device.StubInstanceId);
         Assert.AreEqual(TestClientIPAddress, device.ClientIPAddress);
-        Assert.AreEqual(TestClientWslInstance, device.ClientWslInstance);
+        Assert.IsTrue(device.IsWslAttached);
         Assert.IsTrue(device.IsBound);
         Assert.IsTrue(device.IsConnected);
         Assert.IsTrue(device.IsAttached);
-        Assert.IsTrue(device.IsWslAttached);
     }
 
     [TestMethod]
@@ -202,13 +199,12 @@ sealed class Automation_Tests
     }
 
     [TestMethod]
-    public void Device_ClientWslInstance()
+    public void IsWslAttached()
     {
         var device = new Device()
         {
-            ClientWslInstance = TestClientWslInstance,
+            IsWslAttached = true,
         };
-        Assert.AreEqual(TestClientWslInstance, device.ClientWslInstance);
         Assert.IsTrue(device.IsWslAttached);
     }
 

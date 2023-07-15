@@ -7,8 +7,8 @@ using System.Diagnostics;
 using System.IO;
 using System.Management.Automation;
 using System.Text;
-using System.Threading.Tasks;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
 namespace Usbipd.PowerShell;
 

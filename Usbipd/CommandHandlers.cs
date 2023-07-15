@@ -816,13 +816,16 @@ sealed partial class CommandHandlers : ICommandHandlers
             string state;
             if (device.IPAddress is not null)
             {
-                if (distros.LookupByIPAddress(device.IPAddress)?.Name is string distro)
+                if (distros.LookupByIPAddress(device.IPAddress) is not null)
                 {
-                    state = $"Attached - {distro}";
+                    // All WSL instances for the user share the same IP address; it cannot be determined
+                    // which distro was used to attach. That does not matter, since it is attached
+                    // to the one and only kernel, so it is now available in all distros.
+                    state = "Attached - WSL";
                 }
                 else
                 {
-                    state = "Attached";
+                    state = "Attached - non-WSL";
                 }
             }
             else
@@ -865,7 +868,7 @@ sealed partial class CommandHandlers : ICommandHandlers
                 PersistedGuid = device.Guid,
                 StubInstanceId = device.StubInstanceId,
                 ClientIPAddress = device.IPAddress,
-                ClientWslInstance = device.IPAddress is null ? null : distros?.LookupByIPAddress(device.IPAddress)?.Name,
+                IsWslAttached = device.IPAddress is not null && distros is not null && distros.LookupByIPAddress(device.IPAddress) is not null,
             });
         }
 
