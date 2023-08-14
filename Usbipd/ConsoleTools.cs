@@ -20,7 +20,7 @@ static class ConsoleTools
     {
         var lineBuilder = new StringBuilder(Math.Min(text.Length, width) + 2);
 
-        var FirstWord = (string word) =>
+        void FirstWord(string word)
         {
             lineBuilder.Append(word);
             if (word.Length == width)
@@ -29,14 +29,14 @@ static class ConsoleTools
                 // so Windows Terminal does not glue the next word to it on resize.
                 lineBuilder.Append(' ');
             }
-        };
+        }
 
-        var Flush = () =>
+        string Flush()
         {
             var result = lineBuilder.ToString();
             lineBuilder.Clear();
             return result;
-        };
+        }
 
         foreach (var line in text.Split('\n'))
         {
