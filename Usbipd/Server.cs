@@ -29,12 +29,18 @@ sealed class Server : BackgroundService
         Logger = logger;
         Configuration = config;
         ServiceScopeFactory = serviceScopeFactory;
+        if (!ushort.TryParse(Configuration["usbipd:Port"], out var port))
+        {
+            port = USBIP_PORT;
+        }
+        Logger.Debug($"usbipd:Port = {port}");
+        TcpListener = TcpListener.Create(port);
     }
 
     readonly ILogger Logger;
     readonly IConfiguration Configuration;
     readonly IServiceScopeFactory ServiceScopeFactory;
-    readonly TcpListener TcpListener = TcpListener.Create(USBIP_PORT);
+    readonly TcpListener TcpListener;
 
     public static bool IsRunning()
     {
