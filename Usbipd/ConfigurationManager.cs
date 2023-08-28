@@ -9,6 +9,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading;
 using Usbipd.Automation;
 using Windows.Win32;
 using Windows.Win32.Devices.DeviceAndDriverInstallation;
@@ -416,7 +417,17 @@ static partial class ConfigurationManager
 
             try
             {
-                // For extra measure, we also try to reset the USB port, which may fail silently.
+                // Some drivers fail to initialize if the device is left in a non-default state.
+                // They expect to be loaded after the device is just plugged in. Hence, we cycle the port,
+                // which acts as an unplug/replug. Therefore, the driver (host or client) will see a nice clean device.
+
+                // NOTE: Some devices (SanDisk flash drives, mostly) don't like this right after driver load.
+                // Since this code is run right after switching drivers, give the device some time to settle.
+                // Experiments show 20ms almost does the job (very few failures), and 30ms no longer
+                // reproduced errors after 100 attach/detach cycles. So, we use 100ms for good measure.
+
+                Thread.Sleep(TimeSpan.FromMilliseconds(100));
+
                 var busId = GetBusId(DeviceNode);
                 var hubInterfacePath = GetHubInterfacePath(DeviceNode);
                 using var hubFile = new DeviceFile(hubInterfacePath);
