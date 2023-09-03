@@ -79,11 +79,14 @@ usbipd wsl attach --busid=<BUSID>
 ```
 
 :information_source:\
-Currently, WSL 2 does not support USB devices by default.\
-As a workaround, instructions on how to setup a USBIP client for WSL 2 can be found on the [wiki](https://github.com/dorssel/usbipd-win/wiki/WSL-support).
+Instructions on how to prepare WSL 2 for USBIP can be found on the [wiki](https://github.com/dorssel/usbipd-win/wiki/WSL-support).
 
-[Andrew Leech](https://github.com/andrewleech) has created a convenient GUI for those who prefer that over a CLI,
-see his [GitLab project](https://gitlab.com/alelec/wsl-usb-gui).
+### GUI
+
+For those who prefer a GUI over a CLI, the following is available:
+
+- [Andrew Leech](https://github.com/andrewleech) has created a [Windows Desktop Application](https://gitlab.com/alelec/wsl-usb-gui).
+- [Dushan Balisson](https://github.com/dushanabe) has created a [Visual Studio Code Extension](https://marketplace.visualstudio.com/items?itemName=thecreativedodo.usbip-connect).
 
 ## How to remove
 
