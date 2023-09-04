@@ -5,6 +5,7 @@
 using System;
 using System.Net;
 using System.Net.Sockets;
+using Usbipd.Automation;
 
 namespace Usbipd;
 
@@ -15,6 +16,7 @@ sealed class ClientContext : IDisposable
     /// Canonical remote client IP address (either IPv4 or IPv6).
     /// </summary>
     public IPAddress ClientAddress { get; set; } = IPAddress.Any;
+    public BusId? AttachedBusId { get; set; }
     public DeviceFile? AttachedDevice { get; set; }
 
     void IDisposable.Dispose()
