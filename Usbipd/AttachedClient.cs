@@ -11,7 +11,7 @@ using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-
+using Usbipd.Automation;
 using static Usbipd.Interop.Linux;
 using static Usbipd.Interop.UsbIp;
 
@@ -24,6 +24,7 @@ sealed class AttachedClient
         LoggerFactory = loggerFactory;
         ClientContext = clientContext;
         Pcap = pcap;
+        BusId = (BusId)clientContext.AttachedBusId!;
 
         var tcpClient = clientContext.TcpClient;
         Stream = tcpClient.GetStream();
@@ -34,6 +35,7 @@ sealed class AttachedClient
     readonly ILoggerFactory LoggerFactory;
     readonly ClientContext ClientContext;
     readonly PcapNg Pcap;
+    readonly BusId BusId;
     readonly NetworkStream Stream;
     readonly Channel<RequestReply> ReplyChannel = Channel.CreateUnbounded<RequestReply>();
 
@@ -103,6 +105,7 @@ sealed class AttachedClient
                                 status = -(int)(won ? Errno.ECONNRESET : Errno.SUCCESS),
                             },
                         };
+                        Pcap.DumpPacketUnlink(BusId, true, header);
                         await Stream.WriteAsync(header.ToBytes(), cancellationToken);
                     }
                     // Only write the reply if it was an actual SUBMIT request that was still pending after processing UNLINK.
@@ -134,6 +137,7 @@ sealed class AttachedClient
                     break;
                 case UsbIpCmd.USBIP_CMD_UNLINK:
                     {
+                        Pcap.DumpPacketUnlink(BusId, false, header);
                         // Queue the unlink so it will be handled by the writer first (we prefer the UNLINK to win the race).
                         PendingUnlinks.Enqueue(new(header.basic.seqnum, header.cmd_unlink.seqnum));
                         // We cancel the URB if it still pending.

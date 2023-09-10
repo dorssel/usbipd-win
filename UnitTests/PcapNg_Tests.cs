@@ -257,6 +257,38 @@ sealed class PcapNg_Tests
     }
 
     [TestMethod]
+    public void DumpPacketUnlink_Disabled()
+    {
+        using var mockConfiguration = new MockConfiguration(null);
+        using var pcapNg = new PcapNg(mockConfiguration.Object, MockLogger);
+        pcapNg.DumpPacketUnlink(new(), false, new());
+    }
+
+    [TestMethod]
+    public void DumpPacketUnlink_Reply_Disabled()
+    {
+        using var mockConfiguration = new MockConfiguration(null);
+        using var pcapNg = new PcapNg(mockConfiguration.Object, MockLogger);
+        pcapNg.DumpPacketUnlink(new(), true, new());
+    }
+
+    [TestMethod]
+    public void DumpPacketUnlink()
+    {
+        using var mockConfiguration = new MockConfiguration(TemporaryPath);
+        using var pcapNg = new PcapNg(mockConfiguration.Object, MockLogger);
+        pcapNg.DumpPacketUnlink(new(), false, new());
+    }
+
+    [TestMethod]
+    public void DumpPacketUnlink_Reply()
+    {
+        using var mockConfiguration = new MockConfiguration(TemporaryPath);
+        using var pcapNg = new PcapNg(mockConfiguration.Object, MockLogger);
+        pcapNg.DumpPacketUnlink(new(), true, new());
+    }
+
+    [TestMethod]
     public void SnapLength_Normal()
     {
         using var mockConfiguration = new MockConfiguration(TemporaryPath, 1024);
