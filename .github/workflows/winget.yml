@@ -9,6 +9,11 @@ name: winget
 
 on:
   workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Release Tag'
+        required: true
+        type: string
   release:
     types: [released]
 
@@ -22,4 +27,5 @@ jobs:
       - uses: vedantmgoyal2009/winget-releaser@v2
         with:
           identifier: dorssel.usbipd-win
+          release-tag: ${{ github.event.release.tag_name || inputs.tag_name }}
           token: ${{ secrets.WINGET_TOKEN }}
