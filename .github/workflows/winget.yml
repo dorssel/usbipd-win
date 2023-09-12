@@ -1,0 +1,25 @@
+# SPDX-FileCopyrightText: 2023 Frans van Dorsselaer
+#
+# SPDX-License-Identifier: GPL-3.0-only
+
+---
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+
+name: winget
+
+on:
+  workflow_dispatch:
+  release:
+    types: [released]
+
+permissions: read-all
+
+jobs:
+  publish:
+    runs-on: windows-latest
+
+    steps:
+      - uses: vedantmgoyal2009/winget-releaser@v2
+        with:
+          identifier: dorssel.usbipd-win
+          token: ${{ secrets.WINGET_TOKEN }}

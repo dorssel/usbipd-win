@@ -21,6 +21,7 @@ SPDX-License-Identifier: GPL-3.0-only
 
     <!-- Usbipd.PowerShell -->
     <PackageVersion Include="PowerShellStandard.Library" Version="5.1.1" />
+    <PackageVersion Include="System.Text.Json" Version="7.0.3" />
 
     <!-- Installer -->
     <PackageVersion Include="WixToolset.DifxApp.wixext" Version="4.0.1" />
@@ -35,7 +36,6 @@ SPDX-License-Identifier: GPL-3.0-only
     <PackageVersion Include="MSTest.TestAdapter" Version="3.1.1" />
     <PackageVersion Include="MSTest.TestFramework" Version="3.1.1" />
     <PackageVersion Include="System.IO.Pipelines" Version="7.0.0" />
-    <PackageVersion Include="System.Text.Json" Version="7.0.3" />
     <PackageVersion Include="coverlet.collector" Version="6.0.0" />
   </ItemGroup>
 </Project>
