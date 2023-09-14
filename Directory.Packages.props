@@ -24,11 +24,11 @@ SPDX-License-Identifier: GPL-3.0-only
     <PackageVersion Include="System.Text.Json" Version="7.0.3" />
 
     <!-- Installer -->
-    <PackageVersion Include="WixToolset.DifxApp.wixext" Version="4.0.1" />
-    <PackageVersion Include="WixToolset.Firewall.wixext" Version="4.0.1" />
-    <PackageVersion Include="WixToolset.Heat" Version="4.0.1" />
-    <PackageVersion Include="WixToolset.UI.wixext" Version="4.0.1" />
-    <PackageVersion Include="WixToolset.Util.wixext" Version="4.0.1" />
+    <PackageVersion Include="WixToolset.DifxApp.wixext" Version="4.0.2" />
+    <PackageVersion Include="WixToolset.Firewall.wixext" Version="4.0.2" />
+    <PackageVersion Include="WixToolset.Heat" Version="4.0.2" />
+    <PackageVersion Include="WixToolset.UI.wixext" Version="4.0.2" />
+    <PackageVersion Include="WixToolset.Util.wixext" Version="4.0.2" />
 
     <!-- UnitTests -->
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.7.2" />
