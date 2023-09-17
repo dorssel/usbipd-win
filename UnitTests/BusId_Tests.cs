@@ -32,8 +32,7 @@ sealed class BusId_Tests
 
     sealed class BusIdData
     {
-        static readonly string[] _Invalid = new[]
-        {
+        static readonly string[] _Invalid = [
             "",
             "1",
             "1-",
@@ -48,15 +47,14 @@ sealed class BusId_Tests
             "1-0",
             "1-65536",
             "65536-1",
-        };
+        ];
 
         public static IEnumerable<string[]> Invalid
         {
             get => from value in _Invalid select new string[] { value };
         }
 
-        static readonly string[] _Valid = new[]
-        {
+        static readonly string[] _Valid = [
             "1-1",
             "1-2",
             "1-65534",
@@ -73,7 +71,7 @@ sealed class BusId_Tests
             "65535-2",
             "65535-65534",
             "65535-65535",
-        };
+        ];
 
         public static IEnumerable<string[]> Valid
         {

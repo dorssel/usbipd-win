@@ -11,8 +11,7 @@ namespace UnitTests;
 [TestClass]
 sealed class Interop_UsbIp_Tests
 {
-    static readonly byte[] TestUsbIpHeaderBytes =
-    {
+    static readonly byte[] TestUsbIpHeaderBytes = [
         0x01, 0x02, 0x03, 0x04, // basic.command
         0x11, 0x12, 0x13, 0x14, // basic.seqnum
         0x21, 0x22, 0x23, 0x24, // basic.devid
@@ -30,7 +29,7 @@ sealed class Interop_UsbIp_Tests
         0xa3, 0xa4, // cmd_submit.setup.wValue
         0xa5, 0xa6, // cmd_submit.setup.wIndex
         0xa7, 0xa8, // cmd_submit.setup.wLength
-    };
+    ];
 
     static readonly UsbIpHeader TestUsbIpHeader = new()
     {
@@ -112,13 +111,12 @@ sealed class Interop_UsbIp_Tests
         Assert.IsTrue(bytes.SequenceEqual(TestUsbIpHeaderBytes));
     }
 
-    static readonly byte[] TestUsbIpIsoPacketDescriptorBytes =
-    {
+    static readonly byte[] TestUsbIpIsoPacketDescriptorBytes = [
         0x01, 0x02, 0x03, 0x04, // offset
         0x11, 0x12, 0x13, 0x14, // length
         0x21, 0x22, 0x23, 0x24, // actual_length
         0x31, 0x32, 0x33, 0x34, // status
-    };
+    ];
 
     static readonly UsbIpIsoPacketDescriptor TestUsbIpIsoPacketDescriptor = new()
     {

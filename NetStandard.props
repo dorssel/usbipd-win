@@ -11,6 +11,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <Platform>AnyCPU</Platform>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <IsTrimmable>false</IsTrimmable>
   </PropertyGroup>
 
 </Project>

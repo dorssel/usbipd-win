@@ -85,7 +85,7 @@ sealed class AttachedEndpoint
 
         // VBoxUSB only excepts up to 8 iso packets per ioctl, so we may have to split
         // the request into multiple ioctls.
-        List<Task> ioctls = new();
+        List<Task> ioctls = [];
 
         // Input or output, single or multiple URBs, exceptions or not, this buffer must be locked until after all ioctls have completed.
         var gcHandle = GCHandle.Alloc(buf, GCHandleType.Pinned);

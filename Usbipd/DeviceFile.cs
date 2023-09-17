@@ -40,10 +40,7 @@ sealed class DeviceFile : IDisposable
 
     public HANDLE DangerousGetHandle()
     {
-        if (FileHandle.IsClosed)
-        {
-            throw new ObjectDisposedException(nameof(DeviceFile));
-        }
+        ObjectDisposedException.ThrowIf(FileHandle.IsClosed, this);
         return (HANDLE)FileHandle.DangerousGetHandle();
     }
 

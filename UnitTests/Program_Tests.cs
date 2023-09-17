@@ -15,14 +15,14 @@ sealed class Program_Tests
     [TestMethod]
     public void MainSuccess()
     {
-        var exitCode = (ExitCode)Program.Main(new string[] { "--version" });
+        var exitCode = (ExitCode)Program.Main("--version");
         Assert.AreEqual(ExitCode.Success, exitCode);
     }
 
     [TestMethod]
     public void MainParseError()
     {
-        var exitCode = (ExitCode)Program.Main(new string[] { "unknown-command" });
+        var exitCode = (ExitCode)Program.Main("unknown-command");
         Assert.AreEqual(ExitCode.ParseError, exitCode);
     }
 

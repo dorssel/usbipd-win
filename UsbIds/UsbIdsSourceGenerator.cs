@@ -12,22 +12,16 @@ namespace UsbIds;
 
 [Generator]
 #pragma warning disable CA1812
-sealed class UsbIdsSourceGenerator : ISourceGenerator
+sealed class UsbIdsSourceGenerator : IIncrementalGenerator
 #pragma warning restore CA1812
 {
-    public void Initialize(GeneratorInitializationContext context)
+    public void Initialize(IncrementalGeneratorInitializationContext context)
     {
-        // No initialization required for this one
+        context.RegisterImplementationSourceOutput(context.AdditionalTextsProvider.Where(static f => Path.GetFileName(f.Path) == "usb.ids"), Execute);
     }
 
-    public void Execute(GeneratorExecutionContext context)
+    public static void Execute(SourceProductionContext context, AdditionalText additionalText)
     {
-        if (context.AdditionalFiles.Where(f => Path.GetFileName(f.Path) == "usb.ids").SingleOrDefault() is not AdditionalText additionalText)
-        {
-            // no usb.ids --> nothing to do
-            return;
-        }
-
         if (additionalText.GetText() is not SourceText sourceText)
         {
             throw new InvalidDataException("unable to read usb.ids");
@@ -59,7 +53,7 @@ sealed class UsbIdsSourceGenerator : ISourceGenerator
                 {
                     throw new InvalidDataException($"duplicate vendor id {vid:x4} in usb.ids");
                 }
-                vendor = new();
+                vendor = [];
                 vendors.Add(vid, (vendorName, vendor));
                 continue;
             }

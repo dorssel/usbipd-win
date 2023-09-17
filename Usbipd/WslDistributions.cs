@@ -109,7 +109,8 @@ sealed partial record WslDistributions
         // * Ubuntu             Running         1
         //   Debian             Stopped         2
         //   Custom-MyDistro    Running         2
-        var detailsResult = await ProcessUtils.RunCapturedProcessAsync(WslPath, new[] { "--list", "--all", "--verbose" }, Encoding.Unicode, cancellationToken);
+        var detailsResult = await ProcessUtils.RunCapturedProcessAsync(WslPath, Encoding.Unicode, cancellationToken,
+            "--list", "--all", "--verbose");
         switch (detailsResult.ExitCode)
         {
             case 0:
@@ -138,10 +139,9 @@ sealed partial record WslDistributions
                     {
                         // We'll do our best to get the instance address on the WSL virtual switch, but we don't fail if we can't.
                         // We use 'cat /proc/net/fib_trie', where we assume 'cat' is available on all distributions and /proc/net/fib_trie is supported by the WSL kernel.
-                        var ipResult = await ProcessUtils.RunCapturedProcessAsync(WslPath, new[] { "--distribution", name, "--", "cat", "/proc/net/fib_trie" }, Encoding.UTF8, cancellationToken);
-#pragma warning disable CA1508 // Avoid dead conditional code (false positive)
+                        var ipResult = await ProcessUtils.RunCapturedProcessAsync(WslPath, Encoding.UTF8, cancellationToken,
+                            "--distribution", name, "--", "cat", "/proc/net/fib_trie");
                         if (ipResult.ExitCode == 0)
-#pragma warning restore CA1508 // Avoid dead conditional code
                         {
                             // Example output:
                             //
@@ -191,9 +191,7 @@ sealed partial record WslDistributions
                 // At least, that seems to be the case; it turns out that the wsl.exe command line interface isn't stable.
 
                 // Newer versions of wsl.exe support the --status command.
-#pragma warning disable CA1508 // Avoid dead conditional code (false positive)
-                if ((await ProcessUtils.RunCapturedProcessAsync(WslPath, new[] { "--status" }, Encoding.Unicode, cancellationToken)).ExitCode != 0)
-#pragma warning restore CA1508 // Avoid dead conditional code
+                if ((await ProcessUtils.RunCapturedProcessAsync(WslPath, Encoding.Unicode, cancellationToken, "--status")).ExitCode != 0)
                 {
                     // We conclude that WSL is indeed not installed at all.
                     return null;

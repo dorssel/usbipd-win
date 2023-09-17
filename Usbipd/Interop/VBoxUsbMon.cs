@@ -100,7 +100,7 @@ static class VBoxUsbMon
             return result;
         }
 
-        public void SetMatch(UsbFilterIdx index, UsbFilterMatch match, ushort value)
+        public readonly void SetMatch(UsbFilterIdx index, UsbFilterMatch match, ushort value)
         {
             aFields[(int)index].enmMatch = match;
             aFields[(int)index].u16Value = value;

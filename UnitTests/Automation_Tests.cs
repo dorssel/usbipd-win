@@ -20,7 +20,7 @@ sealed class Automation_Tests
     static readonly IPAddress TestClientIPAddress = IPAddress.Parse("1.2.3.4");
 
     static readonly Device TestDevice = new(TestInstanceId, TestDescription, true, TestBusId, TestPersistedGuid, TestStubInstanceId, TestClientIPAddress, true);
-    readonly Device[] TestDevices = new[] { TestDevice, new() };
+    readonly Device[] TestDevices = [TestDevice, new()];
     const string TestJson = """
         {
             "Devices": [

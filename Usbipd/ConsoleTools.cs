@@ -274,7 +274,7 @@ static class ConsoleTools
     /// </summary>
     public static void ReportIfForceNeeded(this IConsole console)
     {
-        var upperFilters = Registry.GetValue(UpperFiltersPath, UpperFiltersName, null) as string[] ?? Array.Empty<string>();
+        var upperFilters = Registry.GetValue(UpperFiltersPath, UpperFiltersName, null) as string[] ?? [];
         foreach (var filter in new SortedSet<string>(upperFilters.Where(f => !string.IsNullOrWhiteSpace(f)), StringComparer.InvariantCultureIgnoreCase))
         {
             if (BlacklistUpperFilters.Contains(filter, StringComparer.InvariantCultureIgnoreCase))

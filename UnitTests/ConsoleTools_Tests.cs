@@ -11,6 +11,7 @@ namespace UnitTests;
 sealed class ConsoleTools_Tests
 {
     [TestMethod]
+#pragma warning disable CA1861 // Avoid constant arrays as arguments
     [DataRow("", 10, new[] { "" })]
     [DataRow("1", 10, new[] { "1" })]
     [DataRow("123456789", 10, new[] { "123456789" })]
@@ -18,6 +19,7 @@ sealed class ConsoleTools_Tests
     [DataRow("123456789ab", 10, new[] { "123456789ab" })]
     [DataRow("12345 789", 10, new[] { "12345 789" })]
     [DataRow("12345 789a", 10, new[] { "12345", "789a" })]
+#pragma warning restore CA1861 // Avoid constant arrays as arguments
     public void Wrap(string input, int width, string[] expected)
     {
         var result = ConsoleTools.Wrap(input, width);

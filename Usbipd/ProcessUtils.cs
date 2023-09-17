@@ -13,6 +13,8 @@ static class ProcessUtils
 {
     public sealed record ProcessResult(int ExitCode, string StandardOutput, string StandardError);
 
+    static readonly char[] CtrlC = ['\x03'];
+
     /// <summary>
     /// <para>
     /// Our process is usually wsl.exe running something within Linux. This function tries to kill all of it.
@@ -35,11 +37,11 @@ static class ProcessUtils
         {
             // Fire-and-forget Ctrl+C, this *should* terminate any Linux process.
             // If this is not a remote command execution, then the local Windows process gets it free of charge.
-            await process.StandardInput.WriteAsync(new[] { '\x03' }, remoteTimeoutTokenSource.Token);
+            await process.StandardInput.WriteAsync(CtrlC, remoteTimeoutTokenSource.Token);
             process.StandardInput.Close();
             await process.WaitForExitAsync(remoteTimeoutTokenSource.Token);
         }
-        catch (OperationCanceledException) { }
+        catch (Exception e) when (e is OperationCanceledException or IOException) { }
         finally
         {
             // Kill the entire Windows process tree, just in case it hasn't exited already.
@@ -47,7 +49,7 @@ static class ProcessUtils
         }
     }
 
-    public static async Task<ProcessResult> RunCapturedProcessAsync(string filename, IEnumerable<string> arguments, Encoding encoding, CancellationToken cancellationToken)
+    public static async Task<ProcessResult> RunCapturedProcessAsync(string filename, Encoding encoding, CancellationToken cancellationToken, params string[] arguments)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -85,7 +87,7 @@ static class ProcessUtils
         return new(process.ExitCode, stdout, stderr);
     }
 
-    public static async Task<int> RunUncapturedProcessAsync(string filename, IEnumerable<string> arguments, CancellationToken cancellationToken)
+    public static async Task<int> RunUncapturedProcessAsync(string filename, CancellationToken cancellationToken, params string[] arguments)
     {
         cancellationToken.ThrowIfCancellationRequested();
         using var process = Process.Start(CreateCommonProcessStartInfo(filename, arguments));
