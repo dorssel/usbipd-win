@@ -34,19 +34,21 @@ static partial class ConfigurationManager
         {
             fixed (char* pInstanceId = instanceId)
             {
-                PInvoke.CM_Locate_DevNode(out var deviceNode, pInstanceId, present ? PInvoke.CM_LOCATE_DEVNODE_NORMAL : PInvoke.CM_LOCATE_DEVNODE_PHANTOM).ThrowOnError(nameof(PInvoke.CM_Locate_DevNode));
+                PInvoke.CM_Locate_DevNode(out var deviceNode, pInstanceId,
+                    present ? CM_LOCATE_DEVNODE_FLAGS.CM_LOCATE_DEVNODE_NORMAL : CM_LOCATE_DEVNODE_FLAGS.CM_LOCATE_DEVNODE_PHANTOM)
+                    .ThrowOnError(nameof(PInvoke.CM_Locate_DevNode));
                 return deviceNode;
             }
         }
     }
 
-    static string[] Get_Device_Interface_List(in Guid interfaceClassGuid, string? deviceId, uint flags)
+    static string[] Get_Device_Interface_List(in Guid interfaceClassGuid, string? deviceId, CM_GET_DEVICE_INTERFACE_LIST_FLAGS flags)
     {
         unsafe
         {
             fixed (char* pDeviceId = deviceId)
             {
-                PInvoke.CM_Get_Device_Interface_List_Size(out var bufferLen, interfaceClassGuid, pDeviceId, flags).ThrowOnError(nameof(PInvoke.CM_Get_Device_Interface_List_Size));
+                PInvoke.CM_Get_Device_Interface_List_Size(out var bufferLen, interfaceClassGuid, pDeviceId, (uint)flags).ThrowOnError(nameof(PInvoke.CM_Get_Device_Interface_List_Size));
                 var deviceInterfaceList = new string('\0', (int)bufferLen);
                 fixed (char* buffer = deviceInterfaceList)
                 {
@@ -130,7 +132,7 @@ static partial class ConfigurationManager
     static Dictionary<uint, string> GetHubs()
     {
         var hubs = new Dictionary<uint, string>();
-        var hubInterfaces = Get_Device_Interface_List(PInvoke.GUID_DEVINTERFACE_USB_HUB, null, PInvoke.CM_GET_DEVICE_INTERFACE_LIST_PRESENT);
+        var hubInterfaces = Get_Device_Interface_List(PInvoke.GUID_DEVINTERFACE_USB_HUB, null, CM_GET_DEVICE_INTERFACE_LIST_FLAGS.CM_GET_DEVICE_INTERFACE_LIST_PRESENT);
         foreach (var hubInterface in hubInterfaces)
         {
             try
@@ -282,14 +284,14 @@ static partial class ConfigurationManager
     {
         PInvoke.CM_Get_Parent(out var hubDeviceNode, deviceNode, 0).ThrowOnError(nameof(PInvoke.CM_Get_Parent));
         var hubInstanceId = (string)Get_DevNode_Property(hubDeviceNode, PInvoke.DEVPKEY_Device_InstanceId);
-        return Get_Device_Interface_List(PInvoke.GUID_DEVINTERFACE_USB_HUB, hubInstanceId, PInvoke.CM_GET_DEVICE_INTERFACE_LIST_PRESENT).Single();
+        return Get_Device_Interface_List(PInvoke.GUID_DEVINTERFACE_USB_HUB, hubInstanceId, CM_GET_DEVICE_INTERFACE_LIST_FLAGS.CM_GET_DEVICE_INTERFACE_LIST_PRESENT).Single();
     }
 
     public sealed record VBoxDevice(uint DeviceNode, string InstanceId, string InterfacePath);
 
     public static VBoxDevice GetVBoxDevice(BusId busId)
     {
-        var deviceInterfaces = Get_Device_Interface_List(Interop.VBoxUsb.GUID_CLASS_VBOXUSB, null, PInvoke.CM_GET_DEVICE_INTERFACE_LIST_PRESENT);
+        var deviceInterfaces = Get_Device_Interface_List(Interop.VBoxUsb.GUID_CLASS_VBOXUSB, null, CM_GET_DEVICE_INTERFACE_LIST_FLAGS.CM_GET_DEVICE_INTERFACE_LIST_PRESENT);
         foreach (var deviceInterface in deviceInterfaces)
         {
             // This may fail due to a race condition between a device being removed and querying its details.
@@ -329,7 +331,7 @@ static partial class ConfigurationManager
         // This gets all the VBox driver installations ever installed, even those
         // that are not currently installed for a device and for devices that are not
         // plugged in now.
-        var deviceInterfaces = Get_Device_Interface_List(Interop.VBoxUsb.GUID_CLASS_VBOXUSB, null, PInvoke.CM_GET_DEVICE_INTERFACE_LIST_ALL_DEVICES);
+        var deviceInterfaces = Get_Device_Interface_List(Interop.VBoxUsb.GUID_CLASS_VBOXUSB, null, CM_GET_DEVICE_INTERFACE_LIST_FLAGS.CM_GET_DEVICE_INTERFACE_LIST_ALL_DEVICES);
         foreach (var deviceInterface in deviceInterfaces)
         {
             string deviceId;
