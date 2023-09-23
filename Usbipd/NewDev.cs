@@ -31,7 +31,8 @@ static class NewDev
             };
             PInvoke.SetupDiOpenDeviceInfo(deviceInfoSet, originalInstanceId, default, 0, &deviceInfoData).ThrowOnError(nameof(PInvoke.SetupDiOpenDeviceInfo));
             BOOL tmpReboot;
-            PInvoke.DiInstallDevice(default, deviceInfoSet, deviceInfoData, null, PInvoke.DIIDFLAG_INSTALLNULLDRIVER, &tmpReboot).ThrowOnError(nameof(PInvoke.DIIDFLAG_INSTALLNULLDRIVER));
+            PInvoke.DiInstallDevice(default, deviceInfoSet, deviceInfoData, null, DIINSTALLDEVICE_FLAGS.DIIDFLAG_INSTALLNULLDRIVER, &tmpReboot)
+                .ThrowOnError(nameof(DIINSTALLDEVICE_FLAGS.DIIDFLAG_INSTALLNULLDRIVER));
             if (tmpReboot)
             {
                 reboot = true;
@@ -103,7 +104,8 @@ static class NewDev
             };
             PInvoke.SetupDiOpenDeviceInfo(deviceInfoSet, originalInstanceId, default, 0, &deviceInfoData).ThrowOnError(nameof(PInvoke.SetupDiOpenDeviceInfo));
             BOOL tmpReboot;
-            PInvoke.DiInstallDevice(default, deviceInfoSet, deviceInfoData, null, PInvoke.DIIDFLAG_INSTALLNULLDRIVER, &tmpReboot).ThrowOnError(nameof(PInvoke.DIIDFLAG_INSTALLNULLDRIVER));
+            PInvoke.DiInstallDevice(default, deviceInfoSet, deviceInfoData, null, DIINSTALLDEVICE_FLAGS.DIIDFLAG_INSTALLNULLDRIVER, &tmpReboot)
+                .ThrowOnError(nameof(DIINSTALLDEVICE_FLAGS.DIIDFLAG_INSTALLNULLDRIVER));
             if (tmpReboot)
             {
                 reboot = true;
