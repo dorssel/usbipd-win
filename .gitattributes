@@ -32,9 +32,8 @@ usb.ids   text eol=lf
 
 # VBoxUsb drivers
 *.cat   binary
-*.inf   text
+*.inf   text eol=crlf
 *.sys   binary
-*.cer   binary
 
 # Linux scripts
 *.sh   text eol=lf
