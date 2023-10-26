@@ -48,7 +48,7 @@ static partial class ConfigurationManager
         {
             fixed (char* pDeviceId = deviceId)
             {
-                PInvoke.CM_Get_Device_Interface_List_Size(out var bufferLen, interfaceClassGuid, pDeviceId, (uint)flags).ThrowOnError(nameof(PInvoke.CM_Get_Device_Interface_List_Size));
+                PInvoke.CM_Get_Device_Interface_List_Size(out var bufferLen, interfaceClassGuid, pDeviceId, flags).ThrowOnError(nameof(PInvoke.CM_Get_Device_Interface_List_Size));
                 var deviceInterfaceList = new string('\0', (int)bufferLen);
                 fixed (char* buffer = deviceInterfaceList)
                 {
