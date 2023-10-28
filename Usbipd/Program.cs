@@ -3,8 +3,6 @@
 //
 // SPDX-License-Identifier: GPL-3.0-only
 
-using System;
-using System.Collections.Generic;
 using System.CommandLine;
 using System.CommandLine.Builder;
 using System.CommandLine.Completions;
@@ -12,10 +10,7 @@ using System.CommandLine.Help;
 using System.CommandLine.IO;
 using System.CommandLine.Parsing;
 using System.Diagnostics;
-using System.IO;
-using System.Linq;
 using System.Reflection;
-using System.Threading;
 using Usbipd.Automation;
 using static Usbipd.ConsoleTools;
 

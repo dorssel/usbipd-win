@@ -2,16 +2,9 @@
 //
 // SPDX-License-Identifier: GPL-3.0-only
 
-using System;
 using System.Net;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Windows.Win32;
 using Windows.Win32.Networking.WinSock;
 using Windows.Win32.Security;

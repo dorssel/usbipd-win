@@ -3,11 +3,9 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 using System.Diagnostics;
-using System.IO;
 using System.Management.Automation;
 using System.Runtime.Serialization.Json;
 using System.Text;
-using System.Threading.Tasks;
 using Usbipd.Automation;
 
 namespace Usbipd.PowerShell;

@@ -2,13 +2,10 @@
 //
 // SPDX-License-Identifier: GPL-3.0-only
 
-using System;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.IO;
 using System.Net;
 using System.Runtime.InteropServices;
-using System.Threading.Tasks;
 using Usbipd.Automation;
 using static Usbipd.Interop.VBoxUsb;
 using static Usbipd.Tools;
