@@ -2,9 +2,7 @@
 //
 // SPDX-License-Identifier: GPL-3.0-only
 
-using System;
 using System.Net;
-using Microsoft.Extensions.Logging;
 using Usbipd.Automation;
 
 namespace Usbipd;

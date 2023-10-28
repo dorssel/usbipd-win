@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: GPL-3.0-only
 
-using System;
 using System.Net;
 using System.Runtime.Serialization;
 using System.Text.Json.Serialization;

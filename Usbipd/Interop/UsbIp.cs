@@ -2,13 +2,9 @@
 //
 // SPDX-License-Identifier: GPL-3.0-only
 
-using System;
 using System.Buffers.Binary;
-using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Threading;
-using System.Threading.Tasks;
 using Windows.Win32.Devices.Usb;
 
 namespace Usbipd.Interop;

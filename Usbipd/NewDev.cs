@@ -2,10 +2,8 @@
 //
 // SPDX-License-Identifier: GPL-3.0-only
 
-using System;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
-using System.Threading;
 using Windows.Win32;
 using Windows.Win32.Devices.DeviceAndDriverInstallation;
 using Windows.Win32.Foundation;

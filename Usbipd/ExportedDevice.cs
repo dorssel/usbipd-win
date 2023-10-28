@@ -2,15 +2,10 @@
 //
 // SPDX-License-Identifier: GPL-3.0-only
 
-using System;
 using System.Buffers.Binary;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using Usbipd.Automation;
 using Usbipd.Interop;
 using Windows.Win32;

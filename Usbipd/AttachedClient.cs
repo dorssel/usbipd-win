@@ -2,15 +2,10 @@
 //
 // SPDX-License-Identifier: GPL-3.0-only
 
-using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
-using System.Threading;
 using System.Threading.Channels;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
 using Usbipd.Automation;
 using static Usbipd.Interop.Linux;
 using static Usbipd.Interop.UsbIp;
