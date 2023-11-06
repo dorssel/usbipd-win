@@ -3,6 +3,8 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
 ---
+# yaml-language-server: $schema=https://json.schemastore.org/yamllint.json
+
 extends: default
 
 rules:
