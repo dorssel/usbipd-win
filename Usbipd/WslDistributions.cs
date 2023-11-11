@@ -48,7 +48,9 @@ sealed partial record WslDistributions
 
     public static string GetVMSwitchName()
     {
-        var vmSwitchName = "WSL";
+        // Apparently, Windows Subsystem for Android uses a switch with "(WSL Core)" in the name.
+        // So, the parentheses are required.
+        var vmSwitchName = "(WSL)";
         var wslConfigFilePath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
 
         var wslConfigFilePathName = Path.Join(wslConfigFilePath, WslConfigFileName);
