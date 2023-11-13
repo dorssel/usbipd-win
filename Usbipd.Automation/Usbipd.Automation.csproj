@@ -9,6 +9,7 @@ SPDX-License-Identifier: GPL-3.0-only
   <Import Project="..\NetStandard.props" />
 
   <ItemGroup>
+    <None Remove="usb.ids" />
     <AdditionalFiles Include="usb.ids" />
   </ItemGroup>
 

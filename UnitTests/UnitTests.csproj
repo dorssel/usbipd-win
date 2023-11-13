@@ -12,14 +12,6 @@ SPDX-License-Identifier: GPL-3.0-only
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="NativeMethods.txt" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <AdditionalFiles Include="NativeMethods.txt" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="Microsoft.Windows.CsWin32">
       <PrivateAssets>all</PrivateAssets>
