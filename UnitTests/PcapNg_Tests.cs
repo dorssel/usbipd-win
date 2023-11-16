@@ -213,7 +213,7 @@ sealed class PcapNg_Tests
     {
         using var mockConfiguration = new MockConfiguration(null);
         using var pcapNg = new PcapNg(mockConfiguration.Object, MockLogger);
-        pcapNg.DumpPacketIsoRequest(new(), new(), Array.Empty<UsbIpIsoPacketDescriptor>(), null);
+        pcapNg.DumpPacketIsoRequest(new(), new(), [], null);
     }
 
     [TestMethod]
@@ -229,7 +229,7 @@ sealed class PcapNg_Tests
     {
         using var mockConfiguration = new MockConfiguration(TemporaryPath);
         using var pcapNg = new PcapNg(mockConfiguration.Object, MockLogger);
-        pcapNg.DumpPacketIsoRequest(new(), new(), Array.Empty<UsbIpIsoPacketDescriptor>(), null);
+        pcapNg.DumpPacketIsoRequest(new(), new(), [], null);
     }
 
     [TestMethod]
@@ -237,7 +237,7 @@ sealed class PcapNg_Tests
     {
         using var mockConfiguration = new MockConfiguration(null);
         using var pcapNg = new PcapNg(mockConfiguration.Object, MockLogger);
-        pcapNg.DumpPacketIsoReply(new(), new(), new(), Array.Empty<UsbIpIsoPacketDescriptor>(), null);
+        pcapNg.DumpPacketIsoReply(new(), new(), new(), [], null);
     }
 
     [TestMethod]
@@ -253,7 +253,7 @@ sealed class PcapNg_Tests
     {
         using var mockConfiguration = new MockConfiguration(TemporaryPath);
         using var pcapNg = new PcapNg(mockConfiguration.Object, MockLogger);
-        pcapNg.DumpPacketIsoReply(new(), new(), new(), Array.Empty<UsbIpIsoPacketDescriptor>(), null);
+        pcapNg.DumpPacketIsoReply(new(), new(), new(), [], null);
     }
 
     [TestMethod]

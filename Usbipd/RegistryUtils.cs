@@ -123,7 +123,7 @@ static class RegistryUtils
     public static bool SetAllDevicesAsDetached()
     {
         using var devicesKey = GetDevicesKey(false);
-        var deviceKeyNames = devicesKey?.GetSubKeyNames() ?? Array.Empty<string>();
+        var deviceKeyNames = devicesKey?.GetSubKeyNames() ?? [];
         var failure = false;
         foreach (var deviceKeyName in deviceKeyNames)
         {

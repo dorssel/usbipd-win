@@ -243,7 +243,7 @@ sealed class PcapNg
 
     static readonly IPEndPoint hostFakeIpv4 = new(IPAddress.Parse("10.0.0.0"), USBIP_PORT);
     static ushort deviceFakePort = 0x8000;
-    static readonly byte[] pseudoHeader = new byte[] { 0, 6, 0, 20 + 48 };
+    static readonly byte[] pseudoHeader = [0, 6, 0, 20 + 48];
 
 
     public void DumpPacketUnlink(BusId busId, bool reply, UsbIpHeader header)

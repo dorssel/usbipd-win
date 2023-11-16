@@ -28,7 +28,7 @@ sealed class ExportedDevice_Tests
     /// <summary>
     /// See <seealso href="https://www.kernel.org/doc/html/latest/usb/usbip_protocol.html"/>.
     /// </summary>
-    static readonly byte[] TestDeviceBytes = new byte[] {
+    static readonly byte[] TestDeviceBytes = [
         // path (256 bytes, text)
         (byte)'S', (byte)'O', (byte)'M', (byte)'E', (byte)'\\', (byte)'D', (byte)'e', (byte)'v',
         (byte)'i', (byte)'c', (byte)'e', (byte)'\\', (byte)'P', (byte)'a', (byte)'t', (byte)'h',
@@ -68,17 +68,17 @@ sealed class ExportedDevice_Tests
         4,
         // bNumInterfaces (1 byte)
         2,
-    };
+    ];
 
     /// <summary>
     /// See <seealso href="https://www.kernel.org/doc/html/latest/usb/usbip_protocol.html"/>.
     /// </summary>
-    static readonly byte[] TestDeviceInterfacesBytes = new byte[] {
+    static readonly byte[] TestDeviceInterfacesBytes = [
         // interface: 3 bytes + 1 padding byte
         1, 2, 3, 0,
         // interface: 3 bytes + 1 padding byte
         4, 5, 6, 0,
-    };
+    ];
 
     [TestMethod]
     public void Serialize_NoInterfaces()

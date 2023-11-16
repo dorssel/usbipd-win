@@ -35,6 +35,12 @@ sealed class Server : BackgroundService
     readonly IServiceScopeFactory ServiceScopeFactory;
     readonly TcpListener TcpListener;
 
+    public override void Dispose()
+    {
+        TcpListener.Dispose();
+        base.Dispose();
+    }
+
     public static bool IsRunning()
     {
         try

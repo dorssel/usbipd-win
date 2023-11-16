@@ -201,7 +201,7 @@ static class UsbIp
     public static byte[] ToBytes(this in UsbIpHeader header)
     {
         var bytes = new byte[Unsafe.SizeOf<UsbIpHeader>()];
-        MemoryMarshal.Write(bytes, ref Unsafe.AsRef(header));
+        MemoryMarshal.Write(bytes, header);
         MemoryMarshal.AsRef<UsbIpHeader>(bytes).ReverseEndianness();
         return bytes;
     }

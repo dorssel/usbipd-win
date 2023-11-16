@@ -86,17 +86,17 @@ static class Program
     {
         try
         {
-            return complete()?.Where(s => s.StartsWith(completionContext.WordToComplete)) ?? Array.Empty<string>();
+            return complete()?.Where(s => s.StartsWith(completionContext.WordToComplete)) ?? [];
         }
 #pragma warning disable CA1031 // Do not catch general exception types (justification: completions are supposed to help, not crash)
         catch
 #pragma warning restore CA1031 // Do not catch general exception types
         {
-            return Array.Empty<string>();
+            return [];
         }
     }
 
-    internal static int Main(string[] args)
+    internal static int Main(params string[] args)
     {
         if (!Console.IsInputRedirected)
         {
@@ -128,7 +128,7 @@ static class Program
             //  bind [--busid <BUSID>]
             //
             var busIdOption = new Option<BusId>(
-                aliases: new[] { "--busid", "-b" },
+                aliases: ["--busid", "-b"],
                 parseArgument: ParseBusId
             )
             {
@@ -140,7 +140,7 @@ static class Program
             //  bind [--force]
             //
             var forceOption = new Option<bool>(
-                aliases: new[] { "--force", "-f" }
+                aliases: ["--force", "-f"]
             )
             {
                 Description = "Force binding; the host cannot use the device",
@@ -151,7 +151,7 @@ static class Program
             //
             var hardwareIdOption = new Option<VidPid>(
                 // NOTE: the alias '-h' is already for '--help'
-                aliases: new[] { "--hardware-id", "-i" },
+                aliases: ["--hardware-id", "-i"],
                 parseArgument: ParseVidPid
             )
             {
@@ -218,7 +218,7 @@ static class Program
             //  list [--usbids]
             //
             var usbidsOption = new Option<bool>(
-                aliases: new[] { "--usbids", "-u" }
+                aliases: ["--usbids", "-u"]
             )
             {
                 Description = "Show device description from Linux database",
@@ -266,7 +266,7 @@ static class Program
             serverCommand.SetHandler(async (invocationContext) =>
             {
                 invocationContext.ExitCode = (int)await commandHandlers.Server(
-                    invocationContext.ParseResult.GetValueForArgument(keyValueArgument) ?? Array.Empty<string>(),
+                    invocationContext.ParseResult.GetValueForArgument(keyValueArgument) ?? [],
                     invocationContext.Console, invocationContext.GetCancellationToken());
             });
             rootCommand.AddCommand(serverCommand);
@@ -291,7 +291,7 @@ static class Program
             //  unbind [--all]
             //
             var allOption = new Option<bool>(
-                aliases: new[] { "--all", "-a" }
+                aliases: ["--all", "-a"]
             )
             {
                 Description = "Stop sharing all devices",
@@ -301,7 +301,7 @@ static class Program
             //  unbind [--busid <BUSID>]
             //
             var busIdOption = new Option<BusId>(
-                aliases: new[] { "--busid", "-b" },
+                aliases: ["--busid", "-b"],
                 parseArgument: ParseBusId
             )
             {
@@ -313,7 +313,7 @@ static class Program
             //  unbind [--guid <GUID>]
             //
             var guidOption = new Option<Guid>(
-                aliases: new[] { "--guid", "-g" },
+                aliases: ["--guid", "-g"],
                 parseArgument: ParseGuid
             )
             {
@@ -326,7 +326,7 @@ static class Program
             //
             var hardwareIdOption = new Option<VidPid>(
                 // NOTE: the alias '-h' is already for '--help'
-                aliases: new[] { "--hardware-id", "-i" },
+                aliases: ["--hardware-id", "-i"],
                 parseArgument: ParseVidPid
             )
             {
@@ -402,7 +402,7 @@ static class Program
                 //  wsl attach [--auto-attach]
                 //
                 var autoAttachOption = new Option<bool>(
-                    aliases: new[] { "--auto-attach", "-a" }
+                    aliases: ["--auto-attach", "-a"]
                 )
                 {
                     Description = "Automatically re-attach when the device is detached or unplugged",
@@ -412,7 +412,7 @@ static class Program
                 //  wsl attach --busid <BUSID>
                 //
                 var busIdOption = new Option<BusId>(
-                    aliases: new[] { "--busid", "-b" },
+                    aliases: ["--busid", "-b"],
                     parseArgument: ParseBusId
                 )
                 {
@@ -424,7 +424,7 @@ static class Program
                 //  wsl attach --distribution <NAME>
                 //
                 var distributionOption = new Option<string>(
-                    aliases: new[] { "--distribution", "-d" }
+                    aliases: ["--distribution", "-d"]
                 )
                 {
                     ArgumentHelpName = "NAME",
@@ -436,7 +436,7 @@ static class Program
                 //
                 var hardwareIdOption = new Option<VidPid>(
                     // NOTE: the alias '-h' is already for '--help'
-                    aliases: new[] { "--hardware-id", "-i" },
+                    aliases: ["--hardware-id", "-i"],
                     parseArgument: ParseVidPid
                 )
                 {
@@ -444,16 +444,6 @@ static class Program
                     Description = "Attach device having <VID>:<PID>",
                 }.AddCompletions(completionContext => CompletionGuard(completionContext, () =>
                     UsbDevice.GetAll().Where(d => d.BusId.HasValue).GroupBy(d => d.HardwareId).Select(g => g.Key.ToString())));
-                //
-                //  wsl attach --usbip-path <PATH>
-                //
-                var usbipPathOption = new Option<string>(
-                    aliases: new[] { "--usbip-path", "-u" }
-                )
-                {
-                    ArgumentHelpName = "PATH",
-                    Description = "Path to the 'usbip' client tool in the WSL distribution",
-                };
                 //
                 //  wsl attach
                 //
@@ -503,7 +493,7 @@ static class Program
                 //  wsl detach [--all]
                 //
                 var allOption = new Option<bool>(
-                    aliases: new[] { "--all", "-a" }
+                    aliases: ["--all", "-a"]
                 )
                 {
                     Description = "Detach all devices",
@@ -513,7 +503,7 @@ static class Program
                 //  wsl detach [--busid <BUSID>]
                 //
                 var busIdOption = new Option<BusId>(
-                    aliases: new[] { "--busid", "-b" },
+                    aliases: ["--busid", "-b"],
                     parseArgument: ParseBusId
                 )
                 {
@@ -526,7 +516,7 @@ static class Program
                 //
                 var hardwareIdOption = new Option<VidPid>(
                     // NOTE: the alias '-h' is already for '--help'
-                    aliases: new[] { "--hardware-id", "-i" },
+                    aliases: ["--hardware-id", "-i"],
                     parseArgument: ParseVidPid
                 )
                 {
@@ -582,7 +572,7 @@ static class Program
                 //  wsl list [--usbids]
                 //
                 var usbidsOption = new Option<bool>(
-                    aliases: new[] { "--usbids", "-u" }
+                    aliases: ["--usbids", "-u"]
                 )
                 {
                     Description = "Show device description from Linux database",
@@ -622,14 +612,14 @@ static class Program
             {
                 foreach (var subCommand in helpContext.Command.Children.OfType<Command>())
                 {
-                    var subDescriptions = subCommand.Description?.Split('\0', 2) ?? Array.Empty<string>();
+                    var subDescriptions = subCommand.Description?.Split('\0', 2) ?? [];
                     if (subDescriptions.Length > 1)
                     {
                         // Only use the short description for subcommands.
                         helpContext.HelpBuilder.CustomizeSymbol(subCommand, subCommand.Name, subDescriptions[0]);
                     }
                 }
-                var descriptions = helpContext.Command.Description?.Split('\0', 2) ?? Array.Empty<string>();
+                var descriptions = helpContext.Command.Description?.Split('\0', 2) ?? [];
                 helpContext.HelpBuilder.CustomizeLayout(_ =>
                 {
                     var layout = HelpBuilder.Default.GetLayout();

@@ -13,7 +13,7 @@ sealed class WslDistributions_Tests
     [TestMethod]
     public void Constructor()
     {
-        var distros = new WslDistributions(Array.Empty<WslDistributions.Distribution>(), null);
+        var distros = new WslDistributions([], null);
         Assert.AreEqual(0, distros.Distributions.Count());
         Assert.IsNull(distros.HostAddress);
     }
@@ -70,21 +70,19 @@ sealed class WslDistributions_Tests
 
     sealed class NetworkData
     {
-        static readonly (string host, string client)[] SameNetworkData = new[]
-        {
+        static readonly (string host, string client)[] SameNetworkData = [
             ("0.0.0.0/0", "255.255.255.255"),
             ("1.2.3.4/32", "1.2.3.4"),
             ("1.2.3.4/31", "1.2.3.5"),
-        };
+        ];
 
-        static readonly (string host, string client)[] DifferentNetworkData = new[]
-        {
+        static readonly (string host, string client)[] DifferentNetworkData = [
             ("0.0.0.0/1", "128.0.0.0"),
             ("1.2.3.4/32", "1.2.3.5"),
             ("1.2.3.4/24", "0::1.2.3.4"),
             ("0::1.2.3.4/24", "1.2.3.4"),
             ("0::1.2.3.4/24", "0::1.2.3.4"),
-        };
+        ];
 
         static (IPAddress address, IPAddress mask) FromCIDR(string cidr)
         {

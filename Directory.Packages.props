@@ -8,34 +8,29 @@ SPDX-License-Identifier: GPL-3.0-only
   <ItemGroup>
     <!-- all -->
     <PackageVersion Include="GitVersion.MsBuild" Version="5.12.0" />
-
     <!-- Usbipd -->
-    <PackageVersion Include="Microsoft.Extensions.Configuration.Ini" Version="7.0.0" />
-    <PackageVersion Include="Microsoft.Extensions.Hosting.WindowsServices" Version="7.0.1" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.Ini" Version="8.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting.WindowsServices" Version="8.0.0" />
     <PackageVersion Include="Microsoft.Windows.CsWin32" Version="0.3.49-beta" />
     <PackageVersion Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
-
     <!-- UsbIds -->
     <PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.4" />
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="4.7.0" />
-
     <!-- Usbipd.PowerShell -->
     <PackageVersion Include="PowerShellStandard.Library" Version="5.1.1" />
-    <PackageVersion Include="System.Text.Json" Version="7.0.3" />
-
+    <PackageVersion Include="System.Text.Json" Version="7.0.4" />
     <!-- Installer -->
     <PackageVersion Include="WixToolset.DifxApp.wixext" Version="4.0.3" />
     <PackageVersion Include="WixToolset.Firewall.wixext" Version="4.0.3" />
     <PackageVersion Include="WixToolset.Heat" Version="4.0.3" />
     <PackageVersion Include="WixToolset.UI.wixext" Version="4.0.3" />
     <PackageVersion Include="WixToolset.Util.wixext" Version="4.0.3" />
-
     <!-- UnitTests -->
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
     <PackageVersion Include="Moq" Version="4.20.69" />
     <PackageVersion Include="MSTest.TestAdapter" Version="3.1.1" />
     <PackageVersion Include="MSTest.TestFramework" Version="3.1.1" />
-    <PackageVersion Include="System.IO.Pipelines" Version="7.0.0" />
+    <PackageVersion Include="System.IO.Pipelines" Version="8.0.0" />
     <PackageVersion Include="coverlet.collector" Version="6.0.0" />
   </ItemGroup>
 </Project>

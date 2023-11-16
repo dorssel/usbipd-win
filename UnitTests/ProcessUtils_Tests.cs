@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 using System.ComponentModel;
+using System.Text;
 
 namespace UnitTests;
 
@@ -23,9 +24,7 @@ sealed class ProcessUtils_Tests
     [TestMethod]
     public void RunCapturedProcessAsync_CommandSuccess()
     {
-        var result = ProcessUtils.RunCapturedProcessAsync(CompExe,
-            new[] { "/M", File1, File2 },
-            System.Text.Encoding.UTF8, CancellationToken.None).Result;
+        var result = ProcessUtils.RunCapturedProcessAsync(CompExe, Encoding.UTF8, CancellationToken.None, "/M", File1, File2).Result;
         Assert.AreEqual(0, result.ExitCode);
     }
 
@@ -34,8 +33,7 @@ sealed class ProcessUtils_Tests
     {
         var exception = Assert.ThrowsException<AggregateException>(() =>
         {
-            ProcessUtils.RunCapturedProcessAsync(CompExe + "_does_not_exist",
-                Array.Empty<string>(), System.Text.Encoding.UTF8, CancellationToken.None).Wait();
+            ProcessUtils.RunCapturedProcessAsync(CompExe + "_does_not_exist", Encoding.UTF8, CancellationToken.None).Wait();
         });
         Assert.IsInstanceOfType(exception.InnerException, typeof(Win32Exception));
     }
@@ -43,9 +41,7 @@ sealed class ProcessUtils_Tests
     [TestMethod]
     public void RunCapturedProcessAsync_CommandFailure()
     {
-        var result = ProcessUtils.RunCapturedProcessAsync(CompExe,
-            new[] { "/M", File1 + "_does_not_exist", File2 },
-            System.Text.Encoding.UTF8, CancellationToken.None).Result;
+        var result = ProcessUtils.RunCapturedProcessAsync(CompExe, Encoding.UTF8, CancellationToken.None, "/M", File1 + "_does_not_exist", File2).Result;
         Assert.AreNotEqual(0, result.ExitCode);
     }
 
@@ -53,22 +49,16 @@ sealed class ProcessUtils_Tests
     public void RunCapturedProcessAsync_Canceled()
     {
         using var cancellationTokenSource = new CancellationTokenSource(TimeSpan.FromMilliseconds(100));
-        var task = ProcessUtils.RunCapturedProcessAsync(CompExe,
-            new[] { "/M" },
-            System.Text.Encoding.UTF8, cancellationTokenSource.Token);
-        var exception = Assert.ThrowsException<AggregateException>(() =>
-        {
-            task.Wait();
-        });
+        var task = ProcessUtils.RunCapturedProcessAsync(CompExe, Encoding.UTF8, cancellationTokenSource.Token, "/M");
+        var exception = Assert.ThrowsException<AggregateException>(task.Wait);
         Assert.IsInstanceOfType(exception.InnerException, typeof(OperationCanceledException));
     }
 
     [TestMethod]
     public void RunUncapturedProcessAsync_CommandSuccess()
     {
-        var result = ProcessUtils.RunUncapturedProcessAsync(CompExe,
-            new[] { "/M", File1, File2 },
-            CancellationToken.None).Result;
+        var result = ProcessUtils.RunUncapturedProcessAsync(CompExe, CancellationToken.None,
+            "/M", File1, File2).Result;
         Assert.AreEqual(0, result);
     }
 
@@ -77,8 +67,7 @@ sealed class ProcessUtils_Tests
     {
         var exception = Assert.ThrowsException<AggregateException>(() =>
         {
-            ProcessUtils.RunUncapturedProcessAsync(CompExe + "_does_not_exist",
-                Array.Empty<string>(), CancellationToken.None).Wait();
+            ProcessUtils.RunUncapturedProcessAsync(CompExe + "_does_not_exist", CancellationToken.None).Wait();
         });
         Assert.IsInstanceOfType(exception.InnerException, typeof(Win32Exception));
     }
@@ -86,9 +75,7 @@ sealed class ProcessUtils_Tests
     [TestMethod]
     public void RunUncapturedProcessAsync_CommandFailure()
     {
-        var result = ProcessUtils.RunUncapturedProcessAsync(CompExe,
-            new[] { "/M", File1 + "_does_not_exist", File2 },
-            CancellationToken.None).Result;
+        var result = ProcessUtils.RunUncapturedProcessAsync(CompExe, CancellationToken.None, "/M", File1 + "_does_not_exist", File2).Result;
         Assert.AreNotEqual(0, result);
     }
 
@@ -96,13 +83,8 @@ sealed class ProcessUtils_Tests
     public void RunUncapturedProcessAsync_Canceled()
     {
         using var cancellationTokenSource = new CancellationTokenSource(TimeSpan.FromMilliseconds(100));
-        var task = ProcessUtils.RunUncapturedProcessAsync(CompExe,
-            new[] { "/M" },
-            cancellationTokenSource.Token);
-        var exception = Assert.ThrowsException<AggregateException>(() =>
-        {
-            task.Wait();
-        });
+        var task = ProcessUtils.RunUncapturedProcessAsync(CompExe, cancellationTokenSource.Token, "/M");
+        var exception = Assert.ThrowsException<AggregateException>(task.Wait);
         Assert.IsInstanceOfType(exception.InnerException, typeof(OperationCanceledException));
     }
 }

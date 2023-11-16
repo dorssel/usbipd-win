@@ -71,7 +71,7 @@ sealed class DeviceFile_Tests
     {
         using var deviceFile = new DeviceFile(TemporaryPath);
         var rangeBuffer = new FILE_ALLOCATED_RANGE_BUFFER();
-        var outputBuffer = Array.Empty<byte>();
+        byte[] outputBuffer = [];
         var result = deviceFile.IoControlAsync(TEST_IOCTL.FSCTL_QUERY_ALLOCATED_RANGES, Tools.StructToBytes(rangeBuffer), outputBuffer).Result;
         Assert.AreEqual(0u, result);
     }

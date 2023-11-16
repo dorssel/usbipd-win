@@ -33,8 +33,7 @@ sealed class VidPid_Tests
 
     sealed class VidPidData
     {
-        static readonly string[] _Invalid = new[]
-        {
+        static readonly string[] _Invalid = [
             "",
             ":",
             "000:0000",
@@ -47,15 +46,14 @@ sealed class VidPid_Tests
             "0000:0000 ",
             "000g:0000",
             "0000:000g",
-        };
+        ];
 
         public static IEnumerable<string[]> Invalid
         {
             get => from value in _Invalid select new string[] { value };
         }
 
-        static readonly string[] _Valid = new[]
-        {
+        static readonly string[] _Valid = [
             "0000:0000",
             "0123:0000",
             "4567:0000",
@@ -70,7 +68,7 @@ sealed class VidPid_Tests
             "0000:cdef",
             "0000:CDEF",
             "fFfF:FfFf",
-        };
+        ];
 
         public static IEnumerable<string[]> Valid
         {
@@ -221,8 +219,7 @@ sealed class VidPid_Tests
 
     sealed class HardwareIdData
     {
-        static readonly string[] _Invalid = new[]
-        {
+        static readonly string[] _Invalid = [
             "",
             "VID_&PID_",
             "VID_000&PID_0000",
@@ -237,15 +234,14 @@ sealed class VidPid_Tests
             "0000&0000",
             "VID_0000:PID_0000",
             "0000:0000",
-        };
+        ];
 
         public static IEnumerable<string[]> Invalid
         {
             get => from value in _Invalid select new string[] { value };
         }
 
-        static readonly string[] _Valid = new[]
-        {
+        static readonly string[] _Valid = [
             "VID_0000&PID_0000",
             "VID_0123&PID_0000",
             "VID_4567&PID_0000",
@@ -261,7 +257,7 @@ sealed class VidPid_Tests
             "VID_0000&PID_CDEF",
             "VID_fFfF&PID_FfFf",
             "xxxVID_0000&PID_0000xxx",
-        };
+        ];
 
         public static IEnumerable<string[]> Valid
         {

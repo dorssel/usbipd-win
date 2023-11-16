@@ -47,7 +47,7 @@ sealed partial class CommandHandlers : ICommandHandlers
     {
         if (!CheckNoStub(vidPid, console))
         {
-            return Array.Empty<UsbDevice>();
+            return [];
         }
         var devices = UsbDevice.GetAll().Where(d => (d.HardwareId == vidPid) && (!connectedOnly || d.BusId.HasValue));
         var found = false;
@@ -364,7 +364,7 @@ sealed partial class CommandHandlers : ICommandHandlers
         // Unbind acts as a cleanup and has to support partially failed binds.
 
         var deviceList = devices.ToList();
-        if (!deviceList.Any())
+        if (deviceList.Count == 0)
         {
             // This would result in a no-op, which may not be what the user intended.
             return ExitCode.Failure;
@@ -632,10 +632,8 @@ sealed partial class CommandHandlers : ICommandHandlers
         // 6) WSL kernel must be USBIP capable.
 
         {
-            var wslResult = await ProcessUtils.RunCapturedProcessAsync(
-                WslDistributions.WslPath,
-                new[] { "--distribution", distroData.Name, "--user", "root", "--", "cat", "/sys/devices/platform/vhci_hcd.0/status" },
-                Encoding.UTF8, cancellationToken);
+            var wslResult = await ProcessUtils.RunCapturedProcessAsync(WslDistributions.WslPath, Encoding.UTF8, cancellationToken,
+                "--distribution", distroData.Name, "--user", "root", "--", "cat", "/sys/devices/platform/vhci_hcd.0/status");
             // Expected output:
             //
             //    hub port sta spd dev      sockfd local_busid
@@ -652,18 +650,14 @@ sealed partial class CommandHandlers : ICommandHandlers
         // 7) WSL 'usbip' must be correctly installed for root.
 
         {
-            var wslResult = await ProcessUtils.RunCapturedProcessAsync(
-                WslDistributions.WslPath,
-                new[] { "--distribution", distroData.Name, "--user", "root", "--", "usbip", "version" },
-                Encoding.UTF8, cancellationToken);
+            var wslResult = await ProcessUtils.RunCapturedProcessAsync(WslDistributions.WslPath, Encoding.UTF8, cancellationToken,
+                "--distribution", distroData.Name, "--user", "root", "--", "usbip", "version");
             // Expected output:
             //
             //    usbip (usbip-utils 2.0)
             //
             // NOTE: The package name and version varies.
-#pragma warning disable CA1508 // Avoid dead conditional code (false positive)
             if (wslResult.ExitCode != 0 || !wslResult.StandardOutput.StartsWith("usbip ("))
-#pragma warning restore CA1508 // Avoid dead conditional code
             {
                 console.ReportError($"WSL 'usbip' client not correctly installed. See {WslDistributions.WslWikiUrl} for the latest instructions.");
                 return ExitCode.Failure;
@@ -683,10 +677,8 @@ sealed partial class CommandHandlers : ICommandHandlers
             using var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutTokenSource.Token);
             try
             {
-                var wslResult = await ProcessUtils.RunCapturedProcessAsync(
-                    WslDistributions.WslPath,
-                    new[] { "--distribution", distroData.Name, "--user", "root", "--", "bash", "-c", $"echo < /dev/tcp/{distros.HostAddress}/{Interop.UsbIp.USBIP_PORT}" },
-                    Encoding.UTF8, linkedTokenSource.Token);
+                _ = await ProcessUtils.RunCapturedProcessAsync(WslDistributions.WslPath, Encoding.UTF8, linkedTokenSource.Token,
+                    "--distribution", distroData.Name, "--user", "root", "--", "bash", "-c", $"echo < /dev/tcp/{distros.HostAddress}/{Interop.UsbIp.USBIP_PORT}");
             }
             catch (OperationCanceledException) when (timeoutTokenSource.IsCancellationRequested)
             {
@@ -697,10 +689,8 @@ sealed partial class CommandHandlers : ICommandHandlers
         // Finally, call 'usbip attach', or run the auto-attach.sh script.
         if (!autoAttach)
         {
-            var wslResult = await ProcessUtils.RunUncapturedProcessAsync(
-                WslDistributions.WslPath,
-                new[] { "--distribution", distroData.Name, "--user", "root", "--", "usbip", "attach", $"--remote={distros.HostAddress}", $"--busid={busId}" },
-                cancellationToken);
+            var wslResult = await ProcessUtils.RunUncapturedProcessAsync(WslDistributions.WslPath, cancellationToken,
+                "--distribution", distroData.Name, "--user", "root", "--", "usbip", "attach", $"--remote={distros.HostAddress}", $"--busid={busId}");
             if (wslResult != 0)
             {
                 console.ReportError($"Failed to attach device with busid '{busId}'.");
@@ -720,10 +710,8 @@ sealed partial class CommandHandlers : ICommandHandlers
 
             console.ReportInfo("Starting endless attach loop; press Ctrl+C to quit.");
 
-            await ProcessUtils.RunUncapturedProcessAsync(
-                WslDistributions.WslPath,
-                new[] { "--distribution", distroData.Name, "--user", "root", "--", "bash", scriptLinuxPath, distros.HostAddress.ToString(), busId.ToString() },
-                cancellationToken);
+            await ProcessUtils.RunUncapturedProcessAsync(WslDistributions.WslPath, cancellationToken,
+                "--distribution", distroData.Name, "--user", "root", "--", "bash", scriptLinuxPath, distros.HostAddress.ToString(), busId.ToString());
             // This process always ends in failure, as it is supposed to run an endless loop.
             // This may be intended by the user (Ctrl+C, WSL shutdown), others may be real errors.
             // There is no way to tell the difference...

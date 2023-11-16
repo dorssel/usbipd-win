@@ -10,16 +10,16 @@ namespace Usbipd.Automation;
 [DataContract]
 public sealed partial class State
 {
-    public State() : this(Array.Empty<Device>()) { }
+    public State() : this([]) { }
 
     [JsonConstructor]
-    public State(IReadOnlyCollection<Device> devices) => (Devices) = (devices);
+    public State(IReadOnlyCollection<Device> devices) => Devices = devices;
 
     /// <summary>
     /// Serialization for <see cref="Devices" />.
     /// </summary>
     [DataMember(Name = nameof(Devices))]
-    List<Device> _Devices = new();
+    List<Device> _Devices = [];
 
     public IReadOnlyCollection<Device> Devices
     {

@@ -17,7 +17,7 @@ Windows software for sharing locally connected USB devices to other machines, in
 
 ## How to install
 
-This software requires Microsoft Windows 8.1 x64 / Microsoft Windows Server 2012 or newer;
+This software requires Microsoft Windows 10 (x64 only) / Microsoft Windows Server 2019, version 1809 or newer;
 it does not depend on any other software.
 
 Run the installer (.msi) from the [latest release](https://github.com/dorssel/usbipd-win/releases/latest)

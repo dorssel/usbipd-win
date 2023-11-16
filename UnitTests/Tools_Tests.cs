@@ -17,10 +17,9 @@ namespace UnitTests;
 [TestClass]
 sealed class Tools_Tests
 {
-    static readonly byte[] TestStreamBytes =
-    {
+    static readonly byte[] TestStreamBytes = [
         0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
-    };
+    ];
 
     [TestMethod]
     public void ReadMessageAsync_Success()
@@ -94,12 +93,11 @@ sealed class Tools_Tests
         l = 0x1112131415161718,
     };
 
-    static readonly byte[] TestStructBytes = new byte[]
-    {
+    static readonly byte[] TestStructBytes = [
         0x04, 0x03, 0x02, 0x01, // i
         0x01, 0x00, 0x00, 0x00, // b
         0x18, 0x17, 0x16, 0x015, 0x14, 0x13, 0x12, 0x11, // l
-    };
+    ];
 
     [TestMethod]
     public void StructToBytes_Span_Success()

@@ -19,21 +19,12 @@ using static Usbipd.Interop.UsbIp;
 
 namespace Usbipd;
 
-sealed class ConnectedClient
+sealed class ConnectedClient(ILogger<ConnectedClient> logger, ClientContext clientContext, IServiceProvider serviceProvider)
 {
-    public ConnectedClient(ILogger<ConnectedClient> logger, ClientContext clientContext, IServiceProvider serviceProvider)
-    {
-        Logger = logger;
-        ClientContext = clientContext;
-        ServiceProvider = serviceProvider;
-
-        Stream = clientContext.TcpClient.GetStream();
-    }
-
-    readonly ILogger Logger;
-    readonly ClientContext ClientContext;
-    readonly IServiceProvider ServiceProvider;
-    readonly NetworkStream Stream;
+    readonly ILogger Logger = logger;
+    readonly ClientContext ClientContext = clientContext;
+    readonly IServiceProvider ServiceProvider = serviceProvider;
+    readonly NetworkStream Stream = clientContext.TcpClient.GetStream();
 
     public async Task RunAsync(CancellationToken cancellationToken)
     {
@@ -246,9 +237,7 @@ sealed class ConnectedClient
         }
         catch
         {
-#pragma warning disable CA1508 // Avoid dead conditional code (false positive)
             if (status != Status.ST_OK)
-#pragma warning restore CA1508 // Avoid dead conditional code
             {
                 try
                 {
