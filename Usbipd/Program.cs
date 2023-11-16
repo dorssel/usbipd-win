@@ -115,6 +115,15 @@ static class Program
         return (int)Run(null, new CommandHandlers(), args);
     }
 
+    private static readonly string[] AliasBusId = { "--busid", "-b" };
+    private static readonly string[] AliasForceOption = { "--force", "-f" };
+    private static readonly string[] AliasVidPid = { "--hardware-id", "-i" };
+    private static readonly string[] AliasUsbIds = { "--usbids", "-u" };
+    private static readonly string[] AliasAll = { "--all", "-a" };
+    private static readonly string[] AliasGuid = { "--guid", "-g" };
+    private static readonly string[] AliasAutoAttach = { "--auto-attach", "-a" };
+    private static readonly string[] AliasDistribution = { "--distribution", "-d" };
+    private static readonly string[] AliasUsbIpPath = { "--usbip-path", "-u" };
     internal static ExitCode Run(IConsole? optionalTestConsole, ICommandHandlers commandHandlers, params string[] args)
     {
         var rootCommand = new RootCommand("Shares locally connected USB devices to other machines, including Hyper-V guests and WSL 2.");
@@ -128,7 +137,7 @@ static class Program
             //  bind [--busid <BUSID>]
             //
             var busIdOption = new Option<BusId>(
-                aliases: new[] { "--busid", "-b" },
+                aliases: AliasBusId,
                 parseArgument: ParseBusId
             )
             {
@@ -140,7 +149,7 @@ static class Program
             //  bind [--force]
             //
             var forceOption = new Option<bool>(
-                aliases: new[] { "--force", "-f" }
+                aliases: AliasForceOption
             )
             {
                 Description = "Force binding; the host cannot use the device",
@@ -151,7 +160,7 @@ static class Program
             //
             var hardwareIdOption = new Option<VidPid>(
                 // NOTE: the alias '-h' is already for '--help'
-                aliases: new[] { "--hardware-id", "-i" },
+                aliases: AliasVidPid,
                 parseArgument: ParseVidPid
             )
             {
@@ -218,7 +227,7 @@ static class Program
             //  list [--usbids]
             //
             var usbidsOption = new Option<bool>(
-                aliases: new[] { "--usbids", "-u" }
+                aliases: AliasUsbIds
             )
             {
                 Description = "Show device description from Linux database",
@@ -291,7 +300,7 @@ static class Program
             //  unbind [--all]
             //
             var allOption = new Option<bool>(
-                aliases: new[] { "--all", "-a" }
+                aliases: AliasAll
             )
             {
                 Description = "Stop sharing all devices",
@@ -301,7 +310,7 @@ static class Program
             //  unbind [--busid <BUSID>]
             //
             var busIdOption = new Option<BusId>(
-                aliases: new[] { "--busid", "-b" },
+                aliases: AliasBusId,
                 parseArgument: ParseBusId
             )
             {
@@ -313,7 +322,7 @@ static class Program
             //  unbind [--guid <GUID>]
             //
             var guidOption = new Option<Guid>(
-                aliases: new[] { "--guid", "-g" },
+                aliases: AliasGuid,
                 parseArgument: ParseGuid
             )
             {
@@ -326,7 +335,7 @@ static class Program
             //
             var hardwareIdOption = new Option<VidPid>(
                 // NOTE: the alias '-h' is already for '--help'
-                aliases: new[] { "--hardware-id", "-i" },
+                aliases: AliasVidPid,
                 parseArgument: ParseVidPid
             )
             {
@@ -402,7 +411,7 @@ static class Program
                 //  wsl attach [--auto-attach]
                 //
                 var autoAttachOption = new Option<bool>(
-                    aliases: new[] { "--auto-attach", "-a" }
+                    aliases: AliasAutoAttach
                 )
                 {
                     Description = "Automatically re-attach when the device is detached or unplugged",
@@ -412,7 +421,7 @@ static class Program
                 //  wsl attach --busid <BUSID>
                 //
                 var busIdOption = new Option<BusId>(
-                    aliases: new[] { "--busid", "-b" },
+                    aliases: AliasBusId,
                     parseArgument: ParseBusId
                 )
                 {
@@ -424,7 +433,7 @@ static class Program
                 //  wsl attach --distribution <NAME>
                 //
                 var distributionOption = new Option<string>(
-                    aliases: new[] { "--distribution", "-d" }
+                    aliases: AliasDistribution
                 )
                 {
                     ArgumentHelpName = "NAME",
@@ -436,7 +445,7 @@ static class Program
                 //
                 var hardwareIdOption = new Option<VidPid>(
                     // NOTE: the alias '-h' is already for '--help'
-                    aliases: new[] { "--hardware-id", "-i" },
+                    aliases: AliasVidPid,
                     parseArgument: ParseVidPid
                 )
                 {
@@ -448,7 +457,7 @@ static class Program
                 //  wsl attach --usbip-path <PATH>
                 //
                 var usbipPathOption = new Option<string>(
-                    aliases: new[] { "--usbip-path", "-u" }
+                    aliases: AliasUsbIpPath
                 )
                 {
                     ArgumentHelpName = "PATH",
@@ -503,7 +512,7 @@ static class Program
                 //  wsl detach [--all]
                 //
                 var allOption = new Option<bool>(
-                    aliases: new[] { "--all", "-a" }
+                    aliases: AliasAll
                 )
                 {
                     Description = "Detach all devices",
@@ -513,7 +522,7 @@ static class Program
                 //  wsl detach [--busid <BUSID>]
                 //
                 var busIdOption = new Option<BusId>(
-                    aliases: new[] { "--busid", "-b" },
+                    aliases: AliasBusId,
                     parseArgument: ParseBusId
                 )
                 {
@@ -526,7 +535,7 @@ static class Program
                 //
                 var hardwareIdOption = new Option<VidPid>(
                     // NOTE: the alias '-h' is already for '--help'
-                    aliases: new[] { "--hardware-id", "-i" },
+                    aliases: AliasVidPid,
                     parseArgument: ParseVidPid
                 )
                 {
@@ -582,7 +591,7 @@ static class Program
                 //  wsl list [--usbids]
                 //
                 var usbidsOption = new Option<bool>(
-                    aliases: new[] { "--usbids", "-u" }
+                    aliases: AliasUsbIds
                 )
                 {
                     Description = "Show device description from Linux database",

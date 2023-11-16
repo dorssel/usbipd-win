@@ -364,7 +364,7 @@ sealed partial class CommandHandlers : ICommandHandlers
         // Unbind acts as a cleanup and has to support partially failed binds.
 
         var deviceList = devices.ToList();
-        if (!deviceList.Any())
+        if (deviceList.Count > 0)
         {
             // This would result in a no-op, which may not be what the user intended.
             return ExitCode.Failure;

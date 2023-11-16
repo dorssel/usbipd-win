@@ -11,6 +11,7 @@ namespace Usbipd;
 
 static class ProcessUtils
 {
+    private static readonly char[] CtrlC = { '\x03' };
     public sealed record ProcessResult(int ExitCode, string StandardOutput, string StandardError);
 
     /// <summary>
@@ -35,7 +36,7 @@ static class ProcessUtils
         {
             // Fire-and-forget Ctrl+C, this *should* terminate any Linux process.
             // If this is not a remote command execution, then the local Windows process gets it free of charge.
-            await process.StandardInput.WriteAsync(new[] { '\x03' }, remoteTimeoutTokenSource.Token);
+            await process.StandardInput.WriteAsync(CtrlC, remoteTimeoutTokenSource.Token);
             process.StandardInput.Close();
             await process.WaitForExitAsync(remoteTimeoutTokenSource.Token);
         }
