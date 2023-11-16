@@ -18,7 +18,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="4.7.0" />
     <!-- Usbipd.PowerShell -->
     <PackageVersion Include="PowerShellStandard.Library" Version="5.1.1" />
-    <PackageVersion Include="System.Text.Json" Version="7.0.4" />
+    <PackageVersion Include="System.Text.Json" Version="8.0.0" />
     <!-- Installer -->
     <PackageVersion Include="WixToolset.DifxApp.wixext" Version="4.0.3" />
     <PackageVersion Include="WixToolset.Firewall.wixext" Version="4.0.3" />
