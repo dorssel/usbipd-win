@@ -25,6 +25,8 @@ sealed partial record WslDistributions
     public const string VmSwitchSectionKey = "wsl2:vmSwitch";
 
     public static readonly string WslPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "wsl.exe");
+    private static readonly string[] ListAllVerboseArguments = { "--list", "--all", "--verbose" };
+    private static readonly string[] StatusArgument = { "--status" };
 
     public sealed record Distribution(string Name, bool IsDefault, uint Version, bool IsRunning, IPAddress? IPAddress);
 
@@ -93,13 +95,11 @@ sealed partial record WslDistributions
             return null;
         }
 
-        // The WSL switch only exists if at least one WSL 2 instance is running.
-        var wslHost = NetworkInterface.GetAllNetworkInterfaces()
-            .FirstOrDefault(nic => nic.Name.Contains(GetVMSwitchName(), StringComparison.OrdinalIgnoreCase))?.GetIPProperties().UnicastAddresses
-            .FirstOrDefault(ip => ip.Address.AddressFamily == AddressFamily.InterNetwork);
+        UnicastIPAddressInformation? wslHost = null;
 
         var distros = new List<Distribution>();
 
+        // The WSL switch only exists if at least one WSL 2 instance is running.
         // Get a list of details of available distros (in any state: Stopped, Running, Installing, etc.)
         // This contains all we need (default, name, state, version).
         // NOTE: WslGetDistributionConfiguration() is unreliable getting the version.
@@ -109,7 +109,7 @@ sealed partial record WslDistributions
         // * Ubuntu             Running         1
         //   Debian             Stopped         2
         //   Custom-MyDistro    Running         2
-        var detailsResult = await ProcessUtils.RunCapturedProcessAsync(WslPath, new[] { "--list", "--all", "--verbose" }, Encoding.Unicode, cancellationToken);
+        var detailsResult = await ProcessUtils.RunCapturedProcessAsync(WslPath, ListAllVerboseArguments, Encoding.Unicode, cancellationToken);
         switch (detailsResult.ExitCode)
         {
             case 0:
@@ -132,6 +132,15 @@ sealed partial record WslDistributions
                     var name = match.Groups[2].Value.TrimEnd();
                     var isRunning = match.Groups[3].Value == "Running";
                     var version = uint.Parse(match.Groups[4].Value, CultureInfo.InvariantCulture);
+
+                    var networkingModeResult = await ProcessUtils.RunCapturedProcessAsync(WslPath, new [] { "--distribution", name, "--", "wslinfo", "--networking-mode", "-n" }, Encoding.UTF8, cancellationToken);
+                    var hostnameResult = await ProcessUtils.RunCapturedProcessAsync(WslPath, new [] { "--distribution", name, "--", "hostname", "-I" }, Encoding.UTF8, cancellationToken);
+                    var networkInterfaces = NetworkInterface.GetAllNetworkInterfaces();
+                    wslHost = (networkingModeResult.StandardOutput.Equals("mirrored"))
+                        ? networkInterfaces.SelectMany(nic => nic.GetIPProperties().UnicastAddresses).FirstOrDefault(ip => ip.Address.Equals(IPAddress.Parse(hostnameResult.StandardOutput.Trim())))
+                        : networkInterfaces
+                        .FirstOrDefault(nic => nic.Name.Contains(GetVMSwitchName(), StringComparison.OrdinalIgnoreCase))?.GetIPProperties().UnicastAddresses
+                        .FirstOrDefault(ip => ip.Address.AddressFamily == AddressFamily.InterNetwork);
 
                     IPAddress? address = null;
                     if (wslHost is not null && isRunning && version == 2)
@@ -192,7 +201,7 @@ sealed partial record WslDistributions
 
                 // Newer versions of wsl.exe support the --status command.
 #pragma warning disable CA1508 // Avoid dead conditional code (false positive)
-                if ((await ProcessUtils.RunCapturedProcessAsync(WslPath, new[] { "--status" }, Encoding.Unicode, cancellationToken)).ExitCode != 0)
+                if ((await ProcessUtils.RunCapturedProcessAsync(WslPath, StatusArgument, Encoding.Unicode, cancellationToken)).ExitCode != 0)
 #pragma warning restore CA1508 // Avoid dead conditional code
                 {
                     // We conclude that WSL is indeed not installed at all.
