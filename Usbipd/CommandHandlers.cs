@@ -36,7 +36,6 @@ interface ICommandHandlers
     public Task<ExitCode> WslDetach(BusId busId, IConsole console, CancellationToken cancellationToken);
     public Task<ExitCode> WslDetach(VidPid vidPid, IConsole console, CancellationToken cancellationToken);
     public Task<ExitCode> WslDetachAll(IConsole console, CancellationToken cancellationToken);
-    public Task<ExitCode> WslList(bool usbids, IConsole console, CancellationToken cancellationToken);
 
     public Task<ExitCode> State(IConsole console, CancellationToken cancellationToken);
 }
@@ -781,48 +780,6 @@ sealed partial class CommandHandlers : ICommandHandlers
         return Task.FromResult(ExitCode.Success);
     }
 
-    async Task<ExitCode> ICommandHandlers.WslList(bool usbids, IConsole console, CancellationToken cancellationToken)
-    {
-        if (await GetDistributionsAsync(console, cancellationToken) is not WslDistributions distros)
-        {
-            return ExitCode.Failure;
-        }
-
-        console.WriteLine($"{"BUSID",-5}  {"VID:PID",-9}  {"DEVICE",-60}  STATE");
-        foreach (var device in UsbDevice.GetAll().Where(d => d.BusId.HasValue).OrderBy(d => d.BusId))
-        {
-            string state;
-            if (device.IPAddress is not null)
-            {
-                if (distros.LookupByIPAddress(device.IPAddress) is not null)
-                {
-                    // All WSL instances for the user share the same IP address; it cannot be determined
-                    // which distro was used to attach. That does not matter, since it is attached
-                    // to the one and only kernel, so it is now available in all distros.
-                    state = "Attached - WSL";
-                }
-                else
-                {
-                    state = "Attached - non-WSL";
-                }
-            }
-            else
-            {
-                state = "Not attached";
-            }
-            // NOTE: Strictly speaking, both Bus and Port can be > 99. If you have one of those, you win a prize!
-            console.Write($"{device.BusId,-5}  ");
-            console.Write($"{device.HardwareId,-9}  ");
-            console.WriteTruncated(GetDescription(device, usbids), 60, true);
-            console.WriteLine($"  {state}");
-        }
-        console.WriteLine(string.Empty);
-
-        console.ReportIfServerNotRunning();
-        console.ReportIfForceNeeded();
-        return ExitCode.Success;
-    }
-
     async Task<ExitCode> ICommandHandlers.State(IConsole console, CancellationToken cancellationToken)
     {
         Console.SetError(TextWriter.Null);
@@ -846,7 +803,6 @@ sealed partial class CommandHandlers : ICommandHandlers
                 PersistedGuid = device.Guid,
                 StubInstanceId = device.StubInstanceId,
                 ClientIPAddress = device.IPAddress,
-                IsWslAttached = device.IPAddress is not null && distros is not null && distros.LookupByIPAddress(device.IPAddress) is not null,
             });
         }
 

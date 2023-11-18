@@ -19,7 +19,7 @@ sealed class Automation_Tests
     const string TestStubInstanceId = "testStubInstanceId";
     static readonly IPAddress TestClientIPAddress = IPAddress.Parse("1.2.3.4");
 
-    static readonly Device TestDevice = new(TestInstanceId, TestDescription, true, TestBusId, TestPersistedGuid, TestStubInstanceId, TestClientIPAddress, true);
+    static readonly Device TestDevice = new(TestInstanceId, TestDescription, true, TestBusId, TestPersistedGuid, TestStubInstanceId, TestClientIPAddress);
     readonly Device[] TestDevices = [TestDevice, new()];
     const string TestJson = """
         {
@@ -30,7 +30,6 @@ sealed class Automation_Tests
                     "Description": "testDescription",
                     "InstanceId": "testInstanceId\\***VID_1234&PID_CDEF***",
                     "IsForced": true,
-                    "IsWslAttached": true,
                     "PersistedGuid": "ad9d8376-6284-495e-a80b-ff1826d7447d",
                     "StubInstanceId": "testStubInstanceId"
                 },
@@ -40,7 +39,6 @@ sealed class Automation_Tests
                     "Description": "",
                     "InstanceId": "",
                     "IsForced": false,
-                    "IsWslAttached": false,
                     "PersistedGuid": null,
                     "StubInstanceId": null
                 }
@@ -91,7 +89,6 @@ sealed class Automation_Tests
         Assert.IsNull(device.PersistedGuid);
         Assert.IsNull(device.StubInstanceId);
         Assert.IsNull(device.ClientIPAddress);
-        Assert.IsFalse(device.IsWslAttached);
         Assert.IsFalse(device.IsBound);
         Assert.IsFalse(device.IsConnected);
         Assert.IsFalse(device.IsAttached);
@@ -100,7 +97,7 @@ sealed class Automation_Tests
     [TestMethod]
     public void Device_JsonConstructor()
     {
-        var device = new Device(TestInstanceId, TestDescription, true, TestBusId, TestPersistedGuid, TestStubInstanceId, TestClientIPAddress, true);
+        var device = new Device(TestInstanceId, TestDescription, true, TestBusId, TestPersistedGuid, TestStubInstanceId, TestClientIPAddress);
         Assert.AreEqual(TestInstanceId, device.InstanceId);
         Assert.AreEqual(TestHardwareId, device.HardwareId);
         Assert.AreEqual(TestDescription, device.Description);
@@ -109,7 +106,6 @@ sealed class Automation_Tests
         Assert.AreEqual(TestPersistedGuid, device.PersistedGuid);
         Assert.AreEqual(TestStubInstanceId, device.StubInstanceId);
         Assert.AreEqual(TestClientIPAddress, device.ClientIPAddress);
-        Assert.IsTrue(device.IsWslAttached);
         Assert.IsTrue(device.IsBound);
         Assert.IsTrue(device.IsConnected);
         Assert.IsTrue(device.IsAttached);
@@ -196,16 +192,6 @@ sealed class Automation_Tests
         };
         Assert.AreEqual(TestClientIPAddress, device.ClientIPAddress);
         Assert.IsTrue(device.IsAttached);
-    }
-
-    [TestMethod]
-    public void IsWslAttached()
-    {
-        var device = new Device()
-        {
-            IsWslAttached = true,
-        };
-        Assert.IsTrue(device.IsWslAttached);
     }
 
     [TestMethod]

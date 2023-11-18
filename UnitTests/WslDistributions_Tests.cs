@@ -54,20 +54,6 @@ sealed class WslDistributions_Tests
         Assert.IsNull(distro);
     }
 
-    [TestMethod]
-    public void LookupByIPAddress_Success()
-    {
-        var distro = TestDistributions.LookupByIPAddress(IPAddress.Parse("1.2.3.4"));
-        Assert.AreEqual(TestNewDistribution2, distro);
-    }
-
-    [TestMethod]
-    public void LookupByIPAddress_NotFound()
-    {
-        var distro = TestDistributions.LookupByIPAddress(IPAddress.Parse("1.2.3.5"));
-        Assert.IsNull(distro);
-    }
-
     sealed class NetworkData
     {
         static readonly (string host, string client)[] SameNetworkData = [

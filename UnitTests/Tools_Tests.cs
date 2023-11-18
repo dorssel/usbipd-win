@@ -18,7 +18,9 @@ namespace UnitTests;
 sealed class Tools_Tests
 {
     static readonly byte[] TestStreamBytes = [
+#pragma warning disable format
         0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
+#pragma warning restore format
     ];
 
     [TestMethod]
@@ -94,9 +96,11 @@ sealed class Tools_Tests
     };
 
     static readonly byte[] TestStructBytes = [
+#pragma warning disable format
         0x04, 0x03, 0x02, 0x01, // i
         0x01, 0x00, 0x00, 0x00, // b
         0x18, 0x17, 0x16, 0x015, 0x14, 0x13, 0x12, 0x11, // l
+#pragma warning restore format
     ];
 
     [TestMethod]

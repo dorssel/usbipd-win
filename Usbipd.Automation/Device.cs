@@ -14,10 +14,9 @@ public sealed partial class Device
     public Device() { }
 
     [JsonConstructor]
-    public Device(string instanceId, string description, bool isForced, BusId? busId, Guid? persistedGuid, string? stubInstanceId,
-        IPAddress? clientIPAddress, bool isWslAttached)
-        => (InstanceId, Description, IsForced, BusId, PersistedGuid, StubInstanceId, ClientIPAddress, IsWslAttached)
-        = (instanceId, description, isForced, busId, persistedGuid, stubInstanceId, clientIPAddress, isWslAttached);
+    public Device(string instanceId, string description, bool isForced, BusId? busId, Guid? persistedGuid, string? stubInstanceId, IPAddress? clientIPAddress)
+        => (InstanceId, Description, IsForced, BusId, PersistedGuid, StubInstanceId, ClientIPAddress)
+        = (instanceId, description, isForced, busId, persistedGuid, stubInstanceId, clientIPAddress);
 
     [DataMember]
     [JsonPropertyOrder(4)]
@@ -62,11 +61,11 @@ public sealed partial class Device
     }
 
     [DataMember]
-    [JsonPropertyOrder(7)]
+    [JsonPropertyOrder(6)]
     public Guid? PersistedGuid { get; init; }
 
     [DataMember]
-    [JsonPropertyOrder(8)]
+    [JsonPropertyOrder(7)]
     public string? StubInstanceId { get; init; }
 
     /// <summary>
@@ -82,10 +81,6 @@ public sealed partial class Device
         get => IPAddress.TryParse(_ClientIPAddress, out var clientIPAddress) ? clientIPAddress : null;
         init => _ClientIPAddress = value?.ToString();
     }
-
-    [DataMember]
-    [JsonPropertyOrder(6)]
-    public bool IsWslAttached { get; init; }
 
     [JsonIgnore]
     public bool IsBound { get => PersistedGuid is not null; }
