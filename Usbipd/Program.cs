@@ -567,34 +567,6 @@ static class Program
                 });
                 wslCommand.AddCommand(detachCommand);
             }
-            {
-                //
-                //  wsl list [--usbids]
-                //
-                var usbidsOption = new Option<bool>(
-                    aliases: ["--usbids", "-u"]
-                )
-                {
-                    Description = "Show device description from Linux database",
-                    Arity = ArgumentArity.Zero,
-                };
-                //
-                //  wsl list
-                //
-                var listCommand = new Command("list", "List USB devices\0"
-                    + "Lists all USB devices that are available for being attached to a WSL instance.")
-                {
-                    usbidsOption,
-                };
-                listCommand.SetHandler(async (invocationContext) =>
-                {
-                    invocationContext.ExitCode = (int)(
-                        await commandHandlers.WslList(invocationContext.ParseResult.HasOption(usbidsOption),
-                            invocationContext.Console, invocationContext.GetCancellationToken())
-                        );
-                });
-                wslCommand.AddCommand(listCommand);
-            }
         }
 
         // Same as UseDefaults() minus exception handling.

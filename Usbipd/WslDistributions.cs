@@ -214,6 +214,4 @@ sealed partial record WslDistributions
     }
 
     public Distribution? LookupByName(string name) => Distributions.FirstOrDefault(distro => distro.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
-
-    public Distribution? LookupByIPAddress(IPAddress address) => Distributions.FirstOrDefault(distro => address.Equals(distro.IPAddress));
 }
