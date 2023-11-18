@@ -2,6 +2,8 @@
 //
 // SPDX-License-Identifier: GPL-3.0-only
 
+#if !NETSTANDARD
+
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -32,3 +34,5 @@ public class NullableBusIdJsonConverter : JsonConverter<BusId?>
         writer.WriteStringValue(value.ToString());
     }
 }
+
+#endif

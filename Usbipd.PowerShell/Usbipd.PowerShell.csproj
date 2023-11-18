@@ -13,14 +13,9 @@ SPDX-License-Identifier: GPL-3.0-only
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="$(PkgSystem_Text_Json)\lib\$(TargetFramework)\System.Text.Json.dll" CopyToOutputDirectory="PreserveNewest" Visible="false" />
-  </ItemGroup>
-  
-  <ItemGroup>
     <PackageReference Include="PowerShellStandard.Library">
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="System.Text.Json" GeneratePathProperty="true" />
   </ItemGroup>
   
   <ItemGroup>
