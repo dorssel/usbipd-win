@@ -2,6 +2,8 @@
 //
 // SPDX-License-Identifier: GPL-3.0-only
 
+#if !NETSTANDARD
+
 using System.Net;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -33,3 +35,5 @@ public class NullableIPAddressJsonConverter : JsonConverter<IPAddress?>
         writer.WriteStringValue(value.ToString());
     }
 }
+
+#endif

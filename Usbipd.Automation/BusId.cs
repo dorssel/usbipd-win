@@ -2,7 +2,9 @@
 //
 // SPDX-License-Identifier: GPL-3.0-only
 
+#if !NETSTANDARD
 using System.Text.Json.Serialization;
+#endif
 using System.Text.RegularExpressions;
 
 namespace Usbipd.Automation;
@@ -10,8 +12,10 @@ namespace Usbipd.Automation;
 public readonly record struct BusId
     : IComparable<BusId>
 {
+#if !NETSTANDARD
     [JsonConstructor]
     public BusId(ushort bus, ushort port) => (Bus, Port) = (bus, port);
+#endif
 
     public ushort Bus { get; init; }
     public ushort Port { get; init; }

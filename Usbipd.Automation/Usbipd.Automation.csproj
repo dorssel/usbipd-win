@@ -8,13 +8,14 @@ SPDX-License-Identifier: GPL-3.0-only
 
   <Import Project="..\NetStandard.props" />
 
+  <PropertyGroup>
+    <TargetFrameworks>net8.0-windows10.0.17763;netstandard2.0</TargetFrameworks>
+    <TargetFramework></TargetFramework>
+  </PropertyGroup>
+
   <ItemGroup>
     <None Remove="usb.ids" />
     <AdditionalFiles Include="usb.ids" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="System.Text.Json" />
   </ItemGroup>
 
   <ItemGroup>
