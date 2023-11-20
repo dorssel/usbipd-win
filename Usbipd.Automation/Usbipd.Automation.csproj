@@ -6,11 +6,10 @@ SPDX-License-Identifier: GPL-3.0-only
 -->
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <Import Project="..\NetStandard.props" />
-
   <PropertyGroup>
-    <TargetFrameworks>net8.0-windows10.0.17763;netstandard2.0</TargetFrameworks>
-    <TargetFramework></TargetFramework>
+    <TargetFrameworks>$(MainTargetFramework);netstandard2.0</TargetFrameworks>
+    <Platforms>AnyCPU</Platforms>
+    <Platform>AnyCPU</Platform>
   </PropertyGroup>
 
   <ItemGroup>

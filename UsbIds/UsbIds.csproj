@@ -6,9 +6,8 @@ SPDX-License-Identifier: GPL-3.0-only
 -->
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <Import Project="..\NetStandard.props" />
-
   <PropertyGroup>
+    <TargetFrameworks>netstandard2.0</TargetFrameworks>
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
     <IsRoslynComponent>true</IsRoslynComponent>
   </PropertyGroup>

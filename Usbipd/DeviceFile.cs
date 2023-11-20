@@ -67,7 +67,7 @@ sealed class DeviceFile : IDisposable
                 {
                     taskCompletionSource.SetException(new Win32Exception((int)errorCode, $"DeviceIoControl returned error {(WIN32_ERROR)errorCode}"));
                 }
-                Overlapped.Free(nativeOverlapped);
+                BoundHandle.FreeNativeOverlapped(nativeOverlapped);
             }
 
             var nativeOverlapped = BoundHandle.AllocateNativeOverlapped(OnCompletion, null, new object?[] { input, output });
