@@ -6,14 +6,12 @@
 using System.CommandLine;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Security.Principal;
 using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Hosting.WindowsServices;
 using Usbipd.Automation;
-using Windows.Win32.Security;
 using static Usbipd.ConsoleTools;
 using ExitCode = Usbipd.Program.ExitCode;
 
@@ -21,6 +19,8 @@ namespace Usbipd;
 
 interface ICommandHandlers
 {
+    public Task<ExitCode> AttachWsl(BusId busId, bool autoAttach, string? distribution, IConsole console, CancellationToken cancellationToken);
+    public Task<ExitCode> AttachWsl(VidPid vidPid, bool autoAttach, string? distribution, IConsole console, CancellationToken cancellationToken);
     public Task<ExitCode> Bind(BusId busId, bool force, IConsole console, CancellationToken cancellationToken);
     public Task<ExitCode> Bind(VidPid vidPid, bool force, IConsole console, CancellationToken cancellationToken);
     public Task<ExitCode> Detach(BusId busId, IConsole console, CancellationToken cancellationToken);
@@ -33,10 +33,6 @@ interface ICommandHandlers
     public Task<ExitCode> Unbind(Guid guid, IConsole console, CancellationToken cancellationToken);
     public Task<ExitCode> Unbind(VidPid vidPid, IConsole console, CancellationToken cancellationToken);
     public Task<ExitCode> UnbindAll(IConsole console, CancellationToken cancellationToken);
-
-    public Task<ExitCode> WslAttach(BusId busId, bool autoAttach, string? distribution, IConsole console, CancellationToken cancellationToken);
-    public Task<ExitCode> WslAttach(VidPid vidPid, bool autoAttach, string? distribution, IConsole console, CancellationToken cancellationToken);
-
     public Task<ExitCode> State(IConsole console, CancellationToken cancellationToken);
 }
 
@@ -182,7 +178,7 @@ sealed partial class CommandHandlers : ICommandHandlers
         return Task.FromResult(ExitCode.Success);
     }
 
-    static ExitCode Bind(BusId busId, bool wslAttach, bool force, IConsole console)
+    static ExitCode Bind(BusId busId, bool force, IConsole console)
     {
         var device = UsbDevice.GetAll().Where(d => d.BusId.HasValue && d.BusId.Value == busId).SingleOrDefault();
         if (device is null)
@@ -190,13 +186,10 @@ sealed partial class CommandHandlers : ICommandHandlers
             console.ReportError($"There is no device with busid '{busId}'.");
             return ExitCode.Failure;
         }
-        if (device.Guid.HasValue && (wslAttach || (force == device.IsForced)))
+        if (device.Guid.HasValue && (force == device.IsForced))
         {
             // Not an error, just let the user know they just executed a no-op.
-            if (!wslAttach)
-            {
-                console.ReportInfo($"Device with busid '{busId}' was already shared.");
-            }
+            console.ReportInfo($"Device with busid '{busId}' was already shared.");
             if (!device.IsForced)
             {
                 console.ReportIfForceNeeded();
@@ -205,29 +198,6 @@ sealed partial class CommandHandlers : ICommandHandlers
         }
         if (!CheckWriteAccess(console))
         {
-            if (wslAttach)
-            {
-                TOKEN_ELEVATION_TYPE elevationType;
-                unsafe
-                {
-                    using var identity = WindowsIdentity.GetCurrent();
-                    var b = Windows.Win32.PInvoke.GetTokenInformation(identity.AccessToken, TOKEN_INFORMATION_CLASS.TokenElevationType, &elevationType, 4, out var returnLength);
-                    if (!b || returnLength != 4)
-                    {
-                        // Assume elevation is not available.
-                        elevationType = TOKEN_ELEVATION_TYPE.TokenElevationTypeDefault;
-                    }
-                }
-
-                if (elevationType == TOKEN_ELEVATION_TYPE.TokenElevationTypeLimited)
-                {
-                    console.ReportInfo("The first time attaching a device to WSL requires elevated privileges; subsequent attaches will succeed with standard user privileges.");
-                }
-                else
-                {
-                    console.ReportInfo($"To share this device, an administrator will first have to execute 'usbipd bind --busid {busId}'.");
-                }
-            }
             return ExitCode.AccessDenied;
         }
         if (!device.Guid.HasValue)
@@ -254,7 +224,7 @@ sealed partial class CommandHandlers : ICommandHandlers
 
     Task<ExitCode> ICommandHandlers.Bind(BusId busId, bool force, IConsole console, CancellationToken cancellationToken)
     {
-        return Task.FromResult(Bind(busId, false, force, console));
+        return Task.FromResult(Bind(busId, force, console));
     }
 
     Task<ExitCode> ICommandHandlers.Bind(VidPid vidPid, bool force, IConsole console, CancellationToken cancellationToken)
@@ -263,7 +233,7 @@ sealed partial class CommandHandlers : ICommandHandlers
         {
             return Task.FromResult(ExitCode.Failure);
         }
-        return Task.FromResult(Bind(busId, false, force, console));
+        return Task.FromResult(Bind(busId, force, console));
     }
 
     async Task<ExitCode> ICommandHandlers.Server(string[] args, IConsole console, CancellationToken cancellationToken)
@@ -472,12 +442,17 @@ sealed partial class CommandHandlers : ICommandHandlers
     [GeneratedRegex(@"^[a-zA-Z]:\\")]
     private static partial Regex LocalDriveRegex();
 
-    async Task<ExitCode> ICommandHandlers.WslAttach(BusId busId, bool autoAttach, string? distribution, IConsole console, CancellationToken cancellationToken)
+    async Task<ExitCode> ICommandHandlers.AttachWsl(BusId busId, bool autoAttach, string? distribution, IConsole console, CancellationToken cancellationToken)
     {
         var device = UsbDevice.GetAll().Where(d => d.BusId.HasValue && d.BusId.Value == busId).SingleOrDefault();
         if (device is null)
         {
             console.ReportError($"There is no device with busid '{busId}'.");
+            return ExitCode.Failure;
+        }
+        if (!device.Guid.HasValue)
+        {
+            console.ReportError($"Device is not shared; run 'usbipd bind -b {busId}' as administrator first.");
             return ExitCode.Failure;
         }
         // We allow auto-attach on devices that are already attached.
@@ -622,12 +597,6 @@ sealed partial class CommandHandlers : ICommandHandlers
             return ExitCode.Failure;
         }
 
-        var bindResult = Bind(busId, true, false, console);
-        if (bindResult != ExitCode.Success)
-        {
-            return bindResult;
-        }
-
         // 6) WSL kernel must be USBIP capable.
 
         {
@@ -719,13 +688,13 @@ sealed partial class CommandHandlers : ICommandHandlers
         return ExitCode.Success;
     }
 
-    async Task<ExitCode> ICommandHandlers.WslAttach(VidPid vidPid, bool autoAttach, string? distribution, IConsole console, CancellationToken cancellationToken)
+    async Task<ExitCode> ICommandHandlers.AttachWsl(VidPid vidPid, bool autoAttach, string? distribution, IConsole console, CancellationToken cancellationToken)
     {
         if (GetBusIdByHardwareId(vidPid, console) is not BusId busId)
         {
             return ExitCode.Failure;
         }
-        return await ((ICommandHandlers)this).WslAttach(busId, autoAttach, distribution, console, cancellationToken);
+        return await ((ICommandHandlers)this).AttachWsl(busId, autoAttach, distribution, console, cancellationToken);
     }
 
     static ExitCode Detach(IEnumerable<UsbDevice> devices, IConsole console)

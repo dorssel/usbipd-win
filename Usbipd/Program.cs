@@ -118,11 +118,102 @@ static class Program
     internal static ExitCode Run(IConsole? optionalTestConsole, ICommandHandlers commandHandlers, params string[] args)
     {
         var rootCommand = new RootCommand("Shares locally connected USB devices to other machines, including Hyper-V guests and WSL 2.");
-        rootCommand.SetHandler((invocationContext) =>
+        rootCommand.SetHandler(invocationContext =>
         {
             invocationContext.HelpBuilder.Write(rootCommand, invocationContext.Console.Out.CreateTextWriter());
         });
 
+        {
+            //
+            //  attach [--auto-attach]
+            //
+            var autoAttachOption = new Option<bool>(
+                aliases: ["--auto-attach", "-a"]
+            )
+            {
+                Description = "Automatically re-attach when the device is detached or unplugged",
+                Arity = ArgumentArity.Zero,
+            };
+            //
+            //  attach --busid <BUSID>
+            //
+            var busIdOption = new Option<BusId>(
+                aliases: ["--busid", "-b"],
+                parseArgument: ParseBusId
+            )
+            {
+                ArgumentHelpName = "BUSID",
+                Description = "Attach device having <BUSID>",
+            }.AddCompletions(completionContext => CompletionGuard(completionContext, () =>
+                UsbDevice.GetAll().Where(d => d.BusId.HasValue).Select(d => d.BusId.GetValueOrDefault().ToString())));
+            //
+            //  attach --wsl [<DISTRIBUTION>]
+            //
+            var wslOption = new Option<string>(
+                aliases: ["--wsl", "-w"]
+            )
+            {
+                ArgumentHelpName = "[DISTRIBUTION]",
+                Description = "Attach to WSL, optionally specifying the distribution to use",
+                IsRequired = true,
+                Arity = ArgumentArity.ZeroOrOne,
+            }.AddCompletions(completionContext => CompletionGuard(completionContext, () =>
+                WslDistributions.CreateAsync(CancellationToken.None).Result?.Distributions.Select(d => d.Name)));
+            //
+            //  attach [--hardware-id <VID>:<PID>]
+            //
+            var hardwareIdOption = new Option<VidPid>(
+                // NOTE: the alias '-h' is already for '--help'
+                aliases: ["--hardware-id", "-i"],
+                parseArgument: ParseVidPid
+            )
+            {
+                ArgumentHelpName = "VID:PID",
+                Description = "Attach device having <VID>:<PID>",
+            }.AddCompletions(completionContext => CompletionGuard(completionContext, () =>
+                UsbDevice.GetAll().Where(d => d.BusId.HasValue).GroupBy(d => d.HardwareId).Select(g => g.Key.ToString())));
+            //
+            //  wsl attach
+            //
+            var attachCommand = new Command("attach", "Attach a USB device to a client\0"
+                + "Attaches a USB device to a client.\n"
+                + "\n"
+                + "Currently, only WSL is supported. Other clients need to perform an attach using client-side tooling.\n"
+                + "\n"
+                + OneOfRequiredText(busIdOption, hardwareIdOption))
+                {
+                    autoAttachOption,
+                    busIdOption,
+                    hardwareIdOption,
+                    wslOption,
+                };
+            attachCommand.AddValidator(commandResult =>
+            {
+                ValidateOneOf(commandResult, busIdOption, hardwareIdOption);
+            });
+            attachCommand.SetHandler(async invocationContext =>
+            {
+                if (invocationContext.ParseResult.HasOption(busIdOption))
+                {
+                    invocationContext.ExitCode = (int)(
+                        await commandHandlers.AttachWsl(invocationContext.ParseResult.GetValueForOption(busIdOption),
+                            invocationContext.ParseResult.HasOption(autoAttachOption),
+                            invocationContext.ParseResult.GetValueForOption(wslOption),
+                            invocationContext.Console, invocationContext.GetCancellationToken())
+                        );
+                }
+                else
+                {
+                    invocationContext.ExitCode = (int)(
+                        await commandHandlers.AttachWsl(invocationContext.ParseResult.GetValueForOption(hardwareIdOption),
+                            invocationContext.ParseResult.HasOption(autoAttachOption),
+                            invocationContext.ParseResult.GetValueForOption(wslOption),
+                            invocationContext.Console, invocationContext.GetCancellationToken())
+                        );
+                }
+            });
+            rootCommand.AddCommand(attachCommand);
+        }
         {
             //
             //  bind [--busid <BUSID>]
@@ -178,7 +269,7 @@ static class Program
             {
                 ValidateOneOf(commandResult, busIdOption, hardwareIdOption);
             });
-            bindCommand.SetHandler(async (invocationContext) =>
+            bindCommand.SetHandler(async invocationContext =>
             {
                 if (invocationContext.ParseResult.HasOption(busIdOption))
                 {
@@ -238,8 +329,8 @@ static class Program
             //
             //  wsl detach
             //
-            var detachCommand = new Command("detach", "Detach a USB device from a remote client\0"
-                + "Detaches one or more USB devices. The remote client sees this as a surprise "
+            var detachCommand = new Command("detach", "Detach a USB device from a client\0"
+                + "Detaches one or more USB devices. The client sees this as a surprise "
                 + "removal event. A detached device becomes available again in Windows, "
                 + "unless it was bound using the --force option.\n"
                 + "\n"
@@ -253,7 +344,7 @@ static class Program
             {
                 ValidateOneOf(commandResult, allOption, busIdOption, hardwareIdOption);
             });
-            detachCommand.SetHandler(async (invocationContext) =>
+            detachCommand.SetHandler(async invocationContext =>
             {
                 if (invocationContext.ParseResult.HasOption(allOption))
                 {
@@ -284,7 +375,7 @@ static class Program
             //
             var licenseCommand = new Command("license", "Display license information\0"
                 + "Displays license information.");
-            licenseCommand.SetHandler(async (invocationContext) =>
+            licenseCommand.SetHandler(async invocationContext =>
             {
                 invocationContext.ExitCode = (int)(
                     await commandHandlers.License(invocationContext.Console, invocationContext.GetCancellationToken())
@@ -311,7 +402,7 @@ static class Program
             {
                 usbidsOption,
             };
-            listCommand.SetHandler(async (invocationContext) =>
+            listCommand.SetHandler(async invocationContext =>
             {
                 invocationContext.ExitCode = (int)(
                     await commandHandlers.List(invocationContext.ParseResult.HasOption(usbidsOption),
@@ -342,7 +433,7 @@ static class Program
             {
                 keyValueArgument,
             };
-            serverCommand.SetHandler(async (invocationContext) =>
+            serverCommand.SetHandler(async invocationContext =>
             {
                 invocationContext.ExitCode = (int)await commandHandlers.Server(
                     invocationContext.ParseResult.GetValueForArgument(keyValueArgument) ?? [],
@@ -356,7 +447,7 @@ static class Program
             //
             var stateCommand = new Command("state", "Output state in JSON\0"
                 + "Outputs the current state of all USB devices in machine-readable JSON suitable for scripted automation.");
-            stateCommand.SetHandler(async (invocationContext) =>
+            stateCommand.SetHandler(async invocationContext =>
             {
                 invocationContext.ExitCode = (int)(
                     await commandHandlers.State(
@@ -432,7 +523,7 @@ static class Program
             {
                 ValidateOneOf(commandResult, allOption, busIdOption, guidOption, hardwareIdOption);
             });
-            unbindCommand.SetHandler(async (invocationContext) =>
+            unbindCommand.SetHandler(async invocationContext =>
             {
                 if (invocationContext.ParseResult.HasOption(allOption))
                 {
@@ -468,105 +559,30 @@ static class Program
             //
             //  wsl
             //
-            var wslCommand = new Command("wsl", "Convenience commands for WSL\0"
-                + "Convenience commands for attaching and detaching devices to Windows Subsystem for Linux.");
-            wslCommand.SetHandler((invocationContext) =>
+            //  NOTE: This command is obsolete; we just need to inform the user where to find the changes.
+            //
+            var wslCommand = new Command("wsl")
             {
-                // 'wsl' always expects a subcommand. Without a subcommand, just act as if '--help' was provided.
-                invocationContext.HelpBuilder.Write(wslCommand, invocationContext.Console.Out.CreateTextWriter());
+                IsHidden = true,
+            };
+            wslCommand.AddOption(new Option<bool>(
+                aliases: ["--help", "-h", "-?"]
+            )
+            {
+                Arity = ArgumentArity.Zero,
+            });
+            wslCommand.AddArgument(new Argument<string[]>()
+            {
+                Arity = ArgumentArity.ZeroOrMore,
+            });
+            wslCommand.SetHandler(invocationContext =>
+            {
+                ConsoleTools.ReportError(invocationContext.Console, $"The 'wsl' subcommand has been removed; "
+                    + "see https://learn.microsoft.com/en-us/windows/wsl/connect-usb#attach-a-usb-device "
+                    + "on how to use the new syntax.");
+                invocationContext.ExitCode = (int)ExitCode.ParseError;
             });
             rootCommand.AddCommand(wslCommand);
-            {
-                //
-                //  wsl attach [--auto-attach]
-                //
-                var autoAttachOption = new Option<bool>(
-                    aliases: ["--auto-attach", "-a"]
-                )
-                {
-                    Description = "Automatically re-attach when the device is detached or unplugged",
-                    Arity = ArgumentArity.Zero,
-                };
-                //
-                //  wsl attach --busid <BUSID>
-                //
-                var busIdOption = new Option<BusId>(
-                    aliases: ["--busid", "-b"],
-                    parseArgument: ParseBusId
-                )
-                {
-                    ArgumentHelpName = "BUSID",
-                    Description = "Attach device having <BUSID>",
-                }.AddCompletions(completionContext => CompletionGuard(completionContext, () =>
-                    UsbDevice.GetAll().Where(d => d.BusId.HasValue).Select(d => d.BusId.GetValueOrDefault().ToString())));
-                //
-                //  wsl attach --distribution <NAME>
-                //
-                var distributionOption = new Option<string>(
-                    aliases: ["--distribution", "-d"]
-                )
-                {
-                    ArgumentHelpName = "NAME",
-                    Description = "Name of the WSL distribution to attach to",
-                }.AddCompletions(completionContext => CompletionGuard(completionContext, () =>
-                    WslDistributions.CreateAsync(CancellationToken.None).Result?.Distributions.Select(d => d.Name)));
-                //
-                //  wsl attach [--hardware-id <VID>:<PID>]
-                //
-                var hardwareIdOption = new Option<VidPid>(
-                    // NOTE: the alias '-h' is already for '--help'
-                    aliases: ["--hardware-id", "-i"],
-                    parseArgument: ParseVidPid
-                )
-                {
-                    ArgumentHelpName = "VID:PID",
-                    Description = "Attach device having <VID>:<PID>",
-                }.AddCompletions(completionContext => CompletionGuard(completionContext, () =>
-                    UsbDevice.GetAll().Where(d => d.BusId.HasValue).GroupBy(d => d.HardwareId).Select(g => g.Key.ToString())));
-                //
-                //  wsl attach
-                //
-                var attachCommand = new Command("attach", "Attach a USB device to a WSL instance\0"
-                    + "Attaches a USB device to a WSL instance.\n"
-                    + "\n"
-                    + "The first time a device is attached this command will include a 'bind', for "
-                    + "which administrator privileges are required. Subsequent attaches can be "
-                    + "done with standard user privileges.\n"
-                    + "\n"
-                    + OneOfRequiredText(busIdOption, hardwareIdOption))
-                {
-                    autoAttachOption,
-                    busIdOption,
-                    distributionOption,
-                    hardwareIdOption,
-                };
-                attachCommand.AddValidator(commandResult =>
-                {
-                    ValidateOneOf(commandResult, busIdOption, hardwareIdOption);
-                });
-                attachCommand.SetHandler(async (invocationContext) =>
-                {
-                    if (invocationContext.ParseResult.HasOption(busIdOption))
-                    {
-                        invocationContext.ExitCode = (int)(
-                            await commandHandlers.WslAttach(invocationContext.ParseResult.GetValueForOption(busIdOption),
-                                invocationContext.ParseResult.HasOption(autoAttachOption),
-                                invocationContext.ParseResult.GetValueForOption(distributionOption),
-                                invocationContext.Console, invocationContext.GetCancellationToken())
-                            );
-                    }
-                    else
-                    {
-                        invocationContext.ExitCode = (int)(
-                            await commandHandlers.WslAttach(invocationContext.ParseResult.GetValueForOption(hardwareIdOption),
-                                invocationContext.ParseResult.HasOption(autoAttachOption),
-                                invocationContext.ParseResult.GetValueForOption(distributionOption),
-                                invocationContext.Console, invocationContext.GetCancellationToken())
-                            );
-                    }
-                });
-                wslCommand.AddCommand(attachCommand);
-            }
         }
 
         // Same as UseDefaults() minus exception handling.
