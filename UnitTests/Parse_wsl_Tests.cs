@@ -11,20 +11,16 @@ sealed class Parse_wsl_Tests
     : ParseTestBase
 {
     [TestMethod]
-    public void Success()
+    public void ParseError()
     {
-        Test(ExitCode.Success, "wsl");
+        // 'wsl' has been removed, so this is an error.
+        Test(ExitCode.ParseError, "wsl");
     }
 
     [TestMethod]
     public void Help()
     {
-        Test(ExitCode.Success, "wsl", "--help");
-    }
-
-    [TestMethod]
-    public void UnknownCommand()
-    {
-        Test(ExitCode.ParseError, "wsl", "unknown-command");
+        // Even --help will give a parse error, just to remind the user the command is entirely gone.
+        Test(ExitCode.ParseError, "wsl", "--help");
     }
 }

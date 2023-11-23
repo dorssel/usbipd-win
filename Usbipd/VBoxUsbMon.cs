@@ -30,7 +30,7 @@ sealed class VBoxUsbMon : IDisposable
 
     public static bool IsServiceInstalled()
     {
-        return ServiceController.GetDevices().Any((sc) => sc.ServiceName.Equals(ServiceName, StringComparison.InvariantCultureIgnoreCase));
+        return ServiceController.GetDevices().Any(sc => sc.ServiceName.Equals(ServiceName, StringComparison.InvariantCultureIgnoreCase));
     }
 
     public static bool IsVersionSupported(UsbSupVersion version) =>

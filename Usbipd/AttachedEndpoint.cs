@@ -67,13 +67,13 @@ sealed class AttachedEndpoint
         }
 
         var packetDescriptors = await Stream.ReadUsbIpIsoPacketDescriptorsAsync(submit.number_of_packets, cancellationToken);
-        if (packetDescriptors.Any((d) => d.length > ushort.MaxValue))
+        if (packetDescriptors.Any(d => d.length > ushort.MaxValue))
         {
             // VBoxUSB uses ushort for length, and that is fine as none of the current
             // USB standards support larger ISO packets sizes. This is just a sanity check.
             throw new ProtocolViolationException("ISO packet too big");
         }
-        if (packetDescriptors.Sum((d) => d.length) != submit.transfer_buffer_length)
+        if (packetDescriptors.Sum(d => d.length) != submit.transfer_buffer_length)
         {
             // USBIP requires the packets in the data buffer to be sequential without any padding.
             throw new ProtocolViolationException($"cumulative lengths of ISO packets does not match transfer_buffer_length");
@@ -155,10 +155,10 @@ sealed class AttachedEndpoint
                     ret_submit = new()
                     {
                         status = -(int)Errno.SUCCESS,
-                        actual_length = (int)packetDescriptors.Sum((pd) => pd.actual_length),
+                        actual_length = (int)packetDescriptors.Sum(pd => pd.actual_length),
                         start_frame = submit.start_frame,
                         number_of_packets = submit.number_of_packets,
-                        error_count = packetDescriptors.Count((d) => d.status != -(int)Errno.SUCCESS),
+                        error_count = packetDescriptors.Count(d => d.status != -(int)Errno.SUCCESS),
                     },
                 };
 
@@ -199,7 +199,7 @@ sealed class AttachedEndpoint
         }
         finally
         {
-            _ = Task.WhenAll(ioctls).ContinueWith((task) =>
+            _ = Task.WhenAll(ioctls).ContinueWith(task =>
             {
                 gcHandle.Free();
             }, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
@@ -327,7 +327,7 @@ sealed class AttachedEndpoint
                     gcHandle.Free();
                     throw;
                 }
-                _ = ioctl.ContinueWith((task) =>
+                _ = ioctl.ContinueWith(task =>
                 {
                     gcHandle.Free();
                 }, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
