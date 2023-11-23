@@ -201,6 +201,85 @@ static class Program
         }
         {
             //
+            //  detach [--all]
+            //
+            var allOption = new Option<bool>(
+                aliases: ["--all", "-a"]
+            )
+            {
+                Description = "Detach all devices",
+                Arity = ArgumentArity.Zero,
+            };
+            //
+            //  detach [--busid <BUSID>]
+            //
+            var busIdOption = new Option<BusId>(
+                aliases: ["--busid", "-b"],
+                parseArgument: ParseBusId
+            )
+            {
+                ArgumentHelpName = "BUSID",
+                Description = "Detach device having <BUSID>",
+            }.AddCompletions(completionContext => CompletionGuard(completionContext, () =>
+                UsbDevice.GetAll().Where(d => d.BusId.HasValue).Select(d => d.BusId.GetValueOrDefault().ToString())));
+            //
+            //  detach [--hardware-id <VID>:<PID>]
+            //
+            var hardwareIdOption = new Option<VidPid>(
+                // NOTE: the alias '-h' is already for '--help'
+                aliases: ["--hardware-id", "-i"],
+                parseArgument: ParseVidPid
+            )
+            {
+                ArgumentHelpName = "VID:PID",
+                Description = "Detach all devices having <VID>:<PID>",
+            }.AddCompletions(completionContext => CompletionGuard(completionContext, () =>
+                UsbDevice.GetAll().Where(d => d.BusId.HasValue).GroupBy(d => d.HardwareId).Select(g => g.Key.ToString())));
+            //
+            //  wsl detach
+            //
+            var detachCommand = new Command("detach", "Detach a USB device from a remote client\0"
+                + "Detaches one or more USB devices. The remote client sees this as a surprise "
+                + "removal event. A detached device becomes available again in Windows, "
+                + "unless it was bound using the --force option.\n"
+                + "\n"
+                + OneOfRequiredText(allOption, busIdOption, hardwareIdOption))
+                {
+                    allOption,
+                    busIdOption,
+                    hardwareIdOption,
+                };
+            detachCommand.AddValidator(commandResult =>
+            {
+                ValidateOneOf(commandResult, allOption, busIdOption, hardwareIdOption);
+            });
+            detachCommand.SetHandler(async (invocationContext) =>
+            {
+                if (invocationContext.ParseResult.HasOption(allOption))
+                {
+                    invocationContext.ExitCode = (int)(
+                        await commandHandlers.DetachAll(invocationContext.Console, invocationContext.GetCancellationToken())
+                        );
+                }
+                else if (invocationContext.ParseResult.HasOption(busIdOption))
+                {
+                    invocationContext.ExitCode = (int)(
+                        await commandHandlers.Detach(invocationContext.ParseResult.GetValueForOption(busIdOption),
+                            invocationContext.Console, invocationContext.GetCancellationToken())
+                        );
+                }
+                else
+                {
+                    invocationContext.ExitCode = (int)(
+                        await commandHandlers.Detach(invocationContext.ParseResult.GetValueForOption(hardwareIdOption),
+                            invocationContext.Console, invocationContext.GetCancellationToken())
+                        );
+                }
+            });
+            rootCommand.AddCommand(detachCommand);
+        }
+        {
+            //
             //  license
             //
             var licenseCommand = new Command("license", "Display license information\0"
@@ -487,85 +566,6 @@ static class Program
                     }
                 });
                 wslCommand.AddCommand(attachCommand);
-            }
-            {
-                //
-                //  wsl detach [--all]
-                //
-                var allOption = new Option<bool>(
-                    aliases: ["--all", "-a"]
-                )
-                {
-                    Description = "Detach all devices",
-                    Arity = ArgumentArity.Zero,
-                };
-                //
-                //  wsl detach [--busid <BUSID>]
-                //
-                var busIdOption = new Option<BusId>(
-                    aliases: ["--busid", "-b"],
-                    parseArgument: ParseBusId
-                )
-                {
-                    ArgumentHelpName = "BUSID",
-                    Description = "Detach device having <BUSID>",
-                }.AddCompletions(completionContext => CompletionGuard(completionContext, () =>
-                    UsbDevice.GetAll().Where(d => d.BusId.HasValue).Select(d => d.BusId.GetValueOrDefault().ToString())));
-                //
-                //  wsl detach [--hardware-id <VID>:<PID>]
-                //
-                var hardwareIdOption = new Option<VidPid>(
-                    // NOTE: the alias '-h' is already for '--help'
-                    aliases: ["--hardware-id", "-i"],
-                    parseArgument: ParseVidPid
-                )
-                {
-                    ArgumentHelpName = "VID:PID",
-                    Description = "Detach all devices having <VID>:<PID>",
-                }.AddCompletions(completionContext => CompletionGuard(completionContext, () =>
-                    UsbDevice.GetAll().Where(d => d.BusId.HasValue).GroupBy(d => d.HardwareId).Select(g => g.Key.ToString())));
-                //
-                //  wsl detach
-                //
-                var detachCommand = new Command("detach", "Detach a USB device from a WSL instance\0"
-                    + "Detaches one or more USB devices. The WSL instance sees this as a surprise "
-                    + "removal event. A detached device becomes available again in Windows, "
-                    + "unless it was bound using the --force option.\n"
-                    + "\n"
-                    + OneOfRequiredText(allOption, busIdOption, hardwareIdOption))
-                {
-                    allOption,
-                    busIdOption,
-                    hardwareIdOption,
-                };
-                detachCommand.AddValidator(commandResult =>
-                {
-                    ValidateOneOf(commandResult, allOption, busIdOption, hardwareIdOption);
-                });
-                detachCommand.SetHandler(async (invocationContext) =>
-                {
-                    if (invocationContext.ParseResult.HasOption(allOption))
-                    {
-                        invocationContext.ExitCode = (int)(
-                            await commandHandlers.WslDetachAll(invocationContext.Console, invocationContext.GetCancellationToken())
-                            );
-                    }
-                    else if (invocationContext.ParseResult.HasOption(busIdOption))
-                    {
-                        invocationContext.ExitCode = (int)(
-                            await commandHandlers.WslDetach(invocationContext.ParseResult.GetValueForOption(busIdOption),
-                                invocationContext.Console, invocationContext.GetCancellationToken())
-                            );
-                    }
-                    else
-                    {
-                        invocationContext.ExitCode = (int)(
-                            await commandHandlers.WslDetach(invocationContext.ParseResult.GetValueForOption(hardwareIdOption),
-                                invocationContext.Console, invocationContext.GetCancellationToken())
-                            );
-                    }
-                });
-                wslCommand.AddCommand(detachCommand);
             }
         }
 
