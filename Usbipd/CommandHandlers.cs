@@ -23,6 +23,9 @@ interface ICommandHandlers
 {
     public Task<ExitCode> Bind(BusId busId, bool force, IConsole console, CancellationToken cancellationToken);
     public Task<ExitCode> Bind(VidPid vidPid, bool force, IConsole console, CancellationToken cancellationToken);
+    public Task<ExitCode> Detach(BusId busId, IConsole console, CancellationToken cancellationToken);
+    public Task<ExitCode> Detach(VidPid vidPid, IConsole console, CancellationToken cancellationToken);
+    public Task<ExitCode> DetachAll(IConsole console, CancellationToken cancellationToken);
     public Task<ExitCode> License(IConsole console, CancellationToken cancellationToken);
     public Task<ExitCode> List(bool usbids, IConsole console, CancellationToken cancellationToken);
     public Task<ExitCode> Server(string[] args, IConsole console, CancellationToken cancellationToken);
@@ -33,9 +36,6 @@ interface ICommandHandlers
 
     public Task<ExitCode> WslAttach(BusId busId, bool autoAttach, string? distribution, IConsole console, CancellationToken cancellationToken);
     public Task<ExitCode> WslAttach(VidPid vidPid, bool autoAttach, string? distribution, IConsole console, CancellationToken cancellationToken);
-    public Task<ExitCode> WslDetach(BusId busId, IConsole console, CancellationToken cancellationToken);
-    public Task<ExitCode> WslDetach(VidPid vidPid, IConsole console, CancellationToken cancellationToken);
-    public Task<ExitCode> WslDetachAll(IConsole console, CancellationToken cancellationToken);
 
     public Task<ExitCode> State(IConsole console, CancellationToken cancellationToken);
 }
@@ -728,7 +728,7 @@ sealed partial class CommandHandlers : ICommandHandlers
         return await ((ICommandHandlers)this).WslAttach(busId, autoAttach, distribution, console, cancellationToken);
     }
 
-    static ExitCode WslDetach(IEnumerable<UsbDevice> devices, IConsole console)
+    static ExitCode Detach(IEnumerable<UsbDevice> devices, IConsole console)
     {
         var error = false;
         foreach (var device in devices)
@@ -748,7 +748,7 @@ sealed partial class CommandHandlers : ICommandHandlers
         return error ? ExitCode.Failure : ExitCode.Success;
     }
 
-    Task<ExitCode> ICommandHandlers.WslDetach(BusId busId, IConsole console, CancellationToken cancellationToken)
+    Task<ExitCode> ICommandHandlers.Detach(BusId busId, IConsole console, CancellationToken cancellationToken)
     {
         var device = UsbDevice.GetAll().Where(d => d.BusId.HasValue && d.BusId.Value == busId).SingleOrDefault();
         if (device is null)
@@ -756,10 +756,10 @@ sealed partial class CommandHandlers : ICommandHandlers
             console.ReportError($"There is no device with busid '{busId}'.");
             return Task.FromResult(ExitCode.Failure);
         }
-        return Task.FromResult(WslDetach(new[] { device }, console));
+        return Task.FromResult(Detach(new[] { device }, console));
     }
 
-    Task<ExitCode> ICommandHandlers.WslDetach(VidPid vidPid, IConsole console, CancellationToken cancellationToken)
+    Task<ExitCode> ICommandHandlers.Detach(VidPid vidPid, IConsole console, CancellationToken cancellationToken)
     {
         var devices = GetDevicesByHardwareId(vidPid, true, console);
         if (!devices.Any())
@@ -767,10 +767,10 @@ sealed partial class CommandHandlers : ICommandHandlers
             // This would result in a no-op, which may not be what the user intended.
             return Task.FromResult(ExitCode.Failure);
         }
-        return Task.FromResult(WslDetach(devices, console));
+        return Task.FromResult(Detach(devices, console));
     }
 
-    Task<ExitCode> ICommandHandlers.WslDetachAll(IConsole console, CancellationToken cancellationToken)
+    Task<ExitCode> ICommandHandlers.DetachAll(IConsole console, CancellationToken cancellationToken)
     {
         if (!RegistryUtils.SetAllDevicesAsDetached())
         {
