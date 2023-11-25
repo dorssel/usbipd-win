@@ -38,7 +38,7 @@ SPDX-License-Identifier: GPL-3.0-only
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="wsl-scripts\auto-attach.sh">
+    <None Update="wsl\auto-attach.sh;wsl\usbip;WSL\README.md">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

@@ -615,24 +615,7 @@ sealed partial class CommandHandlers : ICommandHandlers
             }
         }
 
-        // 7) WSL 'usbip' must be correctly installed for root.
-
-        {
-            var wslResult = await ProcessUtils.RunCapturedProcessAsync(WslDistributions.WslPath, Encoding.UTF8, cancellationToken,
-                "--distribution", distroData.Name, "--user", "root", "--", "usbip", "version");
-            // Expected output:
-            //
-            //    usbip (usbip-utils 2.0)
-            //
-            // NOTE: The package name and version varies.
-            if (wslResult.ExitCode != 0 || !wslResult.StandardOutput.StartsWith("usbip ("))
-            {
-                console.ReportError($"WSL 'usbip' client not correctly installed. See {WslDistributions.WslWikiUrl} for the latest instructions.");
-                return ExitCode.Failure;
-            }
-        }
-
-        // 8) Heuristic firewall check
+        // 7) Heuristic firewall check
         //
         // With minimal requirements (bash only) try to connect from WSL to our server.
         // If the process does not terminate within one second, then most likely a third party
@@ -654,11 +637,21 @@ sealed partial class CommandHandlers : ICommandHandlers
             }
         }
 
+        var wslWindowsPath = Path.Combine(Path.GetDirectoryName(Environment.ProcessPath)!, "wsl");
+        if (!LocalDriveRegex().IsMatch(Path.GetPathRoot(wslWindowsPath) ?? string.Empty))
+        {
+            // We need the wsl utility directory to be accessible from within WSL.
+            console.ReportError($"Option '--wsl' requires that this software is installed on a local drive.");
+            return ExitCode.Failure;
+        }
+        var driveLetter = wslWindowsPath[0..1].ToLowerInvariant();
+        var wslLinuxPath = Path.Combine(@"\mnt", driveLetter, Path.GetRelativePath(Path.GetPathRoot(wslWindowsPath)!, wslWindowsPath)).Replace('\\', '/');
+
         // Finally, call 'usbip attach', or run the auto-attach.sh script.
         if (!autoAttach)
         {
             var wslResult = await ProcessUtils.RunUncapturedProcessAsync(WslDistributions.WslPath, cancellationToken,
-                "--distribution", distroData.Name, "--user", "root", "--", "usbip", "attach", $"--remote={distros.HostAddress}", $"--busid={busId}");
+                "--distribution", distroData.Name, "--user", "root", "--", wslLinuxPath + "/usbip", "attach", $"--remote={distros.HostAddress}", $"--busid={busId}");
             if (wslResult != 0)
             {
                 console.ReportError($"Failed to attach device with busid '{busId}'.");
@@ -667,19 +660,10 @@ sealed partial class CommandHandlers : ICommandHandlers
         }
         else
         {
-            var scriptWindowsPath = Path.Combine(Path.GetDirectoryName(Environment.ProcessPath)!, "wsl-scripts", "auto-attach.sh");
-            if (!LocalDriveRegex().IsMatch(Path.GetPathRoot(scriptWindowsPath) ?? string.Empty))
-            {
-                console.ReportError($"Option '--auto-attach' requires that this software is installed on a local drive.");
-                return ExitCode.Failure;
-            }
-            var driveLetter = scriptWindowsPath[0..1].ToLowerInvariant();
-            var scriptLinuxPath = Path.Combine(@"\mnt", driveLetter, Path.GetRelativePath(Path.GetPathRoot(scriptWindowsPath)!, scriptWindowsPath)).Replace('\\', '/');
-
             console.ReportInfo("Starting endless attach loop; press Ctrl+C to quit.");
 
             await ProcessUtils.RunUncapturedProcessAsync(WslDistributions.WslPath, cancellationToken,
-                "--distribution", distroData.Name, "--user", "root", "--", "bash", scriptLinuxPath, distros.HostAddress.ToString(), busId.ToString());
+                "--distribution", distroData.Name, "--user", "root", "--", "bash", wslLinuxPath + "/auto-attach.sh", distros.HostAddress.ToString(), busId.ToString());
             // This process always ends in failure, as it is supposed to run an endless loop.
             // This may be intended by the user (Ctrl+C, WSL shutdown), others may be real errors.
             // There is no way to tell the difference...
