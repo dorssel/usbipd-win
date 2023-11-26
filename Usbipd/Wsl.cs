@@ -40,9 +40,10 @@ static partial class Wsl
         //      (2) it must be version 2
         //      (3) it must be running
         // (c) if the user did not specify one:
-        //      (1) there must exist at least one version 2
-        //      (2) there must be at least one running
-        //      (3) if there are multiple running:
+        //      (1) there must exist at least one distribution
+        //      (2) there must exist at least one version 2 distribution
+        //      (3) there must be at least one version 2 running
+        //      (4)
         //          (i) use the default distribution, if and only if it is version 2 and running
         //              (FYI: This is administered by WSL in HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Lxss.)
         //          (ii) use the first one that is version 2 and running
@@ -50,32 +51,13 @@ static partial class Wsl
         // We provide enough instructions to the user how to fix whatever
         // error/warning we give. Or else we get flooded with "it doesn't work" issues...
 
-        if (await CreateAsync(cancellationToken) is not IEnumerable<Distribution> distros)
+        if (await CreateAsync(cancellationToken) is not IEnumerable<Distribution> distributions)
         {
             // check (a) failed
             console.ReportError($"Windows Subsystem for Linux version 2 is not available. See {InstallWslUrl}.");
             return ExitCode.Failure;
         }
 
-        // Figure out which distribution to use. WSL can be in many states:
-        // (a) not installed at all (already handled by the null return above)
-        // (b) if the user specified one:
-        //      (1) it must exist
-        //      (2) it must be version 2
-        //      (3) it must be running
-        // (c) if the user did not specify one:
-        //      (1) there must exist at least one distribution
-        //      (2) there must exist at least one version 2 distribution
-        //      (3) there must be at least one version 2 running
-        //      (4)
-        //          (i) use the default distribution, if and only if it is version 2 and running
-        //              (FYI: This is administered by WSL in HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Lxss.)
-        //          (ii) else, use the first one that is version 2 and running
-        //
-        // We provide enough instructions to the user how to fix whatever
-        // error/warning we give. Or else we get flooded with "it doesn't work" issues...
-
-        Distribution distro;
         if (distribution is not null)
         {
             // case (b)
@@ -83,14 +65,14 @@ static partial class Wsl
                 "Please file an issue if you believe that the default selection mechanism is not working for you.");
 
             // check (b1)
-            if (distros.FirstOrDefault(d => d.Name.Equals(distribution, StringComparison.OrdinalIgnoreCase)) is not Distribution selectedDistro)
+            if (distributions.FirstOrDefault(d => d.Name.Equals(distribution, StringComparison.OrdinalIgnoreCase)) is not Distribution selectedDistribution)
             {
                 console.ReportError($"The WSL distribution '{distribution}' does not exist. Learn how to list all installed distributions at {ListDistributionsUrl}.");
                 return ExitCode.Failure;
             }
 
             // check (b2)
-            switch (selectedDistro.Version)
+            switch (selectedDistribution.Version)
             {
                 case 1:
                     console.ReportError($"The selected WSL distribution is using WSL 1, but WSL 2 is required. Learn how to upgrade at {SetWslVersionUrl}.");
@@ -99,14 +81,14 @@ static partial class Wsl
                     // Supported
                     break;
                 default:
-                    console.ReportError($"The selected WSL distribution is using unsupported WSL {selectedDistro.Version}, but WSL 2 is required.");
+                    console.ReportError($"The selected WSL distribution is using unsupported WSL {selectedDistribution.Version}, but WSL 2 is required.");
                     return ExitCode.Failure;
             }
 
             // check (b3)
-            if (!selectedDistro.IsRunning)
+            if (!selectedDistribution.IsRunning)
             {
-                // Make sure the distro is running before we attach. While WSL is capable of
+                // Make sure the distribution is running before we attach. While WSL is capable of
                 // starting on the fly when wsl.exe is invoked, that will cause confusing behavior
                 // where we might attach a USB device to WSL, then immediately detach it when the
                 // WSL VM is shutdown shortly afterwards.
@@ -115,53 +97,53 @@ static partial class Wsl
                 return ExitCode.Failure;
             }
 
-            distro = selectedDistro;
+            distribution = selectedDistribution.Name;
         }
         else
         {
             // case (c)
 
             // check (c1)
-            if (!distros.Any())
+            if (!distributions.Any())
             {
                 console.ReportError($"There are no WSL distributions installed. Learn how to install one at {InstallDistributionUrl}.");
                 return ExitCode.Failure;
             }
 
             // check (c2)
-            if (!distros.Any(d => d.Version == 2))
+            if (!distributions.Any(d => d.Version == 2))
             {
                 console.ReportError($"This program only works with WSL 2 distributions. Learn how to upgrade at {SetWslVersionUrl}.");
                 return ExitCode.Failure;
             }
 
             // check (c3)
-            if (!distros.Any(d => d.Version == 2 && d.IsRunning))
+            if (!distributions.Any(d => d.Version == 2 && d.IsRunning))
             {
                 console.ReportError($"There is no WSL 2 distribution running; keep a command prompt to a WSL 2 distribution open to leave it running.");
                 return ExitCode.Failure;
             }
 
-            if (distros.FirstOrDefault(d => d.IsDefault && d.Version == 2 && d.IsRunning) is Distribution defaultDistro)
+            if (distributions.FirstOrDefault(d => d.IsDefault && d.Version == 2 && d.IsRunning) is Distribution defaultDistribution)
             {
                 // case (c4i)
-                distro = defaultDistro;
+                distribution = defaultDistribution.Name;
             }
             else
             {
                 // case (c4ii)
-                distro = distros.First(d => d.Version == 2 && d.IsRunning);
+                distribution = distributions.First(d => d.Version == 2 && d.IsRunning).Name;
             }
         }
 
-        console.ReportInfo($"Using WSL distribution '{distro.Name}' to attach; the device will be available in all WSL 2 distributions.");
+        console.ReportInfo($"Using WSL distribution '{distribution}' to attach; the device will be available in all WSL 2 distributions.");
 
         // We now have determined which running version 2 distribution to use.
 
         // Check: WSL kernel must be USBIP capable.
         {
             var wslResult = await ProcessUtils.RunCapturedProcessAsync(WslPath, Encoding.UTF8, cancellationToken,
-                "--distribution", distro.Name, "--user", "root", "--", "cat", "/sys/devices/platform/vhci_hcd.0/status");
+                "--distribution", distribution, "--user", "root", "--", "cat", "/sys/devices/platform/vhci_hcd.0/status");
             // Expected output:
             //
             //    hub port sta spd dev      sockfd local_busid
@@ -175,7 +157,7 @@ static partial class Wsl
             }
         }
 
-        // Check: our distro-independent usbip client must be runnable.
+        // Check: our distribution-independent usbip client must be runnable.
         var wslWindowsPath = Path.Combine(Path.GetDirectoryName(Environment.ProcessPath)!, "wsl");
         if (!LocalDriveRegex().IsMatch(Path.GetPathRoot(wslWindowsPath) ?? string.Empty))
         {
@@ -188,7 +170,7 @@ static partial class Wsl
 
         {
             var wslResult = await ProcessUtils.RunCapturedProcessAsync(WslPath, Encoding.UTF8, cancellationToken,
-                "--distribution", distro.Name, "--user", "root", "--", wslLinuxPath + "/usbip", "version");
+                "--distribution", distribution, "--user", "root", "--", wslLinuxPath + "/usbip", "version");
             if (wslResult.ExitCode != 0 || wslResult.StandardOutput.Trim() != "usbip (usbip-utils 2.0)")
             {
                 console.ReportError($"Unable to run 'usbip' client tool. Please report this at https://github.com/dorssel/usbipd-win/issues.");
@@ -200,7 +182,7 @@ static partial class Wsl
         IPAddress hostAddress;
         {
             var wslResult = await ProcessUtils.RunCapturedProcessAsync(WslPath, Encoding.UTF8, cancellationToken,
-                "--distribution", distro.Name, "--user", "root", "--", "/usr/bin/wslinfo", "--networking-mode");
+                "--distribution", distribution, "--user", "root", "--", "/usr/bin/wslinfo", "--networking-mode");
             if (wslResult.ExitCode == 0 && wslResult.StandardOutput.Trim() == "mirrored")
             {
                 // mirrored networking mode ... we're done
@@ -213,7 +195,7 @@ static partial class Wsl
                 {
                     // We use 'cat /proc/net/fib_trie', where we assume 'cat' is available on all distributions and /proc/net/fib_trie is supported by the WSL kernel.
                     var ipResult = await ProcessUtils.RunCapturedProcessAsync(WslPath, Encoding.UTF8, cancellationToken,
-                        "--distribution", distro.Name, "--", "cat", "/proc/net/fib_trie");
+                        "--distribution", distribution, "--", "cat", "/proc/net/fib_trie");
                     if (ipResult.ExitCode == 0)
                     {
                         // Example output:
@@ -305,7 +287,7 @@ static partial class Wsl
             try
             {
                 _ = await ProcessUtils.RunCapturedProcessAsync(WslPath, Encoding.UTF8, linkedTokenSource.Token,
-                    "--distribution", distro.Name, "--user", "root", "--", "bash", "-c", $"echo < /dev/tcp/{hostAddress}/{Interop.UsbIp.USBIP_PORT}");
+                    "--distribution", distribution, "--user", "root", "--", "bash", "-c", $"echo < /dev/tcp/{hostAddress}/{Interop.UsbIp.USBIP_PORT}");
             }
             catch (OperationCanceledException) when (timeoutTokenSource.IsCancellationRequested)
             {
@@ -317,7 +299,7 @@ static partial class Wsl
         if (!autoAttach)
         {
             var wslResult = await ProcessUtils.RunUncapturedProcessAsync(WslPath, cancellationToken,
-                "--distribution", distro.Name, "--user", "root", "--", wslLinuxPath + "/usbip", "attach", $"--remote={hostAddress}", $"--busid={busId}");
+                "--distribution", distribution, "--user", "root", "--", wslLinuxPath + "/usbip", "attach", $"--remote={hostAddress}", $"--busid={busId}");
             if (wslResult != 0)
             {
                 console.ReportError($"Failed to attach device with busid '{busId}'.");
@@ -329,7 +311,7 @@ static partial class Wsl
             console.ReportInfo("Starting endless attach loop; press Ctrl+C to quit.");
 
             await ProcessUtils.RunUncapturedProcessAsync(WslPath, cancellationToken,
-                "--distribution", distro.Name, "--user", "root", "--", "bash", wslLinuxPath + "/auto-attach.sh", hostAddress.ToString(), busId.ToString());
+                "--distribution", distribution, "--user", "root", "--", "bash", wslLinuxPath + "/auto-attach.sh", hostAddress.ToString(), busId.ToString());
             // This process always ends in failure, as it is supposed to run an endless loop.
             // This may be intended by the user (Ctrl+C, WSL shutdown), others may be real errors.
             // There is no way to tell the difference...
@@ -358,7 +340,7 @@ static partial class Wsl
     private static partial Regex WslListHeaderRegex();
 
     [GeneratedRegex(@"^( |\*) (.+) +([a-zA-Z]+) +([0-9])+ *$")]
-    private static partial Regex WslListDistroRegex();
+    private static partial Regex WslListDistributionRegex();
 
     [GeneratedRegex(@"\|--\s+(\S+)\s+/32 host LOCAL")]
     private static partial Regex LocalAddressRegex();
@@ -381,9 +363,9 @@ static partial class Wsl
             return null;
         }
 
-        var distros = new List<Distribution>();
+        var distributions = new List<Distribution>();
 
-        // Get a list of details of available distros (in any state: Stopped, Running, Installing, etc.)
+        // Get a list of details of available distributions (in any state: Stopped, Running, Installing, etc.)
         // This contains all we need (default, name, state, version).
         // NOTE: WslGetDistributionConfiguration() is unreliable getting the version.
         //
@@ -406,7 +388,7 @@ static partial class Wsl
 
                 foreach (var line in details.Skip(1))
                 {
-                    var match = WslListDistroRegex().Match(line);
+                    var match = WslListDistributionRegex().Match(line);
                     if (!match.Success)
                     {
                         throw new UnexpectedResultException($"WSL failed to parse distributions: {detailsResult.StandardOutput}");
@@ -415,7 +397,7 @@ static partial class Wsl
                     var name = match.Groups[2].Value.TrimEnd();
                     var isRunning = match.Groups[3].Value == "Running";
                     var version = uint.Parse(match.Groups[4].Value, CultureInfo.InvariantCulture);
-                    distros.Add(new(name, isDefault, version, isRunning));
+                    distributions.Add(new(name, isDefault, version, isRunning));
                 }
                 break;
 
@@ -443,6 +425,6 @@ static partial class Wsl
                 break;
         }
 
-        return distros.AsEnumerable();
+        return distributions.AsEnumerable();
     }
 }
