@@ -12,7 +12,7 @@ set -e
 HOST=$1
 BUSID=$2
 
-# Use our distro-independent build of usbip, which resides in the same
+# Use our distribution-independent build of usbip, which resides in the same
 # directory as this very script.
 USBIP="${BASH_SOURCE%/*}/usbip"
 
@@ -49,7 +49,7 @@ is_attached() {
     # This function determines if the target device is already attached.
     # This uses bash-only functionality for two reasons:
     # - performance (does not start new processes every second)
-    # - no dependencies on installed tools (should work on any distro)
+    # - no dependencies on installed tools (should work on any distribution)
 
     # We enumerate all currently attached USBIP devices. Note that we cannot simply
     # enumerate /var/run/vhci_hcd/port*, as those are not removed when a device is detached.
