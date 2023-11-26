@@ -158,7 +158,7 @@ static class Program
                 IsRequired = true,
                 Arity = ArgumentArity.ZeroOrOne,
             }.AddCompletions(completionContext => CompletionGuard(completionContext, () =>
-                WslDistributions.CreateAsync(CancellationToken.None).Result?.Distributions.Select(d => d.Name)));
+                Wsl.CreateAsync(CancellationToken.None).Result?.Select(d => d.Name)));
             //
             //  attach [--hardware-id <VID>:<PID>]
             //
@@ -577,9 +577,7 @@ static class Program
             });
             wslCommand.SetHandler(invocationContext =>
             {
-                ConsoleTools.ReportError(invocationContext.Console, $"The 'wsl' subcommand has been removed; "
-                    + "see https://learn.microsoft.com/en-us/windows/wsl/connect-usb#attach-a-usb-device "
-                    + "on how to use the new syntax.");
+                ConsoleTools.ReportError(invocationContext.Console, $"The 'wsl' subcommand has been removed. Learn about the new syntax at {Wsl.AttachWslUrl}.");
                 invocationContext.ExitCode = (int)ExitCode.ParseError;
             });
             rootCommand.AddCommand(wslCommand);

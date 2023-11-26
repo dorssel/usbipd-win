@@ -8,52 +8,8 @@ using System.Net;
 namespace UnitTests;
 
 [TestClass]
-sealed class WslDistributions_Tests
+sealed class Wsl_Tests
 {
-    [TestMethod]
-    public void Constructor()
-    {
-        var distros = new WslDistributions([], null);
-        Assert.AreEqual(0, distros.Distributions.Count());
-        Assert.IsNull(distros.HostAddress);
-    }
-
-    static readonly WslDistributions.Distribution TestOldDistribution = new("Old", false, 1, true, null);
-    static readonly WslDistributions.Distribution TestNewDistribution1 = new("New1", true, 2, false, null);
-    static readonly WslDistributions.Distribution TestNewDistribution2 = new("New2", false, 2, true, IPAddress.Parse("1.2.3.4"));
-
-    static readonly WslDistributions TestDistributions = new(new[]
-    {
-        TestOldDistribution, TestNewDistribution1, TestNewDistribution2,
-    }, IPAddress.Parse("1.2.3.1"));
-
-    [TestMethod]
-    public void WslPath()
-    {
-        var isFullyQualified = Path.IsPathFullyQualified(WslDistributions.WslPath);
-        Assert.IsTrue(isFullyQualified);
-    }
-
-    [TestMethod]
-    public void DefaultDistribution()
-    {
-        Assert.AreEqual(TestNewDistribution1, TestDistributions.DefaultDistribution);
-    }
-
-    [TestMethod]
-    public void LookupByName_Success()
-    {
-        var distro = TestDistributions.LookupByName("New2");
-        Assert.AreEqual(TestNewDistribution2, distro);
-    }
-
-    [TestMethod]
-    public void LookupByName_NotFound()
-    {
-        var distro = TestDistributions.LookupByName("New3");
-        Assert.IsNull(distro);
-    }
-
     sealed class NetworkData
     {
         static readonly (string host, string client)[] SameNetworkData = [
@@ -99,7 +55,7 @@ sealed class WslDistributions_Tests
     [DynamicData(nameof(NetworkData.TestData), typeof(NetworkData))]
     public void IsOnSameIPv4Network(IPAddress hostAddress, IPAddress hostMask, IPAddress clientAddress, bool expected)
     {
-        var result = WslDistributions.IsOnSameIPv4Network(hostAddress, hostMask, clientAddress);
+        var result = Wsl.IsOnSameIPv4Network(hostAddress, hostMask, clientAddress);
         Assert.AreEqual(expected, result);
     }
 }

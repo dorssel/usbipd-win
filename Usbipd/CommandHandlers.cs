@@ -6,10 +6,8 @@
 using System.CommandLine;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
-using System.Text.RegularExpressions;
 using Microsoft.Extensions.Hosting.WindowsServices;
 using Usbipd.Automation;
 using static Usbipd.ConsoleTools;
@@ -36,7 +34,7 @@ interface ICommandHandlers
     public Task<ExitCode> State(IConsole console, CancellationToken cancellationToken);
 }
 
-sealed partial class CommandHandlers : ICommandHandlers
+sealed class CommandHandlers : ICommandHandlers
 {
     static IEnumerable<UsbDevice> GetDevicesByHardwareId(VidPid vidPid, bool connectedOnly, IConsole console)
     {
@@ -429,19 +427,6 @@ sealed partial class CommandHandlers : ICommandHandlers
         return Task.FromResult(ExitCode.Success);
     }
 
-    static async Task<WslDistributions?> GetDistributionsAsync(IConsole console, CancellationToken cancellationToken)
-    {
-        var distributions = await WslDistributions.CreateAsync(cancellationToken);
-        if (distributions is null)
-        {
-            console.ReportError($"Windows Subsystem for Linux version 2 is not available. See {WslDistributions.InstallWslUrl}.");
-        }
-        return distributions;
-    }
-
-    [GeneratedRegex(@"^[a-zA-Z]:\\")]
-    private static partial Regex LocalDriveRegex();
-
     async Task<ExitCode> ICommandHandlers.AttachWsl(BusId busId, bool autoAttach, string? distribution, IConsole console, CancellationToken cancellationToken)
     {
         var device = UsbDevice.GetAll().Where(d => d.BusId.HasValue && d.BusId.Value == busId).SingleOrDefault();
@@ -462,214 +447,12 @@ sealed partial class CommandHandlers : ICommandHandlers
             return ExitCode.Failure;
         }
 
-        if (await GetDistributionsAsync(console, cancellationToken) is not WslDistributions distros)
-        {
-            return ExitCode.Failure;
-        }
-
         if (!CheckServerRunning(console))
         {
             return ExitCode.Failure;
         }
 
-        // The order of the following checks is important, as later checks can only succeed if earlier checks already passed.
-
-        // 1) Distro must exist
-
-        // Figure out which distribution to use. WSL can be in many states:
-        // (a) not installed at all (already handled by GetDistributionsAsync above)
-        // (b) installed but, with 0 distributions (error)
-        // (c) 1 distribution, but it is not marked as default (warning)
-        // (d) 1 distribution, correctly marked as default (ok)
-        // (e) more than 1 distribution, none marked as default (error, or warning when using --distribution)
-        // (f) more than 1 distribution, one of which is default (ok)
-        // This is administered by WSL in HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Lxss.
-        //
-        // We provide enough instructions to the user how to fix whatever
-        // error/warning we give. Or else we get flooded with "it doesn't work" issues...
-
-        WslDistributions.Distribution distroData;
-        if (distribution is null)
-        {
-            // The user did not specifically provide the --distribution option.
-            switch (distros.Distributions.Count())
-            {
-                case 0:
-                    // case (b)
-                    console.ReportError("There are no WSL distributions installed; see https://docs.microsoft.com/windows/wsl/basic-commands#install on how to install one.");
-                    return ExitCode.Failure;
-                case 1:
-                    if (distros.DefaultDistribution is null)
-                    {
-                        // case (c)
-                        // This can happen if the user removed the default distribution.
-                        distroData = distros.Distributions.Single();
-                        console.ReportWarning($"Using the only available WSL distribution '{distroData.Name}', but it should have been set as default; " +
-                            "see https://docs.microsoft.com/windows/wsl/basic-commands#set-default-linux-distribution on how to fix this.");
-                    }
-                    else
-                    {
-                        // case (d)
-                        distroData = distros.DefaultDistribution;
-                    }
-                    break;
-                default:
-                    if (distros.DefaultDistribution is null)
-                    {
-                        // case (e)
-                        // This can happen if the user removed the default distribution.
-                        console.ReportError("More than one WSL distribution is available, but none is set as default; " +
-                            "see https://docs.microsoft.com/windows/wsl/basic-commands#set-default-linux-distribution on how to fix this.");
-                        return ExitCode.Failure;
-                    }
-                    else
-                    {
-                        // case (f)
-                        distroData = distros.DefaultDistribution;
-                        // This helps out users that may not be aware that they have more than one and have the default set to the "wrong" one.
-                        console.ReportInfo($"Using default WSL distribution '{distroData.Name}'; specify the '--distribution' option to select a different one.");
-                    }
-                    break;
-            }
-        }
-        else if (distros.LookupByName(distribution) is WslDistributions.Distribution selectedDistroData)
-        {
-            distroData = selectedDistroData;
-            if (distros.DefaultDistribution is null)
-            {
-                // case (c/e)
-                console.ReportWarning("No WSL distribution is set as default; " +
-                    "see https://docs.microsoft.com/windows/wsl/basic-commands#set-default-linux-distribution on how to fix this.");
-            }
-        }
-        else
-        {
-            console.ReportError($"The WSL distribution '{distribution}' does not exist; " +
-                "see https://docs.microsoft.com/windows/wsl/basic-commands#list-installed-linux-distributions.");
-            return ExitCode.Failure;
-        }
-
-        // 2) Distro must be correct WSL version
-
-        switch (distroData.Version)
-        {
-            case 1:
-                console.ReportError($"The selected WSL distribution is using WSL 1, but WSL 2 is required. Learn how to upgrade at {WslDistributions.SetWslVersionUrl}.");
-                return ExitCode.Failure;
-            case 2:
-                // Supported
-                break;
-            default:
-                console.ReportError($"The selected WSL distribution is using unsupported WSL {distroData.Version}, but WSL 2 is required.");
-                return ExitCode.Failure;
-        }
-
-        // 3) Distro must be running
-
-        if (!distroData.IsRunning)
-        {
-            // Make sure the distro is running before we attach. While WSL is capable of
-            // starting on the fly when wsl.exe is invoked, that will cause confusing behavior
-            // where we might attach a USB device to WSL, then immediately detach it when the
-            // WSL VM is shutdown shortly afterwards.
-
-            console.ReportError($"The selected WSL distribution is not running; keep a command prompt to the distribution open to leave it running.");
-            return ExitCode.Failure;
-        }
-
-        // 4) Host must be reachable.
-        //    This check only makes sense if at least one WSL 2 distro is running, which is ensured by earlier checks.
-
-        if (distros.HostAddress is null)
-        {
-            // This would be weird: we already know that a WSL 2 instance is running.
-            // Maybe the virtual switch does not have 'WSL' in the name?
-            console.ReportError("The local IP address for the WSL virtual switch could not be found.");
-            return ExitCode.Failure;
-        }
-
-        // 5) Distro must have connectivity.
-        //    This check only makes sense if the host is reachable, which is ensured by earlier checks.
-
-        if (distroData.IPAddress is null)
-        {
-            console.ReportError($"The selected WSL distribution cannot be reached via the WSL virtual switch; try restarting the WSL distribution.");
-            return ExitCode.Failure;
-        }
-
-        // 6) WSL kernel must be USBIP capable.
-
-        {
-            var wslResult = await ProcessUtils.RunCapturedProcessAsync(WslDistributions.WslPath, Encoding.UTF8, cancellationToken,
-                "--distribution", distroData.Name, "--user", "root", "--", "cat", "/sys/devices/platform/vhci_hcd.0/status");
-            // Expected output:
-            //
-            //    hub port sta spd dev      sockfd local_busid
-            //    hs  0000 006 002 00040002 000003 1-1
-            //    hs  0001 004 000 00000000 000000 0-0
-            //    ...
-            if (wslResult.ExitCode != 0 || !wslResult.StandardOutput.Contains("local_busid"))
-            {
-                console.ReportError($"WSL kernel is not USBIP capable; update with 'wsl --update'.");
-                return ExitCode.Failure;
-            }
-        }
-
-        // 7) Heuristic firewall check
-        //
-        // With minimal requirements (bash only) try to connect from WSL to our server.
-        // If the process does not terminate within one second, then most likely a third party
-        // firewall is blocking the connection. Anything else (e.g. bash not available, or not supporting
-        // /dev/tcp, or whatever) will most likely finish within 1 second and the test will simply pass.
-        // In any case, just issue a warning, which is a lot more informative than the 1 minute TCP
-        // timeout that usbip will get.
-        {
-            using var timeoutTokenSource = new CancellationTokenSource(TimeSpan.FromSeconds(1));
-            using var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutTokenSource.Token);
-            try
-            {
-                _ = await ProcessUtils.RunCapturedProcessAsync(WslDistributions.WslPath, Encoding.UTF8, linkedTokenSource.Token,
-                    "--distribution", distroData.Name, "--user", "root", "--", "bash", "-c", $"echo < /dev/tcp/{distros.HostAddress}/{Interop.UsbIp.USBIP_PORT}");
-            }
-            catch (OperationCanceledException) when (timeoutTokenSource.IsCancellationRequested)
-            {
-                console.ReportWarning($"A third-party firewall may be blocking the connection; ensure TCP port {Interop.UsbIp.USBIP_PORT} is allowed.");
-            }
-        }
-
-        var wslWindowsPath = Path.Combine(Path.GetDirectoryName(Environment.ProcessPath)!, "wsl");
-        if (!LocalDriveRegex().IsMatch(Path.GetPathRoot(wslWindowsPath) ?? string.Empty))
-        {
-            // We need the wsl utility directory to be accessible from within WSL.
-            console.ReportError($"Option '--wsl' requires that this software is installed on a local drive.");
-            return ExitCode.Failure;
-        }
-        var driveLetter = wslWindowsPath[0..1].ToLowerInvariant();
-        var wslLinuxPath = Path.Combine(@"\mnt", driveLetter, Path.GetRelativePath(Path.GetPathRoot(wslWindowsPath)!, wslWindowsPath)).Replace('\\', '/');
-
-        // Finally, call 'usbip attach', or run the auto-attach.sh script.
-        if (!autoAttach)
-        {
-            var wslResult = await ProcessUtils.RunUncapturedProcessAsync(WslDistributions.WslPath, cancellationToken,
-                "--distribution", distroData.Name, "--user", "root", "--", wslLinuxPath + "/usbip", "attach", $"--remote={distros.HostAddress}", $"--busid={busId}");
-            if (wslResult != 0)
-            {
-                console.ReportError($"Failed to attach device with busid '{busId}'.");
-                return ExitCode.Failure;
-            }
-        }
-        else
-        {
-            console.ReportInfo("Starting endless attach loop; press Ctrl+C to quit.");
-
-            await ProcessUtils.RunUncapturedProcessAsync(WslDistributions.WslPath, cancellationToken,
-                "--distribution", distroData.Name, "--user", "root", "--", "bash", wslLinuxPath + "/auto-attach.sh", distros.HostAddress.ToString(), busId.ToString());
-            // This process always ends in failure, as it is supposed to run an endless loop.
-            // This may be intended by the user (Ctrl+C, WSL shutdown), others may be real errors.
-            // There is no way to tell the difference...
-        }
-
-        return ExitCode.Success;
+        return await Wsl.Attach(busId, autoAttach, distribution, console, cancellationToken);
     }
 
     async Task<ExitCode> ICommandHandlers.AttachWsl(VidPid vidPid, bool autoAttach, string? distribution, IConsole console, CancellationToken cancellationToken)
@@ -733,16 +516,9 @@ sealed partial class CommandHandlers : ICommandHandlers
         return Task.FromResult(ExitCode.Success);
     }
 
-    async Task<ExitCode> ICommandHandlers.State(IConsole console, CancellationToken cancellationToken)
+    Task<ExitCode> ICommandHandlers.State(IConsole console, CancellationToken cancellationToken)
     {
         Console.SetError(TextWriter.Null);
-
-        WslDistributions? distros = null;
-        try
-        {
-            distros = await GetDistributionsAsync(console, cancellationToken);
-        }
-        catch (UnexpectedResultException) { }
 
         var devices = new List<Device>();
         foreach (var device in UsbDevice.GetAll().OrderBy(d => d.InstanceId))
@@ -771,8 +547,7 @@ sealed partial class CommandHandlers : ICommandHandlers
         });
         var json = JsonSerializer.Serialize(state, context.State);
 
-        // Need to add newline, to fix PowerShell 3.0 (the default on Server 2012)
-        Console.WriteLine(json);
-        return ExitCode.Success;
+        Console.Write(json);
+        return Task.FromResult(ExitCode.Success);
     }
 }
