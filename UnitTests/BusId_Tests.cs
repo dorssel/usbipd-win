@@ -98,7 +98,7 @@ sealed class BusId_Tests
         }
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DynamicData(nameof(BusIdData.Invalid), typeof(BusIdData))]
     public void TryParseInvalid(string text)
     {
@@ -108,7 +108,7 @@ sealed class BusId_Tests
         Assert.AreEqual(0, busId.Port);
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DynamicData(nameof(BusIdData.Valid), typeof(BusIdData))]
     public void TryParseValid(string text)
     {
@@ -121,7 +121,7 @@ sealed class BusId_Tests
         Assert.AreEqual(expectedPort, busId.Port);
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DynamicData(nameof(BusIdData.Invalid), typeof(BusIdData))]
     public void ParseInvalid(string text)
     {
@@ -131,7 +131,7 @@ sealed class BusId_Tests
         });
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DynamicData(nameof(BusIdData.Valid), typeof(BusIdData))]
     public void ParseValid(string text)
     {
@@ -142,7 +142,7 @@ sealed class BusId_Tests
         Assert.AreEqual(expectedPort, busId.Port);
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DynamicData(nameof(BusIdData.Compare), typeof(BusIdData))]
     public void Compare(string left, string right, int expected)
     {
@@ -150,7 +150,7 @@ sealed class BusId_Tests
         Assert.AreEqual(expected, result);
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DynamicData(nameof(BusIdData.Compare), typeof(BusIdData))]
     public void LessThan(string left, string right, int expected)
     {
@@ -158,7 +158,7 @@ sealed class BusId_Tests
         Assert.AreEqual(expected < 0, result);
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DynamicData(nameof(BusIdData.Compare), typeof(BusIdData))]
     public void LessThanOrEqual(string left, string right, int expected)
     {
@@ -166,7 +166,7 @@ sealed class BusId_Tests
         Assert.AreEqual(expected <= 0, result);
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DynamicData(nameof(BusIdData.Compare), typeof(BusIdData))]
     public void GreaterThan(string left, string right, int expected)
     {
@@ -174,7 +174,7 @@ sealed class BusId_Tests
         Assert.AreEqual(expected > 0, result);
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DynamicData(nameof(BusIdData.Compare), typeof(BusIdData))]
     public void GreaterThanOrEqual(string left, string right, int expected)
     {
@@ -182,7 +182,7 @@ sealed class BusId_Tests
         Assert.AreEqual(expected >= 0, result);
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DynamicData(nameof(BusIdData.Valid), typeof(BusIdData))]
     public void ToStringValid(string text)
     {

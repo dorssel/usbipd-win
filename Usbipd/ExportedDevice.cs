@@ -16,12 +16,10 @@ using static Usbipd.Tools;
 
 namespace Usbipd;
 
-sealed partial record ExportedDevice(string InstanceId, BusId BusId, Linux.UsbDeviceSpeed Speed,
+sealed record ExportedDevice(string InstanceId, BusId BusId, Linux.UsbDeviceSpeed Speed,
     ushort VendorId, ushort ProductId, ushort BcdDevice,
     byte DeviceClass, byte DeviceSubClass, byte DeviceProtocol,
-    byte ConfigurationValue, byte NumConfigurations, List<(byte, byte, byte)> Interfaces);
-
-sealed partial record ExportedDevice
+    byte ConfigurationValue, byte NumConfigurations, List<(byte, byte, byte)> Interfaces)
 {
     static void Serialize(Stream stream, string value, uint size)
     {

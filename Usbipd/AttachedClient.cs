@@ -34,7 +34,7 @@ sealed class AttachedClient
     readonly NetworkStream Stream;
     readonly Channel<RequestReply> ReplyChannel = Channel.CreateUnbounded<RequestReply>();
 
-    readonly Dictionary<byte, AttachedEndpoint> AttachedEndpoints = new();
+    readonly Dictionary<byte, AttachedEndpoint> AttachedEndpoints = [];
 
     AttachedEndpoint GetAttachedEndpoint(byte rawEndpoint, CancellationToken cancellationToken)
     {
@@ -49,7 +49,7 @@ sealed class AttachedClient
     /// Mapping from USBIP seqnum to raw USB endpoint number.
     /// Used for UNLINK.
     /// </summary>
-    readonly ConcurrentDictionary<uint, byte> PendingSubmits = new();
+    readonly ConcurrentDictionary<uint, byte> PendingSubmits = [];
 
     // UNLINK strategy
     // ===============

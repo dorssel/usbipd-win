@@ -4,9 +4,7 @@
 
 using System.Net;
 using System.Net.Sockets;
-using System.Runtime.InteropServices;
 using Windows.Win32;
-using Windows.Win32.Networking.WinSock;
 using Windows.Win32.Security;
 
 using static Usbipd.Interop.UsbIp;
@@ -96,45 +94,10 @@ sealed class Server : BackgroundService
 
         // All client sockets will inherit these. Formally, these options have to
         // be set before the socket reaches connected state, including Accept().
-#if false
         TcpListener.Server.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
-        try
-        {
-            // NOTE: This way of settings keepalive options only exists from Windows 10 1709 onward.
-            TcpListener.Server.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.TcpKeepAliveInterval, 1 /* s */);
-            TcpListener.Server.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.TcpKeepAliveTime, 10 /* s */);
-            TcpListener.Server.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.TcpKeepAliveRetryCount, 5);
-        }
-        catch (SocketException)
-#endif
-        {
-            // This always works (on Windows, not on Linux, but we are Windows-only anyway).
-            // It is required to support pre-Windows 10 1709.
-            //
-            // NOTE:
-            // TcpKeepAliveRetryCount cannot be configured this way at all. It is fixed at 10, so we use a default of 500 ms.
-            // This ensures the best compatibility with the original values: 10 seconds delay before
-            // keepalives are sent at all, followed by 5 seconds of retry.
-
-            if (!uint.TryParse(Configuration["usbipd:TcpKeepAliveInterval"], out var tcpKeepAliveInterval))
-            {
-                tcpKeepAliveInterval = 500; /* ms, default */
-            }
-            if (!uint.TryParse(Configuration["usbipd:TcpKeepAliveTime"], out var tcpKeepAliveTime))
-            {
-                tcpKeepAliveTime = 10_000; /* ms, default */
-            }
-            Logger.Debug($"usbipd:TcpKeepAliveInterval = {tcpKeepAliveInterval} ms");
-            Logger.Debug($"usbipd:TcpKeepAliveTime = {tcpKeepAliveTime} ms");
-
-            var keepAlive = new tcp_keepalive()
-            {
-                onoff = 1,
-                keepaliveinterval = tcpKeepAliveInterval,
-                keepalivetime = tcpKeepAliveTime,
-            };
-            TcpListener.Server.IOControl(IOControlCode.KeepAliveValues, MemoryMarshal.AsBytes(new[] { keepAlive }.AsSpan()).ToArray(), null);
-        }
+        TcpListener.Server.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.TcpKeepAliveInterval, 1 /* s */);
+        TcpListener.Server.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.TcpKeepAliveTime, 10 /* s */);
+        TcpListener.Server.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.TcpKeepAliveRetryCount, 5);
 
         TcpListener.Start();
         while (true)

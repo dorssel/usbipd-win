@@ -4,7 +4,7 @@
 
 namespace Usbipd.Automation;
 
-public static partial class UsbIds
+static partial class UsbIds
 {
     static string? FindString(ulong[] array, ulong value)
     {
@@ -27,10 +27,15 @@ public static partial class UsbIds
         return Strings.Substring(start, end - start);
     }
 
-    public static (string? Vendor, string? Product) GetNames(VidPid vidPid)
+    /// <returns><see langword="null"/> if not found</returns>
+    public static string? GetVendor(this VidPid vidPid)
     {
-        var vendor = FindString(VendorLookup, (ulong)vidPid.Vid << 48);
-        var product = vendor is not null ? FindString(ProductLookup, ((ulong)vidPid.Vid << 48) | ((ulong)vidPid.Pid << 32)) : null;
-        return (vendor, product);
+        return FindString(VendorLookup, (ulong)vidPid.Vid << 48);
+    }
+
+    /// <returns><see langword="null"/> if not found</returns>
+    public static string? GetProduct(this VidPid vidPid)
+    {
+        return FindString(ProductLookup, ((ulong)vidPid.Vid << 48) | ((ulong)vidPid.Pid << 32));
     }
 }

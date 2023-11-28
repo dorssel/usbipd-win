@@ -73,9 +73,9 @@ public readonly record struct VidPid
         };
     }
 
-    public string? Vendor => UsbIds.GetNames(this).Vendor;
+    public string? Vendor => this.GetVendor();
 
-    public string? Product => UsbIds.GetNames(this).Product;
+    public string? Product => this.GetProduct();
 
     #region IComparable<VidPid>
 

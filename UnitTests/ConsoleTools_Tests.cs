@@ -55,15 +55,6 @@ sealed class ConsoleTools_Tests
     }
 
     [TestMethod]
-    public void ReportVersionNotSupported()
-    {
-        var console = new TestConsole();
-        ConsoleTools.ReportVersionNotSupported(console, new());
-        Assert.IsTrue(string.IsNullOrEmpty(console.Out.ToString()));
-        Assert.IsFalse(string.IsNullOrEmpty(console.Error.ToString()));
-    }
-
-    [TestMethod]
     public void ReportRebootRequired()
     {
         var console = new TestConsole();
