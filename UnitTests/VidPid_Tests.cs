@@ -190,6 +190,7 @@ sealed class VidPid_Tests
     }
 
     [TestMethod]
+    [DataRow("8087:0000")] // vendor Intel, product unknown
     [DataRow("8087:8001")] // vendor Intel, product Hub
     [DataRow("8087:ffff")] // vendor Intel, product unknown
     public void VendorKnown(string text)
@@ -199,8 +200,12 @@ sealed class VidPid_Tests
     }
 
     [TestMethod]
+    [DataRow("0000:0000")] // vendor unknown, product irrelevant
     [DataRow("0000:8001")] // vendor unknown, product irrelevant
     [DataRow("0000:ffff")] // vendor unknown, product irrelevant
+    [DataRow("ffff:0000")] // vendor unknown, product irrelevant
+    [DataRow("ffff:8001")] // vendor unknown, product irrelevant
+    [DataRow("ffff:ffff")] // vendor unknown, product irrelevant
     public void VendorUnknown(string text)
     {
         var vidPid = VidPid.Parse(text);
@@ -216,9 +221,14 @@ sealed class VidPid_Tests
     }
 
     [TestMethod]
-    [DataRow("8087:ffff")] // vendor Intel, product unknown
+    [DataRow("0000:0000")] // vendor unknown, product irrelevant
     [DataRow("0000:8001")] // vendor unknown, product irrelevant
     [DataRow("0000:ffff")] // vendor unknown, product irrelevant
+    [DataRow("8087:0000")] // vendor Intel, product unknown
+    [DataRow("8087:ffff")] // vendor Intel, product unknown
+    [DataRow("ffff:0000")] // vendor unknown, product irrelevant
+    [DataRow("ffff:8001")] // vendor unknown, product irrelevant
+    [DataRow("ffff:ffff")] // vendor unknown, product irrelevant
     public void ProductUnknown(string text)
     {
         var vidPid = VidPid.Parse(text);

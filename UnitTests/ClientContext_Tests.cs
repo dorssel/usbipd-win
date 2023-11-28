@@ -24,6 +24,30 @@ sealed class ClientContext_Tests
     }
 
     [TestMethod]
+    public void ClientAddress()
+    {
+        using var clientContext = new ClientContext();
+
+        Assert.AreEqual(IPAddress.Any, clientContext.ClientAddress);
+        clientContext.ClientAddress = IPAddress.Loopback;
+        Assert.AreEqual(IPAddress.Loopback, clientContext.ClientAddress);
+        clientContext.ClientAddress = IPAddress.Any;
+        Assert.AreEqual(IPAddress.Any, clientContext.ClientAddress);
+    }
+
+    [TestMethod]
+    public void AttachedBusId()
+    {
+        using var clientContext = new ClientContext();
+
+        Assert.IsNull(clientContext.AttachedBusId);
+        clientContext.AttachedBusId = new(1, 42);
+        Assert.IsNotNull(clientContext.AttachedBusId);
+        clientContext.AttachedBusId = null;
+        Assert.IsNull(clientContext.AttachedBusId);
+    }
+
+    [TestMethod]
     public void Dispose()
     {
         var clientContext = new ClientContext();
