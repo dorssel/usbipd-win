@@ -176,101 +176,75 @@ static class ConsoleTools
         console.ReportText("info", text);
     }
 
-    const string ServiceNotRunningText = "The service is currently not running; a reboot should fix that.";
-    const string VBoxUsbMonNotRunningText = "The VBoxUsbMon driver is currently not running; a reboot should fix that.";
-    const string VBoxUsbMonNotInstalled = "The VBoxUsbMon driver is not correctly installed; a repair or re-install of this software should fix that.";
-
-    public static void ReportVersionNotSupported(IConsole console, UsbSupVersion version)
-    {
-        console.ReportError($"VBoxUsbMon version {version.major}.{version.minor} is not supported; this must be resolved first.");
-    }
-
     /// <summary>
-    /// Helper to warn users that the service is not running.
-    /// For commands that may lead the user to believe that everything is fine when in fact it is not.
+    /// Helper to display an error or warning if something is not in order.
     ///
     /// <para>
-    /// For example: 'list' succeeds and shows 'Shared', but attaching from the client will fail.
-    /// </para>
-    /// <para>
-    /// For example: 'bind' succeeds, but attaching from the client will fail.
+    /// For example, 'list or 'bind' will work fine. But actually attaching is not going to work.
+    /// Therefore, such commands will give a warning telling the user that the current action
+    /// is fine, but it will fail later on unless they resolve the situaton.
     /// </para>
     ///
     /// <para>
-    /// Things that can be fixed by a simple reboot are reported as a warning. More serious stuff as an error.
+    /// For example, 'attach --wsl' will not work at all.
+    /// Therefore, such commands will give an error and the current action fails.
     /// </para>
     /// </summary>
-    public static void ReportIfServerNotRunning(this IConsole console)
+    public static bool CheckAndReportServerRunning(this IConsole console, bool error)
     {
+        void Report(string text)
+        {
+            if (error)
+            {
+                console.ReportError(text);
+            }
+            else
+            {
+                console.ReportWarning(text);
+            }
+        }
         if (!VBoxUsbMon.IsServiceInstalled())
         {
             // We rely on the DIFX driver installer framework and on the (suboptimal) VBoxUsbMon.inf.
             // Sometimes, DIFX cannot create the VBoxUsbMon service, but still appears to succeed.
-            console.ReportError(VBoxUsbMonNotInstalled);
-        }
-        else if (!Server.IsRunning())
-        {
-            console.ReportWarning(ServiceNotRunningText);
-        }
-        else if (VBoxUsbMon.GetRunningVersion() is not UsbSupVersion version)
-        {
-            // The usbipd service has a dependency on VBoxUsbMon, but we can still get here when running the server from the command line.
-            console.ReportWarning(VBoxUsbMonNotRunningText);
-        }
-        else if (!VBoxUsbMon.IsVersionSupported(version))
-        {
-            // This may happen if a full installation of (a rather old version of) VirtualBox interferes.
-            ReportVersionNotSupported(console, version);
-        }
-    }
-
-    public static bool CheckServerRunning(IConsole console)
-    {
-        if (!VBoxUsbMon.IsServiceInstalled())
-        {
-            // We rely on the DIFX driver installer framework and on the (suboptimal) VBoxUsbMon.inf.
-            // Sometimes, DIFX cannot create the VBoxUsbMon service, but still appears to succeed.
-            console.ReportError(VBoxUsbMonNotInstalled);
+            Report("The VBoxUsbMon driver is not correctly installed; a repair or re-install of this software should fix that.");
             return false;
         }
         if (!Server.IsRunning())
         {
-            console.ReportError(ServiceNotRunningText);
+            Report("The service is currently not running; a reboot should fix that.");
             return false;
         }
         if (VBoxUsbMon.GetRunningVersion() is not UsbSupVersion version)
         {
             // The usbipd service has a dependency on VBoxUsbMon, but we can still get here when running the server from the command line.
-            console.ReportError(VBoxUsbMonNotRunningText);
+            Report("The VBoxUsbMon driver is currently not running; a reboot should fix that.");
             return false;
         }
         if (!VBoxUsbMon.IsVersionSupported(version))
         {
             // This may happen if a full installation of (a rather old version of) VirtualBox interferes.
-            ReportVersionNotSupported(console, version);
+            Report($"VBoxUsbMon version {version.major}.{version.minor} is not supported; a repair or re-install of this software may fix that.");
             return false;
         }
         return true;
     }
 
-    static readonly SortedSet<string> WhitelistUpperFilters = new();
+    static readonly SortedSet<string> WhitelistUpperFilters = [];
 
-    static readonly SortedSet<string> BlacklistUpperFilters = new()
-    {
+    static readonly SortedSet<string> BlacklistUpperFilters =
+    [
         "EUsbHubFilter",
         "TsUsbFlt",
         "UsbDk",
         "USBPcap",
-    };
+    ];
 
     const string UpperFiltersPath = @"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Class\{36fc9e60-c465-11cf-8056-444553540000}";
     const string UpperFiltersName = @"UpperFilters";
 
     /// <summary>
-    /// Helper to warn users that the service is not running.
-    /// For commands that may lead the user to believe that everything is fine when in fact it is not.
-    /// For example: 'list' succeeds and shows 'Shared', but attaching from the client will fail.
-    /// For example: 'bind' succeeds, but attaching from the client will fail.
+    /// Helper to warn users that an incompatible USB filter driver has been detected.
     /// </summary>
     public static void ReportIfForceNeeded(this IConsole console)
     {

@@ -14,7 +14,7 @@ namespace Usbipd;
 
 static class RegistryUtils
 {
-    public const string DevicesRegistryPath = @"SOFTWARE\usbipd-win";
+    const string DevicesRegistryPath = @"SOFTWARE\usbipd-win";
 
     static RegistryKey OpenBaseKey(bool writable)
     {

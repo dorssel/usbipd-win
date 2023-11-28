@@ -57,7 +57,7 @@ sealed class ConfigurationManagerException_Tests
         }
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DynamicData(nameof(MappingData.KnownGood), typeof(MappingData))]
     public void CodeAndMessageConstructor(CONFIGRET configRet, WIN32_ERROR win32Error)
     {

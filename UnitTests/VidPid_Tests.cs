@@ -95,7 +95,7 @@ sealed class VidPid_Tests
         }
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DynamicData(nameof(VidPidData.Invalid), typeof(VidPidData))]
     public void TryParseInvalid(string text)
     {
@@ -105,7 +105,7 @@ sealed class VidPid_Tests
         Assert.AreEqual(0, vidPid.Pid);
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DynamicData(nameof(VidPidData.Valid), typeof(VidPidData))]
     public void TryParseValid(string text)
     {
@@ -118,7 +118,7 @@ sealed class VidPid_Tests
         Assert.AreEqual(expectedPid, vidPid.Pid);
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DynamicData(nameof(VidPidData.Invalid), typeof(VidPidData))]
     public void ParseInvalid(string text)
     {
@@ -128,7 +128,7 @@ sealed class VidPid_Tests
         });
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DynamicData(nameof(VidPidData.Valid), typeof(VidPidData))]
     public void ParseValid(string text)
     {
@@ -139,7 +139,7 @@ sealed class VidPid_Tests
         Assert.AreEqual(expectedPid, vidPid.Pid);
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DynamicData(nameof(VidPidData.Compare), typeof(VidPidData))]
     public void Compare(string left, string right, int expected)
     {
@@ -147,7 +147,7 @@ sealed class VidPid_Tests
         Assert.AreEqual(expected, result);
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DynamicData(nameof(VidPidData.Compare), typeof(VidPidData))]
     public void LessThan(string left, string right, int expected)
     {
@@ -155,7 +155,7 @@ sealed class VidPid_Tests
         Assert.AreEqual(expected < 0, result);
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DynamicData(nameof(VidPidData.Compare), typeof(VidPidData))]
     public void LessThanOrEqual(string left, string right, int expected)
     {
@@ -163,7 +163,7 @@ sealed class VidPid_Tests
         Assert.AreEqual(expected <= 0, result);
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DynamicData(nameof(VidPidData.Compare), typeof(VidPidData))]
     public void GreaterThan(string left, string right, int expected)
     {
@@ -171,7 +171,7 @@ sealed class VidPid_Tests
         Assert.AreEqual(expected > 0, result);
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DynamicData(nameof(VidPidData.Compare), typeof(VidPidData))]
     public void GreaterThanOrEqual(string left, string right, int expected)
     {
@@ -179,7 +179,7 @@ sealed class VidPid_Tests
         Assert.AreEqual(expected >= 0, result);
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DynamicData(nameof(VidPidData.Valid), typeof(VidPidData))]
     public void ToStringValid(string text)
     {
@@ -190,30 +190,38 @@ sealed class VidPid_Tests
     }
 
     [TestMethod]
-    public void VendorKnown()
+    [DataRow("8087:8001")] // vendor Intel, product Hub
+    [DataRow("8087:ffff")] // vendor Intel, product unknown
+    public void VendorKnown(string text)
     {
-        var vidPid = new VidPid(0x8087, 0x0000);
+        var vidPid = VidPid.Parse(text);
         Assert.IsNotNull(vidPid.Vendor);
     }
 
     [TestMethod]
-    public void VendorUnknown()
+    [DataRow("0000:8001")] // vendor unknown, product irrelevant
+    [DataRow("0000:ffff")] // vendor unknown, product irrelevant
+    public void VendorUnknown(string text)
     {
-        var vidPid = new VidPid(0x0000, 0x0000);
+        var vidPid = VidPid.Parse(text);
         Assert.IsNull(vidPid.Vendor);
     }
 
     [TestMethod]
-    public void ProductKnown()
+    [DataRow("8087:8001")] // vendor Intel, product Hub
+    public void ProductKnown(string text)
     {
-        var vidPid = new VidPid(0x8087, 0x8001);
+        var vidPid = VidPid.Parse(text);
         Assert.IsNotNull(vidPid.Product);
     }
 
     [TestMethod]
-    public void ProductUnknown()
+    [DataRow("8087:ffff")] // vendor Intel, product unknown
+    [DataRow("0000:8001")] // vendor unknown, product irrelevant
+    [DataRow("0000:ffff")] // vendor unknown, product irrelevant
+    public void ProductUnknown(string text)
     {
-        var vidPid = new VidPid(0x8087, 0x0000);
+        var vidPid = VidPid.Parse(text);
         Assert.IsNull(vidPid.Product);
     }
 
@@ -265,7 +273,7 @@ sealed class VidPid_Tests
         }
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DynamicData(nameof(HardwareIdData.Invalid), typeof(HardwareIdData))]
     public void FromHardwareOrInstanceIdInvalid(string text)
     {
@@ -275,7 +283,7 @@ sealed class VidPid_Tests
         });
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DynamicData(nameof(HardwareIdData.Valid), typeof(HardwareIdData))]
     public void FromHardwareOrInstanceIdValid(string text)
     {

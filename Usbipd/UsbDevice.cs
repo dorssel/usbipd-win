@@ -14,10 +14,8 @@ namespace Usbipd;
 ///     <item>Disconnected (persisted) devices that are bound.</item>
 /// </list>
 /// </summary>
-sealed partial record UsbDevice(string InstanceId, string Description, bool IsForced,
-    BusId? BusId = null, Guid? Guid = null, IPAddress? IPAddress = null, string? StubInstanceId = null);
-
-sealed partial record UsbDevice
+sealed record UsbDevice(string InstanceId, string Description, bool IsForced,
+    BusId? BusId = null, Guid? Guid = null, IPAddress? IPAddress = null, string? StubInstanceId = null)
 {
     public VidPid HardwareId
     {
@@ -29,7 +27,7 @@ sealed partial record UsbDevice
             }
             catch (FormatException)
             {
-                return new VidPid();
+                return new();
             }
         }
     }

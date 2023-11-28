@@ -115,10 +115,10 @@ sealed class CommandHandlers : ICommandHandlers
     {
         if (usbids)
         {
-            var (Vendor, Product) = UsbIds.GetNames(device.HardwareId);
-            if (Vendor is not null)
+            var vendor = device.HardwareId.Vendor;
+            if (vendor is not null)
             {
-                return $"{Vendor}, {Product ?? ConfigurationManager.UnknownDevice}";
+                return $"{vendor}, {device.HardwareId.Product ?? ConfigurationManager.UnknownDevice}";
             }
             else
             {
@@ -171,7 +171,7 @@ sealed class CommandHandlers : ICommandHandlers
         }
         console.WriteLine(string.Empty);
 
-        console.ReportIfServerNotRunning();
+        console.CheckAndReportServerRunning(false);
         console.ReportIfForceNeeded();
         return Task.FromResult(ExitCode.Success);
     }
@@ -216,7 +216,7 @@ sealed class CommandHandlers : ICommandHandlers
                 console.ReportRebootRequired();
             }
         }
-        console.ReportIfServerNotRunning();
+        console.CheckAndReportServerRunning(false);
         return ExitCode.Success;
     }
 
@@ -447,7 +447,7 @@ sealed class CommandHandlers : ICommandHandlers
             return ExitCode.Failure;
         }
 
-        if (!CheckServerRunning(console))
+        if (!console.CheckAndReportServerRunning(true))
         {
             return ExitCode.Failure;
         }
