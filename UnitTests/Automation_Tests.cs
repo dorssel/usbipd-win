@@ -163,6 +163,17 @@ sealed class Automation_Tests
     }
 
     [TestMethod]
+    public void Device_BusId_Null()
+    {
+        var device = new Device()
+        {
+            BusId = null,
+        };
+        Assert.IsNull(device.BusId);
+        Assert.IsFalse(device.IsConnected);
+    }
+
+    [TestMethod]
     public void Device_PeristedGuid()
     {
         var device = new Device()
@@ -192,6 +203,17 @@ sealed class Automation_Tests
         };
         Assert.AreEqual(TestClientIPAddress, device.ClientIPAddress);
         Assert.IsTrue(device.IsAttached);
+    }
+
+    [TestMethod]
+    public void Device_ClientIPAddress_Null()
+    {
+        var device = new Device()
+        {
+            ClientIPAddress = null,
+        };
+        Assert.IsNull(device.ClientIPAddress);
+        Assert.IsFalse(device.IsAttached);
     }
 
     [TestMethod]
@@ -256,6 +278,16 @@ sealed class Automation_Tests
     }
 
     [TestMethod]
+    public void NullableBusIdJsonConverter_Write_NullWriter()
+    {
+        var converter = new NullableBusIdJsonConverter();
+        Assert.ThrowsException<ArgumentNullException>(() =>
+        {
+            converter.Write(null!, new(1, 42), JsonSerializerOptions.Default);
+        });
+    }
+
+    [TestMethod]
     public void NullableIPAddressJsonConverter_Read_Valid()
     {
         var reader = new Utf8JsonReader("\"1.2.3.4\""u8);
@@ -315,4 +347,15 @@ sealed class Automation_Tests
         writer.Flush();
         CollectionAssert.AreEqual("null"u8.ToArray(), memoryStream.ToArray());
     }
+
+    [TestMethod]
+    public void NullableIPAddressJsonConverter_Write_NullWriter()
+    {
+        var converter = new NullableIPAddressJsonConverter();
+        Assert.ThrowsException<ArgumentNullException>(() =>
+        {
+            converter.Write(null!, IPAddress.Parse("1.2.3.4"), JsonSerializerOptions.Default);
+        });
+    }
+
 }
