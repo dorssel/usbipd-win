@@ -5,6 +5,7 @@
 bin/
 obj/
 packages/
+TestResults/
 .vs/
 .vscode/
 *.user

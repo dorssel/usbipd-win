@@ -16,6 +16,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <IsPublishable>true</IsPublishable>
     <PublishProfile>Properties\PublishProfiles\InputForInstaller.pubxml</PublishProfile>
     <PublishAot>true</PublishAot>
+    <CopyOutputSymbolsToPublishDirectory>false</CopyOutputSymbolsToPublishDirectory>
 
     <AssemblyName>usbipd</AssemblyName>
   </PropertyGroup>
@@ -44,9 +45,16 @@ SPDX-License-Identifier: GPL-3.0-only
 
   <Target Name="RemoveTranslations" BeforeTargets="Build">
     <ItemGroup>
-      <Translations Include="$(OutputPath)\**\System.CommandLine.resources.dll"/>
+      <Translations Include="$(OutputPath)\**\System.CommandLine.resources.dll" />
     </ItemGroup>
     <RemoveDir Directories="@(Translations->DirectoryName())" />
+  </Target>
+
+  <Target Name="RemoveDebug" AfterTargets="Publish">
+    <ItemGroup>
+      <DebugFiles Include="$(PublishDir)\**\*.pdb" />
+    </ItemGroup>
+    <Delete Files="@(DebugFiles)" />
   </Target>
 
 </Project>
