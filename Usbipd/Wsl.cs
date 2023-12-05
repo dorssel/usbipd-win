@@ -5,6 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 using System.CommandLine;
+using System.Diagnostics;
 using System.Globalization;
 using System.Net;
 using System.Net.NetworkInformation;
@@ -27,6 +28,116 @@ static partial class Wsl
     static readonly string WslPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "wsl.exe");
 
     public sealed record Distribution(string Name, bool IsDefault, uint Version, bool IsRunning);
+
+    static readonly char[] CtrlC = ['\x03'];
+
+    static async Task<(int ExitCode, string StandardOutput, string StandardError)>
+        RunWslAsync(string? distribution, Action<string, bool>? outputCallback, CancellationToken cancellationToken, params string[] arguments)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var startInfo = new ProcessStartInfo
+        {
+            FileName = WslPath,
+            UseShellExecute = false,
+            StandardOutputEncoding = distribution is null ? Encoding.Unicode : Encoding.UTF8,
+            StandardErrorEncoding = distribution is null ? Encoding.Unicode : Encoding.UTF8,
+            // None of our commands require user input from the real console.
+            StandardInputEncoding = Encoding.ASCII,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            RedirectStandardInput = true,
+        };
+        if (distribution is not null)
+        {
+            startInfo.ArgumentList.Add("--distribution");
+            startInfo.ArgumentList.Add(distribution);
+            startInfo.ArgumentList.Add("--user");
+            startInfo.ArgumentList.Add("root");
+            startInfo.ArgumentList.Add("--");
+        }
+        foreach (var argument in arguments)
+        {
+            startInfo.ArgumentList.Add(argument);
+        }
+
+        using var process = Process.Start(startInfo)
+            ?? throw new UnexpectedResultException($"Failed to start \"{WslPath}\" with arguments {string.Join(" ", arguments.Select(arg => $"\"{arg}\""))}.");
+        var stdout = string.Empty;
+        var stderr = string.Empty;
+
+        var callbackLock = new object();
+        async Task OnLine(StreamReader streamReader, bool isStandardError)
+        {
+            while (await streamReader.ReadLineAsync(cancellationToken) is string line)
+            {
+                if (outputCallback is not null)
+                {
+                    // prevent stderr/stdout collisions
+                    lock (callbackLock)
+                    {
+                        outputCallback(line, isStandardError);
+                    }
+                }
+                // Note that this normalizes the line endings.
+                if (isStandardError)
+                {
+                    stderr += line + '\n';
+                }
+                else
+                {
+                    stdout += line + '\n';
+                }
+            }
+        }
+
+        var captureTasks = new[]
+        {
+            OnLine(process.StandardOutput, false),
+            OnLine(process.StandardError, true),
+        };
+
+        try
+        {
+            await process.WaitForExitAsync(cancellationToken);
+        }
+        finally
+        {
+            try
+            {
+                if (distribution is not null)
+                {
+                    // Our process is wsl.exe running something within Linux. This function tries to kill all of it.
+                    // First, Ctrl+C is blindly sent to the Linux process; we allow 100ms for wsl.exe to pass it on.
+                    // Regardless of the outcome, we then kill the entire Windows process tree.
+                    //
+                    // If all went well, there are no left-over processes either on Linux or Windows.
+                    // Worst case: the Linux process didn't receive or respond to the Ctrl+C and is still running.
+                    //
+                    // In any case: the Windows process (wsl.exe) is dead after this.
+
+                    // This should be enough time for the Ctrl+C to pass through. If not, too bad.
+                    using var remoteTimeoutTokenSource = new CancellationTokenSource(TimeSpan.FromMilliseconds(100));
+                    // Fire-and-forget Ctrl+C, this *should* terminate any Linux process.
+                    await process.StandardInput.WriteAsync(CtrlC, remoteTimeoutTokenSource.Token);
+                    process.StandardInput.Close();
+                    await process.WaitForExitAsync(remoteTimeoutTokenSource.Token);
+                }
+            }
+            catch (Exception e) when (e is OperationCanceledException or IOException) { }
+            finally
+            {
+                // Kill the entire Windows process tree, just in case it hasn't exited already.
+                process.Kill(true);
+            }
+        }
+
+        // Since the process either completed or was killed, these should complete or cancel promptly.
+        await Task.WhenAll(captureTasks);
+
+        cancellationToken.ThrowIfCancellationRequested();
+        return new(process.ExitCode, stdout, stderr);
+    }
 
     /// <summary>
     /// BusId has already been checked, and the server is running.
@@ -142,8 +253,7 @@ static partial class Wsl
 
         // Check: WSL kernel must be USBIP capable.
         {
-            var wslResult = await ProcessUtils.RunCapturedProcessAsync(WslPath, Encoding.UTF8, cancellationToken,
-                "--distribution", distribution, "--user", "root", "--", "cat", "/sys/devices/platform/vhci_hcd.0/status");
+            var wslResult = await RunWslAsync(distribution, null, cancellationToken, "cat", "/sys/devices/platform/vhci_hcd.0/status");
             // Expected output:
             //
             //    hub port sta spd dev      sockfd local_busid
@@ -169,8 +279,7 @@ static partial class Wsl
         var wslLinuxPath = Path.Combine(@"\mnt", driveLetter, Path.GetRelativePath(Path.GetPathRoot(wslWindowsPath)!, wslWindowsPath)).Replace('\\', '/');
 
         {
-            var wslResult = await ProcessUtils.RunCapturedProcessAsync(WslPath, Encoding.UTF8, cancellationToken,
-                "--distribution", distribution, "--user", "root", "--", wslLinuxPath + "/usbip", "version");
+            var wslResult = await RunWslAsync(distribution, null, cancellationToken, wslLinuxPath + "/usbip", "version");
             if (wslResult.ExitCode != 0 || wslResult.StandardOutput.Trim() != "usbip (usbip-utils 2.0)")
             {
                 console.ReportError($"Unable to run 'usbip' client tool. Please report this at https://github.com/dorssel/usbipd-win/issues.");
@@ -181,8 +290,7 @@ static partial class Wsl
         // Now find out the IP address of the host.
         IPAddress hostAddress;
         {
-            var wslResult = await ProcessUtils.RunCapturedProcessAsync(WslPath, Encoding.UTF8, cancellationToken,
-                "--distribution", distribution, "--user", "root", "--", "/usr/bin/wslinfo", "--networking-mode");
+            var wslResult = await RunWslAsync(distribution, null, cancellationToken, "/usr/bin/wslinfo", "--networking-mode");
             if (wslResult.ExitCode == 0 && wslResult.StandardOutput.Trim() == "mirrored")
             {
                 // mirrored networking mode ... we're done
@@ -194,8 +302,7 @@ static partial class Wsl
                 var clientAddresses = new List<IPAddress>();
                 {
                     // We use 'cat /proc/net/fib_trie', where we assume 'cat' is available on all distributions and /proc/net/fib_trie is supported by the WSL kernel.
-                    var ipResult = await ProcessUtils.RunCapturedProcessAsync(WslPath, Encoding.UTF8, cancellationToken,
-                        "--distribution", distribution, "--", "cat", "/proc/net/fib_trie");
+                    var ipResult = await RunWslAsync(distribution, null, cancellationToken, "cat", "/proc/net/fib_trie");
                     if (ipResult.ExitCode == 0)
                     {
                         // Example output:
@@ -286,8 +393,7 @@ static partial class Wsl
             using var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutTokenSource.Token);
             try
             {
-                _ = await ProcessUtils.RunCapturedProcessAsync(WslPath, Encoding.UTF8, linkedTokenSource.Token,
-                    "--distribution", distribution, "--user", "root", "--", "bash", "-c", $"echo < /dev/tcp/{hostAddress}/{Interop.UsbIp.USBIP_PORT}");
+                _ = await RunWslAsync(distribution, null, linkedTokenSource.Token, "bash", "-c", $"echo < /dev/tcp/{hostAddress}/{Interop.UsbIp.USBIP_PORT}");
             }
             catch (OperationCanceledException) when (timeoutTokenSource.IsCancellationRequested)
             {
@@ -295,12 +401,30 @@ static partial class Wsl
             }
         }
 
+        // This allows us to augment the errors produced by the Linux usbip client tool.
+        // Since we are using our own build of usbip, the "interface" is stable.
+        void FilterUsbip(string line, bool isStandardError)
+        {
+            if (string.IsNullOrEmpty(line))
+            {
+                // usbip throws in an extraneous final empty line
+                return;
+            }
+            // Prepend "WSL", so the user does not confused over "usbip: ... " vs our own "usbipd: ...".
+            // We output as "normal text" (although we could filter on "error:").
+            console.WriteLine("WSL " + line);
+            if (line.Contains("Device busy"))
+            {
+                // We have already checked that the device is not attached to some other client.
+                console.ReportWarning("The device appears to be used by Windows; stop the software using the device, or bind the device using the '--force' option.");
+            }
+        }
+
         // Finally, call 'usbip attach', or run the auto-attach.sh script.
         if (!autoAttach)
         {
-            var wslResult = await ProcessUtils.RunUncapturedProcessAsync(WslPath, cancellationToken,
-                "--distribution", distribution, "--user", "root", "--", wslLinuxPath + "/usbip", "attach", $"--remote={hostAddress}", $"--busid={busId}");
-            if (wslResult != 0)
+            var wslResult = await RunWslAsync(distribution, FilterUsbip, cancellationToken, wslLinuxPath + "/usbip", "attach", $"--remote={hostAddress}", $"--busid={busId}");
+            if (wslResult.ExitCode != 0)
             {
                 console.ReportError($"Failed to attach device with busid '{busId}'.");
                 return ExitCode.Failure;
@@ -310,8 +434,7 @@ static partial class Wsl
         {
             console.ReportInfo("Starting endless attach loop; press Ctrl+C to quit.");
 
-            await ProcessUtils.RunUncapturedProcessAsync(WslPath, cancellationToken,
-                "--distribution", distribution, "--user", "root", "--", "bash", wslLinuxPath + "/auto-attach.sh", hostAddress.ToString(), busId.ToString());
+            _ = await RunWslAsync(distribution, FilterUsbip, cancellationToken, "bash", wslLinuxPath + "/auto-attach.sh", hostAddress.ToString(), busId.ToString());
             // This process always ends in failure, as it is supposed to run an endless loop.
             // This may be intended by the user (Ctrl+C, WSL shutdown), others may be real errors.
             // There is no way to tell the difference...
@@ -374,11 +497,11 @@ static partial class Wsl
         // * Ubuntu             Running         1
         //   Debian             Stopped         2
         //   Custom-MyDistro    Running         2
-        var detailsResult = await ProcessUtils.RunCapturedProcessAsync(WslPath, Encoding.Unicode, cancellationToken, "--list", "--all", "--verbose");
+        var detailsResult = await RunWslAsync(null, null, cancellationToken, "--list", "--all", "--verbose");
         switch (detailsResult.ExitCode)
         {
             case 0:
-                var details = detailsResult.StandardOutput.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
+                var details = detailsResult.StandardOutput.Split('\n', StringSplitOptions.RemoveEmptyEntries);
 
                 // Sanity check
                 if (!WslListHeaderRegex().IsMatch(details.FirstOrDefault() ?? string.Empty))
@@ -406,7 +529,7 @@ static partial class Wsl
                 // At least, that seems to be the case; it turns out that the wsl.exe command line interface isn't stable.
 
                 // Newer versions of wsl.exe support the --status command.
-                if ((await ProcessUtils.RunCapturedProcessAsync(WslPath, Encoding.Unicode, cancellationToken, "--status")).ExitCode != 0)
+                if ((await RunWslAsync(null, null, cancellationToken, "--status")).ExitCode != 0)
                 {
                     // We conclude that WSL is indeed not installed at all.
                     return null;
