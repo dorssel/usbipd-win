@@ -36,18 +36,18 @@ This will install:
 - A command line tool `usbipd`.\
   The location of this tool will be added to the `PATH` environment variable.
 - A firewall rule called `usbipd` to allow all local subnets to connect to the service.\
-  You can modify this firewall rule to fine tune access control.\
-  :information_source:\
-  If you are using a third-party firewall, you may have to reconfigure it to allow
-  incoming connections on TCP port 3240.
+  You can modify this firewall rule to fine tune access control.
+
+> [!NOTE]
+> If you are using a third-party firewall, you may have to reconfigure it to allow
+> incoming connections on TCP port 3240.
 
 ## How to use
 
 ### Share Devices
 
 By default devices are not shared with USBIP clients.
-To lookup and share devices, open a command prompt as an Administrator and use the `usbipd` tool.
-For example:
+To lookup and share devices, run the following commands with administrator privileges:
 
 ```powershell
 usbipd --help
@@ -55,31 +55,46 @@ usbipd list
 usbipd bind --busid=<BUSID>
 ```
 
+Sharing a device is persistent; it survives reboots.
+
+> [!TIP]
+> See the [wiki](https://github.com/dorssel/usbipd-win/wiki/Tested-Devices) for a list of tested devices.
+
 ### Connecting Devices
 
-From another (possibly virtual) machine running Linux, use `usbip` to claim the USB device:
+Attaching devices to a client is non-persistent. You will have to re-attach after a reboot,
+or when the device resets or is physically unplugged/replugged.
+
+#### Non-WSL 2
+
+From another (possibly virtual) machine running Linux, use the `usbip` client-side tool:
 
 ```bash
 usbip list --remote=<HOST>
 sudo usbip attach --remote=<HOST> --busid=<BUSID>
 ```
 
-A list of tested devices can be found on the [wiki](https://github.com/dorssel/usbipd-win/wiki).
-Please file an issue if your device is not working.
+> [!NOTE]
+> Client-side tooling exists for other operating systems such as Microsoft Windows, but not as part of this project.
 
-### WSL 2
+#### WSL 2
 
-You can use the `usbipd wsl` subcommand to share and connect a device with a single command.
-For example, open a command prompt:
+You can attach the device from within Windows with the following command, which does not require administrator privileges:
 
 ```powershell
-usbipd wsl --help
-usbipd wsl list
-usbipd wsl attach --busid=<BUSID>
+usbipd attach --wsl --busid=<BUSID>
 ```
 
-:information_source:\
-Instructions on how to prepare WSL 2 for USBIP can be found on the [wiki](https://github.com/dorssel/usbipd-win/wiki/WSL-support).
+> [!TIP]
+> In case you have used `usbipd` with WSL 2 before, the following has changed since version 4.0.0:
+> - You have to share the device using `usbipd bind` first.
+> - You no longer have to install any client-side tooling.
+> - You no longer have to specify a specific distribution.
+> - The syntax for the command to attach has changed slightly.
+
+> [!TIP]
+> See the [wiki](https://github.com/dorssel/usbipd-win/wiki/WSL-support) on how to add drivers
+> for USB devices that are not supported by the default WSL 2 kernel.
 
 ### GUI
 
@@ -97,5 +112,3 @@ Alternatively, use the Windows Package Manager:
 ```powershell
 winget uninstall usbipd
 ```
-
-There should be no left-overs; please file an issue if you do find any.
