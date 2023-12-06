@@ -79,18 +79,19 @@ sudo usbip attach --remote=<HOST> --busid=<BUSID>
 
 #### WSL 2
 
+> [!TIP]
+> In case you have used `usbipd` with WSL 2 before, the following has changed since version 4.0.0:
+>
+> - You have to share the device using `usbipd bind` first.
+> - You no longer have to install any client-side tooling.
+> - You no longer have to specify a specific distribution.
+> - The syntax for the command to attach has changed slightly.
+
 You can attach the device from within Windows with the following command, which does not require administrator privileges:
 
 ```powershell
 usbipd attach --wsl --busid=<BUSID>
 ```
-
-> [!TIP]
-> In case you have used `usbipd` with WSL 2 before, the following has changed since version 4.0.0:
-> - You have to share the device using `usbipd bind` first.
-> - You no longer have to install any client-side tooling.
-> - You no longer have to specify a specific distribution.
-> - The syntax for the command to attach has changed slightly.
 
 > [!TIP]
 > See the [wiki](https://github.com/dorssel/usbipd-win/wiki/WSL-support) on how to add drivers
