@@ -24,6 +24,7 @@ static partial class Wsl
     const string ListDistributionsUrl = "https://learn.microsoft.com/windows/wsl/basic-commands#install";
     const string InstallDistributionUrl = "https://learn.microsoft.com/windows/wsl/basic-commands#install";
     const string SetWslVersionUrl = "https://learn.microsoft.com/windows/wsl/basic-commands#set-wsl-version-to-1-or-2";
+    const string AutomountWslUrl = "https://learn.microsoft.com/windows/wsl/wsl-config#automount-settings";
 
     static readonly string WslPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "wsl.exe");
 
@@ -267,17 +268,50 @@ static partial class Wsl
             }
         }
 
-        // Check: our distribution-independent usbip client must be runnable.
-        var wslWindowsPath = Path.Combine(Path.GetDirectoryName(Environment.ProcessPath)!, "wsl");
-        if (!LocalDriveRegex().IsMatch(Path.GetPathRoot(wslWindowsPath) ?? string.Empty))
+        // Find the location of our WSL client tools w.r.t. a mount point in the distribution.
+        string wslLinuxPath;
         {
-            // We need the wsl utility directory to be accessible from within WSL.
-            console.ReportError($"Option '--wsl' requires that this software is installed on a local drive.");
-            return ExitCode.Failure;
+            var wslWindowsPath = Path.Combine(Path.GetDirectoryName(Environment.ProcessPath)!, "wsl");
+            if ((Path.GetPathRoot(wslWindowsPath) is not string wslWindowsPathRoot) || (!LocalDriveRegex().IsMatch(wslWindowsPathRoot)))
+            {
+                console.ReportError($"Option '--wsl' requires that this software is installed on a local drive.");
+                return ExitCode.Failure;
+            }
+            string wslLinuxMountPoint;
+            {
+                var wslResult = await RunWslAsync(distribution, null, cancellationToken, "cat", "/proc/self/mountinfo");
+                // Example output:
+                //
+                // 46 51 0:26 / /mnt/wsl rw,relatime shared:1 - tmpfs none rw
+                // 47 51 0:28 / /usr/lib/wsl/drivers ro,nosuid,nodev,noatime - 9p none ro,dirsync,aname=drivers;fmask=222;dmask=222,mmap,access=client,msize=65536,trans=fd,rfd=7,wfd=7
+                // 51 38 8:32 / / rw,relatime - ext4 /dev/sdc rw,discard,errors=remount-ro,data=ordered
+                // ...
+                // 82 68 0:56 / /sys/fs/cgroup/rdma rw,nosuid,nodev,noexec,relatime shared:25 - cgroup cgroup rw,rdma
+                // 83 68 0:57 / /sys/fs/cgroup/misc rw,nosuid,nodev,noexec,relatime shared:26 - cgroup cgroup rw,misc
+                // 84 51 0:58 / /mnt/c rw,noatime - 9p drvfs rw,dirsync,aname=drvfs;path=C:\;uid=1000;gid=1000;symlinkroot=/mnt/,mmap,access=client,msize=262144,trans=virtio
+                //
+                // NOTE: The final backslash (\) is optional, and the drive letter is not case sensitive.
+                if (wslResult.ExitCode != 0)
+                {
+                    console.ReportError($"Unable to parse the WSL mount points. Please report this at https://github.com/dorssel/usbipd-win/issues.");
+                    return ExitCode.Failure;
+                }
+                if ((wslResult.StandardOutput.Split('\n')
+                    .FirstOrDefault(line => line.Split(" - ").Skip(1).FirstOrDefault()?.Split(' ').Skip(2).FirstOrDefault()?.Split(';').Any(
+                        o => o.ToLowerInvariant().TrimEnd('\\') == $"path={wslWindowsPathRoot.ToLowerInvariant().TrimEnd('\\')}") ?? false) is not string mountLine)
+                    || (mountLine.Split(' ').Skip(4).FirstOrDefault() is not string mountPoint))
+                {
+                    console.ReportError($"Option '--wsl' requires that drive {wslWindowsPathRoot} is mounted in WSL; see {AutomountWslUrl}.");
+                    return ExitCode.Failure;
+                }
+                wslLinuxMountPoint = mountPoint;
+            }
+            wslLinuxPath = Path.Combine(wslLinuxMountPoint, Path.GetRelativePath(wslWindowsPathRoot, wslWindowsPath)).Replace('\\', '/');
         }
-        var driveLetter = wslWindowsPath[0..1].ToLowerInvariant();
-        var wslLinuxPath = Path.Combine(@"\mnt", driveLetter, Path.GetRelativePath(Path.GetPathRoot(wslWindowsPath)!, wslWindowsPath)).Replace('\\', '/');
 
+        console.ReportInfo($"Using client tools located at {wslLinuxPath}");
+
+        // Check: our distribution-independent usbip client must be runnable.
         {
             var wslResult = await RunWslAsync(distribution, null, cancellationToken, wslLinuxPath + "/usbip", "version");
             if (wslResult.ExitCode != 0 || wslResult.StandardOutput.Trim() != "usbip (usbip-utils 2.0)")
