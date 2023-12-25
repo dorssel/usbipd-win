@@ -218,7 +218,7 @@ static partial class ConfigurationManager
 
         foreach (var childNode in EnumChildren(deviceNode))
         {
-            var name = (Get_DevNode_Property(childNode, PInvoke.DEVPKEY_NAME) as string)?.Trim();
+            var name = GetDeviceName(childNode);
             if (!string.IsNullOrEmpty(name) && descriptionSet.Add(name))
             {
                 descriptionList.Add(name);
