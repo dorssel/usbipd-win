@@ -420,20 +420,40 @@ static partial class Wsl
 
         // Heuristic firewall check
         //
+        // The current timeout is two seconds.
+        // This used to be one second, but some users got false positives due to WSL being slow to start the command.
+        //
         // With minimal requirements (bash only) try to connect from WSL to our server.
-        // If the process does not terminate within one second, then most likely a third party
-        // firewall is blocking the connection. Anything else (e.g. bash not available, or not supporting
-        // /dev/tcp, or whatever) will most likely finish within 1 second and the test will simply pass.
-        // In any case, just issue a warning, which is a lot more informative than the 1 minute TCP
-        // timeout that usbip will get.
+        // If the process does not terminate within the timeout, then most likely a third party firewall is blocking connections (DENY).
+        // If the process terminates within the timeout, then there are several options:
+        //   - The connection worked (pass).
+        //   - A firewall is refusing connections (DROP).
+        //     This is detectable, as the error will be something like:
+        //       bash: connect: Connection refused
+        //       bash: line 1: /dev/tcp/<host-address>/3240: Connection refused
+        //   - bash is not available (silent pass)
+        //   - the bash version does not support the /dev/tcp syntax (silent pass)
+        //   - other reasons (silent pass)
+        // We will simply look for the word "refused". If it isn't there, then the test will be ignored (silent pass).
+        //
         {
-            using var timeoutTokenSource = new CancellationTokenSource(TimeSpan.FromSeconds(1));
+            using var timeoutTokenSource = new CancellationTokenSource(TimeSpan.FromSeconds(2));
             using var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutTokenSource.Token);
+            var pass = true; // NOTE: The default is (silent) pass, just in case the test doesn't work.
             try
             {
-                _ = await RunWslAsync((distribution, "/"), null, linkedTokenSource.Token, "bash", "-c", $"echo < /dev/tcp/{hostAddress}/{Interop.UsbIp.USBIP_PORT}");
+                var pingResult = await RunWslAsync((distribution, "/"), null, linkedTokenSource.Token, "bash", "-c", $"echo < /dev/tcp/{hostAddress}/{Interop.UsbIp.USBIP_PORT}");
+                if (pingResult.StandardError.Contains("refused"))
+                {
+                    pass = false;
+                }
             }
             catch (OperationCanceledException) when (timeoutTokenSource.IsCancellationRequested)
+            {
+                // Timeout, probably a firewall dropping the connection request.
+                pass = false;
+            }
+            if (!pass)
             {
                 console.ReportWarning($"A third-party firewall may be blocking the connection; ensure TCP port {Interop.UsbIp.USBIP_PORT} is allowed.");
             }
