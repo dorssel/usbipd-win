@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # SPDX-FileCopyrightText: 2022 Frans van Dorsselaer
 #
@@ -11,10 +11,6 @@ set -e
 
 HOST=$1
 BUSID=$2
-
-# Use our distribution-independent build of usbip, which resides in the same
-# directory as this very script.
-USBIP="${BASH_SOURCE%/*}/usbip"
 
 IS_ATTACHED=0
 LAST_ERROR=""
@@ -39,7 +35,9 @@ report_attached() {
 }
 
 try_attach() {
-    LAST_ERROR=$("$USBIP" attach --remote="$HOST" --busid="$BUSID" 2>&1) || return 1
+    # Use our distribution-independent build of usbip, which resides in the same directory as this very script.
+    # NOTE: The working directory should have been set to the location of this script.
+    LAST_ERROR=$(./usbip attach --remote="$HOST" --busid="$BUSID" 2>&1) || return 1
     LAST_ERROR=""
     return 0
 }
