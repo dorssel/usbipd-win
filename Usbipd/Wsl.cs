@@ -281,36 +281,13 @@ static partial class Wsl
                 console.ReportError($"Option '--wsl' requires that this software is installed on a local drive.");
                 return ExitCode.Failure;
             }
-            string wslLinuxMountPoint;
+            var wslResult = await RunWslAsync((distribution, "/"), null, cancellationToken, "/bin/wslpath", "-u", wslWindowsPath);
+            if (wslResult.ExitCode != 0)
             {
-                var wslResult = await RunWslAsync((distribution, "/"), null, cancellationToken, "cat", "/proc/self/mountinfo");
-                // Example output:
-                //
-                // 46 51 0:26 / /mnt/wsl rw,relatime shared:1 - tmpfs none rw
-                // 47 51 0:28 / /usr/lib/wsl/drivers ro,nosuid,nodev,noatime - 9p none ro,dirsync,aname=drivers;fmask=222;dmask=222,mmap,access=client,msize=65536,trans=fd,rfd=7,wfd=7
-                // 51 38 8:32 / / rw,relatime - ext4 /dev/sdc rw,discard,errors=remount-ro,data=ordered
-                // ...
-                // 82 68 0:56 / /sys/fs/cgroup/rdma rw,nosuid,nodev,noexec,relatime shared:25 - cgroup cgroup rw,rdma
-                // 83 68 0:57 / /sys/fs/cgroup/misc rw,nosuid,nodev,noexec,relatime shared:26 - cgroup cgroup rw,misc
-                // 84 51 0:58 / /mnt/c rw,noatime - 9p drvfs rw,dirsync,aname=drvfs;path=C:\;uid=1000;gid=1000;symlinkroot=/mnt/,mmap,access=client,msize=262144,trans=virtio
-                //
-                // NOTE: The final backslash (\) is optional, and the drive letter is not case sensitive.
-                if (wslResult.ExitCode != 0)
-                {
-                    console.ReportError($"Unable to parse the WSL mount points. Please report this at https://github.com/dorssel/usbipd-win/issues.");
-                    return ExitCode.Failure;
-                }
-                if ((wslResult.StandardOutput.Split('\n')
-                    .FirstOrDefault(line => line.Split(" - ").Skip(1).FirstOrDefault()?.Split(' ').Skip(2).FirstOrDefault()?.Split(';').Any(
-                        o => o.ToLowerInvariant().TrimEnd('\\') == $"path={wslWindowsPathRoot.ToLowerInvariant().TrimEnd('\\')}") ?? false) is not string mountLine)
-                    || (mountLine.Split(' ').Skip(4).FirstOrDefault() is not string mountPoint))
-                {
-                    console.ReportError($"Option '--wsl' requires that drive {wslWindowsPathRoot} is mounted in WSL; see {AutomountWslUrl}.");
-                    return ExitCode.Failure;
-                }
-                wslLinuxMountPoint = mountPoint;
+                console.ReportError($"Option '--wsl' requires that drive {wslWindowsPathRoot} is mounted in WSL; see {AutomountWslUrl}.");
+                return ExitCode.Failure;
             }
-            wslLinuxPath = Path.Combine(wslLinuxMountPoint, Path.GetRelativePath(wslWindowsPathRoot, wslWindowsPath)).Replace('\\', '/');
+            wslLinuxPath = wslResult.StandardOutput.TrimEnd('\n');
         }
 
         console.ReportInfo($"Using client tools located at {wslLinuxPath}");
@@ -328,7 +305,7 @@ static partial class Wsl
         // Now find out the IP address of the host.
         IPAddress hostAddress;
         {
-            var wslResult = await RunWslAsync((distribution, "/"), null, cancellationToken, "/usr/bin/wslinfo", "--networking-mode");
+            var wslResult = await RunWslAsync((distribution, "/"), null, cancellationToken, "/bin/wslinfo", "--networking-mode");
             if (wslResult.ExitCode == 0 && wslResult.StandardOutput.Trim() == "mirrored")
             {
                 // mirrored networking mode ... we're done
@@ -578,6 +555,11 @@ static partial class Wsl
                     var name = match.Groups[2].Value.TrimEnd();
                     var isRunning = match.Groups[3].Value == "Running";
                     var version = uint.Parse(match.Groups[4].Value, CultureInfo.InvariantCulture);
+                    if (name == "docker-desktop-data")
+                    {
+                        // NOTE: docker-desktop-data is unusable
+                        continue;
+                    }
                     distributions.Add(new(name, isDefault, version, isRunning));
                 }
                 break;
