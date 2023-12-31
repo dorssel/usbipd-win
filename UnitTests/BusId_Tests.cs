@@ -16,6 +16,25 @@ sealed class BusId_Tests
 
         Assert.AreEqual(0, busId.Bus);
         Assert.AreEqual(0, busId.Port);
+        Assert.IsTrue(busId.IsIncompatibleHub);
+    }
+
+    [TestMethod]
+    public void ConstructorWithInvalidBusThrows()
+    {
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() =>
+        {
+            var busId = new BusId(0, 1);
+        });
+    }
+
+    [TestMethod]
+    public void ConstructorWithInvalidPortThrows()
+    {
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() =>
+        {
+            var busId = new BusId(1, 0);
+        });
     }
 
     [TestMethod]
@@ -28,6 +47,15 @@ sealed class BusId_Tests
 
         Assert.AreEqual(testBus, busId.Bus);
         Assert.AreEqual(testPort, busId.Port);
+        Assert.IsFalse(busId.IsIncompatibleHub);
+    }
+
+    [TestMethod]
+    public void ÍncompatibleHub()
+    {
+        Assert.AreEqual(0, BusId.IncompatibleHub.Bus);
+        Assert.AreEqual(0, BusId.IncompatibleHub.Port);
+        Assert.IsTrue(BusId.IncompatibleHub.IsIncompatibleHub);
     }
 
     sealed class BusIdData
@@ -43,10 +71,13 @@ sealed class BusId_Tests
             "1-1 ",
             "a-1",
             "1-a",
+            "0-0",
             "0-1",
             "1-0",
             "1-65536",
             "65536-1",
+            "01-1",
+            "1-01",
         ];
 
         public static IEnumerable<string[]> Invalid
@@ -55,6 +86,7 @@ sealed class BusId_Tests
         }
 
         static readonly string[] _Valid = [
+            "IncompatibleHub",
             "1-1",
             "1-2",
             "1-65534",
@@ -73,30 +105,21 @@ sealed class BusId_Tests
             "65535-65535",
         ];
 
-        public static IEnumerable<string[]> Valid
-        {
-            get => from value in _Valid select new string[] { value };
-        }
+        public static IEnumerable<string[]> Valid => from value in _Valid select new string[] { value };
 
-        static int ExpectedCompare(string left, string right)
-        {
-            var leftBus = ushort.Parse(left.Split('-')[0]);
-            var leftPort = ushort.Parse(left.Split('-')[1]);
-            var rightBus = ushort.Parse(right.Split('-')[0]);
-            var rightPort = ushort.Parse(right.Split('-')[1]);
+        static int ExpectedCompare(string left, string right) =>
+            BusFromValidBusId(left) < BusFromValidBusId(right) ? -1 :
+            BusFromValidBusId(left) > BusFromValidBusId(right) ? 1 :
+            PortFromValidBusId(left) < PortFromValidBusId(right) ? -1 :
+            PortFromValidBusId(left) > PortFromValidBusId(right) ? 1 : 0;
 
-            return
-                leftBus < rightBus ? -1 :
-                leftBus > rightBus ? 1 :
-                leftPort < rightPort ? -1 :
-                leftPort > rightPort ? 1 : 0;
-        }
-
-        public static IEnumerable<object[]> Compare
-        {
-            get => from left in _Valid from right in _Valid select new object[] { left, right, ExpectedCompare(left, right) };
-        }
+        public static IEnumerable<object[]> Compare => from left in _Valid from right in _Valid select new object[] { left, right, ExpectedCompare(left, right) };
     }
+
+    static ushort BusFromValidBusId(string text) => (text == "IncompatibleHub") ? (ushort)0 : ushort.Parse(text.Split('-')[0]);
+
+    static ushort PortFromValidBusId(string text) => (text == "IncompatibleHub") ? (ushort)0 : ushort.Parse(text.Split('-')[1]);
+
 
     [TestMethod]
     [DynamicData(nameof(BusIdData.Invalid), typeof(BusIdData))]
@@ -106,6 +129,7 @@ sealed class BusId_Tests
         Assert.IsFalse(result);
         Assert.AreEqual(0, busId.Bus);
         Assert.AreEqual(0, busId.Port);
+        Assert.IsTrue(busId.IsIncompatibleHub);
     }
 
     [TestMethod]
@@ -114,11 +138,8 @@ sealed class BusId_Tests
     {
         var result = BusId.TryParse(text, out var busId);
         Assert.IsTrue(result);
-
-        var expectedBus = ushort.Parse(text.Split('-')[0]);
-        var expectedPort = ushort.Parse(text.Split('-')[1]);
-        Assert.AreEqual(expectedBus, busId.Bus);
-        Assert.AreEqual(expectedPort, busId.Port);
+        Assert.AreEqual(BusFromValidBusId(text), busId.Bus);
+        Assert.AreEqual(PortFromValidBusId(text), busId.Port);
     }
 
     [TestMethod]
@@ -136,10 +157,8 @@ sealed class BusId_Tests
     public void ParseValid(string text)
     {
         var busId = BusId.Parse(text);
-        var expectedBus = ushort.Parse(text.Split('-')[0]);
-        var expectedPort = ushort.Parse(text.Split('-')[1]);
-        Assert.AreEqual(expectedBus, busId.Bus);
-        Assert.AreEqual(expectedPort, busId.Port);
+        Assert.AreEqual(BusFromValidBusId(text), busId.Bus);
+        Assert.AreEqual(PortFromValidBusId(text), busId.Port);
     }
 
     [TestMethod]

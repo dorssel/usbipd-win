@@ -36,32 +36,39 @@ interface ICommandHandlers
 
 sealed class CommandHandlers : ICommandHandlers
 {
-    static IEnumerable<UsbDevice> GetDevicesByHardwareId(VidPid vidPid, bool connectedOnly, IConsole console)
+    static List<UsbDevice> GetDevicesByHardwareId(VidPid vidPid, bool connectedOnly, IConsole console)
     {
         if (!CheckNoStub(vidPid, console))
         {
             return [];
         }
+        var filtered = new List<UsbDevice>();
         var devices = UsbDevice.GetAll().Where(d => (d.HardwareId == vidPid) && (!connectedOnly || d.BusId.HasValue));
-        var found = false;
         foreach (var device in devices)
         {
             if (device.BusId.HasValue)
             {
-                found = true;
-                console.ReportInfo($"Device with hardware-id '{vidPid}' found at busid '{device.BusId.Value}'.");
+                if (device.BusId.Value.IsIncompatibleHub)
+                {
+                    console.ReportWarning($"Ignoring device with hardware-id '{vidPid}' connected to an incompatible hub.");
+                }
+                else
+                {
+                    console.ReportInfo($"Device with hardware-id '{vidPid}' found at busid '{device.BusId}'.");
+                    filtered.Add(device);
+                }
             }
             else if (device.Guid.HasValue)
             {
-                found = true;
                 console.ReportInfo($"Persisted device with hardware-id '{vidPid}' found at guid '{device.Guid.Value:D}'.");
+                filtered.Add(device);
             }
         }
-        if (!found)
+        if (filtered.Count == 0)
         {
             console.ReportError($"No devices found with hardware-id '{vidPid}'.");
         }
-        return devices;
+        return filtered;
     }
 
     static BusId? GetBusIdByHardwareId(VidPid vidPid, IConsole console)
@@ -148,12 +155,16 @@ sealed class CommandHandlers : ICommandHandlers
             {
                 state = device.IsForced ? "Shared (forced)" : "Shared";
             }
+            else if (device.BusId.Value.IsIncompatibleHub)
+            {
+                state = "Incompatible hub";
+            }
             else
             {
                 state = "Not shared";
             }
             // NOTE: Strictly speaking, both Bus and Port can be > 99. If you have one of those, you win a prize!
-            console.Write($"{device.BusId.Value,-5}  ");
+            console.Write($"{(device.BusId.Value.IsIncompatibleHub ? string.Empty : device.BusId.Value),-5}  ");
             console.Write($"{device.HardwareId,-9}  ");
             console.WriteTruncated(GetDescription(device, usbids), 60, true);
             console.WriteLine($"  {state}");
@@ -498,7 +509,7 @@ sealed class CommandHandlers : ICommandHandlers
     Task<ExitCode> ICommandHandlers.Detach(VidPid vidPid, IConsole console, CancellationToken cancellationToken)
     {
         var devices = GetDevicesByHardwareId(vidPid, true, console);
-        if (!devices.Any())
+        if (devices.Count == 0)
         {
             // This would result in a no-op, which may not be what the user intended.
             return Task.FromResult(ExitCode.Failure);

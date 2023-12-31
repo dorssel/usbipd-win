@@ -31,9 +31,9 @@ static class Program
         Canceled = 4,
     };
 
-    static BusId ParseBusId(ArgumentResult argumentResult)
+    static BusId ParseCompatibleBusId(ArgumentResult argumentResult)
     {
-        if (!BusId.TryParse(argumentResult.Tokens[0].Value, out var busId))
+        if (!BusId.TryParse(argumentResult.Tokens[0].Value, out var busId) || busId.IsIncompatibleHub)
         {
             argumentResult.ErrorMessage = LocalizationResources.Instance.ArgumentConversionCannotParseForOption(argumentResult.Tokens[0].Value,
                 (argumentResult.Parent as OptionResult)?.Token?.Value ?? string.Empty, typeof(BusId));
@@ -96,6 +96,12 @@ static class Program
         }
     }
 
+    internal static IEnumerable<string> CompatibleBusIdCompletions(CompletionContext completionContext)
+    {
+        return CompletionGuard(completionContext, () =>
+            UsbDevice.GetAll().Where(d => d.BusId.HasValue && !d.BusId.Value.IsIncompatibleHub).Select(d => d.BusId.GetValueOrDefault().ToString()));
+    }
+
     internal static int Main(params string[] args)
     {
         if (!Console.IsInputRedirected)
@@ -139,13 +145,12 @@ static class Program
             //
             var busIdOption = new Option<BusId>(
                 aliases: ["--busid", "-b"],
-                parseArgument: ParseBusId
+                parseArgument: ParseCompatibleBusId
             )
             {
                 ArgumentHelpName = "BUSID",
                 Description = "Attach device having <BUSID>",
-            }.AddCompletions(completionContext => CompletionGuard(completionContext, () =>
-                UsbDevice.GetAll().Where(d => d.BusId.HasValue).Select(d => d.BusId.GetValueOrDefault().ToString())));
+            }.AddCompletions(CompatibleBusIdCompletions);
             //
             //  attach --wsl [<DISTRIBUTION>]
             //
@@ -218,13 +223,12 @@ static class Program
             //
             var busIdOption = new Option<BusId>(
                 aliases: ["--busid", "-b"],
-                parseArgument: ParseBusId
+                parseArgument: ParseCompatibleBusId
             )
             {
                 ArgumentHelpName = "BUSID",
                 Description = "Share device having <BUSID>",
-            }.AddCompletions(completionContext => CompletionGuard(completionContext, () =>
-                UsbDevice.GetAll().Where(d => d.BusId.HasValue).Select(d => d.BusId.GetValueOrDefault().ToString())));
+            }.AddCompletions(CompatibleBusIdCompletions);
             //
             //  bind [--force]
             //
@@ -302,13 +306,12 @@ static class Program
             //
             var busIdOption = new Option<BusId>(
                 aliases: ["--busid", "-b"],
-                parseArgument: ParseBusId
+                parseArgument: ParseCompatibleBusId
             )
             {
                 ArgumentHelpName = "BUSID",
                 Description = "Detach device having <BUSID>",
-            }.AddCompletions(completionContext => CompletionGuard(completionContext, () =>
-                UsbDevice.GetAll().Where(d => d.BusId.HasValue).Select(d => d.BusId.GetValueOrDefault().ToString())));
+            }.AddCompletions(CompatibleBusIdCompletions);
             //
             //  detach [--hardware-id <VID>:<PID>]
             //
@@ -461,13 +464,12 @@ static class Program
             //
             var busIdOption = new Option<BusId>(
                 aliases: ["--busid", "-b"],
-                parseArgument: ParseBusId
+                parseArgument: ParseCompatibleBusId
             )
             {
                 ArgumentHelpName = "BUSID",
                 Description = "Stop sharing device having <BUSID>",
-            }.AddCompletions(completionContext => CompletionGuard(completionContext, () =>
-                UsbDevice.GetAll().Where(d => d.BusId.HasValue).Select(d => d.BusId.GetValueOrDefault().ToString())));
+            }.AddCompletions(CompatibleBusIdCompletions);
             //
             //  unbind [--guid <GUID>]
             //
