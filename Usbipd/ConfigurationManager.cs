@@ -152,14 +152,17 @@ static partial class ConfigurationManager
         var match = LocationInfoRegex().Match(locationInfo);
         if (!match.Success)
         {
-            // We want users to report this one.
-            throw new NotSupportedException($"DEVPKEY_Device_LocationInfo returned '{locationInfo}', expected form 'Port_#0123.Hub_#4567'");
+            // This is probably a device on an unsupported hub-type.
+            // See for example https://github.com/dorssel/usbipd-win/issues/809.
+            return BusId.IncompatibleHub;
         }
-        return new()
+        var bus = ushort.Parse(match.Groups[2].Value, CultureInfo.InvariantCulture);
+        var port = ushort.Parse(match.Groups[1].Value, CultureInfo.InvariantCulture);
+        if (bus == 0 || port == 0)
         {
-            Bus = ushort.Parse(match.Groups[2].Value, CultureInfo.InvariantCulture),
-            Port = ushort.Parse(match.Groups[1].Value, CultureInfo.InvariantCulture),
-        };
+            return BusId.IncompatibleHub;
+        }
+        return new(bus, port);
     }
 
     public static BusId? GetBusId(string instanceId)
