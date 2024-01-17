@@ -150,6 +150,18 @@ static partial class Wsl
     /// </summary>
     public static async Task<ExitCode> Attach(BusId busId, bool autoAttach, string? distribution, IConsole console, CancellationToken cancellationToken)
     {
+        var wslWindowsPath = Path.Combine(Path.GetDirectoryName(Environment.ProcessPath)!, "WSL");
+        if (!Path.Exists(wslWindowsPath))
+        {
+            console.ReportError($"WSL support was not installed; reinstall this application with the WSL feature enabled.");
+            return ExitCode.Failure;
+        }
+        if ((Path.GetPathRoot(wslWindowsPath) is not string wslWindowsPathRoot) || (!LocalDriveRegex().IsMatch(wslWindowsPathRoot)))
+        {
+            console.ReportError($"Option '--wsl' requires that this software is installed on a local drive.");
+            return ExitCode.Failure;
+        }
+
         // Figure out which distribution to use. WSL can be in many states:
         // (a) not installed at all
         // (b) if the user specified one:
@@ -279,12 +291,6 @@ static partial class Wsl
         // NOTE: We don't know the shell type (for example, docker-desktop does not even have bash),
         //       so be as portable as possible: single line, use 'test', quote all paths, etc.
         {
-            var wslWindowsPath = Path.Combine(Path.GetDirectoryName(Environment.ProcessPath)!, "wsl");
-            if ((Path.GetPathRoot(wslWindowsPath) is not string wslWindowsPathRoot) || (!LocalDriveRegex().IsMatch(wslWindowsPathRoot)))
-            {
-                console.ReportError($"Option '--wsl' requires that this software is installed on a local drive.");
-                return ExitCode.Failure;
-            }
             var wslResult = await RunWslAsync((distribution, "/"), null, cancellationToken, "/bin/sh", "-c", $$"""
                 if ! test -d "{{WslMountPoint}}"; then
                     mkdir -m 0000 "{{WslMountPoint}}";

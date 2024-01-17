@@ -1,0 +1,32 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!--
+SPDX-FileCopyrightText: 2024 Frans van Dorsselaer
+
+SPDX-License-Identifier: GPL-3.0-only
+-->
+<Wix
+    xmlns="http://wixtoolset.org/schemas/v4/wxs"
+    xmlns:fw="http://wixtoolset.org/schemas/v4/wxs/firewall"
+    >
+    <Fragment>
+        <DirectoryRef Id="APPLICATIONFOLDER">
+            <Directory Id="PowerShell" Name="PowerShell" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="PowerShell" FileSource="$(PowerShellDir)">
+            <Component Id="Usbipd.Automation.dll">
+                <File Name="Usbipd.Automation.dll" />
+            </Component>
+            <Component Id="Usbipd.PowerShell.dll">
+                <File Name="Usbipd.PowerShell.dll" />
+            </Component>
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <ComponentGroup Id="PowerShell">
+            <ComponentRef Id="Usbipd.Automation.dll" />
+            <ComponentRef Id="Usbipd.PowerShell.dll" />
+        </ComponentGroup>
+    </Fragment>
+</Wix>

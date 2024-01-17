@@ -110,8 +110,7 @@ SPDX-License-Identifier: GPL-3.0-only
             Title="Server"
             Description="The user mode server application, installed as a service."
             >
-            <ComponentGroupRef Id="Usbipd" />
-            <ComponentRef Id="usbipd.exe" />
+            <ComponentGroupRef Id="usbipd" />
             <Feature
                 Id="Drivers"
                 Level="1"
@@ -121,6 +120,16 @@ SPDX-License-Identifier: GPL-3.0-only
                 Description="The VirtualBox USB drivers."
                 >
                 <ComponentGroupRef Id="Drivers" />
+            </Feature>
+            <Feature
+                Id="WSL"
+                Level="1"
+                AllowAdvertise="no"
+                AllowAbsent="yes"
+                Title="WSL Support"
+                Description="Support files to attach devices to WSL."
+                >
+                <ComponentGroupRef Id="WSL" />
             </Feature>
             <Feature
                 Id="PowerShell"
@@ -140,9 +149,7 @@ SPDX-License-Identifier: GPL-3.0-only
 
     <Fragment>
         <StandardDirectory Id="ProgramFiles64Folder">
-            <Directory Id="APPLICATIONFOLDER" Name="usbipd-win" FileSource="$(var.PublishDir)">
-                <Directory Id="PowerShell" Name="PowerShell" FileSource="$(var.PowerShellDir)" />
-            </Directory>
+            <Directory Id="APPLICATIONFOLDER" Name="usbipd-win" FileSource="$(var.PublishDir)" />
         </StandardDirectory>
     </Fragment>
 </Wix>

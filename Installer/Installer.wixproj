@@ -17,29 +17,8 @@ SPDX-License-Identifier: GPL-3.0-only
     <Pedantic>true</Pedantic>
   </PropertyGroup>
   <ItemGroup>
-    <Content Include="HarvestTransform.xslt" />
-    <HarvestDirectory Include="$(PublishDir)" Visible="false">
-      <DirectoryRefId>APPLICATIONFOLDER</DirectoryRefId>
-      <SuppressRootDirectory>true</SuppressRootDirectory>
-      <SuppressCOM>true</SuppressCOM>
-      <SuppressRegistry>true</SuppressRegistry>
-      <ComponentGroupName>Usbipd</ComponentGroupName>
-      <PreprocessorVariable>var.PublishDir</PreprocessorVariable>
-      <Transforms>HarvestTransform.xslt</Transforms>
-    </HarvestDirectory>
-    <HarvestDirectory Include="$(PowerShellDir)" Visible="false">
-      <DirectoryRefId>PowerShell</DirectoryRefId>
-      <SuppressRootDirectory>true</SuppressRootDirectory>
-      <SuppressCOM>true</SuppressCOM>
-      <SuppressRegistry>true</SuppressRegistry>
-      <ComponentGroupName>PowerShell</ComponentGroupName>
-      <PreprocessorVariable>var.PowerShellDir</PreprocessorVariable>
-    </HarvestDirectory>
-  </ItemGroup>
-  <ItemGroup>
     <PackageReference Include="WixToolset.DifxApp.wixext" />
     <PackageReference Include="WixToolset.Firewall.wixext" />
-    <PackageReference Include="Wixtoolset.Heat" />
     <PackageReference Include="WixToolset.UI.wixext" />
     <PackageReference Include="WixToolset.Util.wixext" />
   </ItemGroup>
@@ -74,8 +53,8 @@ SPDX-License-Identifier: GPL-3.0-only
   </Target>
   <Target Name="PublishUsbipd" BeforeTargets="BeforeBuild">
     <Message Importance="high" Text="Publishing pre-built usbipd-win" />
-    <RemoveDir Directories="..\Usbipd\bin\publish" />
-    <MakeDir Directories="..\Usbipd\bin\publish" />
+    <RemoveDir Directories="$(PublishDir)" />
+    <MakeDir Directories="$(PublishDir)" />
     <Exec Command="dotnet publish --nologo --no-restore --no-build --framework $(MainTargetFramework) ..\Usbipd" />
   </Target>
 </Project>

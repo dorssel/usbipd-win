@@ -54,6 +54,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <SelfContained>false</SelfContained>
     <IsPackable>false</IsPackable>
     <IsPublishable>false</IsPublishable>
+    <GenerateDependencyFile>false</GenerateDependencyFile>
 
     <Product>usbipd-win</Product>
     <Company>Frans van Dorsselaer</Company>
