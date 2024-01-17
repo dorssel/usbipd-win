@@ -18,7 +18,7 @@ SPDX-License-Identifier: GPL-3.0-only
             <?define WizardH="270" ?>
 
             <?define WizardLineY="234" ?>
-            <?define WizardLineW="372" ?>
+            <?define WizardLineW="370" ?>
             <?define WizardButtonX1="159" ?>
             <?define WizardButtonX2="224" ?>
             <?define WizardButtonX3="297" ?>

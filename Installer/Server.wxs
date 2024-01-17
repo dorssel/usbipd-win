@@ -73,6 +73,10 @@ SPDX-License-Identifier: GPL-3.0-only
                     Value="[APPLICATIONFOLDER]"
                     />
             </Component>
+
+            <Component Id="COPYING.md">
+                <File Name="COPYING.md" />
+            </Component>
         </DirectoryRef>
 
         <!-- This will restore the original Windows drivers for devices that were forced bound. -->
@@ -93,5 +97,11 @@ SPDX-License-Identifier: GPL-3.0-only
             <!-- Condition: usbipd.exe will be (or remains) installed -->
             <Custom Action="TryStartService" Before="InstallFinalize" Condition="$usbipd.exe=3" />
         </InstallExecuteSequence>
+    </Fragment>
+    <Fragment>
+        <ComponentGroup Id="usbipd">
+            <ComponentRef Id="COPYING.md" />
+            <ComponentRef Id="usbipd.exe" />
+        </ComponentGroup>
     </Fragment>
 </Wix>

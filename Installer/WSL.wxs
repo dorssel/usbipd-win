@@ -1,0 +1,60 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!--
+SPDX-FileCopyrightText: 2024 Frans van Dorsselaer
+
+SPDX-License-Identifier: GPL-3.0-only
+-->
+<Wix
+    xmlns="http://wixtoolset.org/schemas/v4/wxs"
+    xmlns:fw="http://wixtoolset.org/schemas/v4/wxs/firewall"
+    >
+    <Fragment>
+        <DirectoryRef Id="APPLICATIONFOLDER">
+            <!-- Windows uses uppercase spelling for folders related to WSL (and lowercase for files). -->
+            <Directory Id="WSL" Name="WSL" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="WSL" FileSource="$(var.PublishDir)\WSL">
+            <Component Id="WSL_README.md">
+                <File Name="README.md" />
+            </Component>
+            <Component Id="usbip">
+                <File Name="usbip" />
+            </Component>
+            <Component Id="auto_attach.sh">
+                <File Name="auto-attach.sh" />
+            </Component>
+        </DirectoryRef>
+
+        <!--
+        This directory gets mounted within WSL, and Linux should not treat ordinary files as executable.
+        We want to inherit all rights + add a deny for execution of non-executable files.
+        WiX does not have tooling to add a "deny permission".
+
+        NOTE: Add the following for any non-executable files.
+        -->
+        <!--
+        <SetProperty Id="FixExecutionRights_file.id" Value="&quot;[System64Folder]\icacls.exe&quot; &quot;[#file.id]&quot; /deny &quot;*S-1-1-0:(X)&quot;" Sequence="execute" Before="FixExecutionRights_file.id" />
+        <CustomAction Id="FixExecutionRights_file.id" BinaryRef="Wix4UtilCA_X64" DllEntry="WixQuietExec64" Return="ignore" Impersonate="no" Execute="deferred" />
+
+        <InstallExecuteSequence>
+            <Custom Action="FixExecutionRights_file.id" Before="InstallFinalize" Condition="$file.id=3" />
+        </InstallExecuteSequence>
+        -->
+
+        <SetProperty Id="FixExecutionRights_WSL_README.md" Value="&quot;[System64Folder]\icacls.exe&quot; &quot;[#WSL_README.md]&quot; /deny &quot;*S-1-1-0:(X)&quot;" Sequence="execute" Before="FixExecutionRights_WSL_README.md" />
+        <CustomAction Id="FixExecutionRights_WSL_README.md" BinaryRef="Wix4UtilCA_X64" DllEntry="WixQuietExec64" Return="ignore" Impersonate="no" Execute="deferred" />
+
+        <InstallExecuteSequence>
+            <Custom Action="FixExecutionRights_WSL_README.md" After="InstallFiles" Condition="$WSL_README.md=3" />
+        </InstallExecuteSequence>
+    </Fragment>
+    <Fragment>
+        <ComponentGroup Id="WSL">
+            <ComponentRef Id="WSL_README.md" />
+            <ComponentRef Id="usbip" />
+            <ComponentRef Id="auto_attach.sh" />
+        </ComponentGroup>
+    </Fragment>
+</Wix>
