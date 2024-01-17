@@ -24,9 +24,10 @@ static partial class Wsl
     const string ListDistributionsUrl = "https://learn.microsoft.com/windows/wsl/basic-commands#install";
     const string InstallDistributionUrl = "https://learn.microsoft.com/windows/wsl/basic-commands#install";
     const string SetWslVersionUrl = "https://learn.microsoft.com/windows/wsl/basic-commands#set-wsl-version-to-1-or-2";
-    const string AutomountWslUrl = "https://learn.microsoft.com/windows/wsl/wsl-config#automount-settings";
 
     static readonly string WslPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "wsl.exe");
+
+    const string WslMountPoint = "/var/run/usbipd-win";
 
     public sealed record Distribution(string Name, bool IsDefault, uint Version, bool IsRunning);
 
@@ -272,8 +273,11 @@ static partial class Wsl
             }
         }
 
-        // Find the location of our WSL client tools w.r.t. a mount point in the distribution.
-        string wslLinuxPath;
+        // Ensure our wsl directory is mounted.
+        // NOTE: This should resolve all issues for users that modified [automount], such as:
+        //       disabled automount, mounting at weird locations, mounting non-executable, etc.
+        // NOTE: We don't know the shell type (for example, docker-desktop does not even have bash),
+        //       so be as portable as possible: single line, use 'test', quote all paths, etc.
         {
             var wslWindowsPath = Path.Combine(Path.GetDirectoryName(Environment.ProcessPath)!, "wsl");
             if ((Path.GetPathRoot(wslWindowsPath) is not string wslWindowsPathRoot) || (!LocalDriveRegex().IsMatch(wslWindowsPathRoot)))
@@ -281,20 +285,24 @@ static partial class Wsl
                 console.ReportError($"Option '--wsl' requires that this software is installed on a local drive.");
                 return ExitCode.Failure;
             }
-            var wslResult = await RunWslAsync((distribution, "/"), null, cancellationToken, "/bin/wslpath", "-u", wslWindowsPath);
+            var wslResult = await RunWslAsync((distribution, "/"), null, cancellationToken, "/bin/sh", "-c", $$"""
+                if ! test -d "{{WslMountPoint}}"; then
+                    mkdir -m 0000 "{{WslMountPoint}}";
+                fi;
+                if ! test -f "{{WslMountPoint}}/README.md"; then
+                    mount -t drvfs -o "uid=0;gid=0;umask=222" "{{wslWindowsPath}}" "{{WslMountPoint}}";
+                fi;
+                """.ReplaceLineEndings(" "));
             if (wslResult.ExitCode != 0)
             {
-                console.ReportError($"Option '--wsl' requires that drive {wslWindowsPathRoot} is mounted in WSL; see {AutomountWslUrl}.");
+                console.ReportError($"Mounting '{wslWindowsPath}' within WSL failed.");
                 return ExitCode.Failure;
             }
-            wslLinuxPath = wslResult.StandardOutput.TrimEnd('\n');
         }
-
-        console.ReportInfo($"Using client tools located at {wslLinuxPath}");
 
         // Check: our distribution-independent usbip client must be runnable.
         {
-            var wslResult = await RunWslAsync((distribution, wslLinuxPath), null, cancellationToken, "./usbip", "version");
+            var wslResult = await RunWslAsync((distribution, WslMountPoint), null, cancellationToken, "./usbip", "version");
             if (wslResult.ExitCode != 0 || wslResult.StandardOutput.Trim() != "usbip (usbip-utils 2.0)")
             {
                 console.ReportError($"Unable to run 'usbip' client tool. Please report this at https://github.com/dorssel/usbipd-win/issues.");
@@ -458,7 +466,7 @@ static partial class Wsl
         // Finally, call 'usbip attach', or run the auto-attach.sh script.
         if (!autoAttach)
         {
-            var wslResult = await RunWslAsync((distribution, wslLinuxPath), FilterUsbip, cancellationToken, "./usbip", "attach", $"--remote={hostAddress}", $"--busid={busId}");
+            var wslResult = await RunWslAsync((distribution, WslMountPoint), FilterUsbip, cancellationToken, "./usbip", "attach", $"--remote={hostAddress}", $"--busid={busId}");
             if (wslResult.ExitCode != 0)
             {
                 console.ReportError($"Failed to attach device with busid '{busId}'.");
@@ -469,7 +477,7 @@ static partial class Wsl
         {
             console.ReportInfo("Starting endless attach loop; press Ctrl+C to quit.");
 
-            _ = await RunWslAsync((distribution, wslLinuxPath), FilterUsbip, cancellationToken, "./auto-attach.sh", hostAddress.ToString(), busId.ToString());
+            _ = await RunWslAsync((distribution, WslMountPoint), FilterUsbip, cancellationToken, "./auto-attach.sh", hostAddress.ToString(), busId.ToString());
             // This process always ends in failure, as it is supposed to run an endless loop.
             // This may be intended by the user (Ctrl+C, WSL shutdown), others may be real errors.
             // There is no way to tell the difference...
