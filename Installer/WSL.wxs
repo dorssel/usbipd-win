@@ -4,10 +4,7 @@ SPDX-FileCopyrightText: 2024 Frans van Dorsselaer
 
 SPDX-License-Identifier: GPL-3.0-only
 -->
-<Wix
-    xmlns="http://wixtoolset.org/schemas/v4/wxs"
-    xmlns:fw="http://wixtoolset.org/schemas/v4/wxs/firewall"
-    >
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
     <Fragment>
         <DirectoryRef Id="APPLICATIONFOLDER">
             <!-- Windows uses uppercase spelling for folders related to WSL (and lowercase for files). -->
@@ -36,7 +33,7 @@ SPDX-License-Identifier: GPL-3.0-only
         -->
         <!--
         <SetProperty Id="FixExecutionRights_file.id" Value="&quot;[System64Folder]\icacls.exe&quot; &quot;[#file.id]&quot; /deny &quot;*S-1-1-0:(X)&quot;" Sequence="execute" Before="FixExecutionRights_file.id" />
-        <CustomAction Id="FixExecutionRights_file.id" BinaryRef="Wix4UtilCA_X64" DllEntry="WixQuietExec64" Return="ignore" Impersonate="no" Execute="deferred" />
+        <CustomAction Id="FixExecutionRights_file.id" BinaryRef="Wix4UtilCA_X64" DllEntry="WixQuietExec" Return="ignore" Impersonate="no" Execute="deferred" />
 
         <InstallExecuteSequence>
             <Custom Action="FixExecutionRights_file.id" Before="InstallFinalize" Condition="$file.id=3" />
@@ -44,7 +41,7 @@ SPDX-License-Identifier: GPL-3.0-only
         -->
 
         <SetProperty Id="FixExecutionRights_WSL_README.md" Value="&quot;[System64Folder]\icacls.exe&quot; &quot;[#WSL_README.md]&quot; /deny &quot;*S-1-1-0:(X)&quot;" Sequence="execute" Before="FixExecutionRights_WSL_README.md" />
-        <CustomAction Id="FixExecutionRights_WSL_README.md" BinaryRef="Wix4UtilCA_X64" DllEntry="WixQuietExec64" Return="ignore" Impersonate="no" Execute="deferred" />
+        <CustomAction Id="FixExecutionRights_WSL_README.md" BinaryRef="Wix4UtilCA_X64" DllEntry="WixQuietExec" Return="ignore" Impersonate="no" Execute="deferred" />
 
         <InstallExecuteSequence>
             <Custom Action="FixExecutionRights_WSL_README.md" After="InstallFiles" Condition="$WSL_README.md=3" />
