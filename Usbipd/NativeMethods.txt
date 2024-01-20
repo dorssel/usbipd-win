@@ -28,7 +28,6 @@ CreateFile
 DeviceIoControl
 DiInstallDevice
 GetCurrentProcess
-GetTokenInformation
 LookupPrivilegeValue
 OpenProcessToken
 RegDeleteKey
@@ -112,5 +111,3 @@ IOCTL_USB_HUB_CYCLE_PORT
 // USB_NODE_CONNECTION_INFORMATION_EX
 USB_NODE_CONNECTION_INFORMATION_EX_V2
 USB_CYCLE_PORT_PARAMS
-
-tcp_keepalive

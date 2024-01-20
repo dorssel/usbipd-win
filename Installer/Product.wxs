@@ -42,20 +42,6 @@ SPDX-License-Identifier: GPL-3.0-only
         <Property Id="MSIDEPLOYMENTCOMPLIANT" Value="1" />
 
         <!--
-        We use .NET trimmed publishing, which will modify the .NET DLLs, but keeps the file version the same.
-        Therefore, we must always overwrite all files, as the trimming may be different from one build to another.
-        This is safe, since we only install files in our own dedicated application directory.
-        -->
-        <SetProperty
-            Action="SetREINSTALLMODE"
-            Id="REINSTALLMODE"
-            Value="amus"
-            Before="CostInitialize"
-            Sequence="first"
-            Condition="NOT REINSTALLMODE"
-            />
-
-        <!--
         MSI specifies that TARGETDIR overrides the default installation location, and winget relies on that.
         WiX, however, uses APPLICATIONFOLDER.
         So, if TARGETDIR is set and APPLICATIONFOLDER is not, then copy TARGETDIR to APPLICATIONFOLDER.
