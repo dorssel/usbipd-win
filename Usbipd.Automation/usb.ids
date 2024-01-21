@@ -9,8 +9,8 @@
 #	The latest version can be obtained from
 #		http://www.linux-usb.org/usb.ids
 #
-# Version: 2023.11.08
-# Date:    2023-11-08 20:34:02
+# Version: 2024.01.20
+# Date:    2024-01-20 20:34:02
 #
 
 # Vendors, devices and interfaces. Please keep sorted.
@@ -753,9 +753,9 @@
 	008c  AVC-2310 Device
 	0094  eHome Infrared Receiver
 	009b  AVC-1410 GameBridge TV NTSC
-	2000  USBXchange
+	2000  USBXchange Firmware Loader
 	2001  USBXchange Adapter
-	2002  USB2-Xchange
+	2002  USB2-Xchange Firmware Loader
 	2003  USB2-Xchange Adapter
 	4000  4-port hub
 	adcc  Composite Device Support
@@ -821,6 +821,9 @@
 	601f  FT601 32-bit FIFO IC
 	6ee0  EZO Carrier Board
 	6f70  HB-RF-USB
+	7150  FT2232x wired for MPSSE+UART
+	7151  FT2232x wired for MPSSE+UART
+	7152  FreeCalypso dual UART with boot control
 	7be8  FT232R
 	8028  Dev board JTAG (FT232H based)
 	8040  4 Port Hub
@@ -1716,6 +1719,7 @@
 	3fcc  RME MADIface
 	4041  Hub and media card controller
 	4060  Ultra Fast Media Reader
+	4063  xD/SD/MS/MMC Reader
 	4064  Ultra Fast Media Reader
 	4712  USB4712 high-speed hub
 	4713  USB4715 high-speed hub (2 ports disabled)
@@ -1972,6 +1976,8 @@
 	9800  Remote Control Receiver_iMON
 	9803  eHome Infrared Receiver
 	9804  DMB Receiver Control
+	9a10  34UC88-B
+	9a11  34UC88-B
 	9a39  27UP850 - WK.AEUDCSN - External Monitor 4K
 	9c01  LGE Sync
 043f  RadiSys Corp.
@@ -2392,6 +2398,7 @@
 	02e6  Xbox Wireless Adapter for Windows
 	02ea  Xbox One Controller
 	02fd  Xbox One S Controller [Bluetooth]
+	02fe  Xbox Wireless Adapter for Windows
 	0400  Windows Powered Pocket PC 2002
 	0401  Windows Powered Pocket PC 2002
 	0402  Windows Powered Pocket PC 2002
@@ -2568,6 +2575,7 @@
 	0800  Wireless keyboard (All-in-One-Media)
 	0810  LifeCam HD-3000
 	0823  Classic IntelliMouse
+	082a  Pro Intellimouse
 	0900  Surface Dock Hub
 	0901  Surface Dock Hub
 	0902  Surface Dock Hub
@@ -3132,10 +3140,10 @@
 	c52b  Unifying Receiver
 	c52d  R700 Remote Presenter receiver
 	c52e  MK260 Wireless Combo Receiver
-	c52f  Unifying Receiver
+	c52f  Nano Receiver
 	c531  C-U0007 [Unifying Receiver]
 	c532  Unifying Receiver
-	c534  Unifying Receiver
+	c534  Nano Receiver
 	c537  Cordless Mouse Receiver
 	c539  Lightspeed Receiver
 	c53a  PowerPlay Wireless Charging System
@@ -3526,6 +3534,7 @@
 	5720  Mass Storage Device
 	5721  Interrupt Demo
 	5722  Bulk Demo
+	572a  STM32F401 microcontroller [ARM Cortex M4] [CDC/ACM serial port]
 	5730  Audio Speaker
 	5731  Microphone
 	5740  Virtual COM Port
@@ -3565,7 +3574,7 @@
 	e07a  Broadcom BCM20702A1 Bluetooth
 	e0c8  MediaTek MT7921 Bluetooth
 	e0cd  MediaTek Bluetooth Adapter
-	e0d8  Bluetooth Adapter
+	e0d8  Bluetooth 5.2 Adapter [MediaTek MT7922]
 048a  S-MOS Systems, Inc.
 048c  Alps Electric Ireland, Ltd
 048d  Integrated Technology Express, Inc.
@@ -4977,6 +4986,11 @@
 	0320  Bluetooth Adapter
 	0321  Bluetooth Device
 	0a28  INDI AV-IN Device
+	1301  Network Controller
+	1302  i3 Gateway
+	1303  3 Micro Module
+	1304  i3 Module
+	1305  i3 Multi Sensing Module
 04c1  U.S. Robotics (3Com)
 	0020  56K Voice Pro
 	0022  56K Voice Pro
