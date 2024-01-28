@@ -90,6 +90,13 @@ SPDX-License-Identifier: GPL-3.0-only
             <Binary Id="banner.png" SourceFile="banner.png" />
 
             <!--
+            The Error dialog has an icon control. At runtime, msiexec will replace the image with
+            the correct one for the message. However, at dialog creation time a valid default (dummy) icon
+            has to be present, or else msiexec will log an error (even though the default image is actually never shown/used).
+            -->
+            <Binary Id="dummy.ico" SourceFile="dummy.ico" />
+
+            <!--
             These are the nearest to FluentUI as recommended by https://docs.microsoft.com/en-us/windows/uwp/design/style/typography.
             -->
             <TextStyle Id="Header" FaceName="Segoe UI Light" Size="34" />
@@ -532,7 +539,7 @@ Published under the terms of the &lt;a href=&quot;https://www.gnu.org/licenses/g
                 <!--
                 The image will be replaced by MSI.
                 -->
-                <Control Id="ErrorIcon" Type="Icon" X="19" Y="20" Width="24" Height="24" FixedSize="yes" IconSize="32" Text="banner.png" />
+                <Control Id="ErrorIcon" Type="Icon" X="19" Y="20" Width="24" Height="24" FixedSize="yes" IconSize="32" Text="dummy.ico" />
             </Dialog>
 
             <!--

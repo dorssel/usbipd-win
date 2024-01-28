@@ -13,10 +13,10 @@ SPDX-License-Identifier: GPL-3.0-only
     <Fragment>
         <DirectoryRef Id="PowerShell" FileSource="$(PowerShellDir)">
             <Component Id="Usbipd.Automation.dll">
-                <File Name="Usbipd.Automation.dll" />
+                <File Id="Usbipd.Automation.dll" Name="Usbipd.Automation.dll" />
             </Component>
             <Component Id="Usbipd.PowerShell.dll">
-                <File Name="Usbipd.PowerShell.dll" />
+                <File Id="Usbipd.PowerShell.dll" Name="Usbipd.PowerShell.dll" />
             </Component>
         </DirectoryRef>
     </Fragment>

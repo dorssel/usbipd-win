@@ -14,13 +14,13 @@ SPDX-License-Identifier: GPL-3.0-only
     <Fragment>
         <DirectoryRef Id="WSL" FileSource="$(var.PublishDir)\WSL">
             <Component Id="WSL_README.md">
-                <File Name="README.md" />
+                <File Id="WSL_README.md" Name="README.md" />
             </Component>
             <Component Id="usbip">
-                <File Name="usbip" />
+                <File Id="usbip" Name="usbip" />
             </Component>
             <Component Id="auto_attach.sh">
-                <File Name="auto-attach.sh" />
+                <File Id="auto_attach.sh" Name="auto-attach.sh" />
             </Component>
         </DirectoryRef>
 
@@ -32,7 +32,11 @@ SPDX-License-Identifier: GPL-3.0-only
         NOTE: Add the following for any non-executable files.
         -->
         <!--
-        <SetProperty Id="FixExecutionRights_file.id" Value="&quot;[System64Folder]\icacls.exe&quot; &quot;[#file.id]&quot; /deny &quot;*S-1-1-0:(X)&quot;" Sequence="execute" Before="FixExecutionRights_file.id" />
+        <SetProperty
+            Id="FixExecutionRights_file.id"
+            Value="&quot;[System64Folder]\icacls.exe&quot; &quot;[#file.id]&quot; /deny &quot;*S-1-1-0:(X)&quot;"
+            Sequence="execute" Before="FixExecutionRights_file.id" Condition="$file.id=3"
+            />
         <CustomAction Id="FixExecutionRights_file.id" BinaryRef="Wix4UtilCA_X64" DllEntry="WixQuietExec" Return="ignore" Impersonate="no" Execute="deferred" />
 
         <InstallExecuteSequence>
@@ -40,7 +44,11 @@ SPDX-License-Identifier: GPL-3.0-only
         </InstallExecuteSequence>
         -->
 
-        <SetProperty Id="FixExecutionRights_WSL_README.md" Value="&quot;[System64Folder]\icacls.exe&quot; &quot;[#WSL_README.md]&quot; /deny &quot;*S-1-1-0:(X)&quot;" Sequence="execute" Before="FixExecutionRights_WSL_README.md" />
+        <SetProperty
+            Id="FixExecutionRights_WSL_README.md"
+            Value="&quot;[System64Folder]\icacls.exe&quot; &quot;[#WSL_README.md]&quot; /deny &quot;*S-1-1-0:(X)&quot;"
+            Sequence="execute" Before="FixExecutionRights_WSL_README.md" Condition="$WSL_README.md=3"
+            />
         <CustomAction Id="FixExecutionRights_WSL_README.md" BinaryRef="Wix4UtilCA_X64" DllEntry="WixQuietExec" Return="ignore" Impersonate="no" Execute="deferred" />
 
         <InstallExecuteSequence>

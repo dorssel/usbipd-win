@@ -12,12 +12,9 @@ SPDX-License-Identifier: GPL-3.0-only
     <PublishDir>..\Usbipd\bin\publish</PublishDir>
     <PowerShellDir>..\Usbipd.PowerShell\bin\$(Configuration)\netstandard2.0</PowerShellDir>
     <DefineConstants>PublishDir=$(PublishDir);PowerShellDir=$(PowerShellDir);DriversDir=..\Drivers;Year=$([System.DateTime]::UtcNow.ToString("yyyy"))</DefineConstants>
-    <!-- Suppress WIX1130: DifxApp Driver is deprecated -->
-    <SuppressSpecificWarnings>1130</SuppressSpecificWarnings>
     <Pedantic>true</Pedantic>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="WixToolset.DifxApp.wixext" />
     <PackageReference Include="WixToolset.Firewall.wixext" />
     <PackageReference Include="WixToolset.UI.wixext" />
     <PackageReference Include="WixToolset.Util.wixext" />
