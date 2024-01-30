@@ -4,10 +4,7 @@ SPDX-FileCopyrightText: 2020 Frans van Dorsselaer
 
 SPDX-License-Identifier: GPL-3.0-only
 -->
-<Wix
-    xmlns="http://wixtoolset.org/schemas/v4/wxs"
-    xmlns:difx="http://wixtoolset.org/schemas/v4/wxs/difxapp"
-    >
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
     <Fragment>
         <DirectoryRef Id="APPLICATIONFOLDER">
             <Directory Id="Drivers" Name="Drivers" />
@@ -16,7 +13,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <Fragment>
         <DirectoryRef Id="Drivers" FileSource="$(var.DriversDir)">
             <Component Id="Drivers_README.md">
-                <File Name="README.md" />
+                <File Id="Drivers_README.md" Name="README.md" />
             </Component>
         </DirectoryRef>
     </Fragment>
@@ -24,14 +21,13 @@ SPDX-License-Identifier: GPL-3.0-only
         <DirectoryRef Id="Drivers" FileSource="$(var.DriversDir)">
             <Directory Id="VBoxUSB" Name="VBoxUSB">
                 <Component Id="VBoxUSB.cat">
-                    <File Name="VBoxUSB.cat" />
+                    <File Id="VBoxUSB.cat" Name="VBoxUSB.cat" />
                 </Component>
                 <Component Id="VBoxUSB.sys" Bitness="always64">
-                    <File Name="VBoxUSB.sys" />
+                    <File Id="VBoxUSB.sys" Name="VBoxUSB.sys" />
                 </Component>
                 <Component Id="VBoxUSB.inf">
-                    <File Name="VBoxUSB.inf" />
-                    <difx:Driver AddRemovePrograms="no" PlugAndPlayPrompt="no" />
+                    <File Id="VBoxUSB.inf" Name="VBoxUSB.inf" />
                 </Component>
             </Directory>
         </DirectoryRef>
@@ -40,14 +36,13 @@ SPDX-License-Identifier: GPL-3.0-only
         <DirectoryRef Id="Drivers" FileSource="$(var.DriversDir)">
             <Directory Id="VBoxUSBMon" Name="VBoxUSBMon">
                 <Component Id="VBoxUSBMon.cat">
-                    <File Name="VBoxUSBMon.cat" />
+                    <File Id="VBoxUSBMon.cat" Name="VBoxUSBMon.cat" />
                 </Component>
                 <Component Id="VBoxUSBMon.sys" Bitness="always64">
-                    <File Name="VBoxUSBMon.sys" />
+                    <File Id="VBoxUSBMon.sys" Name="VBoxUSBMon.sys" />
                 </Component>
                 <Component Id="VBoxUSBMon.inf">
-                    <File Name="VBoxUSBMon.inf" />
-                    <difx:Driver AddRemovePrograms="no" PlugAndPlayPrompt="no" />
+                    <File Id="VBoxUSBMon.inf" Name="VBoxUSBMon.inf" />
                 </Component>
             </Directory>
         </DirectoryRef>

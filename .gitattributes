@@ -22,9 +22,16 @@
 *.cs       text eol=crlf
 *.props    text
 
+*.vcxproj   text
+*.filters   text
+*.cpp       text
+*.h         text
+*.def       text
+
 *.wixproj   text
 *.wxs       text
 *.xslt      text
+*.ico       binary
 *.png       binary
 *.xcf       binary
 

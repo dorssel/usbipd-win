@@ -11,9 +11,7 @@ SPDX-License-Identifier: GPL-3.0-only
   </PropertyGroup>
   
   <ItemGroup>
-    <PackageReference Include="PowerShellStandard.Library">
-      <PrivateAssets>all</PrivateAssets>
-    </PackageReference>
+    <PackageReference Include="PowerShellStandard.Library" PrivateAssets="all" />
   </ItemGroup>
   
   <ItemGroup>
