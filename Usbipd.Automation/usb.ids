@@ -9,8 +9,8 @@
 #	The latest version can be obtained from
 #		http://www.linux-usb.org/usb.ids
 #
-# Version: 2024.01.20
-# Date:    2024-01-20 20:34:02
+# Version: 2024.01.30
+# Date:    2024-01-30 20:34:02
 #
 
 # Vendors, devices and interfaces. Please keep sorted.
@@ -29,6 +29,8 @@
 0004  Nebraska Furniture Mart
 0011  Unknown
 	7788  counterfeit flash drive
+001f  Walmart
+	0b21  AB13X Headset Adapter
 0040  Anyware Corporation
 	073d  Mini Multimedia 2.4GHz Wireless Keyboard with Touch Pad
 0042  DMT
@@ -5269,6 +5271,7 @@
 	1400  PS/2 keyboard + mouse controller
 	1503  Keyboard
 	1603  Keyboard
+	1605  Keyboard
 	1702  Keyboard LKS02
 	1818  Keyboard [Diatec Filco Majestouch 2]
 	2011  Keyboard [Diatec Filco Majestouch 1]
@@ -5862,6 +5865,7 @@
 	b681  ThinkPad T490 Webcam
 	b71a  Integrated IR Camera
 	b76b  SunplusIT Inc [HP HD Camera]
+	b7b4  Integrated Camera (1920x1080)
 04f3  Elan Microelectronics Corp.
 	000a  Touchscreen
 	0103  ActiveJet K-2024 Multimedia Keyboard
@@ -6485,6 +6489,8 @@
 	0003  Smart Card Reader II
 04fe  PFU, Ltd
 	0006  Happy Hacking Keyboard Lite2
+	0020  HHKB-Classic
+	0021  Happy Hacking Keyboard Professional HYBRID Type-S
 04ff  E-CMOS Corp.
 0500  Siam United Hi-Tech
 	0001  DART Keyboard Mouse
@@ -6552,6 +6558,7 @@
 	0081  F8T001v2 Bluetooth
 	0083  Bluetooth Device
 	0084  F8T003v2 Bluetooth
+	008a  6-in-1 Multiport Adapter
 	0102  Flip KVM
 	0103  F5U103 Serial Adapter [etek]
 	0106  VideoBus II Adapter, Video
@@ -7029,6 +7036,7 @@
 	05c4  DualShock 4 [CUH-ZCT1x]
 	0643  DSC-H100 in PTP/MTP mode
 	0689  Walkman NWZ-B173F
+	068c  UP-D711
 	06bb  WALKMAN NWZ-F805
 	06c3  RC-S380
 	07c3  ILCE-6000 (aka Alpha-6000) in Mass Storage mode
@@ -7417,10 +7425,17 @@
 	03ac  DTH-W1620 [MobileStudio Pro 16] touchscreen
 	03b2  DTH167 [Cintiq Pro 16] tablet
 	03b3  DTH167 [Cintiq Pro 16] touchscreen
+	03c0  DTH271 [Cintiq Pro 27] touchscreen
+	03c4  DTH172 [Cintiq Pro 17]
 	03c5  CTL-4100WL [Intuos BT (S)]
 	03c7  CTL-6100WL [Intuos BT (M)]
+	03cb  DTH134 [Wacom One 13] touchscreen
+	03ce  DTC121 [Wacom One 12] touchscreen
+	03d0  DTH227 [Cintiq Pro 22]
 	03dc  PTH-460 [Intuos Pro (S)] tablet
 	03dd  PTH-460 [Intuos Pro BT (S)] tablet
+	03ec  DTH134 [DTH134] touchscreen
+	03ed  DTC121 [DTC121] touchscreen
 	0400  PenPartner 4x5
 	4001  TPC4001
 	4004  TPC4004
@@ -7440,19 +7455,22 @@
 	0002  HID Monitor Controls
 	0003  Device Bay Controller
 	4000  FlexScan EV3237
-	4001  Monitor
-	4002  USB HID Monitor
+	4001  FlexScan EV2450
+	4002  FlexScan EV2455
 	4014  FlexScan EV2750
 	4026  FlexScan EV2451
 	4027  FlexScan EV2456
+	402b  FlexScan EV2780
 	4036  FlexScan EV2785
 	4037  FlexScan EV3285
 	4044  FlexScan EV2457
 	4059  FlexScan EV2760
 	405a  FlexScan EV2360
 	405b  FlexScan EV2460
+	405e  FlexScan EV2495
 	405f  FlexScan EV2795
 	4065  FlexScan EV3895
+	406a  FlexScan EV2480
 056e  Elecom Co., Ltd
 	0002  29UO Mouse
 	0057  Micro Grast Pop M-PGDL
@@ -9042,6 +9060,7 @@
 05e4  Red Wing Corp.
 05e5  Fuji Electric Co., Ltd
 05e6  Keithley Instruments
+	3390  3390 Arbitrary Waveform Generator
 05e8  ICC, Inc.
 05e9  Kawasaki LSI
 	0008  KL5KUSB101B Ethernet [klsi]
@@ -10000,6 +10019,7 @@
 	00bd  Prometheus MIS Touch Fingerprint Reader
 	00c7  TouchPad
 	00cb  Fingerprint scanner
+	00fc  Prometheus Fingerprint Reader
 	0ac3  Large Touch Screen
 	2970  touchpad
 06cc  Terayon Communication Systems
@@ -10061,7 +10081,9 @@
 	038c  CP900DW(ID) Port
 	0393  CP9500D/DW Port
 	0394  CP9000D/DW Port
+	0395  CP9000DW
 	0398  P93D
+	039e  CP9500DW-S
 	03a1  CP9550D/DW Port
 	03a5  CP9550DW-S
 	03a9  CP-9600DW
@@ -10071,7 +10093,9 @@
 	03ae  CP-9800DW-S
 	0f10  Hori/Namco FlightStick 2
 	3b10  P95D
+	3b20  CP9820DW Series
 	3b21  CP-9810D/DW
+	3b2f  LS9820A
 	3b30  CP-D70DW / CP-D707DW
 	3b31  CP-K60DW-S
 	3b36  CP-D80DW
@@ -11218,6 +11242,7 @@
 	c007  DPB-4000
 	c009  DPB-6000
 	c010  CPB-7000
+	c011  ASK-2500
 07cf  Casio Computer Co., Ltd
 	1001  QV-8000SX/5700/3000EX Digicam; Exilim EX-M20
 	1003  Exilim EX-S500
@@ -11353,8 +11378,11 @@
 	0000  FastLane MIDI Interface
 	0001  MIDI Interface
 	0002  MOTU Audio for 64 bit
-	0004  MicroBook
+	0004  Microbook I/II/IIc
 	0008  M Series
+	0009  M Series (firmware update mode)
+	000b  M Series
+	000d  M Series (firmware update mode)
 07ff  Unknown
 	00ff  Portable Hard Drive
 	ffff  Mad Catz Gamepad
@@ -12071,6 +12099,7 @@
 	037c  300k Pixel Camera
 	1000  Flash Drive
 	1132  5-in-1 Card Reader
+	2000  Disk
 	337b  Silicon Motion Camera
 	3710  Silicon Motion Camera
 	3720  Silicon Motion Camera
@@ -12448,6 +12477,7 @@
 	7140  T124 [Tegra K1/Logan 32-bit]
 	7210  SHIELD Controller
 	7321  Switch [Tegra Erista] recovery mode
+	7423  T234 [Orin NX] recovery mode
 	7721  T210 [TX1 Tegra Erista] recovery mode
 	7820  T20 [Tegra 2] recovery mode
 	7c18  T186 [TX2 Tegra Parker] recovery mode
@@ -12460,13 +12490,18 @@
 	cf09  SHIELD Tablet
 0956  BSquare Corp.
 0957  Agilent Technologies, Inc.
+	0007  82357A GPIB Interface Firmware loader
+	0107  82357A GPIB Interface
 	0200  E-Video DC-350 Camera
 	0202  E-Video DC-350 Camera
 	0407  33220A Waveform Generator
-	0518  82357B GPIB Interface
+	0518  82357B GPIB Interface Firmware loader
+	0607  34410A Multimeter
+	0718  82357B GPIB Interface
 	0a07  34411A Multimeter
 	1507  33210A Waveform Generator
 	1745  Test and Measurement Device (IVI)
+	1907  53230A Frequency Counter
 	1f01  N5181A MXG Analog Signal Generator
 	2918  U2702A oscilloscope
 	fb18  LC Device
@@ -12550,6 +12585,7 @@
 	6330  SANWA Supply Inc. Slim Keyboard
 	713a  WK-713 Multimedia Keyboard
 	7160  Hyper Slim Keyboard
+	7202  Enermax Aurora Micro Wireless Receiver
 099e  Trimble Navigation, Ltd
 09a3  PairGain Technologies
 09a4  Contech Research, Inc.
