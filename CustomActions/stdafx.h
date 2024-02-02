@@ -21,3 +21,5 @@
 #pragma comment(lib, "msi.lib")
 #include <Newdev.h>
 #pragma comment(lib, "newdev.lib")
+#include <Setupapi.h>
+#pragma comment(lib, "setupapi.lib")

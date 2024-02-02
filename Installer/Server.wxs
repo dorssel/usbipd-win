@@ -53,6 +53,17 @@ SPDX-License-Identifier: GPL-3.0-only
                     Stop="both"
                     />
                 <!--
+                We have our own VBoxUSBMon custom action service installer for this one, which may clash with
+                VirtualBox or older installations. Therefore, we always create a fresh service instance;
+                we remove the old one and the custom action will set it up correctly no matter what we had before.
+                -->
+                <ServiceControl
+                    Id="VBoxUSBMon"
+                    Name="VBoxUSBMon"
+                    Remove="both"
+                    Stop="both"
+                    />
+                <!--
                 The registry uses the full product name by convention.
                 -->
                 <RegistryKey Root="HKLM" Key="SOFTWARE\usbipd-win" ForceDeleteOnUninstall="yes">
@@ -89,10 +100,9 @@ SPDX-License-Identifier: GPL-3.0-only
         <SetProperty Id="UninstallDrivers" Value="[APPLICATIONFOLDER]" Sequence="execute" Before="UninstallDrivers" Condition="(?usbipd.exe=3) AND ($usbipd.exe=2)" />
         <CustomAction Id="UninstallDrivers" BinaryRef="CustomActions" DllEntry="UninstallDrivers" Impersonate="no" Execute="deferred" />
 
-        <!-- This will install the drivers and report any required reboot. -->
+        <!-- This will install the drivers. -->
         <SetProperty Id="InstallDrivers" Value="[APPLICATIONFOLDER]" Sequence="execute" Before="InstallDrivers" Condition="$usbipd.exe=3" />
         <CustomAction Id="InstallDrivers" BinaryRef="CustomActions" DllEntry="InstallDrivers" Impersonate="no" Execute="deferred" />
-        <CustomAction Id="WixCheckRebootRequired" BinaryRef="Wix4UtilCA_X64" DllEntry="WixCheckRebootRequired" Return="ignore" Execute="immediate" />
 
         <!--
         This will *try to* start the service. However, unlike ServiceControl, it will not fail if it can't.
@@ -111,8 +121,6 @@ SPDX-License-Identifier: GPL-3.0-only
             <Custom Action="InstallDrivers" Before="InstallServices" Condition="$usbipd.exe=3" />
             <!-- Condition: usbipd.exe will be (or remains) installed -->
             <Custom Action="TryStartService" After="StartServices" Condition="$usbipd.exe=3" />
-            <!-- Condition: usbipd.exe will be (or remains) installed (i.e., don't bother the user with reboots for uninstall) -->
-            <Custom Action="WixCheckRebootRequired" After="InstallFinalize" Condition="$usbipd.exe=3" />
         </InstallExecuteSequence>
     </Fragment>
     <Fragment>
