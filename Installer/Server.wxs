@@ -93,8 +93,8 @@ SPDX-License-Identifier: GPL-3.0-only
         <Binary Id="CustomActions" SourceFile="../CustomActions/bin/x64/Release/CustomActions.dll" />
 
         <!-- This will restore the original Windows drivers for devices that were forced bound. -->
-        <SetProperty Id="RestoreDrivers" Value="&quot;[#usbipd.exe]&quot; unbind --all" Sequence="execute" Before="RestoreDrivers" Condition="(?usbipd.exe=3) AND ($usbipd.exe=2)" />
-        <CustomAction Id="RestoreDrivers" BinaryRef="Wix4UtilCA_X64" DllEntry="WixQuietExec" Return="ignore" Impersonate="no" Execute="deferred" />
+        <SetProperty Id="UnbindAll" Value="&quot;[#usbipd.exe]&quot; unbind --all" Sequence="execute" Before="UnbindAll" Condition="(?usbipd.exe=3) AND ($usbipd.exe=2)" />
+        <CustomAction Id="UnbindAll" BinaryRef="Wix4UtilCA_X64" DllEntry="WixQuietExec" Return="ignore" Impersonate="no" Execute="deferred" />
 
         <!-- This will uninstall the drivers. -->
         <SetProperty Id="UninstallDrivers" Value="[APPLICATIONFOLDER]" Sequence="execute" Before="UninstallDrivers" Condition="(?usbipd.exe=3) AND ($usbipd.exe=2)" />
@@ -114,9 +114,10 @@ SPDX-License-Identifier: GPL-3.0-only
 
         <InstallExecuteSequence>
             <!-- Condition: usbipd.exe is installed and will be uninstalled -->
-            <Custom Action="RestoreDrivers" After="StopServices" Condition="(?usbipd.exe=3) AND ($usbipd.exe=2)" />
+            <!-- NOTE: first make sure that no devices are using VBoxUSB, or else VBoxUSBMon does not stop -->
+            <Custom Action="UnbindAll" Before="StopServices" Condition="(?usbipd.exe=3) AND ($usbipd.exe=2)" />
             <!-- Condition: usbipd.exe is installed and will be uninstalled -->
-            <Custom Action="UninstallDrivers" After="RestoreDrivers" Condition="(?usbipd.exe=3) AND ($usbipd.exe=2)" />
+            <Custom Action="UninstallDrivers" After="StopServices" Condition="(?usbipd.exe=3) AND ($usbipd.exe=2)" />
             <!-- Condition: usbipd.exe will be (or remains) installed -->
             <Custom Action="InstallDrivers" Before="InstallServices" Condition="$usbipd.exe=3" />
             <!-- Condition: usbipd.exe will be (or remains) installed -->
