@@ -7,19 +7,10 @@ SPDX-License-Identifier: GPL-3.0-only
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
     <Fragment>
         <DirectoryRef Id="APPLICATIONFOLDER">
-            <Directory Id="Drivers" Name="Drivers" />
-        </DirectoryRef>
-    </Fragment>
-    <Fragment>
-        <DirectoryRef Id="Drivers" FileSource="$(var.DriversDir)">
-            <Component Id="Drivers_README.md">
-                <File Id="Drivers_README.md" Name="README.md" />
-            </Component>
-        </DirectoryRef>
-    </Fragment>
-    <Fragment>
-        <DirectoryRef Id="Drivers" FileSource="$(var.DriversDir)">
-            <Directory Id="VBoxUSB" Name="VBoxUSB">
+            <Directory Id="Drivers" Name="Drivers" FileSource="$(var.DriversDir)">
+                <Component Id="Drivers_README.md">
+                    <File Id="Drivers_README.md" Name="README.md" />
+                </Component>
                 <Component Id="VBoxUSB.cat">
                     <File Id="VBoxUSB.cat" Name="VBoxUSB.cat" />
                 </Component>
@@ -29,44 +20,17 @@ SPDX-License-Identifier: GPL-3.0-only
                 <Component Id="VBoxUSB.inf">
                     <File Id="VBoxUSB.inf" Name="VBoxUSB.inf" />
                 </Component>
-            </Directory>
-        </DirectoryRef>
-    </Fragment>
-    <Fragment>
-        <DirectoryRef Id="Drivers" FileSource="$(var.DriversDir)">
-            <Directory Id="VBoxUSBMon" Name="VBoxUSBMon">
-                <Component Id="VBoxUSBMon.cat">
-                    <File Id="VBoxUSBMon.cat" Name="VBoxUSBMon.cat" />
-                </Component>
                 <Component Id="VBoxUSBMon.sys" Bitness="always64">
                     <File Id="VBoxUSBMon.sys" Name="VBoxUSBMon.sys" />
                 </Component>
-                <Component Id="VBoxUSBMon.inf">
-                    <File Id="VBoxUSBMon.inf" Name="VBoxUSBMon.inf" />
-                </Component>
             </Directory>
         </DirectoryRef>
-    </Fragment>
-    <Fragment>
-        <ComponentGroup Id="VBoxUSB">
+        <ComponentGroup Id="Drivers">
             <ComponentRef Id="Drivers_README.md" />
             <ComponentRef Id="VBoxUSB.cat" />
             <ComponentRef Id="VBoxUSB.sys" />
             <ComponentRef Id="VBoxUSB.inf" />
-        </ComponentGroup>
-    </Fragment>
-    <Fragment>
-        <ComponentGroup Id="VBoxUSBMon">
-            <ComponentRef Id="Drivers_README.md" />
-            <ComponentRef Id="VBoxUSBMon.cat" />
             <ComponentRef Id="VBoxUSBMon.sys" />
-            <ComponentRef Id="VBoxUSBMon.inf" />
-        </ComponentGroup>
-    </Fragment>
-    <Fragment>
-        <ComponentGroup Id="Drivers">
-            <ComponentGroupRef Id="VBoxUSB" />
-            <ComponentGroupRef Id="VBoxUSBMon" />
         </ComponentGroup>
     </Fragment>
 </Wix>

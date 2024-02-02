@@ -28,13 +28,6 @@ static void log(MSIHANDLE hInstall, wstring fmt, ...) {
 }
 
 
-static void require_reboot(MSIHANDLE hInstall) {
-    log(hInstall, L"Requesting reboot");
-    // This is what WixCheckRebootRequired looks for after InstallFinalize.
-    GlobalAddAtom(L"WcaDeferredActionRequiresReboot");
-}
-
-
 static wstring get_property(MSIHANDLE hInstall, const wstring& name) {
     DWORD valueSize = 0;
     if (MsiGetProperty(hInstall, name.c_str(), (LPWSTR)L"", &valueSize) != ERROR_MORE_DATA) {
@@ -52,27 +45,30 @@ static wstring get_property(MSIHANDLE hInstall, const wstring& name) {
 // This action must run deferred, between InstallFiles and InstallFinalize.
 UINT __stdcall InstallDrivers(MSIHANDLE hInstall) {
     auto data = get_property(hInstall, L"CustomActionData");
-    BOOL request_reboot = FALSE;
     {
-        BOOL need_reboot = FALSE;
-        log(hInstall, L"Installing VBoxUSBMon");
-        if (!DiInstallDriver(NULL, (data + L"Drivers\\VBoxUSBMon\\VBoxUSBMon.inf").c_str(), DIIRFLAG_FORCE_INF, &need_reboot)) {
-            log(hInstall, L"ERROR installing VBoxUSBMon: 0x%08x", GetLastError());
-            return ERROR_INSTALL_FAILURE;
-        }
-        request_reboot |= need_reboot;
-    }
-    {
-        BOOL need_reboot = FALSE;
+        // See: https://learn.microsoft.com/en-us/windows-hardware/drivers/install/preinstalling-driver-packages
         log(hInstall, L"Installing VBoxUSB");
-        if (!DiInstallDriver(NULL, (data + L"Drivers\\VBoxUSB\\VBoxUSB.inf").c_str(), DIIRFLAG_FORCE_INF, &need_reboot)) {
+        if (!SetupCopyOEMInf((data + L"Drivers\\VBoxUSB.inf").c_str(), NULL, SPOST_PATH, 0, NULL, 0, NULL, NULL)) {
             log(hInstall, L"ERROR installing VBoxUSB: 0x%08x", GetLastError());
             return ERROR_INSTALL_FAILURE;
         }
-        request_reboot |= need_reboot;
     }
-    if (request_reboot) {
-        require_reboot(hInstall);
+    {
+        log(hInstall, L"Installing VBoxUSBMon");
+        SC_HANDLE manager = OpenSCManager(NULL, SERVICES_ACTIVE_DATABASE, SC_MANAGER_ALL_ACCESS);
+        if (!manager) {
+            log(hInstall, L"ERROR OpenSCManager: 0x%08x", GetLastError());
+            return ERROR_INSTALL_FAILURE;
+        }
+        SC_HANDLE service = CreateService(manager, L"VBoxUSBMon", L"VirtualBox USB Monitor Service", GENERIC_ALL, SERVICE_KERNEL_DRIVER,
+            SERVICE_DEMAND_START, SERVICE_ERROR_NORMAL, (data + L"Drivers\\VBoxUSBMon.sys").c_str(), NULL, NULL, NULL, NULL, NULL);
+        if (!service) {
+            log(hInstall, L"ERROR CreateService: 0x%08x", GetLastError());
+            CloseServiceHandle(manager);
+            return ERROR_INSTALL_FAILURE;
+        }
+        CloseServiceHandle(service);
+        CloseServiceHandle(manager);
     }
     return ERROR_SUCCESS;
 }
@@ -84,17 +80,8 @@ UINT __stdcall UninstallDrivers(MSIHANDLE hInstall) {
     {
         BOOL need_reboot = FALSE;
         log(hInstall, L"Uninstalling VBoxUSB");
-        if (!DiUninstallDriver(NULL, (data + L"Drivers\\VBoxUSB\\VBoxUSB.inf").c_str(), 0, &need_reboot)) {
+        if (!DiUninstallDriver(NULL, (data + L"Drivers\\VBoxUSB.inf").c_str(), 0, &need_reboot)) {
             log(hInstall, L"ERROR uninstalling VBoxUSB: 0x%08x", GetLastError());
-            // continue
-        }
-        // ignore need_reboot
-    }
-    {
-        BOOL need_reboot = FALSE;
-        log(hInstall, L"Uninstalling VBoxUSBMon");
-        if (!DiUninstallDriver(NULL, (data + L"Drivers\\VBoxUSBMon\\VBoxUSBMon.inf").c_str(), 0, &need_reboot)) {
-            log(hInstall, L"ERROR uninstalling VBoxUSBMon: 0x%08x", GetLastError());
             // continue
         }
         // ignore need_reboot
