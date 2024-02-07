@@ -296,7 +296,7 @@ static partial class Wsl
                     mkdir -m 0000 "{{WslMountPoint}}";
                 fi;
                 if ! test -f "{{WslMountPoint}}/README.md"; then
-                    mount -t drvfs -o "uid=0;gid=0;umask=222" "{{wslWindowsPath}}" "{{WslMountPoint}}";
+                    mount -t drvfs -o "ro,umask=222" "{{wslWindowsPath}}" "{{WslMountPoint}}";
                 fi;
                 """.ReplaceLineEndings(" "));
             if (wslResult.ExitCode != 0)
