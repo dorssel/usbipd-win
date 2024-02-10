@@ -58,8 +58,6 @@ static partial class Wsl
             startInfo.ArgumentList.Add("root");
             startInfo.ArgumentList.Add("--cd");
             startInfo.ArgumentList.Add(linux.Value.directory);
-            startInfo.ArgumentList.Add("--shell-type");
-            startInfo.ArgumentList.Add("none");
             startInfo.ArgumentList.Add("--exec");
         }
         foreach (var argument in arguments)
