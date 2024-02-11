@@ -10,12 +10,12 @@ abstract class ParseTestBase
 {
     internal static Mock<ICommandHandlers> CreateMock() => new(MockBehavior.Strict);
 
-    internal static void Test(Program.ExitCode expect, params string[] args)
+    internal static void Test(ExitCode expect, params string[] args)
     {
         Test(expect, CreateMock(), args);
     }
 
-    internal static void Test(Program.ExitCode expect, Mock<ICommandHandlers> mock, params string[] args)
+    internal static void Test(ExitCode expect, Mock<ICommandHandlers> mock, params string[] args)
     {
         Assert.AreEqual(MockBehavior.Strict, mock.Behavior);
         var exitCode = Program.Run(new TestConsole(), mock.Object, args);

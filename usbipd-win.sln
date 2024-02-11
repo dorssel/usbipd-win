@@ -25,7 +25,6 @@ Project("{B7DD6F7E-DEF8-4E67-B5B7-07EF123DB6F0}") = "Installer", "Installer\Inst
 	ProjectSection(ProjectDependencies) = postProject
 		{3C3ED2C8-54D0-48D4-8BF4-78220D4A9E20} = {3C3ED2C8-54D0-48D4-8BF4-78220D4A9E20}
 		{5CE75792-6F4F-4B16-83E6-29052C6E0D8D} = {5CE75792-6F4F-4B16-83E6-29052C6E0D8D}
-		{CBC206BD-0E45-4514-B148-9035C7459268} = {CBC206BD-0E45-4514-B148-9035C7459268}
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UnitTests", "UnitTests\UnitTests.csproj", "{03DA15B4-7F40-4EF3-814B-9050C7A671B5}"
@@ -35,8 +34,6 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Usbipd.Automation", "Usbipd.Automation\Usbipd.Automation.csproj", "{934A2FBC-4EEB-4CE7-88A4-E3336E89DAEB}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UsbIds", "UsbIds\UsbIds.csproj", "{FC600539-9D82-4822-B2A0-7157D166A444}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CustomActions", "CustomActions\CustomActions.vcxproj", "{CBC206BD-0E45-4514-B148-9035C7459268}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -66,9 +63,6 @@ Global
 		{FC600539-9D82-4822-B2A0-7157D166A444}.Debug|x64.Build.0 = Debug|Any CPU
 		{FC600539-9D82-4822-B2A0-7157D166A444}.Release|x64.ActiveCfg = Release|Any CPU
 		{FC600539-9D82-4822-B2A0-7157D166A444}.Release|x64.Build.0 = Release|Any CPU
-		{CBC206BD-0E45-4514-B148-9035C7459268}.Debug|x64.ActiveCfg = Release|x64
-		{CBC206BD-0E45-4514-B148-9035C7459268}.Debug|x64.Build.0 = Release|x64
-		{CBC206BD-0E45-4514-B148-9035C7459268}.Release|x64.ActiveCfg = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

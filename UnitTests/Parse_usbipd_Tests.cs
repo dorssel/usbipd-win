@@ -4,8 +4,6 @@
 
 namespace UnitTests;
 
-using ExitCode = Program.ExitCode;
-
 [TestClass]
 sealed class Parse_usbipd_Tests
     : ParseTestBase

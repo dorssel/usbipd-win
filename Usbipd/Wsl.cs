@@ -13,7 +13,6 @@ using System.Net.Sockets;
 using System.Text;
 using System.Text.RegularExpressions;
 using Usbipd.Automation;
-using static Usbipd.Program;
 
 namespace Usbipd;
 

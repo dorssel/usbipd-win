@@ -4,7 +4,10 @@ SPDX-FileCopyrightText: 2020 Frans van Dorsselaer
 
 SPDX-License-Identifier: GPL-3.0-only
 -->
-<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+<Wix
+    xmlns="http://wixtoolset.org/schemas/v4/wxs"
+    xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util"
+    >
     <Fragment>
         <DirectoryRef Id="APPLICATIONFOLDER">
             <Directory Id="Drivers" Name="Drivers" FileSource="$(var.DriversDir)">
@@ -22,6 +25,14 @@ SPDX-License-Identifier: GPL-3.0-only
                 </Component>
                 <Component Id="VBoxUSBMon.sys" Bitness="always64">
                     <File Id="VBoxUSBMon.sys" Name="VBoxUSBMon.sys" />
+                    <util:EventSource
+                        Name="VBoxUSBMon"
+                        Log="System"
+                        EventMessageFile="%SystemRoot%\System32\IoLogMsg.dll"
+                        SupportsInformationals="true"
+                        SupportsWarnings="true"
+                        SupportsErrors="true"
+                        />
                 </Component>
             </Directory>
         </DirectoryRef>

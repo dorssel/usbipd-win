@@ -24,15 +24,20 @@ CM_SETUP_DEVNODE_READY
 MAX_PATH
 
 AdjustTokenPrivileges
+CloseServiceHandle
 CreateFile
+CreateService
 DeviceIoControl
 DiInstallDevice
+DiUninstallDriver
 GetCurrentProcess
 LookupPrivilegeValue
 OpenProcessToken
+OpenSCManager
 RegDeleteKey
 RegNotifyChangeKeyValue
 SetEvent
+SetupCopyOEMInf
 SetupDiBuildDriverInfoList
 SetupDiCreateDeviceInfoList
 SetupDiEnumDriverInfo
@@ -97,8 +102,12 @@ FILE_DEVICE_UNKNOWN
 METHOD_BUFFERED
 
 FILE_ACCESS_RIGHTS
+GENERIC_ACCESS_RIGHTS
 
 FILE_WRITE_ACCESS
+SC_MANAGER_ALL_ACCESS
+
+SERVICES_ACTIVE_DATABASE
 
 TOKEN_ELEVATION_TYPE
 

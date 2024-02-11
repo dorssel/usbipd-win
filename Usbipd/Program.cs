@@ -22,15 +22,6 @@ static class Program
     public static readonly string Copyright = Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyCopyrightAttribute>()!.Copyright;
     public static readonly string ApplicationName = Path.GetFileName(Process.GetCurrentProcess().ProcessName);
 
-    public enum ExitCode
-    {
-        Success = 0,
-        Failure = 1,
-        ParseError = 2,
-        AccessDenied = 3,
-        Canceled = 4,
-    };
-
     static BusId ParseCompatibleBusId(ArgumentResult argumentResult)
     {
         if (!BusId.TryParse(argumentResult.Tokens[0].Value, out var busId) || busId.IsIncompatibleHub)
@@ -568,6 +559,36 @@ static class Program
                 invocationContext.ExitCode = (int)ExitCode.ParseError;
             });
             rootCommand.AddCommand(wslCommand);
+        }
+        {
+            //
+            //  install
+            //
+            var installCommand = new Command("install")
+            {
+                IsHidden = true,
+            };
+            installCommand.SetHandler(async invocationContext =>
+            {
+                invocationContext.ExitCode = (int)
+                    await commandHandlers.Install(invocationContext.Console, invocationContext.GetCancellationToken());
+            });
+            rootCommand.AddCommand(installCommand);
+        }
+        {
+            //
+            //  uninstall
+            //
+            var uninstallCommand = new Command("uninstall")
+            {
+                IsHidden = true,
+            };
+            uninstallCommand.SetHandler(async invocationContext =>
+            {
+                invocationContext.ExitCode = (int)
+                    await commandHandlers.Uninstall(invocationContext.Console, invocationContext.GetCancellationToken());
+            });
+            rootCommand.AddCommand(uninstallCommand);
         }
 
         // Same as UseDefaults() minus exception handling.
