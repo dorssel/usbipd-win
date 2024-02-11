@@ -90,19 +90,17 @@ SPDX-License-Identifier: GPL-3.0-only
             </Component>
         </DirectoryRef>
 
-        <Binary Id="CustomActions" SourceFile="../CustomActions/bin/x64/Release/CustomActions.dll" />
-
         <!-- This will restore the original Windows drivers for devices that were forced bound. -->
         <SetProperty Id="UnbindAll" Value="&quot;[#usbipd.exe]&quot; unbind --all" Sequence="execute" Before="UnbindAll" Condition="(?usbipd.exe=3) AND ($usbipd.exe=2)" />
         <CustomAction Id="UnbindAll" BinaryRef="Wix4UtilCA_X64" DllEntry="WixQuietExec" Return="ignore" Impersonate="no" Execute="deferred" />
 
         <!-- This will uninstall the drivers. -->
-        <SetProperty Id="UninstallDrivers" Value="[APPLICATIONFOLDER]" Sequence="execute" Before="UninstallDrivers" Condition="(?usbipd.exe=3) AND ($usbipd.exe=2)" />
-        <CustomAction Id="UninstallDrivers" BinaryRef="CustomActions" DllEntry="UninstallDrivers" Impersonate="no" Execute="deferred" />
+        <SetProperty Id="UninstallDrivers" Value="&quot;[#usbipd.exe]&quot; uninstall" Sequence="execute" Before="UninstallDrivers" Condition="(?usbipd.exe=3) AND ($usbipd.exe=2)" />
+        <CustomAction Id="UninstallDrivers" BinaryRef="Wix4UtilCA_X64" DllEntry="WixQuietExec" Return="ignore" Impersonate="no" Execute="deferred" />
 
         <!-- This will install the drivers. -->
-        <SetProperty Id="InstallDrivers" Value="[APPLICATIONFOLDER]" Sequence="execute" Before="InstallDrivers" Condition="$usbipd.exe=3" />
-        <CustomAction Id="InstallDrivers" BinaryRef="CustomActions" DllEntry="InstallDrivers" Impersonate="no" Execute="deferred" />
+        <SetProperty Id="InstallDrivers" Value="&quot;[#usbipd.exe]&quot; install" Sequence="execute" Before="InstallDrivers" Condition="$usbipd.exe=3" />
+        <CustomAction Id="InstallDrivers" BinaryRef="Wix4UtilCA_X64" DllEntry="WixQuietExec" Return="check" Impersonate="no" Execute="deferred" />
 
         <!--
         This will *try to* start the service. However, unlike ServiceControl, it will not fail if it can't.

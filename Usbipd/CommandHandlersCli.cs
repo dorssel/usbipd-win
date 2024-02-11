@@ -8,33 +8,12 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Text.Encodings.Web;
 using System.Text.Json;
-using Microsoft.Extensions.Hosting.WindowsServices;
 using Usbipd.Automation;
 using static Usbipd.ConsoleTools;
-using ExitCode = Usbipd.Program.ExitCode;
 
 namespace Usbipd;
 
-interface ICommandHandlers
-{
-    public Task<ExitCode> AttachWsl(BusId busId, bool autoAttach, string? distribution, IConsole console, CancellationToken cancellationToken);
-    public Task<ExitCode> AttachWsl(VidPid vidPid, bool autoAttach, string? distribution, IConsole console, CancellationToken cancellationToken);
-    public Task<ExitCode> Bind(BusId busId, bool force, IConsole console, CancellationToken cancellationToken);
-    public Task<ExitCode> Bind(VidPid vidPid, bool force, IConsole console, CancellationToken cancellationToken);
-    public Task<ExitCode> Detach(BusId busId, IConsole console, CancellationToken cancellationToken);
-    public Task<ExitCode> Detach(VidPid vidPid, IConsole console, CancellationToken cancellationToken);
-    public Task<ExitCode> DetachAll(IConsole console, CancellationToken cancellationToken);
-    public Task<ExitCode> License(IConsole console, CancellationToken cancellationToken);
-    public Task<ExitCode> List(bool usbids, IConsole console, CancellationToken cancellationToken);
-    public Task<ExitCode> Server(string[] args, IConsole console, CancellationToken cancellationToken);
-    public Task<ExitCode> Unbind(BusId busId, IConsole console, CancellationToken cancellationToken);
-    public Task<ExitCode> Unbind(Guid guid, IConsole console, CancellationToken cancellationToken);
-    public Task<ExitCode> Unbind(VidPid vidPid, IConsole console, CancellationToken cancellationToken);
-    public Task<ExitCode> UnbindAll(IConsole console, CancellationToken cancellationToken);
-    public Task<ExitCode> State(IConsole console, CancellationToken cancellationToken);
-}
-
-sealed class CommandHandlers : ICommandHandlers
+sealed partial class CommandHandlers : ICommandHandlers
 {
     static List<UsbDevice> GetDevicesByHardwareId(VidPid vidPid, bool connectedOnly, IConsole console)
     {
@@ -243,72 +222,6 @@ sealed class CommandHandlers : ICommandHandlers
             return Task.FromResult(ExitCode.Failure);
         }
         return Task.FromResult(Bind(busId, force, console));
-    }
-
-    async Task<ExitCode> ICommandHandlers.Server(string[] args, IConsole console, CancellationToken cancellationToken)
-    {
-        // Pre-conditions that may fail due to user mistakes. Fail gracefully...
-
-        if (!CheckWriteAccess(console))
-        {
-            return ExitCode.AccessDenied;
-        }
-
-        using var mutex = new Mutex(true, Server.SingletonMutexName, out var createdNew);
-        if (!createdNew)
-        {
-            console.ReportError("Another instance is already running.");
-            return ExitCode.Failure;
-        }
-
-        // From here on, the server should run without error. Any further errors (exceptions) are probably bugs...
-
-        using var host = Host.CreateDefaultBuilder()
-            .UseWindowsService()
-            .ConfigureAppConfiguration((context, builder) =>
-            {
-                var defaultConfig = new Dictionary<string, string?>();
-                if (WindowsServiceHelpers.IsWindowsService())
-                {
-                    // EventLog defaults to Warning, which is OK for .NET components,
-                    //      but we want to specifically log Information from our own component.
-                    defaultConfig.Add($"Logging:EventLog:LogLevel:{nameof(Usbipd)}", "Information");
-                }
-                else
-                {
-                    // When not running as a Windows service, do not spam the EventLog.
-                    defaultConfig.Add("Logging:EventLog:LogLevel:Default", "None");
-                }
-                // set the above as defaults
-                builder.AddInMemoryCollection(defaultConfig);
-                // allow overrides from the environment
-                builder.AddEnvironmentVariables();
-                // allow overrides from the command line
-                builder.AddCommandLine(args);
-            })
-            .ConfigureLogging((context, logging) =>
-            {
-                if (!EventLog.SourceExists(Program.Product))
-                {
-                    EventLog.CreateEventSource(Program.Product, "Application");
-                }
-                logging.AddEventLog(settings =>
-                {
-                    settings.SourceName = Program.Product;
-                });
-            })
-            .ConfigureServices((hostContext, services) =>
-            {
-                services.AddHostedService<Server>();
-                services.AddSingleton<PcapNg>();
-                services.AddScoped<ClientContext>();
-                services.AddScoped<ConnectedClient>();
-                services.AddScoped<AttachedClient>();
-            })
-            .Build();
-
-        await host.RunAsync(cancellationToken);
-        return ExitCode.Success;
     }
 
     Task<ExitCode> ICommandHandlers.Unbind(BusId busId, IConsole console, CancellationToken cancellationToken)

@@ -7,8 +7,6 @@ using Usbipd.Automation;
 
 namespace UnitTests;
 
-using ExitCode = Program.ExitCode;
-
 [TestClass]
 sealed class Parse_bind_Tests
     : ParseTestBase

@@ -6,8 +6,6 @@ using System.CommandLine;
 
 namespace UnitTests;
 
-using ExitCode = Program.ExitCode;
-
 [TestClass]
 sealed class Program_Tests
     : ParseTestBase
