@@ -34,6 +34,12 @@ SPDX-License-Identifier: GPL-3.0-only
             Schedule="afterInstallExecute"
             DowngradeErrorMessage="A newer version of [ProductName] is already installed."
             />
+        <!--
+        TODO: If https://github.com/wixtoolset/issues/issues/8046 ever gets implemented, the <MajorUpgrade> can be replaced by:
+        <InstallExecuteSequence>
+            <RemoveExistingProducts Before="InstallFinalize" />
+        </InstallExecuteSequence>
+        -->
 
         <Property Id="ARPURLINFOABOUT" Value="https://github.com/dorssel/usbipd-win" />
         <Property Id="ARPURLUPDATEINFO" Value="https://github.com/dorssel/usbipd-win/releases" />
