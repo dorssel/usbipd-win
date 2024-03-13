@@ -6,24 +6,9 @@ SPDX-License-Identifier: GPL-3.0-only
 -->
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
     <Fragment>
-        <DirectoryRef Id="APPLICATIONFOLDER">
-            <Directory Id="PowerShell" Name="PowerShell" />
-        </DirectoryRef>
-    </Fragment>
-    <Fragment>
-        <DirectoryRef Id="PowerShell" FileSource="$(PowerShellDir)">
-            <Component Id="Usbipd.Automation.dll">
+        <ComponentGroup Id="PowerShell" Directory="APPLICATIONFOLDER" Subdirectory="PowerShell" Source="$(PowerShellDir)">
                 <File Id="Usbipd.Automation.dll" Name="Usbipd.Automation.dll" />
-            </Component>
-            <Component Id="Usbipd.PowerShell.dll">
                 <File Id="Usbipd.PowerShell.dll" Name="Usbipd.PowerShell.dll" />
-            </Component>
-        </DirectoryRef>
-    </Fragment>
-    <Fragment>
-        <ComponentGroup Id="PowerShell">
-            <ComponentRef Id="Usbipd.Automation.dll" />
-            <ComponentRef Id="Usbipd.PowerShell.dll" />
         </ComponentGroup>
     </Fragment>
 </Wix>
