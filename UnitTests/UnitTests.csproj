@@ -19,7 +19,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <PackageReference Include="MSTest.TestAdapter" />
     <PackageReference Include="MSTest.TestFramework" />
     <PackageReference Include="System.IO.Pipelines" />
-    <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="coverlet.collector" PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup>
