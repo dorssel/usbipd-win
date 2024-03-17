@@ -12,6 +12,7 @@ using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Text;
 using System.Text.RegularExpressions;
+using Microsoft.Win32;
 using Usbipd.Automation;
 
 namespace Usbipd;
@@ -31,6 +32,33 @@ static partial class Wsl
     public sealed record Distribution(string Name, bool IsDefault, uint Version, bool IsRunning);
 
     static readonly char[] CtrlC = ['\x03'];
+
+    static string? GetPossibleBlockReason()
+    {
+        using var policy = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Policies\Microsoft\WindowsFirewall\PublicProfile");
+        if (policy is not null)
+        {
+            if (policy.GetValue("DoNotAllowExceptions") is int doNotAllowExceptions && doNotAllowExceptions != 0)
+            {
+                return "A group policy blocks all incoming connections for the public network profile, which includes WSL.";
+            }
+            if (policy.GetValue("AllowLocalPolicyMerge") is int allowLocalPolicyMerge && allowLocalPolicyMerge == 0)
+            {
+                return "A group policy blocks the 'usbipd' firewall rule for the public network profile, which includes WSL.";
+            }
+        }
+
+        using var settings = Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\Services\SharedAccess\Parameters\FirewallPolicy\PublicProfile");
+        if (settings is not null)
+        {
+            if (settings.GetValue("DoNotAllowExceptions") is int doNotAllowExceptions && doNotAllowExceptions != 0)
+            {
+                return "Windows Firewall is configured to block all incoming connections for the public network profile, which includes WSL.";
+            }
+        }
+
+        return null;
+    }
 
     static async Task<(int ExitCode, string StandardOutput, string StandardError)>
         RunWslAsync((string distribution, string directory)? linux, Action<string, bool>? outputCallback, CancellationToken cancellationToken, params string[] arguments)
@@ -443,7 +471,13 @@ static partial class Wsl
             }
             if (!pass)
             {
-                console.ReportWarning($"A third-party firewall may be blocking the connection; ensure TCP port {Interop.UsbIp.USBIP_PORT} is allowed.");
+                if (GetPossibleBlockReason() is string blockReason)
+                {
+                    // We found a possible reason.
+                    console.ReportWarning(blockReason);
+                }
+                // In any case, it isn't working...
+                console.ReportWarning($"A firewall may be blocking the connection; ensure TCP port {Interop.UsbIp.USBIP_PORT} is allowed.");
             }
         }
 
