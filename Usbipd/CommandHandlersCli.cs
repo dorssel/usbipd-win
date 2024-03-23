@@ -305,7 +305,7 @@ sealed partial class CommandHandlers : ICommandHandlers
             console.ReportError($"There is no device with guid '{guid:D}'.");
             return Task.FromResult(ExitCode.Failure);
         }
-        return Task.FromResult(Unbind(new[] { device }, console));
+        return Task.FromResult(Unbind([device], console));
     }
 
     Task<ExitCode> ICommandHandlers.Unbind(VidPid vidPid, IConsole console, CancellationToken cancellationToken)
@@ -416,7 +416,7 @@ sealed partial class CommandHandlers : ICommandHandlers
             console.ReportError($"There is no device with busid '{busId}'.");
             return Task.FromResult(ExitCode.Failure);
         }
-        return Task.FromResult(Detach(new[] { device }, console));
+        return Task.FromResult(Detach([device], console));
     }
 
     Task<ExitCode> ICommandHandlers.Detach(VidPid vidPid, IConsole console, CancellationToken cancellationToken)

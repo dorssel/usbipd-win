@@ -48,7 +48,7 @@ jobs:
         run: dotnet test --configuration Release --no-build --verbosity normal --collect:"XPlat Code Coverage" --logger trx
 
       - name: Publish Test Results
-        uses: EnricoMi/publish-unit-test-result-action/composite@v2
+        uses: EnricoMi/publish-unit-test-result-action/windows@v2
         if: always()
         with:
           files: |
