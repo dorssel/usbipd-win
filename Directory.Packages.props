@@ -17,9 +17,9 @@ SPDX-License-Identifier: GPL-3.0-only
     <!-- Usbipd.PowerShell -->
     <PackageVersion Include="PowerShellStandard.Library" Version="5.1.1" />
     <!-- Installer -->
-    <PackageVersion Include="WixToolset.Firewall.wixext" Version="4.0.4" />
-    <PackageVersion Include="WixToolset.UI.wixext" Version="4.0.4" />
-    <PackageVersion Include="WixToolset.Util.wixext" Version="4.0.4" />
+    <PackageVersion Include="WixToolset.Firewall.wixext" Version="4.0.5" />
+    <PackageVersion Include="WixToolset.UI.wixext" Version="4.0.5" />
+    <PackageVersion Include="WixToolset.Util.wixext" Version="4.0.5" />
     <!-- UnitTests -->
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.9.0" />
     <PackageVersion Include="Moq" Version="4.20.70" />
