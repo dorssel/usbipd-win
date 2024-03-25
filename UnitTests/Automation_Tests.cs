@@ -217,20 +217,20 @@ sealed class Automation_Tests
     }
 
     [TestMethod]
-    public void NullableBusIdJsonConverter_Read_Valid()
+    public void JsonConverterBusId_Read_Valid()
     {
         var reader = new Utf8JsonReader("\"1-42\""u8);
         reader.Read();
 
-        var converter = new NullableBusIdJsonConverter();
+        var converter = new JsonConverterBusId();
         var busId = converter.Read(ref reader, typeof(string), JsonSerializerOptions.Default);
         Assert.AreEqual(new BusId(1, 42), busId);
     }
 
     [TestMethod]
-    public void NullableBusIdJsonConverter_Read_Invalid()
+    public void JsonConverterBusId_Read_Invalid()
     {
-        var converter = new NullableBusIdJsonConverter();
+        var converter = new JsonConverterBusId();
         Assert.ThrowsException<FormatException>(() =>
         {
             var reader = new Utf8JsonReader("\"xxx\""u8);
@@ -241,23 +241,24 @@ sealed class Automation_Tests
     }
 
     [TestMethod]
-    public void NullableBusIdJsonConverter_Read_Null()
+    public void JsonConverterBusId_Read_Null()
     {
-        var reader = new Utf8JsonReader("null"u8);
-        reader.Read();
-
-        var converter = new NullableBusIdJsonConverter();
-        var busId = converter.Read(ref reader, typeof(string), JsonSerializerOptions.Default);
-        Assert.IsNull(busId);
+        var converter = new JsonConverterBusId();
+        Assert.ThrowsException<InvalidDataException>(() =>
+        {
+            var reader = new Utf8JsonReader("null"u8);
+            reader.Read();
+            var busId = converter.Read(ref reader, typeof(string), JsonSerializerOptions.Default);
+        });
     }
 
     [TestMethod]
-    public void NullableBusIdJsonConverter_Write_Valid()
+    public void JsonConverterBusId_Write_Valid()
     {
         using var memoryStream = new MemoryStream();
         using var writer = new Utf8JsonWriter(memoryStream, new() { SkipValidation = true });
         {
-            var converter = new NullableBusIdJsonConverter();
+            var converter = new JsonConverterBusId();
             converter.Write(writer, new(1, 42), JsonSerializerOptions.Default);
         }
         writer.Flush();
@@ -265,22 +266,9 @@ sealed class Automation_Tests
     }
 
     [TestMethod]
-    public void NullableBusIdJsonConverter_Write_Null()
+    public void JsonConverterBusId_Write_NullWriter()
     {
-        using var memoryStream = new MemoryStream();
-        using var writer = new Utf8JsonWriter(memoryStream, new() { SkipValidation = true });
-        {
-            var converter = new NullableBusIdJsonConverter();
-            converter.Write(writer, null, JsonSerializerOptions.Default);
-        }
-        writer.Flush();
-        CollectionAssert.AreEqual("null"u8.ToArray(), memoryStream.ToArray());
-    }
-
-    [TestMethod]
-    public void NullableBusIdJsonConverter_Write_NullWriter()
-    {
-        var converter = new NullableBusIdJsonConverter();
+        var converter = new JsonConverterBusId();
         Assert.ThrowsException<ArgumentNullException>(() =>
         {
             converter.Write(null!, new(1, 42), JsonSerializerOptions.Default);
@@ -288,20 +276,20 @@ sealed class Automation_Tests
     }
 
     [TestMethod]
-    public void NullableIPAddressJsonConverter_Read_Valid()
+    public void JsonConverterIPAddress_Read_Valid()
     {
         var reader = new Utf8JsonReader("\"1.2.3.4\""u8);
         reader.Read();
 
-        var converter = new NullableIPAddressJsonConverter();
+        var converter = new JsonConverterIPAddress();
         var address = converter.Read(ref reader, typeof(string), JsonSerializerOptions.Default);
         Assert.AreEqual(IPAddress.Parse("1.2.3.4"), address);
     }
 
     [TestMethod]
-    public void NullableIPAddressJsonConverter_Read_Invalid()
+    public void JsonConverterIPAddress_Read_Invalid()
     {
-        var converter = new NullableIPAddressJsonConverter();
+        var converter = new JsonConverterIPAddress();
         Assert.ThrowsException<FormatException>(() =>
         {
             var reader = new Utf8JsonReader("\"xxx\""u8);
@@ -312,23 +300,24 @@ sealed class Automation_Tests
     }
 
     [TestMethod]
-    public void NullableIPAddressJsonConverter_Read_Null()
+    public void JsonConverterIPAddress_Read_Null()
     {
-        var reader = new Utf8JsonReader("null"u8);
-        reader.Read();
-
-        var converter = new NullableIPAddressJsonConverter();
-        var address = converter.Read(ref reader, typeof(string), JsonSerializerOptions.Default);
-        Assert.IsNull(address);
+        var converter = new JsonConverterIPAddress();
+        Assert.ThrowsException<InvalidDataException>(() =>
+        {
+            var reader = new Utf8JsonReader("null"u8);
+            reader.Read();
+            var address = converter.Read(ref reader, typeof(string), JsonSerializerOptions.Default);
+        });
     }
 
     [TestMethod]
-    public void NullableIPAddressJsonConverter_Write_Valid()
+    public void JsonConverterIPAddress_Write_Valid()
     {
         using var memoryStream = new MemoryStream();
         using var writer = new Utf8JsonWriter(memoryStream, new() { SkipValidation = true });
         {
-            var converter = new NullableIPAddressJsonConverter();
+            var converter = new JsonConverterIPAddress();
             converter.Write(writer, IPAddress.Parse("1.2.3.4"), JsonSerializerOptions.Default);
         }
         writer.Flush();
@@ -336,22 +325,9 @@ sealed class Automation_Tests
     }
 
     [TestMethod]
-    public void NullableIPAddressJsonConverter_Write_Null()
+    public void JsonConverterIPAddress_Write_NullWriter()
     {
-        using var memoryStream = new MemoryStream();
-        using var writer = new Utf8JsonWriter(memoryStream, new() { SkipValidation = true });
-        {
-            var converter = new NullableIPAddressJsonConverter();
-            converter.Write(writer, null, JsonSerializerOptions.Default);
-        }
-        writer.Flush();
-        CollectionAssert.AreEqual("null"u8.ToArray(), memoryStream.ToArray());
-    }
-
-    [TestMethod]
-    public void NullableIPAddressJsonConverter_Write_NullWriter()
-    {
-        var converter = new NullableIPAddressJsonConverter();
+        var converter = new JsonConverterIPAddress();
         Assert.ThrowsException<ArgumentNullException>(() =>
         {
             converter.Write(null!, IPAddress.Parse("1.2.3.4"), JsonSerializerOptions.Default);

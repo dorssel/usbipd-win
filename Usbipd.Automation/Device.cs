@@ -66,7 +66,6 @@ public sealed partial class Device
 
 #if !NETSTANDARD
     [JsonPropertyOrder(1)]
-    [JsonConverter(typeof(NullableBusIdJsonConverter))]
 #endif
     public BusId? BusId
     {
@@ -94,7 +93,7 @@ public sealed partial class Device
 
 #if !NETSTANDARD
     [JsonPropertyOrder(2)]
-    [JsonConverter(typeof(NullableIPAddressJsonConverter))]
+    [JsonConverter(typeof(JsonConverterIPAddress))]
 #endif
     public IPAddress? ClientIPAddress
     {

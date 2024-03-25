@@ -10,27 +10,22 @@ using System.Text.Json.Serialization;
 
 namespace Usbipd.Automation;
 
-public class NullableIPAddressJsonConverter : JsonConverter<IPAddress?>
+public class JsonConverterIPAddress : JsonConverter<IPAddress>
 {
-    public override IPAddress? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    public override IPAddress Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         if (reader.GetString() is not string text)
         {
-            return null;
+            throw new InvalidDataException();
         }
 
         return IPAddress.Parse(text);
     }
 
-    public override void Write(Utf8JsonWriter writer, IPAddress? value, JsonSerializerOptions options)
+    public override void Write(Utf8JsonWriter writer, IPAddress value, JsonSerializerOptions options)
     {
         _ = writer ?? throw new ArgumentNullException(nameof(writer));
-
-        if (value is null)
-        {
-            writer.WriteNullValue();
-            return;
-        }
+        _ = value ?? throw new ArgumentNullException(nameof(value));
 
         writer.WriteStringValue(value.ToString());
     }
