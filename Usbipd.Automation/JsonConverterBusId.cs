@@ -9,27 +9,21 @@ using System.Text.Json.Serialization;
 
 namespace Usbipd.Automation;
 
-public class NullableBusIdJsonConverter : JsonConverter<BusId?>
+public class JsonConverterBusId : JsonConverter<BusId>
 {
-    public override BusId? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    public override BusId Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         if (reader.GetString() is not string text)
         {
-            return null;
+            throw new InvalidDataException();
         }
 
         return BusId.Parse(text);
     }
 
-    public override void Write(Utf8JsonWriter writer, BusId? value, JsonSerializerOptions options)
+    public override void Write(Utf8JsonWriter writer, BusId value, JsonSerializerOptions options)
     {
         _ = writer ?? throw new ArgumentNullException(nameof(writer));
-
-        if (value is null)
-        {
-            writer.WriteNullValue();
-            return;
-        }
 
         writer.WriteStringValue(value.ToString());
     }
