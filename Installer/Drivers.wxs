@@ -9,39 +9,22 @@ SPDX-License-Identifier: GPL-3.0-only
     xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util"
     >
     <Fragment>
-        <DirectoryRef Id="APPLICATIONFOLDER">
-            <Directory Id="Drivers" Name="Drivers" FileSource="$(var.DriversDir)">
-                <Component Id="Drivers_README.md">
-                    <File Id="Drivers_README.md" Name="README.md" />
-                </Component>
-                <Component Id="VBoxUSB.cat">
-                    <File Id="VBoxUSB.cat" Name="VBoxUSB.cat" />
-                </Component>
-                <Component Id="VBoxUSB.sys" Bitness="always64">
-                    <File Id="VBoxUSB.sys" Name="VBoxUSB.sys" />
-                </Component>
-                <Component Id="VBoxUSB.inf">
-                    <File Id="VBoxUSB.inf" Name="VBoxUSB.inf" />
-                </Component>
-                <Component Id="VBoxUSBMon.sys" Bitness="always64">
-                    <File Id="VBoxUSBMon.sys" Name="VBoxUSBMon.sys" />
-                    <util:EventSource
-                        Name="VBoxUSBMon"
-                        Log="System"
-                        EventMessageFile="%SystemRoot%\System32\IoLogMsg.dll"
-                        SupportsInformationals="true"
-                        SupportsWarnings="true"
-                        SupportsErrors="true"
-                        />
-                </Component>
-            </Directory>
-        </DirectoryRef>
-        <ComponentGroup Id="Drivers">
-            <ComponentRef Id="Drivers_README.md" />
-            <ComponentRef Id="VBoxUSB.cat" />
-            <ComponentRef Id="VBoxUSB.sys" />
-            <ComponentRef Id="VBoxUSB.inf" />
-            <ComponentRef Id="VBoxUSBMon.sys" />
+        <ComponentGroup Id="Drivers" Directory="APPLICATIONFOLDER" Subdirectory="Drivers" Source="$(var.DriversDir)">
+            <File Id="Drivers_README.md" Name="README.md" />
+            <File Id="VBoxUSB.cat" Name="VBoxUSB.cat" />
+            <File Id="VBoxUSB.sys" Name="VBoxUSB.sys" />
+            <File Id="VBoxUSB.inf" Name="VBoxUSB.inf" />
+            <Component Id="VBoxUSBMon.sys">
+                <File Id="VBoxUSBMon.sys" Name="VBoxUSBMon.sys" />
+                <util:EventSource
+                    Name="VBoxUSBMon"
+                    Log="System"
+                    EventMessageFile="%SystemRoot%\System32\IoLogMsg.dll"
+                    SupportsInformationals="true"
+                    SupportsWarnings="true"
+                    SupportsErrors="true"
+                    />
+            </Component>
         </ComponentGroup>
     </Fragment>
 </Wix>
