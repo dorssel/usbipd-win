@@ -142,7 +142,6 @@ sealed partial class CommandHandlers : ICommandHandlers
             {
                 state = "Not shared";
             }
-            // NOTE: Strictly speaking, both Bus and Port can be > 99. If you have one of those, you win a prize!
             console.Write($"{(device.BusId.Value.IsIncompatibleHub ? string.Empty : device.BusId.Value),-5}  ");
             console.Write($"{device.HardwareId,-9}  ");
             console.WriteTruncated(GetDescription(device, usbids), 60, true);
@@ -472,6 +471,65 @@ sealed partial class CommandHandlers : ICommandHandlers
         var json = JsonSerializer.Serialize(state, context.State);
 
         Console.Write(json);
+        return Task.FromResult(ExitCode.Success);
+    }
+
+    Task<ExitCode> ICommandHandlers.PolicyAdd(PolicyRule rule, IConsole console, CancellationToken cancellationToken)
+    {
+        if (RegistryUtils.GetPolicyRules().FirstOrDefault(r => r.Value == rule) is var existingRule && existingRule.Key != default)
+        {
+            console.ReportError($"Policy rule already exists with guid '{existingRule.Key:D}'.");
+            return Task.FromResult(ExitCode.Failure);
+        }
+
+        if (!CheckWriteAccess(console))
+        {
+            return Task.FromResult(ExitCode.AccessDenied);
+        }
+
+        var guid = RegistryUtils.AddPolicyRule(rule);
+        console.ReportInfo($"Policy rule created with guid '{guid:D}'.");
+        return Task.FromResult(ExitCode.Success);
+    }
+
+    Task<ExitCode> ICommandHandlers.PolicyList(IConsole console, CancellationToken cancellationToken)
+    {
+        var policyRules = RegistryUtils.GetPolicyRules();
+        console.WriteLine("Policy rules:");
+        console.WriteLine($"{"GUID",-36}  {"TYPE",-4}  {"ACCESS",-6}  {"BUSID",-5}  {"VID:PID",-9}");
+        foreach (var rule in policyRules)
+        {
+            console.Write($"{rule.Key,-36}  ");
+            console.Write($"{rule.Value.Type,-4}  ");
+            console.Write($"{(rule.Value.Allow ? "Allow" : "Deny"),-6}  ");
+            switch (rule.Value.Type)
+            {
+                case PolicyRuleType.Bind:
+                    var ruleBind = (PolicyRuleBind)rule.Value;
+                    console.Write($"{(ruleBind.BusId.HasValue ? ruleBind.BusId.Value : string.Empty),-5}  ");
+                    console.Write($"{(ruleBind.HardwareId.HasValue ? ruleBind.HardwareId.Value : string.Empty),-9}");
+                    break;
+            }
+            console.WriteLine(string.Empty);
+        }
+        console.WriteLine(string.Empty);
+        return Task.FromResult(ExitCode.Success);
+    }
+
+    Task<ExitCode> ICommandHandlers.PolicyRemove(Guid guid, IConsole console, CancellationToken cancellationToken)
+    {
+        if (!RegistryUtils.GetPolicyRules().ContainsKey(guid))
+        {
+            console.ReportError($"There is no policy rule with guid '{guid:D}'.");
+            return Task.FromResult(ExitCode.Failure);
+        }
+
+        if (!CheckWriteAccess(console))
+        {
+            return Task.FromResult(ExitCode.AccessDenied);
+        }
+
+        RegistryUtils.RemovePolicyRule(guid);
         return Task.FromResult(ExitCode.Success);
     }
 }

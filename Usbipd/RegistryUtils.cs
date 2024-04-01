@@ -34,6 +34,9 @@ static class RegistryUtils
     const string AttachedName = "Attached";
     const string BusIdName = "BusId";
     const string IPAddressName = "IPAddress";
+    const string PolicyName = "Policy";
+    const string TypeName = "Type";
+    const string AllowName = "Allow";
 
     /// <summary>
     /// <see langword="null"/> if not installed
@@ -49,6 +52,18 @@ static class RegistryUtils
     static RegistryKey? GetDeviceKey(Guid guid, bool writable)
     {
         using var devicesKey = GetDevicesKey(writable);
+        return devicesKey.OpenSubKey(guid.ToString("B"), writable);
+    }
+
+    static RegistryKey GetPolicyKey(bool writable)
+    {
+        return BaseKey(writable).OpenSubKey(PolicyName, writable)
+            ?? throw new UnexpectedResultException("Registry key not found; try reinstalling the software.");
+    }
+
+    static RegistryKey? GetPolicyRuleKey(Guid guid, bool writable)
+    {
+        using var devicesKey = GetPolicyKey(writable);
         return devicesKey.OpenSubKey(guid.ToString("B"), writable);
     }
 
@@ -223,5 +238,93 @@ static class RegistryUtils
         {
             return false;
         }
+    }
+
+    public static Guid AddPolicyRule(PolicyRule rule)
+    {
+        if (!rule.IsValid())
+        {
+            throw new ArgumentException("Invalid policy rule", nameof(rule));
+        }
+        if (GetPolicyRules().ContainsValue(rule))
+        {
+            throw new ArgumentException("Duplicate policy rule", nameof(rule));
+        }
+        var guid = Guid.NewGuid();
+        using var ruleKey = GetPolicyKey(true).CreateSubKey($"{guid:B}");
+        ruleKey.SetValue(AllowName, rule.Allow ? 1 : 0);
+        ruleKey.SetValue(TypeName, rule.Type.ToString());
+        rule.Save(ruleKey);
+        return guid;
+    }
+
+    public static void RemovePolicyRule(Guid guid)
+    {
+        using var policyKey = GetPolicyKey(true);
+        policyKey.DeleteSubKeyTree(guid.ToString("B"), false);
+    }
+
+    /// <summary>
+    /// Enumerates all rules.
+    /// <para>
+    /// This retrieves the entire (valid) registry state; it ignores invalid rules, as well as any duplicates.
+    /// </para>
+    /// </summary>
+    public static SortedDictionary<Guid, PolicyRule> GetPolicyRules()
+    {
+        var guids = new SortedSet<Guid>();
+        using var policyKey = GetPolicyKey(false);
+        foreach (var subKeyName in policyKey.GetSubKeyNames())
+        {
+            if (Guid.TryParseExact(subKeyName, "B", out var guid))
+            {
+                // Sanitize uniqueness.
+                guids.Add(guid);
+            }
+        }
+
+        var rules = new SortedDictionary<Guid, PolicyRule>();
+        foreach (var guid in guids)
+        {
+            using var ruleKey = GetPolicyRuleKey(guid, false);
+            if (ruleKey is null)
+            {
+                continue;
+            }
+            if (ruleKey.GetValue(AllowName) is not int allowValue)
+            {
+                // Must exist and be a DWORD.
+                continue;
+            }
+            var allow = (allowValue != 0);
+            if (!Enum.TryParse<PolicyRuleType>(ruleKey.GetValue(TypeName) as string, true, out var ruleType))
+            {
+                // Must exist and be a valid enum string.
+                continue;
+            }
+            PolicyRule rule;
+            switch (ruleType)
+            {
+                case PolicyRuleType.Bind:
+                    rule = PolicyRuleBind.Load(allow, ruleKey);
+                    break;
+                default:
+                    // Invalid, ignore.
+                    continue;
+            }
+            if (!rule.IsValid())
+            {
+                // Invalid, ignore.
+                continue;
+            }
+            if (rules.ContainsValue(rule))
+            {
+                // Duplicate, ignore.
+                continue;
+            }
+            rules.Add(guid, rule);
+        }
+        // All unique and valid.
+        return rules;
     }
 }
