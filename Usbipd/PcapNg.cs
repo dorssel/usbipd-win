@@ -392,7 +392,7 @@ sealed class PcapNg
     ulong GetTimestamp()
     {
         // Units are 100 ns.
-        return TimestampBase + (ulong)Stopwatch.ElapsedTicks * 10000000 / (ulong)Stopwatch.Frequency;
+        return TimestampBase + (ulong)Stopwatch.Elapsed.Ticks;
     }
 
     static void AddOption(BinaryWriter block, ushort code, byte[] data)
