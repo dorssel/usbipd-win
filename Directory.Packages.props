@@ -23,8 +23,8 @@ SPDX-License-Identifier: GPL-3.0-only
     <!-- UnitTests -->
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.9.0" />
     <PackageVersion Include="Moq" Version="4.20.70" />
-    <PackageVersion Include="MSTest.TestAdapter" Version="3.2.2" />
-    <PackageVersion Include="MSTest.TestFramework" Version="3.2.2" />
+    <PackageVersion Include="MSTest.TestAdapter" Version="3.3.1" />
+    <PackageVersion Include="MSTest.TestFramework" Version="3.3.1" />
     <PackageVersion Include="System.IO.Pipelines" Version="8.0.0" />
     <PackageVersion Include="coverlet.collector" Version="6.0.2" />
   </ItemGroup>
