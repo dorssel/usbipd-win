@@ -6,23 +6,11 @@ SPDX-License-Identifier: GPL-3.0-only
 -->
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
     <Fragment>
-        <DirectoryRef Id="APPLICATIONFOLDER">
-            <!-- Windows uses uppercase spelling for folders related to WSL (and lowercase for files). -->
-            <Directory Id="WSL" Name="WSL" />
-        </DirectoryRef>
-    </Fragment>
-    <Fragment>
-        <DirectoryRef Id="WSL" FileSource="$(var.PublishDir)\WSL">
-            <Component Id="WSL_README.md">
-                <File Id="WSL_README.md" Name="README.md" />
-            </Component>
-            <Component Id="usbip">
-                <File Id="usbip" Name="usbip" />
-            </Component>
-            <Component Id="auto_attach.sh">
-                <File Id="auto_attach.sh" Name="auto-attach.sh" />
-            </Component>
-        </DirectoryRef>
+        <ComponentGroup Id="WSL" Directory="APPLICATIONFOLDER" Subdirectory="WSL" Source="$(var.PublishDir)\WSL">
+            <File Id="WSL_README.md" Name="README.md" />
+            <File Id="usbip" Name="usbip" />
+            <File Id="auto_attach.sh" Name="auto-attach.sh" />
+        </ComponentGroup>
 
         <!--
         This directory gets mounted within WSL, and Linux should not treat ordinary files as executable.
@@ -54,12 +42,5 @@ SPDX-License-Identifier: GPL-3.0-only
         <InstallExecuteSequence>
             <Custom Action="FixExecutionRights_WSL_README.md" After="InstallFiles" Condition="$WSL_README.md=3" />
         </InstallExecuteSequence>
-    </Fragment>
-    <Fragment>
-        <ComponentGroup Id="WSL">
-            <ComponentRef Id="WSL_README.md" />
-            <ComponentRef Id="usbip" />
-            <ComponentRef Id="auto_attach.sh" />
-        </ComponentGroup>
     </Fragment>
 </Wix>

@@ -30,10 +30,9 @@ SPDX-License-Identifier: GPL-3.0-only
         This being a small product, a MajorUpgrade is a small price to pay to prevent any mishaps.
         Since we strictly follow component rules, we use afterInstallExecute to speed things up a bit.
         -->
-        <MajorUpgrade
-            Schedule="afterInstallExecute"
-            DowngradeErrorMessage="A newer version of [ProductName] is already installed."
-            />
+        <InstallExecuteSequence>
+            <RemoveExistingProducts After="InstallExecute" />
+        </InstallExecuteSequence>
 
         <Property Id="ARPURLINFOABOUT" Value="https://github.com/dorssel/usbipd-win" />
         <Property Id="ARPURLUPDATEINFO" Value="https://github.com/dorssel/usbipd-win/releases" />
