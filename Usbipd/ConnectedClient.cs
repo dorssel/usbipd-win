@@ -56,12 +56,34 @@ sealed class ConnectedClient(ILogger<ConnectedClient> logger, ClientContext clie
         }
     }
 
+    static IEnumerable<UsbDevice> GetDevicesAvailableForClient(IPAddress ipAddress)
+    {
+        return UsbDevice.GetAll().Where(device =>
+        {
+            if (!device.BusId.HasValue)
+            {
+                // The device is not currently plugged in.
+                return false;
+            }
+            if (device.BusId.Value.IsIncompatibleHub)
+            {
+                // The hub the device is plugged into is incompatible.
+                return false;
+            }
+            if (device.Guid.HasValue)
+            {
+                // Device is already bound, so available for attach.
+                return true;
+            }
+            return Policy.AllowBind(device, ipAddress);
+        });
+    }
+
     async Task HandleRequestDeviceListAsync(CancellationToken cancellationToken)
     {
         var exportedDevices = new List<ExportedDevice>();
-        foreach (var device in RegistryUtils.GetBoundDevices().Where(d => d.BusId.HasValue).OrderBy(d => d.BusId.GetValueOrDefault()))
+        foreach (var device in GetDevicesAvailableForClient(ClientContext.ClientAddress))
         {
-            Debug.Assert(device.BusId.HasValue);
             try
             {
                 exportedDevices.Add(await ExportedDevice.GetExportedDevice(device, cancellationToken));
@@ -102,6 +124,22 @@ sealed class ConnectedClient(ILogger<ConnectedClient> logger, ClientContext clie
         VBoxUsbMon? mon = null;
         try
         {
+            {
+                // Auto-bind if necessary *and* allowed.
+                var bindDevice = GetDevicesAvailableForClient(ClientContext.ClientAddress).SingleOrDefault(d => d.BusId.HasValue && d.BusId.Value == busId);
+                if (bindDevice is null)
+                {
+                    await SendOpCodeAsync(OpCode.OP_REP_IMPORT, Status.ST_NODEV);
+                    return;
+                }
+                if (!bindDevice.Guid.HasValue)
+                {
+                    // The device is not currently bound, but it is allowed by the policy. Auto-bind it now...
+                    Logger.AutoBind(ClientContext.ClientAddress, busId, bindDevice.InstanceId);
+                    RegistryUtils.Persist(bindDevice.InstanceId, bindDevice.Description);
+                }
+            }
+
             var device = RegistryUtils.GetBoundDevices().SingleOrDefault(d => d.BusId.HasValue && d.BusId.Value == busId);
             if (device is null)
             {

@@ -138,6 +138,10 @@ sealed partial class CommandHandlers : ICommandHandlers
             {
                 state = "Incompatible hub";
             }
+            else if (Policy.AllowBind(device))
+            {
+                state = "Allowed";
+            }
             else
             {
                 state = "Not shared";

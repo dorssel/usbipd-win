@@ -21,6 +21,9 @@ static partial class LogEvents
     [LoggerMessage(EventId = 4, Level = LogLevel.Error, Message = "An internal error occurred: {text}")]
     public static partial void InternalError(this ILogger logger, string text, Exception? ex = null);
 
+    [LoggerMessage(EventId = 5, Level = LogLevel.Information, Message = "Auto-bind of device at {busId} ({instanceId}) by client {clientAddress}.")]
+    public static partial void AutoBind(this ILogger logger, IPAddress clientAddress, BusId busId, string instanceId);
+
     [LoggerMessage(EventId = 1000, Level = LogLevel.Debug, Message = "{text}")]
     public static partial void Debug(this ILogger logger, string text);
 
