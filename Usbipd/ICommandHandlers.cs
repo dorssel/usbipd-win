@@ -26,4 +26,8 @@ interface ICommandHandlers
     public Task<ExitCode> State(IConsole console, CancellationToken cancellationToken);
     public Task<ExitCode> Install(IConsole console, CancellationToken cancellationToken);
     public Task<ExitCode> Uninstall(IConsole console, CancellationToken cancellationToken);
+    public Task<ExitCode> PolicyAdd(PolicyRule rule, IConsole console, CancellationToken cancellationToken);
+    public Task<ExitCode> PolicyList(IConsole console, CancellationToken cancellationToken);
+    public Task<ExitCode> PolicyRemove(Guid guid, IConsole console, CancellationToken cancellationToken);
+    public Task<ExitCode> PolicyRemoveAll(IConsole console, CancellationToken cancellationToken);
 }

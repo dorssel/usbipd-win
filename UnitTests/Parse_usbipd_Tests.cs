@@ -9,9 +9,9 @@ sealed class Parse_usbipd_Tests
     : ParseTestBase
 {
     [TestMethod]
-    public void Success()
+    public void NoCommand()
     {
-        Test(ExitCode.Success);
+        Test(ExitCode.ParseError);
     }
 
     [TestMethod]

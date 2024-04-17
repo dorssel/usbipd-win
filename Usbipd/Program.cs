@@ -7,7 +7,6 @@ using System.CommandLine;
 using System.CommandLine.Builder;
 using System.CommandLine.Completions;
 using System.CommandLine.Help;
-using System.CommandLine.IO;
 using System.CommandLine.Parsing;
 using System.Diagnostics;
 using System.Reflection;
@@ -63,6 +62,17 @@ static class Program
         return $"Exactly one of the options {list} is required.";
     }
 
+    static string AtLeastOneOfRequiredText(params Option[] options)
+    {
+        Debug.Assert(options.Length >= 2);
+
+        var names = options.Select(o => $"'--{o.Name}'").ToArray();
+        var list = names.Length == 2
+            ? $"{names[0]} or {names[1]}"
+            : string.Join(", ", names[0..(names.Length - 1)]) + ", or " + names[^1];
+        return $"At least one of the options {list} is required.";
+    }
+
     static void ValidateOneOf(CommandResult commandResult, params Option[] options)
     {
         Debug.Assert(options.Length >= 2);
@@ -70,6 +80,16 @@ static class Program
         if (options.Count(option => commandResult.FindResultFor(option) is not null) != 1)
         {
             commandResult.ErrorMessage = OneOfRequiredText(options);
+        }
+    }
+
+    static void ValidateAtLeastOneOf(CommandResult commandResult, params Option[] options)
+    {
+        Debug.Assert(options.Length >= 2);
+
+        if (!options.Any(option => commandResult.FindResultFor(option) is not null))
+        {
+            commandResult.ErrorMessage = AtLeastOneOfRequiredText(options);
         }
     }
 
@@ -115,11 +135,6 @@ static class Program
     internal static ExitCode Run(IConsole? optionalTestConsole, ICommandHandlers commandHandlers, params string[] args)
     {
         var rootCommand = new RootCommand("Shares locally connected USB devices to other machines, including Hyper-V guests and WSL 2.");
-        rootCommand.SetHandler(invocationContext =>
-        {
-            invocationContext.HelpBuilder.Write(rootCommand, invocationContext.Console.Out.CreateTextWriter());
-        });
-
         {
             //
             //  attach [--auto-attach]
@@ -169,7 +184,7 @@ static class Program
             }.AddCompletions(completionContext => CompletionGuard(completionContext, () =>
                 UsbDevice.GetAll().Where(d => d.BusId.HasValue).GroupBy(d => d.HardwareId).Select(g => g.Key.ToString())));
             //
-            //  wsl attach
+            //  attach
             //
             var attachCommand = new Command("attach", "Attach a USB device to a client\0"
                 + "Attaches a USB device to a client.\n"
@@ -317,7 +332,7 @@ static class Program
             }.AddCompletions(completionContext => CompletionGuard(completionContext, () =>
                 UsbDevice.GetAll().Where(d => d.BusId.HasValue).GroupBy(d => d.HardwareId).Select(g => g.Key.ToString())));
             //
-            //  wsl detach
+            //  detach
             //
             var detachCommand = new Command("detach", "Detach a USB device from a client\0"
                 + "Detaches one or more USB devices. The client sees this as a surprise "
@@ -395,6 +410,160 @@ static class Program
                         invocationContext.Console, invocationContext.GetCancellationToken());
             });
             rootCommand.AddCommand(listCommand);
+        }
+        {
+            //
+            //  policy
+            //
+            var policyCommand = new Command("policy", "Manage policy rules\0"
+                + "Policy rules allow or deny specific operations.");
+            {
+                //
+                //  policy add --effect <EFFECT>
+                //
+                var effectOption = new Option<PolicyRuleEffect>(
+                    aliases: ["--effect", "-e"]
+                )
+                {
+                    ArgumentHelpName = "EFFECT",
+                    Description = "Allow or Deny",
+                    IsRequired = true,
+                };
+                //
+                //  policy add --operation <OPERATION>
+                //
+                var operationOption = new Option<PolicyRuleOperation>(
+                    aliases: ["--operation", "-o"]
+                )
+                {
+                    ArgumentHelpName = "OPERATION",
+                    Description = "Currently only supports 'AutoBind'",
+                    IsRequired = true,
+                };
+                //
+                //  policy add [--busid <BUSID>]
+                //
+                var busIdOption = new Option<BusId>(
+                    aliases: ["--busid", "-b"],
+                    parseArgument: ParseCompatibleBusId
+                )
+                {
+                    ArgumentHelpName = "BUSID",
+                    Description = "Share device having <BUSID>",
+                }.AddCompletions(CompatibleBusIdCompletions);
+                //
+                //  policy add [--hardware-id <VID>:<PID>]
+                //
+                var hardwareIdOption = new Option<VidPid>(
+                    // NOTE: the alias '-h' is already for '--help'
+                    aliases: ["--hardware-id", "-i"],
+                    parseArgument: ParseVidPid
+                )
+                {
+                    ArgumentHelpName = "VID:PID",
+                    Description = "Attach device having <VID>:<PID>",
+                }.AddCompletions(completionContext => CompletionGuard(completionContext, () =>
+                    UsbDevice.GetAll().GroupBy(d => d.HardwareId).Select(g => g.Key.ToString())));
+                //
+                //  policy add
+                //
+                var addCommand = new Command("add", "Add a policy rule\0"
+                    + "Add a new policy rule. The resulting policy will be effective immediately.\n"
+                    + "\n"
+                    + AtLeastOneOfRequiredText(busIdOption, hardwareIdOption))
+                {
+                    effectOption,
+                    operationOption,
+                    busIdOption,
+                    hardwareIdOption,
+                };
+                addCommand.AddValidator(commandResult =>
+                {
+                    ValidateAtLeastOneOf(commandResult, busIdOption, hardwareIdOption);
+                });
+                addCommand.SetHandler(async invocationContext =>
+                {
+                    var operation = invocationContext.ParseResult.GetValueForOption(operationOption);
+                    invocationContext.ExitCode = (int)await (operation switch
+                    {
+                        PolicyRuleOperation.AutoBind =>
+                            commandHandlers.PolicyAdd(new PolicyRuleAutoBind(invocationContext.ParseResult.GetValueForOption(effectOption),
+                                    invocationContext.ParseResult.GetValueForOptionOrNull(busIdOption),
+                                    invocationContext.ParseResult.GetValueForOptionOrNull(hardwareIdOption)),
+                                invocationContext.Console, invocationContext.GetCancellationToken()),
+                        _ => throw new UnexpectedResultException($"Unexpected policy rule operation '{operation}'."),
+                    });
+                });
+                policyCommand.AddCommand(addCommand);
+            }
+            {
+                //
+                //  policy list
+                //
+                var listCommand = new Command("list", "List policy rules\0"
+                    + "List all policy rules.");
+                listCommand.SetHandler(async invocationContext =>
+                {
+                    invocationContext.ExitCode = (int)
+                        await commandHandlers.PolicyList(invocationContext.Console, invocationContext.GetCancellationToken());
+                });
+                policyCommand.AddCommand(listCommand);
+            }
+            {
+                //
+                //  policy remove [--all]
+                //
+                var allOption = new Option<bool>(
+                    aliases: ["--all", "-a"]
+                )
+                {
+                    Description = "Remove all policy rules",
+                    Arity = ArgumentArity.Zero,
+                };
+                //
+                //  policy remove [--guid <GUID>]
+                //
+                var guidOption = new Option<Guid>(
+                    aliases: ["--guid", "-g"],
+                    parseArgument: ParseGuid
+                )
+                {
+                    ArgumentHelpName = "GUID",
+                    Description = "Remove the policy rule having <GUID>",
+                }.AddCompletions(completionContext => CompletionGuard(completionContext, () =>
+                    RegistryUtils.GetPolicyRules().Select(r => r.Key.ToString("D"))));
+                //
+                //  policy remove
+                //
+                var removeCommand = new Command("remove", "Remove a policy rule\0"
+                    + "Remove existing policy rules. The resulting policy will be effective immediately.\n"
+                    + "\n"
+                    + OneOfRequiredText(allOption, guidOption))
+                {
+                    allOption,
+                    guidOption,
+                };
+                removeCommand.AddValidator(commandResult =>
+                {
+                    ValidateOneOf(commandResult, allOption, guidOption);
+                });
+                removeCommand.SetHandler(async invocationContext =>
+                {
+                    if (invocationContext.ParseResult.HasOption(allOption))
+                    {
+                        invocationContext.ExitCode = (int)
+                            await commandHandlers.PolicyRemoveAll(invocationContext.Console, invocationContext.GetCancellationToken());
+                    }
+                    else
+                    {
+                        invocationContext.ExitCode = (int)
+                            await commandHandlers.PolicyRemove(invocationContext.ParseResult.GetValueForOption(guidOption),
+                                invocationContext.Console, invocationContext.GetCancellationToken());
+                    }
+                });
+                policyCommand.AddCommand(removeCommand);
+            }
+            rootCommand.AddCommand(policyCommand);
         }
         {
             //

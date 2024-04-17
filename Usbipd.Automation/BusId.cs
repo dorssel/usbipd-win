@@ -22,11 +22,13 @@ public readonly record struct BusId
     {
         // Do not allow the explicit creation of the special IncompatibleHub value.
         // Instead, use the static IncompatibleHub field (preferrable) or "default".
-        if (bus == 0)
+        // USB supports up to 127 devices, but that would require multiple hubs; the "per hub" port will never be >99.
+        // And if you have more than 99 hubs on one system, then you win a prize! (but we're not going to support it...)
+        if (bus == 0 || bus > 99)
         {
             throw new ArgumentOutOfRangeException(nameof(bus));
         }
-        if (port == 0)
+        if (port == 0 || port > 99)
         {
             throw new ArgumentOutOfRangeException(nameof(port));
         }
@@ -63,8 +65,8 @@ public readonly record struct BusId
         }
         var match = Regex.Match(input, "^([1-9][0-9]*)-([1-9][0-9]*)$");
         if (match.Success
-            && ushort.TryParse(match.Groups[1].Value, out var bus)
-            && ushort.TryParse(match.Groups[2].Value, out var port))
+            && ushort.TryParse(match.Groups[1].Value, out var bus) && bus <= 99
+            && ushort.TryParse(match.Groups[2].Value, out var port) && port <= 99)
         {
             busId = new(bus, port);
             return true;
