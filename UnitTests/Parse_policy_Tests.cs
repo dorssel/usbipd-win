@@ -1,4 +1,4 @@
-﻿// SPDX-FileCopyrightText: 2022 Frans van Dorsselaer
+﻿// SPDX-FileCopyrightText: 2024 Frans van Dorsselaer
 //
 // SPDX-License-Identifier: GPL-3.0-only
 
@@ -67,7 +67,27 @@ sealed class Parse_policy_Tests
     }
 
     [TestMethod]
-    public void add_Success()
+    public void add_BusIdSuccess()
+    {
+        var mock = CreateMock();
+        mock.Setup(m => m.PolicyAdd(It.IsAny<PolicyRule>(),
+            It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Success));
+
+        Test(ExitCode.Success, mock, "policy", "add", "--effect", "Allow", "--operation", "AutoBind", "--busid", TestBusId.ToString());
+    }
+
+    [TestMethod]
+    public void add_HardwareIdSuccess()
+    {
+        var mock = CreateMock();
+        mock.Setup(m => m.PolicyAdd(It.IsAny<PolicyRule>(),
+            It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Success));
+
+        Test(ExitCode.Success, mock, "policy", "add", "--effect", "Allow", "--operation", "AutoBind", "--hardware-id", TestHardwareId.ToString());
+    }
+
+    [TestMethod]
+    public void add_BothSuccess()
     {
         var mock = CreateMock();
         mock.Setup(m => m.PolicyAdd(It.IsAny<PolicyRule>(),
@@ -78,12 +98,39 @@ sealed class Parse_policy_Tests
     }
 
     [TestMethod]
-    public void remove_Success()
+    public void add_MissingCondition()
+    {
+        Test(ExitCode.ParseError, "policy", "add", "--effect", "Allow", "--operation", "AutoBind", TestHardwareId.ToString());
+    }
+
+    [TestMethod]
+    public void remove_GuidSuccess()
     {
         var mock = CreateMock();
         mock.Setup(m => m.PolicyRemove(It.IsAny<Guid>(),
             It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Success));
 
         Test(ExitCode.Success, mock, "policy", "remove", "--guid", TestGuid.ToString());
+    }
+
+    [TestMethod]
+    public void remove_AllSuccess()
+    {
+        var mock = CreateMock();
+        mock.Setup(m => m.PolicyRemoveAll(It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Success));
+
+        Test(ExitCode.Success, mock, "policy", "remove", "--all");
+    }
+
+    [TestMethod]
+    public void remove_MissingOption()
+    {
+        Test(ExitCode.ParseError, "policy", "remove");
+    }
+
+    [TestMethod]
+    public void remove_TooManyOptions()
+    {
+        Test(ExitCode.ParseError, "policy", "remove", "--all", "--guid", TestGuid.ToString());
     }
 }

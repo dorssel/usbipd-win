@@ -13,7 +13,7 @@ sealed record PolicyRuleAutoBind(PolicyRuleEffect effect, BusId? BusId, VidPid? 
     const string BusIdName = "BusId";
     const string HardwareIdName = "HardwareId";
 
-    public override bool IsValid() => BusId.HasValue || HardwareId.HasValue;
+    public override bool IsValid() => (BusId.HasValue || HardwareId.HasValue) && !(BusId.HasValue && BusId.Value.IsIncompatibleHub);
 
     public override bool Matches(UsbDevice usbDevice)
     {
