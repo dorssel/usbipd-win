@@ -75,7 +75,7 @@ sealed class ConnectedClient(ILogger<ConnectedClient> logger, ClientContext clie
                 // Device is already bound, so available for attach.
                 return true;
             }
-            return Policy.AllowBind(device, ipAddress);
+            return Policy.IsAutoBindAllowed(device, ipAddress);
         });
     }
 

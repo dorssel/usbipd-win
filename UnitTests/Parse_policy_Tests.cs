@@ -73,7 +73,7 @@ sealed class Parse_policy_Tests
         mock.Setup(m => m.PolicyAdd(It.IsAny<PolicyRule>(),
             It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Success));
 
-        Test(ExitCode.Success, mock, "policy", "add", "--type", "bind", "--access", "allow",
+        Test(ExitCode.Success, mock, "policy", "add", "--effect", "Allow", "--operation", "AutoBind",
             "--busid", TestBusId.ToString(), "--hardware-id", TestHardwareId.ToString());
     }
 

@@ -35,8 +35,8 @@ static class RegistryUtils
     const string BusIdName = "BusId";
     const string IPAddressName = "IPAddress";
     const string PolicyName = "Policy";
-    const string TypeName = "Type";
-    const string AllowName = "Allow";
+    const string EffectName = "Effect";
+    const string OperationName = "Operation";
 
     /// <summary>
     /// <see langword="null"/> if not installed
@@ -252,8 +252,8 @@ static class RegistryUtils
         }
         var guid = Guid.NewGuid();
         using var ruleKey = GetPolicyKey(true).CreateSubKey($"{guid:B}");
-        ruleKey.SetValue(AllowName, rule.Allow ? 1 : 0);
-        ruleKey.SetValue(TypeName, rule.Type.ToString());
+        ruleKey.SetValue(EffectName, rule.Effect.ToString());
+        ruleKey.SetValue(OperationName, rule.Operation.ToString());
         rule.Save(ruleKey);
         return guid;
     }
@@ -262,6 +262,15 @@ static class RegistryUtils
     {
         using var policyKey = GetPolicyKey(true);
         policyKey.DeleteSubKeyTree(guid.ToString("B"), false);
+    }
+
+    public static void RemovePolicyRuleAll()
+    {
+        using var policyKey = GetPolicyKey(true);
+        foreach (var subKeyName in policyKey.GetSubKeyNames())
+        {
+            policyKey.DeleteSubKeyTree(subKeyName, false);
+        }
     }
 
     /// <summary>
@@ -291,22 +300,21 @@ static class RegistryUtils
             {
                 continue;
             }
-            if (ruleKey.GetValue(AllowName) is not int allowValue)
+            if (!Enum.TryParse<PolicyRuleEffect>(ruleKey.GetValue(EffectName) as string, true, out var effect))
             {
-                // Must exist and be a DWORD.
+                // Must exist and be a valid enum string.
                 continue;
             }
-            var allow = (allowValue != 0);
-            if (!Enum.TryParse<PolicyRuleType>(ruleKey.GetValue(TypeName) as string, true, out var ruleType))
+            if (!Enum.TryParse<PolicyRuleOperation>(ruleKey.GetValue(OperationName) as string, true, out var operation))
             {
                 // Must exist and be a valid enum string.
                 continue;
             }
             PolicyRule rule;
-            switch (ruleType)
+            switch (operation)
             {
-                case PolicyRuleType.Bind:
-                    rule = PolicyRuleBind.Load(allow, ruleKey);
+                case PolicyRuleOperation.AutoBind:
+                    rule = PolicyRuleAutoBind.Load(effect, ruleKey);
                     break;
                 default:
                     // Invalid, ignore.

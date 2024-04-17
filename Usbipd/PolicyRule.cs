@@ -6,7 +6,7 @@ using Microsoft.Win32;
 
 namespace Usbipd;
 
-abstract record PolicyRule(bool Allow, PolicyRuleType Type)
+abstract record PolicyRule(PolicyRuleEffect Effect, PolicyRuleOperation Operation)
 {
     public abstract bool IsValid();
 

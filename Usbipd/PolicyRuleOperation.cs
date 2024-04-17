@@ -4,8 +4,7 @@
 
 namespace Usbipd;
 
-public enum PolicyRuleAccess
+public enum PolicyRuleOperation
 {
-    Allow,
-    Deny,
+    AutoBind,
 }

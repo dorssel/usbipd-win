@@ -416,28 +416,28 @@ static class Program
             //  policy
             //
             var policyCommand = new Command("policy", "Manage policy rules\0"
-                + "Policy rules allow or deny specific functionality, such as bind and attach.\n");
+                + "Policy rules allow or deny specific operations.");
             {
                 //
-                //  policy add --access <ACCESS>
+                //  policy add --effect <EFFECT>
                 //
-                var accessOption = new Option<PolicyRuleAccess>(
-                    aliases: ["--access", "-a"]
+                var effectOption = new Option<PolicyRuleEffect>(
+                    aliases: ["--effect", "-e"]
                 )
                 {
-                    ArgumentHelpName = "ACCESS",
+                    ArgumentHelpName = "EFFECT",
                     Description = "Allow or Deny",
                     IsRequired = true,
                 };
                 //
-                //  policy add --type <TYPE>
+                //  policy add --operation <OPERATION>
                 //
-                var typeOption = new Option<PolicyRuleType>(
-                    aliases: ["--type", "-t"]
+                var operationOption = new Option<PolicyRuleOperation>(
+                    aliases: ["--operation", "-o"]
                 )
                 {
-                    ArgumentHelpName = "TYPE",
-                    Description = "Add a policy rule of type <TYPE>",
+                    ArgumentHelpName = "OPERATION",
+                    Description = "Currently only supports 'AutoBind'",
                     IsRequired = true,
                 };
                 //
@@ -472,8 +472,8 @@ static class Program
                     + "\n"
                     + AtLeastOneOfRequiredText(busIdOption, hardwareIdOption))
                 {
-                    accessOption,
-                    typeOption,
+                    effectOption,
+                    operationOption,
                     busIdOption,
                     hardwareIdOption,
                 };
@@ -483,15 +483,15 @@ static class Program
                 });
                 addCommand.SetHandler(async invocationContext =>
                 {
-                    var policyRuleType = invocationContext.ParseResult.GetValueForOption(typeOption);
-                    invocationContext.ExitCode = (int)await (policyRuleType switch
+                    var operation = invocationContext.ParseResult.GetValueForOption(operationOption);
+                    invocationContext.ExitCode = (int)await (operation switch
                     {
-                        PolicyRuleType.Bind =>
-                            commandHandlers.PolicyAdd(new PolicyRuleBind(invocationContext.ParseResult.GetValueForOption(accessOption) == PolicyRuleAccess.Allow,
+                        PolicyRuleOperation.AutoBind =>
+                            commandHandlers.PolicyAdd(new PolicyRuleAutoBind(invocationContext.ParseResult.GetValueForOption(effectOption),
                                     invocationContext.ParseResult.GetValueForOptionOrNull(busIdOption),
                                     invocationContext.ParseResult.GetValueForOptionOrNull(hardwareIdOption)),
                                 invocationContext.Console, invocationContext.GetCancellationToken()),
-                        _ => throw new UnexpectedResultException($"Unexpected policy rule type '{policyRuleType}'."),
+                        _ => throw new UnexpectedResultException($"Unexpected policy rule operation '{operation}'."),
                     });
                 });
                 policyCommand.AddCommand(addCommand);
@@ -501,7 +501,7 @@ static class Program
                 //  policy list
                 //
                 var listCommand = new Command("list", "List policy rules\0"
-                    + "List all policy rules.\n");
+                    + "List all policy rules.");
                 listCommand.SetHandler(async invocationContext =>
                 {
                     invocationContext.ExitCode = (int)
@@ -511,7 +511,17 @@ static class Program
             }
             {
                 //
-                //  policy remove --guid <GUID>
+                //  policy remove [--all]
+                //
+                var allOption = new Option<bool>(
+                    aliases: ["--all", "-a"]
+                )
+                {
+                    Description = "Remove all policy rules",
+                    Arity = ArgumentArity.Zero,
+                };
+                //
+                //  policy remove [--guid <GUID>]
                 //
                 var guidOption = new Option<Guid>(
                     aliases: ["--guid", "-g"],
@@ -520,22 +530,36 @@ static class Program
                 {
                     ArgumentHelpName = "GUID",
                     Description = "Remove the policy rule having <GUID>",
-                    IsRequired = true,
                 }.AddCompletions(completionContext => CompletionGuard(completionContext, () =>
                     RegistryUtils.GetPolicyRules().Select(r => r.Key.ToString("D"))));
                 //
                 //  policy remove
                 //
                 var removeCommand = new Command("remove", "Remove a policy rule\0"
-                    + "Remove an existing policy rule. The resulting policy will be effective immediately.\n")
+                    + "Remove existing policy rules. The resulting policy will be effective immediately.\n"
+                    + "\n"
+                    + OneOfRequiredText(allOption, guidOption))
                 {
+                    allOption,
                     guidOption,
                 };
+                removeCommand.AddValidator(commandResult =>
+                {
+                    ValidateOneOf(commandResult, allOption, guidOption);
+                });
                 removeCommand.SetHandler(async invocationContext =>
                 {
-                    invocationContext.ExitCode = (int)
-                        await commandHandlers.PolicyRemove(invocationContext.ParseResult.GetValueForOption(guidOption),
-                            invocationContext.Console, invocationContext.GetCancellationToken());
+                    if (invocationContext.ParseResult.HasOption(allOption))
+                    {
+                        invocationContext.ExitCode = (int)
+                            await commandHandlers.PolicyRemoveAll(invocationContext.Console, invocationContext.GetCancellationToken());
+                    }
+                    else
+                    {
+                        invocationContext.ExitCode = (int)
+                            await commandHandlers.PolicyRemove(invocationContext.ParseResult.GetValueForOption(guidOption),
+                                invocationContext.Console, invocationContext.GetCancellationToken());
+                    }
                 });
                 policyCommand.AddCommand(removeCommand);
             }

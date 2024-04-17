@@ -29,4 +29,5 @@ interface ICommandHandlers
     public Task<ExitCode> PolicyAdd(PolicyRule rule, IConsole console, CancellationToken cancellationToken);
     public Task<ExitCode> PolicyList(IConsole console, CancellationToken cancellationToken);
     public Task<ExitCode> PolicyRemove(Guid guid, IConsole console, CancellationToken cancellationToken);
+    public Task<ExitCode> PolicyRemoveAll(IConsole console, CancellationToken cancellationToken);
 }

@@ -138,7 +138,7 @@ sealed partial class CommandHandlers : ICommandHandlers
             {
                 state = "Incompatible hub";
             }
-            else if (Policy.AllowBind(device))
+            else if (Policy.IsAutoBindAllowed(device))
             {
                 state = "Allowed";
             }
@@ -362,9 +362,9 @@ sealed partial class CommandHandlers : ICommandHandlers
             console.ReportError($"There is no device with busid '{busId}'.");
             return ExitCode.Failure;
         }
-        if (!device.Guid.HasValue)
+        if (!device.Guid.HasValue && !Policy.IsAutoBindAllowed(device))
         {
-            console.ReportError($"Device is not shared; run 'usbipd bind -b {busId}' as administrator first.");
+            console.ReportError($"Device is not shared; run 'usbipd bind --busid {busId}' as administrator first.");
             return ExitCode.Failure;
         }
         // We allow auto-attach on devices that are already attached.
@@ -500,18 +500,18 @@ sealed partial class CommandHandlers : ICommandHandlers
     {
         var policyRules = RegistryUtils.GetPolicyRules();
         console.WriteLine("Policy rules:");
-        console.WriteLine($"{"GUID",-36}  {"TYPE",-4}  {"ACCESS",-6}  {"BUSID",-5}  {"VID:PID",-9}");
+        console.WriteLine($"{"GUID",-36}  {"EFFECT",-6}  {"OPERATION",-9}  {"BUSID",-5}  {"VID:PID",-9}");
         foreach (var rule in policyRules)
         {
             console.Write($"{rule.Key,-36}  ");
-            console.Write($"{rule.Value.Type,-4}  ");
-            console.Write($"{(rule.Value.Allow ? "Allow" : "Deny"),-6}  ");
-            switch (rule.Value.Type)
+            console.Write($"{rule.Value.Effect,-6}  ");
+            console.Write($"{rule.Value.Operation,-9}  ");
+            switch (rule.Value.Operation)
             {
-                case PolicyRuleType.Bind:
-                    var ruleBind = (PolicyRuleBind)rule.Value;
-                    console.Write($"{(ruleBind.BusId.HasValue ? ruleBind.BusId.Value : string.Empty),-5}  ");
-                    console.Write($"{(ruleBind.HardwareId.HasValue ? ruleBind.HardwareId.Value : string.Empty),-9}");
+                case PolicyRuleOperation.AutoBind:
+                    var autoBind = (PolicyRuleAutoBind)rule.Value;
+                    console.Write($"{(autoBind.BusId.HasValue ? autoBind.BusId.Value : string.Empty),-5}  ");
+                    console.Write($"{(autoBind.HardwareId.HasValue ? autoBind.HardwareId.Value : string.Empty),-9}");
                     break;
             }
             console.WriteLine(string.Empty);
@@ -534,6 +534,17 @@ sealed partial class CommandHandlers : ICommandHandlers
         }
 
         RegistryUtils.RemovePolicyRule(guid);
+        return Task.FromResult(ExitCode.Success);
+    }
+
+    Task<ExitCode> ICommandHandlers.PolicyRemoveAll(IConsole console, CancellationToken cancellationToken)
+    {
+        if (!CheckWriteAccess(console))
+        {
+            return Task.FromResult(ExitCode.AccessDenied);
+        }
+
+        RegistryUtils.RemovePolicyRuleAll();
         return Task.FromResult(ExitCode.Success);
     }
 }

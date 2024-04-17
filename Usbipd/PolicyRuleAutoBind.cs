@@ -7,8 +7,8 @@ using Usbipd.Automation;
 
 namespace Usbipd;
 
-sealed record PolicyRuleBind(bool allow, BusId? BusId, VidPid? HardwareId)
-    : PolicyRule(allow, PolicyRuleType.Bind)
+sealed record PolicyRuleAutoBind(PolicyRuleEffect effect, BusId? BusId, VidPid? HardwareId)
+    : PolicyRule(effect, PolicyRuleOperation.AutoBind)
 {
     const string BusIdName = "BusId";
     const string HardwareIdName = "HardwareId";
@@ -46,7 +46,7 @@ sealed record PolicyRuleBind(bool allow, BusId? BusId, VidPid? HardwareId)
         }
     }
 
-    public static PolicyRuleBind Load(bool allow, RegistryKey registryKey)
+    public static PolicyRuleAutoBind Load(PolicyRuleEffect access, RegistryKey registryKey)
     {
         BusId? busId = null;
         if (Automation.BusId.TryParse(registryKey.GetValue(BusIdName) as string ?? string.Empty, out var parsedBusId))
@@ -58,6 +58,6 @@ sealed record PolicyRuleBind(bool allow, BusId? BusId, VidPid? HardwareId)
         {
             hardwareId = parsedHardwareId;
         }
-        return new(allow, busId, hardwareId);
+        return new(access, busId, hardwareId);
     }
 }

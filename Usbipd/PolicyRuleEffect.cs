@@ -4,7 +4,8 @@
 
 namespace Usbipd;
 
-public enum PolicyRuleType
+public enum PolicyRuleEffect
 {
-    Bind,
+    Allow,
+    Deny,
 }
