@@ -1,0 +1,32 @@
+{
+  "version": 2,
+  "dependencies": {
+    "native,Version=v0.0": {
+      "GitVersion.MsBuild": {
+        "type": "Direct",
+        "requested": "[5.12.0, )",
+        "resolved": "5.12.0",
+        "contentHash": "dJuigXycpJNOiLT9or7mkHSkGFHgGW3/p6cNNYEKZBa7Hhp1FdX/cvqYWWYhRLpfoZOedeA7aRbYiOB3vW/dvA=="
+      },
+      "WixToolset.Firewall.wixext": {
+        "type": "Direct",
+        "requested": "[5.0.0, )",
+        "resolved": "5.0.0",
+        "contentHash": "ImdAKuoOkZcqPiIXmrcprM8Y1azA17EXZdUecpDD/V5jJcY+Ir4EtRLIWjYNno8FgUXRFyFskmAV13Us2SIInA=="
+      },
+      "WixToolset.UI.wixext": {
+        "type": "Direct",
+        "requested": "[5.0.0, )",
+        "resolved": "5.0.0",
+        "contentHash": "bSXUeHrfylVOeoklBb3mSlmMmiIVmQnEakCLeEtQoUundgWY3LOlVr7yjLu/3RBkMCiYdGmaNhg7MHwS2iQDsA=="
+      },
+      "WixToolset.Util.wixext": {
+        "type": "Direct",
+        "requested": "[5.0.0, )",
+        "resolved": "5.0.0",
+        "contentHash": "7lLwyrf+2cTuPju0swTWtRNYesnOMxXhGugMnGGNEPDB4g/+BCUsub2RDYAxnBnbnND7QmPwZnneLrTIQOdAbg=="
+      }
+    },
+    "native,Version=v0.0/win-x64": {}
+  }
+}
