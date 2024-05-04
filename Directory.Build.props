@@ -18,6 +18,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <!-- For PowerShell, we support everything -->
     <Platforms>AnyCPU</Platforms>
     <Platform>AnyCPU</Platform>
+    <RuntimeIdentifiers>win-x64;win-x86</RuntimeIdentifiers>
     <IsTrimmable>false</IsTrimmable>
   </PropertyGroup>
 
@@ -25,6 +26,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <!-- This product only supports x64 (the only architecture supported by VBoxUsb) -->
     <Platforms>x64</Platforms>
     <Platform>x64</Platform>
+    <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
     <IsTrimmable>true</IsTrimmable>
     <!--
     <IsAotCompatible>true</IsAotCompatible>
@@ -48,6 +50,10 @@ SPDX-License-Identifier: GPL-3.0-only
 
     <!-- Common defaults -->
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <RestoreLockedMode Condition="'$(GITHUB_ACTIONS)' == 'true'">true</RestoreLockedMode>
+    <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
     <InvariantGlobalization>true</InvariantGlobalization>
     <SelfContained>false</SelfContained>
     <IsPackable>false</IsPackable>
