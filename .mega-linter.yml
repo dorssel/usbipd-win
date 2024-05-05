@@ -31,4 +31,5 @@ XML_XMLLINT_FILE_EXTENSIONS:
   - .wixproj
   - .wxs
 # Exclude verbatim copies of external sources that are not under our control.
-FILTER_REGEX_EXCLUDE: COPYING\.md|LICENSES/|Drivers/VBoxUSB/|Drivers/VBoxUSBMon/
+# Also exclude auto-generated files.
+FILTER_REGEX_EXCLUDE: COPYING\.md|LICENSES/|Drivers/VBoxUSB/|Drivers/VBoxUSBMon/|packages.lock.json
