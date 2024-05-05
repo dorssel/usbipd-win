@@ -31,8 +31,6 @@
       "usbipd.automation": {
         "type": "Project"
       }
-    },
-    ".NETStandard,Version=v2.0/win-x64": {},
-    ".NETStandard,Version=v2.0/win-x86": {}
+    }
   }
 }

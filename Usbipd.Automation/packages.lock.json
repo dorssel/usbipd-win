@@ -23,8 +23,6 @@
         "contentHash": "kz0PEW2lhqygehI/d6XsPCQzD7ff7gUJaVGPVETX611eadGsA3A877GdSlU0LRVMCTH/+P3o2iDTak+S08V2+A=="
       }
     },
-    ".NETStandard,Version=v2.0/win-x64": {},
-    ".NETStandard,Version=v2.0/win-x86": {},
     "net8.0-windows10.0.17763": {
       "GitVersion.MsBuild": {
         "type": "Direct",
@@ -38,8 +36,6 @@
         "resolved": "8.0.4",
         "contentHash": "PZb5nfQ+U19nhnmnR9T1jw+LTmozhuG2eeuzuW5A7DqxD/UXW2ucjmNJqnqOuh8rdPzM3MQXoF8AfFCedJdCUw=="
       }
-    },
-    "net8.0-windows10.0.17763/win-x64": {},
-    "net8.0-windows10.0.17763/win-x86": {}
+    }
   }
 }
