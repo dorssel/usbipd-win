@@ -110,7 +110,6 @@
           "System.Runtime.CompilerServices.Unsafe": "4.5.3"
         }
       }
-    },
-    ".NETStandard,Version=v2.0/win-x64": {}
+    }
   }
 }

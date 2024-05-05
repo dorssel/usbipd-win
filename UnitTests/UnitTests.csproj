@@ -9,7 +9,7 @@ SPDX-License-Identifier: GPL-3.0-only
   <PropertyGroup>
     <TargetFrameworks>$(MainTargetFramework)</TargetFrameworks>
     <CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <IsAotCompatible>false</IsAotCompatible>
   </PropertyGroup>
 
   <ItemGroup>
