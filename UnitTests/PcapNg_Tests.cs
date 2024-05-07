@@ -12,14 +12,6 @@ namespace UnitTests;
 [TestClass]
 sealed class PcapNg_Tests
 {
-    static readonly string TemporaryPath = Path.GetTempFileName();
-
-    [ClassCleanup]
-    public static void ClassCleanup()
-    {
-        File.Delete(TemporaryPath);
-    }
-
     sealed class MockConfiguration : IDisposable
     {
         public MockConfiguration(string? path, uint? snapLength = null)
@@ -68,35 +60,36 @@ sealed class PcapNg_Tests
     [TestMethod]
     public void Constructor_Create()
     {
-        File.Delete(TemporaryPath);
-        Assert.IsFalse(File.Exists(TemporaryPath));
-        using var mockConfiguration = new MockConfiguration(TemporaryPath);
+        using var temporaryFile = new TemporaryFile();
+        using var mockConfiguration = new MockConfiguration(temporaryFile.AbsolutePath);
         {
             using var _ = new PcapNg(mockConfiguration.Object, MockLogger);
         }
-        Assert.AreNotEqual(0, new FileInfo(TemporaryPath).Length);
+        Assert.AreNotEqual(0, new FileInfo(temporaryFile.AbsolutePath).Length);
     }
 
     [TestMethod]
     public void Constructor_Overwrite()
     {
+        using var temporaryFile = new TemporaryFile();
         {
-            using var file = File.Create(TemporaryPath);
+            using var file = File.Create(temporaryFile.AbsolutePath);
             file.Write(new byte[1000]);
         }
-        Assert.AreEqual(1000, new FileInfo(TemporaryPath).Length);
-        using var mockConfiguration = new MockConfiguration(TemporaryPath);
+        Assert.AreEqual(1000, new FileInfo(temporaryFile.AbsolutePath).Length);
+        using var mockConfiguration = new MockConfiguration(temporaryFile.AbsolutePath);
         {
             using var _ = new PcapNg(mockConfiguration.Object, MockLogger);
         }
-        Assert.AreNotEqual(0, new FileInfo(TemporaryPath).Length);
-        Assert.IsTrue(new FileInfo(TemporaryPath).Length < 1000);
+        Assert.AreNotEqual(0, new FileInfo(temporaryFile.AbsolutePath).Length);
+        Assert.IsTrue(new FileInfo(temporaryFile.AbsolutePath).Length < 1000);
     }
 
     [TestMethod]
     public void Dispose()
     {
-        using var mockConfiguration = new MockConfiguration(TemporaryPath);
+        using var temporaryFile = new TemporaryFile();
+        using var mockConfiguration = new MockConfiguration(temporaryFile.AbsolutePath);
         var pcapNg = new PcapNg(mockConfiguration.Object, MockLogger);
         pcapNg.Dispose();
     }
@@ -104,7 +97,8 @@ sealed class PcapNg_Tests
     [TestMethod]
     public void Dispose_Twice()
     {
-        using var mockConfiguration = new MockConfiguration(TemporaryPath);
+        using var temporaryFile = new TemporaryFile();
+        using var mockConfiguration = new MockConfiguration(temporaryFile.AbsolutePath);
         var pcapNg = new PcapNg(mockConfiguration.Object, MockLogger);
         pcapNg.Dispose();
         pcapNg.Dispose();
@@ -163,7 +157,8 @@ sealed class PcapNg_Tests
     [TestMethod]
     public void DumpPacketNonIsoRequest_WithData()
     {
-        using var mockConfiguration = new MockConfiguration(TemporaryPath);
+        using var temporaryFile = new TemporaryFile();
+        using var mockConfiguration = new MockConfiguration(temporaryFile.AbsolutePath);
         using var pcapNg = new PcapNg(mockConfiguration.Object, MockLogger);
         pcapNg.DumpPacketNonIsoRequest(new(), new(), new byte[10]);
     }
@@ -171,7 +166,8 @@ sealed class PcapNg_Tests
     [TestMethod]
     public void DumpPacketNonIsoRequest_NoData()
     {
-        using var mockConfiguration = new MockConfiguration(TemporaryPath);
+        using var temporaryFile = new TemporaryFile();
+        using var mockConfiguration = new MockConfiguration(temporaryFile.AbsolutePath);
         using var pcapNg = new PcapNg(mockConfiguration.Object, MockLogger);
         pcapNg.DumpPacketNonIsoRequest(new(), new(), null);
     }
@@ -179,7 +175,8 @@ sealed class PcapNg_Tests
     [TestMethod]
     public void DumpPacketNonIsoRequest_NoSetup()
     {
-        using var mockConfiguration = new MockConfiguration(TemporaryPath);
+        using var temporaryFile = new TemporaryFile();
+        using var mockConfiguration = new MockConfiguration(temporaryFile.AbsolutePath);
         using var pcapNg = new PcapNg(mockConfiguration.Object, MockLogger);
         pcapNg.DumpPacketNonIsoRequest(new() { ep = 1 }, new(), null);
     }
@@ -195,7 +192,8 @@ sealed class PcapNg_Tests
     [TestMethod]
     public void DumpPacketNonIsoReply_WithData()
     {
-        using var mockConfiguration = new MockConfiguration(TemporaryPath);
+        using var temporaryFile = new TemporaryFile();
+        using var mockConfiguration = new MockConfiguration(temporaryFile.AbsolutePath);
         using var pcapNg = new PcapNg(mockConfiguration.Object, MockLogger);
         pcapNg.DumpPacketNonIsoReply(new(), new(), new(), new byte[10]);
     }
@@ -203,7 +201,8 @@ sealed class PcapNg_Tests
     [TestMethod]
     public void DumpPacketNonIsoReply_NoData()
     {
-        using var mockConfiguration = new MockConfiguration(TemporaryPath);
+        using var temporaryFile = new TemporaryFile();
+        using var mockConfiguration = new MockConfiguration(temporaryFile.AbsolutePath);
         using var pcapNg = new PcapNg(mockConfiguration.Object, MockLogger);
         pcapNg.DumpPacketNonIsoReply(new(), new(), new(), null);
     }
@@ -219,7 +218,8 @@ sealed class PcapNg_Tests
     [TestMethod]
     public void DumpPacketIsoRequest_WithData()
     {
-        using var mockConfiguration = new MockConfiguration(TemporaryPath);
+        using var temporaryFile = new TemporaryFile();
+        using var mockConfiguration = new MockConfiguration(temporaryFile.AbsolutePath);
         using var pcapNg = new PcapNg(mockConfiguration.Object, MockLogger);
         pcapNg.DumpPacketIsoRequest(new(), new(), new UsbIpIsoPacketDescriptor[2], new byte[10]);
     }
@@ -227,7 +227,8 @@ sealed class PcapNg_Tests
     [TestMethod]
     public void DumpPacketIsoRequest_NoData()
     {
-        using var mockConfiguration = new MockConfiguration(TemporaryPath);
+        using var temporaryFile = new TemporaryFile();
+        using var mockConfiguration = new MockConfiguration(temporaryFile.AbsolutePath);
         using var pcapNg = new PcapNg(mockConfiguration.Object, MockLogger);
         pcapNg.DumpPacketIsoRequest(new(), new(), [], null);
     }
@@ -243,7 +244,8 @@ sealed class PcapNg_Tests
     [TestMethod]
     public void DumpPacketIsoReply_WithData()
     {
-        using var mockConfiguration = new MockConfiguration(TemporaryPath);
+        using var temporaryFile = new TemporaryFile();
+        using var mockConfiguration = new MockConfiguration(temporaryFile.AbsolutePath);
         using var pcapNg = new PcapNg(mockConfiguration.Object, MockLogger);
         pcapNg.DumpPacketIsoReply(new(), new(), new(), new UsbIpIsoPacketDescriptor[2], new byte[10]);
     }
@@ -251,7 +253,8 @@ sealed class PcapNg_Tests
     [TestMethod]
     public void DumpPacketIsoReply_NoData()
     {
-        using var mockConfiguration = new MockConfiguration(TemporaryPath);
+        using var temporaryFile = new TemporaryFile();
+        using var mockConfiguration = new MockConfiguration(temporaryFile.AbsolutePath);
         using var pcapNg = new PcapNg(mockConfiguration.Object, MockLogger);
         pcapNg.DumpPacketIsoReply(new(), new(), new(), [], null);
     }
@@ -275,7 +278,8 @@ sealed class PcapNg_Tests
     [TestMethod]
     public void DumpPacketUnlink()
     {
-        using var mockConfiguration = new MockConfiguration(TemporaryPath);
+        using var temporaryFile = new TemporaryFile();
+        using var mockConfiguration = new MockConfiguration(temporaryFile.AbsolutePath);
         using var pcapNg = new PcapNg(mockConfiguration.Object, MockLogger);
         pcapNg.DumpPacketUnlink(new(), false, new());
     }
@@ -283,7 +287,8 @@ sealed class PcapNg_Tests
     [TestMethod]
     public void DumpPacketUnlink_Reply()
     {
-        using var mockConfiguration = new MockConfiguration(TemporaryPath);
+        using var temporaryFile = new TemporaryFile();
+        using var mockConfiguration = new MockConfiguration(temporaryFile.AbsolutePath);
         using var pcapNg = new PcapNg(mockConfiguration.Object, MockLogger);
         pcapNg.DumpPacketUnlink(new(), true, new());
     }
@@ -291,28 +296,32 @@ sealed class PcapNg_Tests
     [TestMethod]
     public void SnapLength_Normal()
     {
-        using var mockConfiguration = new MockConfiguration(TemporaryPath, 1024);
+        using var temporaryFile = new TemporaryFile();
+        using var mockConfiguration = new MockConfiguration(temporaryFile.AbsolutePath, 1024);
         using var pcapNg = new PcapNg(mockConfiguration.Object, MockLogger);
     }
 
     [TestMethod]
     public void SnapLength_ClipMinimum()
     {
-        using var mockConfiguration = new MockConfiguration(TemporaryPath, 1);
+        using var temporaryFile = new TemporaryFile();
+        using var mockConfiguration = new MockConfiguration(temporaryFile.AbsolutePath, 1);
         using var pcapNg = new PcapNg(mockConfiguration.Object, MockLogger);
     }
 
     [TestMethod]
     public void SnapLength_ClipMaximum()
     {
-        using var mockConfiguration = new MockConfiguration(TemporaryPath, uint.MaxValue);
+        using var temporaryFile = new TemporaryFile();
+        using var mockConfiguration = new MockConfiguration(temporaryFile.AbsolutePath, uint.MaxValue);
         using var pcapNg = new PcapNg(mockConfiguration.Object, MockLogger);
     }
 
     [TestMethod]
     public void PacketWriterAsync_Flush()
     {
-        using var mockConfiguration = new MockConfiguration(TemporaryPath);
+        using var temporaryFile = new TemporaryFile();
+        using var mockConfiguration = new MockConfiguration(temporaryFile.AbsolutePath);
         using var pcapNg = new PcapNg(mockConfiguration.Object, MockLogger);
         pcapNg.DumpPacketNonIsoRequest(new(), new(), null);
         Thread.Sleep(TimeSpan.FromSeconds(6));
