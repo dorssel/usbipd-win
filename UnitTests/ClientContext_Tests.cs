@@ -9,14 +9,6 @@ namespace UnitTests;
 [TestClass]
 sealed class ClientContext_Tests
 {
-    static readonly string TemporaryPath = Path.GetTempFileName();
-
-    [ClassCleanup]
-    public static void ClassCleanup()
-    {
-        File.Delete(TemporaryPath);
-    }
-
     [TestMethod]
     public void DefaultConstructor()
     {
@@ -61,9 +53,10 @@ sealed class ClientContext_Tests
     [TestMethod]
     public void DisposeTwice()
     {
+        using var temporaryFile = new TemporaryFile(true);
         var clientContext = new ClientContext
         {
-            AttachedDevice = new DeviceFile(TemporaryPath)
+            AttachedDevice = new DeviceFile(temporaryFile.AbsolutePath)
         };
         ((IDisposable)clientContext).Dispose();
         ((IDisposable)clientContext).Dispose();

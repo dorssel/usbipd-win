@@ -12,33 +12,28 @@ namespace UnitTests;
 [TestClass]
 sealed class DeviceFile_Tests
 {
-    static readonly string TemporaryPath = Path.GetTempFileName();
-
-    [ClassCleanup]
-    public static void ClassCleanup()
-    {
-        File.Delete(TemporaryPath);
-    }
-
     [TestMethod]
     public void Constructor_Success()
     {
-        using var deviceFile = new DeviceFile(TemporaryPath);
+        using var temporaryFile = new TemporaryFile(true);
+        using var deviceFile = new DeviceFile(temporaryFile.AbsolutePath);
     }
 
     [TestMethod]
     public void Constructor_FileNotFound()
     {
+        using var temporaryFile = new TemporaryFile();
         Assert.ThrowsException<Win32Exception>(() =>
         {
-            using var deviceFile = new DeviceFile(TemporaryPath + "_does_not_exist");
+            using var deviceFile = new DeviceFile(temporaryFile.AbsolutePath);
         });
     }
 
     [TestMethod]
     public void Dispose()
     {
-        var deviceFile = new DeviceFile(TemporaryPath);
+        using var temporaryFile = new TemporaryFile(true);
+        var deviceFile = new DeviceFile(temporaryFile.AbsolutePath);
         deviceFile.Dispose();
         Assert.ThrowsException<ObjectDisposedException>(() =>
         {
@@ -49,7 +44,8 @@ sealed class DeviceFile_Tests
     [TestMethod]
     public void Dispose_Twice()
     {
-        var deviceFile = new DeviceFile(TemporaryPath);
+        using var temporaryFile = new TemporaryFile(true);
+        var deviceFile = new DeviceFile(temporaryFile.AbsolutePath);
         deviceFile.Dispose();
         deviceFile.Dispose();
     }
@@ -57,7 +53,8 @@ sealed class DeviceFile_Tests
     [TestMethod]
     public void DangerousGetHandle_Success()
     {
-        using var deviceFile = new DeviceFile(TemporaryPath);
+        using var temporaryFile = new TemporaryFile(true);
+        using var deviceFile = new DeviceFile(temporaryFile.AbsolutePath);
         _ = deviceFile.DangerousGetHandle();
     }
 
@@ -69,7 +66,8 @@ sealed class DeviceFile_Tests
     [TestMethod]
     public void IoControlAsync_Success()
     {
-        using var deviceFile = new DeviceFile(TemporaryPath);
+        using var temporaryFile = new TemporaryFile(true);
+        using var deviceFile = new DeviceFile(temporaryFile.AbsolutePath);
         var rangeBuffer = new FILE_ALLOCATED_RANGE_BUFFER();
         byte[] outputBuffer = [];
         var result = deviceFile.IoControlAsync(TEST_IOCTL.FSCTL_QUERY_ALLOCATED_RANGES, Tools.StructToBytes(rangeBuffer), outputBuffer).Result;
@@ -79,7 +77,8 @@ sealed class DeviceFile_Tests
     [TestMethod]
     public void IoControlAsync_null_Output()
     {
-        using var deviceFile = new DeviceFile(TemporaryPath);
+        using var temporaryFile = new TemporaryFile(true);
+        using var deviceFile = new DeviceFile(temporaryFile.AbsolutePath);
         var rangeBuffer = new FILE_ALLOCATED_RANGE_BUFFER();
         var result = deviceFile.IoControlAsync(TEST_IOCTL.FSCTL_QUERY_ALLOCATED_RANGES, Tools.StructToBytes(rangeBuffer), null).Result;
         Assert.AreEqual(0u, result);
@@ -88,7 +87,8 @@ sealed class DeviceFile_Tests
     [TestMethod]
     public void IoControlAsync_ShortOutput()
     {
-        using var deviceFile = new DeviceFile(TemporaryPath);
+        using var temporaryFile = new TemporaryFile(true);
+        using var deviceFile = new DeviceFile(temporaryFile.AbsolutePath);
         var rangeBuffer = new FILE_ALLOCATED_RANGE_BUFFER();
         var outputBuffer = new byte[1];
         var result = deviceFile.IoControlAsync(TEST_IOCTL.FSCTL_QUERY_ALLOCATED_RANGES, Tools.StructToBytes(rangeBuffer), outputBuffer, false).Result;
@@ -98,7 +98,8 @@ sealed class DeviceFile_Tests
     [TestMethod]
     public void IoControlAsync_Win32Exception()
     {
-        using var deviceFile = new DeviceFile(TemporaryPath);
+        using var temporaryFile = new TemporaryFile(true);
+        using var deviceFile = new DeviceFile(temporaryFile.AbsolutePath);
         var exception = Assert.ThrowsException<AggregateException>(() =>
         {
             deviceFile.IoControlAsync(TEST_IOCTL.FSCTL_QUERY_ALLOCATED_RANGES, null, null).Wait();
@@ -109,7 +110,8 @@ sealed class DeviceFile_Tests
     [TestMethod]
     public void IoControlAsync_ProtocolViolation()
     {
-        using var deviceFile = new DeviceFile(TemporaryPath);
+        using var temporaryFile = new TemporaryFile(true);
+        using var deviceFile = new DeviceFile(temporaryFile.AbsolutePath);
         var rangeBuffer = new FILE_ALLOCATED_RANGE_BUFFER();
         var outputBuffer = new byte[1];
         var exception = Assert.ThrowsException<AggregateException>(() =>

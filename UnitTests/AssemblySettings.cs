@@ -4,3 +4,4 @@
 
 [assembly: CLSCompliant(false)]
 [assembly: DiscoverInternals]
+[assembly: Parallelize(Workers = 0, Scope = ExecutionScope.MethodLevel)]
