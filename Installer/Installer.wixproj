@@ -6,6 +6,7 @@ SPDX-License-Identifier: GPL-3.0-only
 -->
 <Project Sdk="WixToolset.Sdk">
   <PropertyGroup>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <GenerateGitVersionInformation>false</GenerateGitVersionInformation>
     <UpdateAssemblyInfo>false</UpdateAssemblyInfo>
     <OutputName>usbipd-win</OutputName>

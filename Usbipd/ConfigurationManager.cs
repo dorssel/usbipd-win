@@ -59,7 +59,7 @@ static partial class ConfigurationManager
         return propertyType switch
         {
             DEVPROPTYPE.DEVPROP_TYPE_STRING => new string((char*)pBuffer, 0, propertyBufferSize / sizeof(char)).TrimEnd('\0'),
-            DEVPROPTYPE.DEVPROP_TYPE_STRING | (DEVPROPTYPE)PInvoke.DEVPROP_TYPEMOD_LIST => new string((char*)pBuffer, 0, propertyBufferSize / sizeof(char)).Split('\0', StringSplitOptions.RemoveEmptyEntries),
+            DEVPROPTYPE.DEVPROP_TYPE_STRING_LIST => new string((char*)pBuffer, 0, propertyBufferSize / sizeof(char)).Split('\0', StringSplitOptions.RemoveEmptyEntries),
             _ => throw new NotImplementedException($"property type {propertyType}"),
         };
     }
