@@ -190,7 +190,7 @@ sealed class ConnectedClient(ILogger<ConnectedClient> logger, ClientContext clie
             Logger.Debug($"Claiming took {sw.ElapsedMilliseconds} ms");
             ClientContext.AttachedBusId = device.BusId;
 
-            HCMNOTIFICATION notification = default;
+            CM_Unregister_NotificationSafeHandle? notification = null;
             Logger.ClientAttach(ClientContext.ClientAddress, busId, device.InstanceId);
             try
             {
@@ -235,8 +235,7 @@ sealed class ConnectedClient(ILogger<ConnectedClient> logger, ClientContext clie
                                 break;
                         }
                         return (uint)WIN32_ERROR.ERROR_SUCCESS;
-                    }, out var nintNotification).ThrowOnError(nameof(PInvoke.CM_Register_Notification));
-                    notification = nintNotification;
+                    }, out notification).ThrowOnError(nameof(PInvoke.CM_Register_Notification));
                 }
 
                 // Detect unbind.
@@ -251,10 +250,8 @@ sealed class ConnectedClient(ILogger<ConnectedClient> logger, ClientContext clie
             }
             finally
             {
-                if (notification != default)
-                {
-                    PInvoke.CM_Unregister_Notification(notification);
-                }
+                notification?.Dispose();
+
                 RegistryUtils.SetDeviceAsDetached(device.Guid.Value);
 
                 ClientContext.AttachedDevice.Dispose();

@@ -57,17 +57,17 @@ static class NewDev
             var deviceInstallParams = new SP_DEVINSTALL_PARAMS_W()
             {
                 cbSize = (uint)Marshal.SizeOf<SP_DEVINSTALL_PARAMS_W>(),
-                Flags = PInvoke.DI_ENUMSINGLEINF,
-                FlagsEx = PInvoke.DI_FLAGSEX_ALLOWEXCLUDEDDRVS,
+                Flags = SETUP_DI_DEVICE_INSTALL_FLAGS.DI_ENUMSINGLEINF,
+                FlagsEx = SETUP_DI_DEVICE_INSTALL_FLAGS_EX.DI_FLAGSEX_ALLOWEXCLUDEDDRVS,
                 DriverPath = @$"{RegistryUtils.InstallationFolder ?? throw new UnexpectedResultException("not installed")}\Drivers\VBoxUSB.inf",
             };
             PInvoke.SetupDiSetDeviceInstallParams(deviceInfoSet, deviceInfoData, deviceInstallParams).ThrowOnError(nameof(PInvoke.SetupDiSetDeviceInstallParams));
-            PInvoke.SetupDiBuildDriverInfoList(deviceInfoSet, &deviceInfoData, SETUP_DI_BUILD_DRIVER_DRIVER_TYPE.SPDIT_CLASSDRIVER).ThrowOnError(nameof(PInvoke.SetupDiBuildDriverInfoList));
+            PInvoke.SetupDiBuildDriverInfoList(deviceInfoSet, &deviceInfoData, SETUP_DI_DRIVER_TYPE.SPDIT_CLASSDRIVER).ThrowOnError(nameof(PInvoke.SetupDiBuildDriverInfoList));
             var driverInfoData = new SP_DRVINFO_DATA_V2_W()
             {
                 cbSize = (uint)Marshal.SizeOf<SP_DRVINFO_DATA_V2_W>(),
             };
-            PInvoke.SetupDiEnumDriverInfo(deviceInfoSet, deviceInfoData, (uint)SETUP_DI_BUILD_DRIVER_DRIVER_TYPE.SPDIT_CLASSDRIVER, 0, ref driverInfoData).ThrowOnError(nameof(PInvoke.SetupDiEnumDriverInfo));
+            PInvoke.SetupDiEnumDriverInfo(deviceInfoSet, deviceInfoData, SETUP_DI_DRIVER_TYPE.SPDIT_CLASSDRIVER, 0, ref driverInfoData).ThrowOnError(nameof(PInvoke.SetupDiEnumDriverInfo));
             BOOL tmpReboot;
             PInvoke.DiInstallDevice(default, deviceInfoSet, deviceInfoData, driverInfoData, 0, &tmpReboot).ThrowOnError(nameof(PInvoke.DiInstallDevice));
             if (tmpReboot)

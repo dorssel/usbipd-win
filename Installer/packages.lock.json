@@ -26,6 +26,7 @@
         "resolved": "5.0.0",
         "contentHash": "7lLwyrf+2cTuPju0swTWtRNYesnOMxXhGugMnGGNEPDB4g/+BCUsub2RDYAxnBnbnND7QmPwZnneLrTIQOdAbg=="
       }
-    }
+    },
+    "native,Version=v0.0/win-x64": {}
   }
 }
