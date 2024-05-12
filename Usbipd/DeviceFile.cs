@@ -48,7 +48,7 @@ sealed class DeviceFile : IDisposable
     {
         var taskCompletionSource = new TaskCompletionSource<uint>();
 
-        unsafe
+        unsafe // DevSkim: ignore DS172412
         {
             void OnCompletion(uint errorCode, uint numBytes, NativeOverlapped* nativeOverlapped)
             {

@@ -70,7 +70,7 @@ sealed class Server : BackgroundService
         PInvoke.OpenProcessToken(currentProcess, TOKEN_ACCESS_MASK.TOKEN_ADJUST_PRIVILEGES, out var token).ThrowOnError(nameof(PInvoke.OpenProcessToken));
         using (token)
         {
-            unsafe
+            unsafe // DevSkim: ignore DS172412
             {
                 PInvoke.AdjustTokenPrivileges(token, false, &tokenPrivileges, 0, null, null).ThrowOnError(nameof(PInvoke.AdjustTokenPrivileges));
             }

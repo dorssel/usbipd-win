@@ -52,7 +52,7 @@ static class Tools
         {
             throw new ArgumentException($"buffer too small for structure: {bytes.Length} < {required}", nameof(bytes));
         }
-        unsafe
+        unsafe // DevSkim: ignore DS172412
         {
             fixed (byte* dst = bytes)
             {
@@ -75,7 +75,7 @@ static class Tools
         {
             throw new ArgumentException($"buffer too small for structure: {bytes.Length} < {required}", nameof(bytes));
         }
-        unsafe
+        unsafe // DevSkim: ignore DS172412
         {
             fixed (byte* src = bytes)
             {
