@@ -212,7 +212,7 @@ sealed class ConnectedClient(ILogger<ConnectedClient> logger, ClientContext clie
                 }, null, Timeout.Infinite, true);
 
                 // Detect unplug.
-                unsafe
+                unsafe // DevSkim: ignore DS172412
                 {
                     CM_NOTIFY_FILTER filter = new()
                     {

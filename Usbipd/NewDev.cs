@@ -15,7 +15,6 @@ static class NewDev
     public static bool ForceVBoxDriver(string originalInstanceId)
     {
         BOOL reboot = false;
-        unsafe
         {
             // First, we must set a NULL driver to clear any existing Device Setup Class.
             using var deviceInfoSet = PInvoke.SetupDiCreateDeviceInfoList((Guid?)null, default);
@@ -27,10 +26,16 @@ static class NewDev
             {
                 cbSize = (uint)Marshal.SizeOf<SP_DEVINFO_DATA>(),
             };
-            PInvoke.SetupDiOpenDeviceInfo(deviceInfoSet, originalInstanceId, default, 0, &deviceInfoData).ThrowOnError(nameof(PInvoke.SetupDiOpenDeviceInfo));
+            unsafe // DevSkim: ignore DS172412
+            {
+                PInvoke.SetupDiOpenDeviceInfo(deviceInfoSet, originalInstanceId, default, 0, &deviceInfoData).ThrowOnError(nameof(PInvoke.SetupDiOpenDeviceInfo));
+            }
             BOOL tmpReboot;
-            PInvoke.DiInstallDevice(default, deviceInfoSet, deviceInfoData, null, DIINSTALLDEVICE_FLAGS.DIIDFLAG_INSTALLNULLDRIVER, &tmpReboot)
-                .ThrowOnError(nameof(DIINSTALLDEVICE_FLAGS.DIIDFLAG_INSTALLNULLDRIVER));
+            unsafe // DevSkim: ignore DS172412
+            {
+                PInvoke.DiInstallDevice(default, deviceInfoSet, deviceInfoData, null, DIINSTALLDEVICE_FLAGS.DIIDFLAG_INSTALLNULLDRIVER, &tmpReboot)
+                    .ThrowOnError(nameof(DIINSTALLDEVICE_FLAGS.DIIDFLAG_INSTALLNULLDRIVER));
+            }
             if (tmpReboot)
             {
                 reboot = true;
@@ -41,7 +46,6 @@ static class NewDev
         // 200 ms seems to work, so delay for 500 ms for good measure...
         Thread.Sleep(TimeSpan.FromMilliseconds(500));
 
-        unsafe
         {
             // Now we can update the driver.
             using var deviceInfoSet = PInvoke.SetupDiCreateDeviceInfoList((Guid?)null, default);
@@ -53,7 +57,10 @@ static class NewDev
             {
                 cbSize = (uint)Marshal.SizeOf<SP_DEVINFO_DATA>(),
             };
-            PInvoke.SetupDiOpenDeviceInfo(deviceInfoSet, originalInstanceId, default, 0, &deviceInfoData).ThrowOnError(nameof(PInvoke.SetupDiOpenDeviceInfo));
+            unsafe // DevSkim: ignore DS172412
+            {
+                PInvoke.SetupDiOpenDeviceInfo(deviceInfoSet, originalInstanceId, default, 0, &deviceInfoData).ThrowOnError(nameof(PInvoke.SetupDiOpenDeviceInfo));
+            }
             var deviceInstallParams = new SP_DEVINSTALL_PARAMS_W()
             {
                 cbSize = (uint)Marshal.SizeOf<SP_DEVINSTALL_PARAMS_W>(),
@@ -62,14 +69,20 @@ static class NewDev
                 DriverPath = @$"{RegistryUtils.InstallationFolder ?? throw new UnexpectedResultException("not installed")}\Drivers\VBoxUSB.inf",
             };
             PInvoke.SetupDiSetDeviceInstallParams(deviceInfoSet, deviceInfoData, deviceInstallParams).ThrowOnError(nameof(PInvoke.SetupDiSetDeviceInstallParams));
-            PInvoke.SetupDiBuildDriverInfoList(deviceInfoSet, &deviceInfoData, SETUP_DI_DRIVER_TYPE.SPDIT_CLASSDRIVER).ThrowOnError(nameof(PInvoke.SetupDiBuildDriverInfoList));
+            unsafe // DevSkim: ignore DS172412
+            {
+                PInvoke.SetupDiBuildDriverInfoList(deviceInfoSet, &deviceInfoData, SETUP_DI_DRIVER_TYPE.SPDIT_CLASSDRIVER).ThrowOnError(nameof(PInvoke.SetupDiBuildDriverInfoList));
+            }
             var driverInfoData = new SP_DRVINFO_DATA_V2_W()
             {
                 cbSize = (uint)Marshal.SizeOf<SP_DRVINFO_DATA_V2_W>(),
             };
             PInvoke.SetupDiEnumDriverInfo(deviceInfoSet, deviceInfoData, SETUP_DI_DRIVER_TYPE.SPDIT_CLASSDRIVER, 0, ref driverInfoData).ThrowOnError(nameof(PInvoke.SetupDiEnumDriverInfo));
             BOOL tmpReboot;
-            PInvoke.DiInstallDevice(default, deviceInfoSet, deviceInfoData, driverInfoData, 0, &tmpReboot).ThrowOnError(nameof(PInvoke.DiInstallDevice));
+            unsafe // DevSkim: ignore DS172412
+            {
+                PInvoke.DiInstallDevice(default, deviceInfoSet, deviceInfoData, driverInfoData, 0, &tmpReboot).ThrowOnError(nameof(PInvoke.DiInstallDevice));
+            }
             if (tmpReboot)
             {
                 reboot = true;

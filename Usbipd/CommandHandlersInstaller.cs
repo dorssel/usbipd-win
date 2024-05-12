@@ -22,7 +22,7 @@ sealed partial class CommandHandlers : ICommandHandlers
         {
             ConsoleTools.ReportInfo(console, $"Installing VBoxUSB");
             // See: https://learn.microsoft.com/en-us/windows-hardware/drivers/install/preinstalling-driver-packages
-            unsafe
+            unsafe // DevSkim: ignore DS172412
             {
                 fixed (char* inf = Path.Combine(path, "Drivers", "VBoxUSB.inf"))
                 {
@@ -44,7 +44,7 @@ sealed partial class CommandHandlers : ICommandHandlers
                 console.ReportError($"OpenSCManager -> {Marshal.GetLastWin32Error()}");
                 return Task.FromResult(ExitCode.Failure);
             }
-            unsafe
+            unsafe // DevSkim: ignore DS172412
             {
                 using var service = PInvoke.CreateService(manager, "VBoxUSBMon", "VirtualBox USB Monitor Service",
                     (uint)GENERIC_ACCESS_RIGHTS.GENERIC_ALL, ENUM_SERVICE_TYPE.SERVICE_KERNEL_DRIVER, SERVICE_START_TYPE.SERVICE_DEMAND_START,
@@ -70,7 +70,7 @@ sealed partial class CommandHandlers : ICommandHandlers
 
         {
             ConsoleTools.ReportInfo(console, $"Uninstalling VBoxUSB");
-            unsafe
+            unsafe // DevSkim: ignore DS172412
             {
                 BOOL needReboot;
                 if (!PInvoke.DiUninstallDriver(HWND.Null, Path.Combine(path, "Drivers", "VBoxUSB.inf"), 0, &needReboot))

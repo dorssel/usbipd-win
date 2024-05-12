@@ -25,7 +25,7 @@ static partial class ConfigurationManager
 
     public static uint Locate_DevNode(string instanceId, bool present)
     {
-        unsafe
+        unsafe // DevSkim: ignore DS172412
         {
             fixed (char* pInstanceId = instanceId)
             {
@@ -39,7 +39,7 @@ static partial class ConfigurationManager
 
     static string[] Get_Device_Interface_List(in Guid interfaceClassGuid, string? deviceId, CM_GET_DEVICE_INTERFACE_LIST_FLAGS flags)
     {
-        unsafe
+        unsafe // DevSkim: ignore DS172412
         {
             fixed (char* pDeviceId = deviceId)
             {
@@ -54,7 +54,7 @@ static partial class ConfigurationManager
         }
     }
 
-    static unsafe object ConvertProperty(DEVPROPTYPE propertyType, byte* pBuffer, int propertyBufferSize)
+    static unsafe object ConvertProperty(DEVPROPTYPE propertyType, byte* pBuffer, int propertyBufferSize) // DevSkim: ignore DS172412
     {
         return propertyType switch
         {
@@ -66,7 +66,7 @@ static partial class ConfigurationManager
 
     static object Get_Device_Interface_Property(string deviceInterface, in DEVPROPKEY devPropKey)
     {
-        unsafe
+        unsafe // DevSkim: ignore DS172412
         {
             var propertyBufferSize = 0u;
             var cr = PInvoke.CM_Get_Device_Interface_Property(deviceInterface, devPropKey, out var propertyType, null, ref propertyBufferSize, 0);
@@ -85,7 +85,7 @@ static partial class ConfigurationManager
 
     static object Get_DevNode_Property(uint deviceNode, in DEVPROPKEY devPropKey)
     {
-        unsafe
+        unsafe // DevSkim: ignore DS172412
         {
             var propertyBufferSize = 0u;
             var cr = PInvoke.CM_Get_DevNode_Property(deviceNode, devPropKey, out var propertyType, null, ref propertyBufferSize, 0);
@@ -361,7 +361,7 @@ static partial class ConfigurationManager
 
     public static void SetDeviceFriendlyName(uint deviceNode)
     {
-        unsafe
+        unsafe // DevSkim: ignore DS172412
         {
             var friendlyName = "USBIP Shared Device";
             fixed (char* pValue = friendlyName)
@@ -388,7 +388,7 @@ static partial class ConfigurationManager
         public RestartingDevice(uint deviceNode)
         {
             DeviceNode = deviceNode;
-            unsafe
+            unsafe // DevSkim: ignore DS172412
             {
                 PNP_VETO_TYPE vetoType;
                 var vetoName = new string('\0', (int)PInvoke.MAX_PATH);
