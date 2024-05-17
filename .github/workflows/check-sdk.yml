@@ -28,5 +28,6 @@ jobs:
       - uses: martincostello/update-dotnet-sdk@v3
 
         with:
+          channel: '8.0.2xx'
           labels: dependencies
           repo-token: ${{ secrets.GITHUB_TOKEN }}
