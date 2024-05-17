@@ -10,9 +10,9 @@
       },
       "Microsoft.DotNet.ILCompiler": {
         "type": "Direct",
-        "requested": "[8.0.4, )",
-        "resolved": "8.0.4",
-        "contentHash": "bVK6XD5E/BpkPmdrx99ZkloZZX3nOvTAcW+W6jW4cs8elWlLFAc9BXHk2esxSVHMiaCLiLdIJAyhUfhV50TW+Q=="
+        "requested": "[8.0.5, )",
+        "resolved": "8.0.5",
+        "contentHash": "tfdncRQLXNpATB4Ykj11O5+fbkBAHoeLi6XfyxAWmilU4rwC3apT612RIuhqB6tBGE69G7Dl1g7HeydsH3Wz1w=="
       },
       "Microsoft.Extensions.Hosting.WindowsServices": {
         "type": "Direct",
@@ -27,9 +27,9 @@
       },
       "Microsoft.NET.ILLink.Tasks": {
         "type": "Direct",
-        "requested": "[8.0.4, )",
-        "resolved": "8.0.4",
-        "contentHash": "PZb5nfQ+U19nhnmnR9T1jw+LTmozhuG2eeuzuW5A7DqxD/UXW2ucjmNJqnqOuh8rdPzM3MQXoF8AfFCedJdCUw=="
+        "requested": "[8.0.5, )",
+        "resolved": "8.0.5",
+        "contentHash": "4ISW1Ndgz86FkIbu5rVlMqhhtojdy5rUlxC/N+9kPh9qbYcvHiCvYbHKzAPVIx9OPYIjT9trXt7JI42Y5Ukq6A=="
       },
       "Microsoft.Windows.CsWin32": {
         "type": "Direct",
@@ -386,17 +386,17 @@
     "net8.0-windows10.0.17763/win-x64": {
       "Microsoft.DotNet.ILCompiler": {
         "type": "Direct",
-        "requested": "[8.0.4, )",
-        "resolved": "8.0.4",
-        "contentHash": "bVK6XD5E/BpkPmdrx99ZkloZZX3nOvTAcW+W6jW4cs8elWlLFAc9BXHk2esxSVHMiaCLiLdIJAyhUfhV50TW+Q==",
+        "requested": "[8.0.5, )",
+        "resolved": "8.0.5",
+        "contentHash": "tfdncRQLXNpATB4Ykj11O5+fbkBAHoeLi6XfyxAWmilU4rwC3apT612RIuhqB6tBGE69G7Dl1g7HeydsH3Wz1w==",
         "dependencies": {
-          "runtime.win-x64.Microsoft.DotNet.ILCompiler": "8.0.4"
+          "runtime.win-x64.Microsoft.DotNet.ILCompiler": "8.0.5"
         }
       },
       "runtime.win-x64.Microsoft.DotNet.ILCompiler": {
         "type": "Transitive",
-        "resolved": "8.0.4",
-        "contentHash": "jOBAHB9NiCdVUrNoJMkDjRPdNTLUxTVu87D5nXjoMPrgk12QDwVFGKCFCgQTxnfY12xSg6KlW4lMG0v+PfYGwQ=="
+        "resolved": "8.0.5",
+        "contentHash": "tb0bL36K+FfXdErkSb3xiJLzbnuXHv09dF+XOS76SLTGbWgNUJlC7aSAg4Z7c5nRAh6BRoqC932H4r/3502w5A=="
       },
       "System.Diagnostics.EventLog": {
         "type": "Transitive",
