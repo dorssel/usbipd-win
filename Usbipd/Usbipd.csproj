@@ -22,6 +22,11 @@ SPDX-License-Identifier: GPL-3.0-only
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Remove="packages.lock.json" />
+    <None Include="packages.lock.json" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Content Include="..\COPYING.md" Link="COPYING.md" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
