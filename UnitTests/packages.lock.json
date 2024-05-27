@@ -46,9 +46,9 @@
       },
       "MSTest.TestAdapter": {
         "type": "Direct",
-        "requested": "[3.4.0, )",
-        "resolved": "3.4.0",
-        "contentHash": "s8SNJ09FY8slmrPHIyNtAZbPbL1KP/5r/25DFYhQ6o1e/ETYZgcUx00eib8a3n2nCsPWrql79QXRI58PNbquAQ==",
+        "requested": "[3.4.1, )",
+        "resolved": "3.4.1",
+        "contentHash": "9Pd3Sa5lktcLHQVuvFoUvjPiicfuuxJUL5q62jyHLNNAy1MmsiJNF1k2IaY9LVkh1Fg+N3Lf4QjOwz8luuU1gQ==",
         "dependencies": {
           "Microsoft.Testing.Extensions.VSTestBridge": "1.2.1",
           "Microsoft.Testing.Platform.MSBuild": "1.2.1"
@@ -56,9 +56,9 @@
       },
       "MSTest.TestFramework": {
         "type": "Direct",
-        "requested": "[3.4.0, )",
-        "resolved": "3.4.0",
-        "contentHash": "8gpuvRoC7CvGg9mf8hOu55YT068LNjHevfGSMHe469cFeUV+KV+9rk1pME9RK/SRpU0SM2Jo2JeZLOEY8cglIw=="
+        "requested": "[3.4.1, )",
+        "resolved": "3.4.1",
+        "contentHash": "GBec0lHrOwh8M0kCW/PTfev1PPWZRZ/HCaEucCMFPdmvJSoMpukcvzqev2xC6D8BxNSKsIvDwEcFVoh8cJpdmA=="
       },
       "System.IO.Pipelines": {
         "type": "Direct",
