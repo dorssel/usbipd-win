@@ -19,7 +19,7 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      - uses: vedantmgoyal2009/winget-releaser@v2
+      - uses: vedantmgoyal9/winget-releaser@main
         with:
           identifier: dorssel.usbipd-win
           token: ${{ secrets.WINGET_TOKEN }}
