@@ -10,6 +10,9 @@ root = true
 # All files
 [*]
 indent_style = space
+# Solution files (auto-generated, but sometimes manually edited)
+[*.sln]
+indent_style = tab
 # Code files
 [*.{cs,csx,vb,vbx}]
 indent_size = 4
