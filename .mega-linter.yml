@@ -32,4 +32,4 @@ XML_XMLLINT_FILE_EXTENSIONS:
   - .wxs
 # Exclude verbatim copies of external sources that are not under our control.
 # Also exclude auto-generated files.
-FILTER_REGEX_EXCLUDE: COPYING\.md|LICENSES/|Drivers/VBoxUSB/|Drivers/VBoxUSBMon/|packages.lock.json
+FILTER_REGEX_EXCLUDE: COPYING\.md|LICENSES/|Drivers/VBoxUSB/|Drivers/VBoxUSBMon/|packages.lock.json|Usbipd.Automation/usb.ids
