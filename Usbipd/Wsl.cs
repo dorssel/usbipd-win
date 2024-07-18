@@ -7,6 +7,7 @@
 using System.CommandLine;
 using System.Diagnostics;
 using System.Globalization;
+using System.IO.Compression;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
@@ -60,8 +61,8 @@ static partial class Wsl
         return null;
     }
 
-    static async Task<(int ExitCode, string StandardOutput, string StandardError)>
-        RunWslAsync((string distribution, string directory)? linux, Action<string, bool>? outputCallback, CancellationToken cancellationToken, params string[] arguments)
+    static async Task<(int ExitCode, string StandardOutput, string StandardError, MemoryStream BinaryOutput)>
+        RunWslAsync((string distribution, string directory)? linux, Action<string, bool>? outputCallback, bool binaryOutput, CancellationToken cancellationToken, params string[] arguments)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -96,6 +97,7 @@ static partial class Wsl
             ?? throw new UnexpectedResultException($"Failed to start \"{WslPath}\" with arguments {string.Join(" ", arguments.Select(arg => $"\"{arg}\""))}.");
         var stdout = string.Empty;
         var stderr = string.Empty;
+        var memoryStream = new MemoryStream();
 
         var callbackLock = new object();
         async Task OnLine(StreamReader streamReader, bool isStandardError)
@@ -122,9 +124,15 @@ static partial class Wsl
             }
         }
 
+        async Task CaptureBinary(Stream stream)
+        {
+            await process.StandardOutput.BaseStream.CopyToAsync(memoryStream, cancellationToken);
+            memoryStream.Position = 0;
+        }
+
         var captureTasks = new[]
         {
-            OnLine(process.StandardOutput, false),
+            binaryOutput ? CaptureBinary(process.StandardOutput.BaseStream) : OnLine(process.StandardOutput, false),
             OnLine(process.StandardError, true),
         };
 
@@ -167,7 +175,7 @@ static partial class Wsl
         await Task.WhenAll(captureTasks);
 
         cancellationToken.ThrowIfCancellationRequested();
-        return new(process.ExitCode, stdout, stderr);
+        return new(process.ExitCode, stdout, stderr, memoryStream);
     }
 
     /// <summary>
@@ -296,14 +304,62 @@ static partial class Wsl
 
         // Check: WSL kernel must be USBIP capable.
         {
-            var wslResult = await RunWslAsync((distribution, "/"), null, cancellationToken, "cat", "/sys/devices/platform/vhci_hcd.0/status");
-            // Expected output:
-            //
-            //    hub port sta spd dev      sockfd local_busid
-            //    hs  0000 006 002 00040002 000003 1-1
-            //    hs  0001 004 000 00000000 000000 0-0
-            //    ...
-            if (wslResult.ExitCode != 0 || !wslResult.StandardOutput.Contains("local_busid"))
+            var wslResult = await RunWslAsync((distribution, "/"), null, true, cancellationToken, "cat", "/proc/config.gz");
+            if (wslResult.ExitCode != 0)
+            {
+                console.ReportError($"Unable to get WSL kernel configuration.");
+                return ExitCode.Failure;
+            }
+            using var gunzipStream = new GZipStream(wslResult.BinaryOutput, CompressionMode.Decompress);
+            using var reader = new StreamReader(gunzipStream, Encoding.UTF8);
+            var config = await reader.ReadToEndAsync(cancellationToken);
+            if (config.Contains("CONFIG_USBIP_VHCI_HCD=y"))
+            {
+                // USBIP client built-in, we're done
+            }
+            else if (config.Contains("CONFIG_USBIP_VHCI_HCD=m"))
+            {
+                // USBIP client built as a module
+
+                // Expected output:
+                //
+                //    ...
+                //    vhci_hcd 61440 0 - Live 0x0000000000000000
+                //    ...
+                wslResult = await RunWslAsync((distribution, "/"), null, false, cancellationToken, "cat", "/proc/modules");
+                if (wslResult.ExitCode != 0)
+                {
+                    console.ReportError($"Unable to get WSL kernel modules.");
+                    return ExitCode.Failure;
+                }
+                if (!wslResult.StandardOutput.Contains("vhci_hcd"))
+                {
+                    console.ReportInfo($"Loading vhci_hcd module.");
+                    wslResult = await RunWslAsync((distribution, "/"), null, false, cancellationToken, "modprobe", "vhci_hcd");
+                    if (wslResult.ExitCode != 0)
+                    {
+                        console.ReportError($"Loading vhci_hcd failed.");
+                        return ExitCode.Failure;
+                    }
+                    // Expected output:
+                    //
+                    //    ...
+                    //    vhci_hcd 61440 0 - Live 0x0000000000000000
+                    //    ...
+                    wslResult = await RunWslAsync((distribution, "/"), null, false, cancellationToken, "cat", "/proc/modules");
+                    if (wslResult.ExitCode != 0)
+                    {
+                        console.ReportError($"Unable to get WSL kernel modules.");
+                        return ExitCode.Failure;
+                    }
+                    if (!wslResult.StandardOutput.Contains("vhci_hcd"))
+                    {
+                        console.ReportError($"Module vhci_hcd not loaded.");
+                        return ExitCode.Failure;
+                    }
+                }
+            }
+            else
             {
                 console.ReportError($"WSL kernel is not USBIP capable; update with 'wsl --update'.");
                 return ExitCode.Failure;
@@ -316,7 +372,7 @@ static partial class Wsl
         // NOTE: We don't know the shell type (for example, docker-desktop does not even have bash),
         //       so be as portable as possible: single line, use 'test', quote all paths, etc.
         {
-            var wslResult = await RunWslAsync((distribution, "/"), null, cancellationToken, "/bin/sh", "-c", $$"""
+            var wslResult = await RunWslAsync((distribution, "/"), null, false, cancellationToken, "/bin/sh", "-c", $$"""
                 if ! test -d "{{WslMountPoint}}"; then
                     mkdir -m 0000 "{{WslMountPoint}}";
                 fi;
@@ -333,7 +389,7 @@ static partial class Wsl
 
         // Check: our distribution-independent usbip client must be runnable.
         {
-            var wslResult = await RunWslAsync((distribution, WslMountPoint), null, cancellationToken, "./usbip", "version");
+            var wslResult = await RunWslAsync((distribution, WslMountPoint), null, false, cancellationToken, "./usbip", "version");
             if (wslResult.ExitCode != 0 || wslResult.StandardOutput.Trim() != "usbip (usbip-utils 2.0)")
             {
                 console.ReportError($"Unable to run 'usbip' client tool. Please report this at https://github.com/dorssel/usbipd-win/issues.");
@@ -344,7 +400,7 @@ static partial class Wsl
         // Now find out the IP address of the host.
         IPAddress hostAddress;
         {
-            var wslResult = await RunWslAsync((distribution, "/"), null, cancellationToken, "/bin/wslinfo", "--networking-mode");
+            var wslResult = await RunWslAsync((distribution, "/"), null, false, cancellationToken, "/bin/wslinfo", "--networking-mode");
             if (wslResult.ExitCode == 0 && wslResult.StandardOutput.Trim() == "mirrored")
             {
                 // mirrored networking mode ... we're done
@@ -356,7 +412,7 @@ static partial class Wsl
                 var clientAddresses = new List<IPAddress>();
                 {
                     // We use 'cat /proc/net/fib_trie', where we assume 'cat' is available on all distributions and /proc/net/fib_trie is supported by the WSL kernel.
-                    var ipResult = await RunWslAsync((distribution, "/"), null, cancellationToken, "cat", "/proc/net/fib_trie");
+                    var ipResult = await RunWslAsync((distribution, "/"), null, false, cancellationToken, "cat", "/proc/net/fib_trie");
                     if (ipResult.ExitCode == 0)
                     {
                         // Example output:
@@ -458,7 +514,7 @@ static partial class Wsl
             var pass = true; // NOTE: The default is (silent) pass, just in case the test doesn't work.
             try
             {
-                var pingResult = await RunWslAsync((distribution, "/"), null, linkedTokenSource.Token, "bash", "-c", $"echo < /dev/tcp/{hostAddress}/{Interop.UsbIp.USBIP_PORT}");
+                var pingResult = await RunWslAsync((distribution, "/"), null, false, linkedTokenSource.Token, "bash", "-c", $"echo < /dev/tcp/{hostAddress}/{Interop.UsbIp.USBIP_PORT}");
                 if (pingResult.StandardError.Contains("refused"))
                 {
                     pass = false;
@@ -503,7 +559,7 @@ static partial class Wsl
         // Finally, call 'usbip attach', or run the auto-attach.sh script.
         if (!autoAttach)
         {
-            var wslResult = await RunWslAsync((distribution, WslMountPoint), FilterUsbip, cancellationToken, "./usbip", "attach", $"--remote={hostAddress}", $"--busid={busId}");
+            var wslResult = await RunWslAsync((distribution, WslMountPoint), FilterUsbip, false, cancellationToken, "./usbip", "attach", $"--remote={hostAddress}", $"--busid={busId}");
             if (wslResult.ExitCode != 0)
             {
                 console.ReportError($"Failed to attach device with busid '{busId}'.");
@@ -514,7 +570,7 @@ static partial class Wsl
         {
             console.ReportInfo("Starting endless attach loop; press Ctrl+C to quit.");
 
-            _ = await RunWslAsync((distribution, WslMountPoint), FilterUsbip, cancellationToken, "./auto-attach.sh", hostAddress.ToString(), busId.ToString());
+            _ = await RunWslAsync((distribution, WslMountPoint), FilterUsbip, false, cancellationToken, "./auto-attach.sh", hostAddress.ToString(), busId.ToString());
             // This process always ends in failure, as it is supposed to run an endless loop.
             // This may be intended by the user (Ctrl+C, WSL shutdown), others may be real errors.
             // There is no way to tell the difference...
@@ -577,7 +633,7 @@ static partial class Wsl
         // * Ubuntu             Running         1
         //   Debian             Stopped         2
         //   Custom-MyDistro    Running         2
-        var detailsResult = await RunWslAsync(null, null, cancellationToken, "--list", "--all", "--verbose");
+        var detailsResult = await RunWslAsync(null, null, false, cancellationToken, "--list", "--all", "--verbose");
         switch (detailsResult.ExitCode)
         {
             case 0:
@@ -614,7 +670,7 @@ static partial class Wsl
                 // At least, that seems to be the case; it turns out that the wsl.exe command line interface isn't stable.
 
                 // Newer versions of wsl.exe support the --status command.
-                if ((await RunWslAsync(null, null, cancellationToken, "--status")).ExitCode != 0)
+                if ((await RunWslAsync(null, null, false, cancellationToken, "--status")).ExitCode != 0)
                 {
                     // We conclude that WSL is indeed not installed at all.
                     return null;
