@@ -178,6 +178,13 @@ static partial class Wsl
         return new(process.ExitCode, stdout, stderr, memoryStream);
     }
 
+    enum FirewallCheckResult
+    {
+        Unknown,
+        Pass,
+        Fail,
+    }
+
     /// <summary>
     /// BusId has already been checked, and the server is running.
     /// </summary>
@@ -491,49 +498,67 @@ static partial class Wsl
         console.ReportInfo($"Using IP address {hostAddress} to reach the host.");
 
         // Heuristic firewall check
-        //
-        // The current timeout is two seconds.
-        // This used to be one second, but some users got false positives due to WSL being slow to start the command.
-        //
-        // With minimal requirements (bash only) try to connect from WSL to our server.
-        // If the process does not terminate within the timeout, then most likely a third party firewall is blocking connections (DENY).
-        // If the process terminates within the timeout, then there are several options:
-        //   - The connection worked (pass).
-        //   - A firewall is refusing connections (DROP).
-        //     This is detectable, as the error will be something like:
-        //       bash: connect: Connection refused
-        //       bash: line 1: /dev/tcp/<host-address>/3240: Connection refused
-        //   - bash is not available (silent pass)
-        //   - the bash version does not support the /dev/tcp syntax (silent pass)
-        //   - other reasons (silent pass)
-        // We will simply look for the word "refused". If it isn't there, then the test will be ignored (silent pass).
-        //
         {
+            // The current timeout is two seconds.
+            // This used to be one second, but some users got false results due to WSL being slow to start the command.
             using var timeoutTokenSource = new CancellationTokenSource(TimeSpan.FromSeconds(2));
             using var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutTokenSource.Token);
-            var pass = true; // NOTE: The default is (silent) pass, just in case the test doesn't work.
+            FirewallCheckResult result;
             try
             {
+                // With minimal requirements (bash only) try to connect from WSL to our server.
                 var pingResult = await RunWslAsync((distribution, "/"), null, false, linkedTokenSource.Token, "bash", "-c", $"echo < /dev/tcp/{hostAddress}/{Interop.UsbIp.USBIP_PORT}");
                 if (pingResult.StandardError.Contains("refused"))
                 {
-                    pass = false;
+                    // If the output contains "refused", then the test was executed and failed, irrespective of the exit code.
+                    result = FirewallCheckResult.Fail;
+                }
+                else if (pingResult.ExitCode == 0)
+                {
+                    // The test was executed, and returned within the timeout, and the connection was not actively refused (see above).
+                    result = FirewallCheckResult.Pass;
+                }
+                else
+                {
+                    // The test was not executed properly (bash unavailable, /dev/tcp not supported, etc.).
+                    result = FirewallCheckResult.Unknown;
                 }
             }
             catch (OperationCanceledException) when (timeoutTokenSource.IsCancellationRequested)
             {
-                // Timeout, probably a firewall dropping the connection request.
-                pass = false;
+                // Timeout, probably a firewall dropping the connection request (i.e., not actively refused (DENY), but DROP).
+                result = FirewallCheckResult.Fail;
             }
-            if (!pass)
+            switch (result)
             {
-                if (GetPossibleBlockReason() is string blockReason)
-                {
-                    // We found a possible reason.
-                    console.ReportWarning(blockReason);
-                }
-                // In any case, it isn't working...
-                console.ReportWarning($"A firewall may be blocking the connection; ensure TCP port {Interop.UsbIp.USBIP_PORT} is allowed.");
+                case FirewallCheckResult.Unknown:
+                default:
+                    {
+                        console.ReportInfo($"Firewall check not possible with this distribution (no bash, or wrong version of bash).");
+                        // Try to detect any (domain) policy blockers.
+                        if (GetPossibleBlockReason() is string blockReason)
+                        {
+                            // We found a possible blocker.
+                            console.ReportWarning(blockReason);
+                        }
+                    }
+                    break;
+
+                case FirewallCheckResult.Fail:
+                    {
+                        if (GetPossibleBlockReason() is string blockReason)
+                        {
+                            // We found a possible reason.
+                            console.ReportWarning(blockReason);
+                        }
+                        // In any case, it isn't working...
+                        console.ReportWarning($"A firewall appears to be blocking the connection; ensure TCP port {Interop.UsbIp.USBIP_PORT} is allowed.");
+                    }
+                    break;
+
+                case FirewallCheckResult.Pass:
+                    // All is well.
+                    break;
             }
         }
 
