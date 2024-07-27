@@ -10,21 +10,21 @@
       },
       "WixToolset.Firewall.wixext": {
         "type": "Direct",
-        "requested": "[5.0.0, )",
-        "resolved": "5.0.0",
-        "contentHash": "ImdAKuoOkZcqPiIXmrcprM8Y1azA17EXZdUecpDD/V5jJcY+Ir4EtRLIWjYNno8FgUXRFyFskmAV13Us2SIInA=="
+        "requested": "[5.0.1, )",
+        "resolved": "5.0.1",
+        "contentHash": "c2ubWDTZNj5rvBo/JyOVqHhABZR5TAykXfreKw5jw+Gd0KBRsDFvUzzGGgKD05LITds4vFuDihzjAW32xgxoyQ=="
       },
       "WixToolset.UI.wixext": {
         "type": "Direct",
-        "requested": "[5.0.0, )",
-        "resolved": "5.0.0",
-        "contentHash": "bSXUeHrfylVOeoklBb3mSlmMmiIVmQnEakCLeEtQoUundgWY3LOlVr7yjLu/3RBkMCiYdGmaNhg7MHwS2iQDsA=="
+        "requested": "[5.0.1, )",
+        "resolved": "5.0.1",
+        "contentHash": "5QOjucYewg+fQ6obndgfpLFVqfX/3UlqAq+aNCmmAb8Gjl81uNxUdo47QF0tnryKyU2OLkiq09tXC0rKsz4d4A=="
       },
       "WixToolset.Util.wixext": {
         "type": "Direct",
-        "requested": "[5.0.0, )",
-        "resolved": "5.0.0",
-        "contentHash": "7lLwyrf+2cTuPju0swTWtRNYesnOMxXhGugMnGGNEPDB4g/+BCUsub2RDYAxnBnbnND7QmPwZnneLrTIQOdAbg=="
+        "requested": "[5.0.1, )",
+        "resolved": "5.0.1",
+        "contentHash": "7DxjepwZ4vuLfy2scstHWaKRgYmDSpj7YAV31lrxnU5a4U6Au2p9t4YpnXrNeq8FFYuZivg5vEc/zuz5tfigug=="
       }
     },
     "native,Version=v0.0/win-x64": {}
