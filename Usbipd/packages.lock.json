@@ -4,9 +4,9 @@
     "net8.0-windows10.0.17763": {
       "GitVersion.MsBuild": {
         "type": "Direct",
-        "requested": "[5.12.0, )",
-        "resolved": "5.12.0",
-        "contentHash": "dJuigXycpJNOiLT9or7mkHSkGFHgGW3/p6cNNYEKZBa7Hhp1FdX/cvqYWWYhRLpfoZOedeA7aRbYiOB3vW/dvA=="
+        "requested": "[6.0.0, )",
+        "resolved": "6.0.0",
+        "contentHash": "WYn+IYYDkpTErfbtrfVsM4RxrCINTZRzTFkmAHnYisoUzk1i5kOY1kWeH6kljR3Kmqt8i2FLHaDB6VrIgX6Opg=="
       },
       "Microsoft.DotNet.ILCompiler": {
         "type": "Direct",
