@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+SPDX-FileCopyrightText: 2024 Frans van Dorsselaer
+
+SPDX-License-Identifier: GPL-3.0-only
+-->
+<Project>
+
+  <PropertyGroup>
+    <!-- Fix GitVersion -->
+    <GitVersionFileExe>dotnet &quot;$(PkgGitVersion_MsBuild)/tools/net8.0/gitversion.dll&quot;</GitVersionFileExe>
+    <GitVersionAssemblyFile>$(PkgGitVersion_MsBuild)/tools/net8.0/GitVersion.MsBuild.dll</GitVersionAssemblyFile>
+  </PropertyGroup>
+
+</Project>

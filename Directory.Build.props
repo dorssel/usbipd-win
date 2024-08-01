@@ -64,6 +64,7 @@ SPDX-License-Identifier: GPL-3.0-only
 
   <ItemGroup>
     <PackageReference Include="GitVersion.MsBuild" PrivateAssets="all" />
+    <Compile Include="$(MSBuildThisFileDirectory)Fake_GitVersionInformation.cs" Condition=" '$(MSBuildRuntimeType)' != 'Core' " />
   </ItemGroup>
 
 </Project>
