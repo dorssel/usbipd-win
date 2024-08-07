@@ -4,9 +4,9 @@
     "native,Version=v0.0": {
       "GitVersion.MsBuild": {
         "type": "Direct",
-        "requested": "[6.0.0, )",
-        "resolved": "6.0.0",
-        "contentHash": "WYn+IYYDkpTErfbtrfVsM4RxrCINTZRzTFkmAHnYisoUzk1i5kOY1kWeH6kljR3Kmqt8i2FLHaDB6VrIgX6Opg=="
+        "requested": "[6.0.1, )",
+        "resolved": "6.0.1",
+        "contentHash": "7nTvs5Uy+pc6kgmHFsjBEY8XYNWoWW7xp3zyP18YcUibm/Kjf3dPaDXhJKqLwOQmpiTkeAzFU1PvGgn1c8s1OA=="
       },
       "WixToolset.Firewall.wixext": {
         "type": "Direct",
