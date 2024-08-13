@@ -3,6 +3,6 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
 ---
-# yaml-language-server: $schema=https://raw.githubusercontent.com/GitTools/GitVersion/main/schemas/5.12/GitVersion.configuration.json
+# yaml-language-server: $schema=https://raw.githubusercontent.com/GitTools/GitVersion/main/schemas/6.0/GitVersion.configuration.json
 
 assembly-file-versioning-format: '{Major}.{Minor}.{Patch}.{env:GITHUB_RUN_NUMBER ?? 0}'

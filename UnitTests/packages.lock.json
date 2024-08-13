@@ -10,9 +10,9 @@
       },
       "GitVersion.MsBuild": {
         "type": "Direct",
-        "requested": "[6.0.1, )",
-        "resolved": "6.0.1",
-        "contentHash": "7nTvs5Uy+pc6kgmHFsjBEY8XYNWoWW7xp3zyP18YcUibm/Kjf3dPaDXhJKqLwOQmpiTkeAzFU1PvGgn1c8s1OA=="
+        "requested": "[6.0.2, )",
+        "resolved": "6.0.2",
+        "contentHash": "rGj4pT8bBEb92ajJR0eFvY5apVy/U4GdsQ89vLBv0zFGJ8ddEv3Fq27mN8oI+xmCIdx6PlPs+JNFA22FCR5VjA=="
       },
       "Microsoft.NET.Test.Sdk": {
         "type": "Direct",
