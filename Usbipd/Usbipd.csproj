@@ -34,6 +34,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" />
     <PackageReference Include="Microsoft.Windows.CsWin32" PrivateAssets="all" />
     <PackageReference Include="System.CommandLine" />
+    <PackageReference Include="System.Text.Json" />
   </ItemGroup>
 
   <ItemGroup>
@@ -50,7 +51,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <ItemGroup>
       <Translations Include="$(OutputPath)\**\System.CommandLine.resources.dll" />
     </ItemGroup>
-    <RemoveDir Directories="@(Translations->DirectoryName())" />
+    <RemoveDir Directories="@(Translations-&gt;DirectoryName())" />
   </Target>
 
   <Target Name="RemoveDebug" AfterTargets="Publish">
