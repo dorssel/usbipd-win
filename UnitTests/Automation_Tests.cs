@@ -334,4 +334,15 @@ sealed class Automation_Tests
         });
     }
 
+    [TestMethod]
+    public void JsonConverterIPAddress_Write_NullValue()
+    {
+        using var memoryStream = new MemoryStream();
+        using var writer = new Utf8JsonWriter(memoryStream, new() { SkipValidation = true });
+        var converter = new JsonConverterIPAddress();
+        Assert.ThrowsException<ArgumentNullException>(() =>
+        {
+            converter.Write(writer, null!, JsonSerializerOptions.Default);
+        });
+    }
 }
