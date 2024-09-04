@@ -56,7 +56,7 @@ static class Tools
         {
             fixed (byte* dst = bytes)
             {
-                Marshal.StructureToPtr(s, (IntPtr)dst, false);
+                Marshal.StructureToPtr(s, (nint)dst, false);
             }
         }
     }
@@ -79,7 +79,7 @@ static class Tools
         {
             fixed (byte* src = bytes)
             {
-                s = Marshal.PtrToStructure<T>((IntPtr)src);
+                s = Marshal.PtrToStructure<T>((nint)src);
             }
         }
     }

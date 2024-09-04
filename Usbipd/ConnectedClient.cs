@@ -231,7 +231,7 @@ sealed class ConnectedClient(ILogger<ConnectedClient> logger, ClientContext clie
                         {
                             case CM_NOTIFY_ACTION.CM_NOTIFY_ACTION_DEVICEREMOVEPENDING:
                             case CM_NOTIFY_ACTION.CM_NOTIFY_ACTION_DEVICEREMOVECOMPLETE:
-                                PInvoke.SetEvent((HANDLE)(IntPtr)context);
+                                PInvoke.SetEvent((HANDLE)(nint)context);
                                 break;
                         }
                         return (uint)WIN32_ERROR.ERROR_SUCCESS;

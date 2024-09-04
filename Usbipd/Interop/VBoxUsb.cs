@@ -109,7 +109,7 @@ static class VBoxUsb
         public UsbSupXferFlags flags;          /* [in] USBSUP_FLAG_XXX */
         public UsbSupError error;          /* [out] USBSUP_XFER_XXX */
         public ulong len;            /* [in/out] may change */
-        public IntPtr buf;           /* [in/out] depends on dir */
+        public nint buf;           /* [in/out] depends on dir */
         public uint numIsoPkts;     /* [in] number of isochronous packets (8 max) */
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
         public UsbSupIsoPkt[] aIsoPkts;    /* [in/out] isochronous packet descriptors */
