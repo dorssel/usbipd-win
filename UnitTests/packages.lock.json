@@ -37,9 +37,9 @@
       },
       "Moq": {
         "type": "Direct",
-        "requested": "[4.20.70, )",
-        "resolved": "4.20.70",
-        "contentHash": "4rNnAwdpXJBuxqrOCzCyICXHSImOTRktCgCWXWykuF1qwoIsVvEnR7PjbMk/eLOxWvhmj5Kwt+kDV3RGUYcNwg==",
+        "requested": "[4.20.71, )",
+        "resolved": "4.20.71",
+        "contentHash": "sVyDjL8RDhB2CHYlAc8JCVdULQDqKPLKQj8B9yplEHg+MoNkWcuz3soUpwqTbNmFRJrKgVs8iqFK1SYlBTG5/A==",
         "dependencies": {
           "Castle.Core": "5.1.1"
         }
