@@ -38,7 +38,7 @@ jobs:
           dotnet restore --force-evaluate Installer
 
       - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v6
+        uses: peter-evans/create-pull-request@v7
         with:
           commit-message: 'Update packages.lock.json'
           title: 'Update packages.lock.json'
