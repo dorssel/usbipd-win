@@ -334,7 +334,7 @@ sealed class AttachedEndpoint
             }
             else
             {
-                urb.buf = IntPtr.Zero;
+                urb.buf = 0;
                 StructToBytes(urb, bytes);
                 ioctl = Device.IoControlAsync(SUPUSB_IOCTL.SEND_URB, bytes, bytes);
             }
