@@ -30,7 +30,7 @@ jobs:
           curl --fail --output Usbipd.Automation/usb.ids http://www.linux-usb.org/usb.ids # DevSkim: ignore DS137138
 
       - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v6
+        uses: peter-evans/create-pull-request@v7
         with:
           commit-message: 'Update usb.ids'
           title: 'Update usb.ids'
