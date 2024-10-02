@@ -1,10 +1,10 @@
-; $Id: VBoxUSB.inf 155564 2023-01-27 16:55:51Z klaus $
+; $Id: VBoxUSB.inf 164827 2024-09-16 14:03:52Z bird $
 ;; @file
 ; VBox host drivers - USB drivers - Win32 USB device
 ;
 
 ;
-; Copyright (C) 2011-2023 Oracle and/or its affiliates.
+; Copyright (C) 2011-2024 Oracle and/or its affiliates.
 ;
 ; This file is part of VirtualBox base platform packages, as
 ; available from https://www.virtualbox.org.
@@ -39,7 +39,7 @@ Signature="$Windows NT$"
 Class=USB
 ClassGUID={36FC9E60-C465-11CF-8056-444553540000}
 provider=%ORACLE%
-DriverVer = 07/10/2024,7.0.20.13906 ; r163906
+DriverVer = 09/26/2024,7.1.2.14945 ; r164945
 CatalogFile=VBoxUSB.cat
 
 [SourceDisksNames]
