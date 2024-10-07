@@ -5,6 +5,6 @@
     "rollForward": "latestPatch"
   },
   "msbuild-sdks": {
-    "WixToolset.Sdk": "5.0.1"
+    "WixToolset.Sdk": "5.0.2"
   }
 }
