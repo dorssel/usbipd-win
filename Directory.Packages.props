@@ -28,6 +28,6 @@ SPDX-License-Identifier: GPL-3.0-only
     <PackageVersion Include="System.IO.Pipelines" Version="8.0.0" />
     <PackageVersion Include="coverlet.collector" Version="6.0.2" />
     <!-- Transitive dependencies with security fixes -->
-    <PackageVersion Include="System.Text.Json" Version="8.0.4" />
+    <PackageVersion Include="System.Text.Json" Version="8.0.5" />
   </ItemGroup>
 </Project>
