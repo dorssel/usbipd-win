@@ -474,11 +474,6 @@
           "System.Diagnostics.EventLog": "8.0.0"
         }
       },
-      "System.Text.Encodings.Web": {
-        "type": "Transitive",
-        "resolved": "8.0.0",
-        "contentHash": "yev/k9GHAEGx2Rg3/tU6MQh4HGBXJs70y7j1LaM1i/ER9po+6nnQ6RRqTJn1E7Xu0fbIFK80Nh5EoODxrbxwBQ=="
-      },
       "usbipd": {
         "type": "Project",
         "dependencies": {
@@ -509,12 +504,9 @@
       },
       "System.Text.Json": {
         "type": "CentralTransitive",
-        "requested": "[8.0.4, )",
-        "resolved": "8.0.4",
-        "contentHash": "bAkhgDJ88XTsqczoxEMliSrpijKZHhbJQldhAmObj/RbrN3sU5dcokuXmWJWsdQAhiMJ9bTayWsL1C9fbbCRhw==",
-        "dependencies": {
-          "System.Text.Encodings.Web": "8.0.0"
-        }
+        "requested": "[8.0.5, )",
+        "resolved": "8.0.5",
+        "contentHash": "0f1B50Ss7rqxXiaBJyzUu9bWFOO2/zSlifZ/UNMdiIpDYe4cY4LQQicP4nirK1OS31I43rn062UIJ1Q9bpmHpg=="
       }
     }
   }
