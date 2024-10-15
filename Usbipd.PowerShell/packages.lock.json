@@ -4,9 +4,9 @@
     ".NETStandard,Version=v2.0": {
       "GitVersion.MsBuild": {
         "type": "Direct",
-        "requested": "[6.0.2, )",
-        "resolved": "6.0.2",
-        "contentHash": "rGj4pT8bBEb92ajJR0eFvY5apVy/U4GdsQ89vLBv0zFGJ8ddEv3Fq27mN8oI+xmCIdx6PlPs+JNFA22FCR5VjA=="
+        "requested": "[6.0.3, )",
+        "resolved": "6.0.3",
+        "contentHash": "U9lnHqzhDFAOyninVjyN/inUrNpPoYXb/CZwxf51JOgOV8hpWf4YV2GmdJyOjdCKm1S3REeS2U1xt0eS8XVoVg=="
       },
       "NETStandard.Library": {
         "type": "Direct",
