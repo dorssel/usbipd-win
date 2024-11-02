@@ -10,7 +10,6 @@ SPDX-License-Identifier: GPL-3.0-only
     <!-- Use the latest .NET SDK -->
     <!-- This product requires Windows 10 (Windows Server 2019) or higher -->
     <MainTargetFramework>net8.0-windows10.0.17763</MainTargetFramework>
-    <GitVersionTargetFramework>net8.0</GitVersionTargetFramework>
   </PropertyGroup>
 
   <!-- Sane defaults; override in project where needed -->
