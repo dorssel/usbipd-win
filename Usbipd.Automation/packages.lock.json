@@ -4,9 +4,9 @@
     ".NETStandard,Version=v2.0": {
       "GitVersion.MsBuild": {
         "type": "Direct",
-        "requested": "[6.0.2, )",
-        "resolved": "6.0.2",
-        "contentHash": "rGj4pT8bBEb92ajJR0eFvY5apVy/U4GdsQ89vLBv0zFGJ8ddEv3Fq27mN8oI+xmCIdx6PlPs+JNFA22FCR5VjA=="
+        "requested": "[6.0.4, )",
+        "resolved": "6.0.4",
+        "contentHash": "Gf6rFhNQVh7bcmxNFvcbI5MCRPZwdcWcoGDAdXRzrlvsLBdHaVz5KFup4mKXegoiirDCUEbjKyc1wmB2qrnctw=="
       },
       "NETStandard.Library": {
         "type": "Direct",
@@ -26,9 +26,9 @@
     "net8.0-windows10.0.17763": {
       "GitVersion.MsBuild": {
         "type": "Direct",
-        "requested": "[6.0.2, )",
-        "resolved": "6.0.2",
-        "contentHash": "rGj4pT8bBEb92ajJR0eFvY5apVy/U4GdsQ89vLBv0zFGJ8ddEv3Fq27mN8oI+xmCIdx6PlPs+JNFA22FCR5VjA=="
+        "requested": "[6.0.4, )",
+        "resolved": "6.0.4",
+        "contentHash": "Gf6rFhNQVh7bcmxNFvcbI5MCRPZwdcWcoGDAdXRzrlvsLBdHaVz5KFup4mKXegoiirDCUEbjKyc1wmB2qrnctw=="
       },
       "Microsoft.NET.ILLink.Tasks": {
         "type": "Direct",
