@@ -33,7 +33,7 @@ sealed class AttachedEndpoint
 
         ReplyChannel = replyChannel;
 
-        Task.Run(async () =>
+        _ = Task.Run(async () =>
         {
             // This task ensures that all SUBMIT replies for this specific endpoint are
             // returned in the same order as the requests.
@@ -143,7 +143,7 @@ sealed class AttachedEndpoint
             // Continue when all ioctls *and* their continuations have been completed.
             var replyTask = Task.WhenAll(ioctls).ContinueWith(RequestReply (task, _) =>
             {
-                Interlocked.Decrement(ref InterlockedSubmits);
+                _ = Interlocked.Decrement(ref InterlockedSubmits);
 
                 var header = new UsbIpHeader
                 {
@@ -208,7 +208,7 @@ sealed class AttachedEndpoint
 
     public async Task HandleSubmitAsync(UsbIpHeaderBasic basic, UsbIpHeaderCmdSubmit submit, CancellationToken cancellationToken)
     {
-        Interlocked.Increment(ref InterlockedSubmits);
+        _ = Interlocked.Increment(ref InterlockedSubmits);
 
         if (basic.EndpointType(submit) == UsbSupTransferType.USBSUP_TRANSFER_TYPE_ISOC)
         {
@@ -345,7 +345,7 @@ sealed class AttachedEndpoint
 
         var replyTask = ioctl.ContinueWith(RequestReply (task, _) =>
         {
-            Interlocked.Decrement(ref InterlockedSubmits);
+            _ = Interlocked.Decrement(ref InterlockedSubmits);
 
             BytesToStruct(bytes, out urb);
 
@@ -496,7 +496,7 @@ sealed class AttachedEndpoint
             // Just like for CLEAR_FEATURE, we are going to wait until this finishes,
             // in order to avoid races with subsequent SUBMIT to the same endpoint.
             Logger.Trace($"Aborting endpoint");
-            await Device.IoControlAsync(SUPUSB_IOCTL.USB_ABORT_ENDPOINT, StructToBytes(clearEndpoint), null);
+            _ = await Device.IoControlAsync(SUPUSB_IOCTL.USB_ABORT_ENDPOINT, StructToBytes(clearEndpoint), null);
 
             UnlinkHoldoffCount = 0;
         }

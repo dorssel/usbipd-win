@@ -16,7 +16,10 @@ public sealed partial class State
 
 #if !NETSTANDARD
     [JsonConstructor]
-    public State(IReadOnlyCollection<Device> devices) => Devices = devices;
+    public State(IReadOnlyCollection<Device> devices)
+    {
+        Devices = devices;
+    }
 #endif
 
     /// <summary>

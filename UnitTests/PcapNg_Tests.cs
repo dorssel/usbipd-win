@@ -10,16 +10,16 @@ using static Usbipd.Interop.VBoxUsb;
 namespace UnitTests;
 
 [TestClass]
-sealed class PcapNg_Tests
+sealed partial class PcapNg_Tests
 {
-    sealed class MockConfiguration : IDisposable
+    sealed partial class MockConfiguration : IDisposable
     {
         public MockConfiguration(string? path, uint? snapLength = null)
         {
-            Mock.Setup(m => m["usbipd:PcapNg:Path"]).Returns(path!);
+            _ = Mock.Setup(m => m["usbipd:PcapNg:Path"]).Returns(path!);
             if (path is not null)
             {
-                Mock.Setup(m => m["usbipd:PcapNg:SnapLength"]).Returns(snapLength?.ToString()!);
+                _ = Mock.Setup(m => m["usbipd:PcapNg:SnapLength"]).Returns(snapLength?.ToString()!);
             }
         }
 
@@ -114,21 +114,15 @@ sealed class PcapNg_Tests
             { UsbSupTransferType.USBSUP_TRANSFER_TYPE_BULK, 3 },
         };
 
-        static readonly List<UsbSupTransferType> _Invalid = new()
-        {
+        static readonly List<UsbSupTransferType> _Invalid =
+        [
             UsbSupTransferType.USBSUP_TRANSFER_TYPE_CTRL,
             (UsbSupTransferType)0xbaadf00d,
-        };
+        ];
 
-        public static IEnumerable<object[]> KnownGood
-        {
-            get => from value in _KnownGood select new object[] { value.Key, value.Value };
-        }
+        public static IEnumerable<object[]> KnownGood => from value in _KnownGood select new object[] { value.Key, value.Value };
 
-        public static IEnumerable<object[]> Invalid
-        {
-            get => from value in _Invalid select new object[] { value };
-        }
+        public static IEnumerable<object[]> Invalid => from value in _Invalid select new object[] { value };
     }
 
 
@@ -143,7 +137,7 @@ sealed class PcapNg_Tests
     [DynamicData(nameof(TypeData.Invalid), typeof(TypeData))]
     public void ConvertType_Invalid(UsbSupTransferType from)
     {
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => PcapNg.ConvertType(from));
+        _ = Assert.ThrowsException<ArgumentOutOfRangeException>(() => PcapNg.ConvertType(from));
     }
 
     [TestMethod]

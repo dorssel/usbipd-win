@@ -51,10 +51,7 @@ sealed class ConfigurationManagerException_Tests
             { (CONFIGRET)0xbaadf00d, WIN32_ERROR.ERROR_CAN_NOT_COMPLETE }, // unknown error
         };
 
-        public static IEnumerable<object[]> KnownGood
-        {
-            get => from value in _KnownGood select new object[] { value.Key, value.Value };
-        }
+        public static IEnumerable<object[]> KnownGood => from value in _KnownGood select new object[] { value.Key, value.Value };
     }
 
     [TestMethod]

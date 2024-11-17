@@ -30,7 +30,7 @@ static partial class Wsl
 
     const string WslMountPoint = "/var/run/usbipd-win";
 
-    public sealed record Distribution(string Name, bool IsDefault, uint Version, bool IsRunning);
+    internal sealed record Distribution(string Name, bool IsDefault, uint Version, bool IsRunning);
 
     static readonly char[] CtrlC = ['\x03'];
 

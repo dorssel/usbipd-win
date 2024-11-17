@@ -204,22 +204,15 @@ static class Program
             });
             attachCommand.SetHandler(async invocationContext =>
             {
-                if (invocationContext.ParseResult.HasOption(busIdOption))
-                {
-                    invocationContext.ExitCode = (int)
-                        await commandHandlers.AttachWsl(invocationContext.ParseResult.GetValueForOption(busIdOption),
+                invocationContext.ExitCode = invocationContext.ParseResult.HasOption(busIdOption)
+                    ? (int)await commandHandlers.AttachWsl(invocationContext.ParseResult.GetValueForOption(busIdOption),
+                            invocationContext.ParseResult.HasOption(autoAttachOption),
+                            invocationContext.ParseResult.GetValueForOption(wslOption),
+                            invocationContext.Console, invocationContext.GetCancellationToken())
+                    : (int)await commandHandlers.AttachWsl(invocationContext.ParseResult.GetValueForOption(hardwareIdOption),
                             invocationContext.ParseResult.HasOption(autoAttachOption),
                             invocationContext.ParseResult.GetValueForOption(wslOption),
                             invocationContext.Console, invocationContext.GetCancellationToken());
-                }
-                else
-                {
-                    invocationContext.ExitCode = (int)
-                        await commandHandlers.AttachWsl(invocationContext.ParseResult.GetValueForOption(hardwareIdOption),
-                            invocationContext.ParseResult.HasOption(autoAttachOption),
-                            invocationContext.ParseResult.GetValueForOption(wslOption),
-                            invocationContext.Console, invocationContext.GetCancellationToken());
-                }
             });
             rootCommand.AddCommand(attachCommand);
         }
@@ -279,20 +272,13 @@ static class Program
             });
             bindCommand.SetHandler(async invocationContext =>
             {
-                if (invocationContext.ParseResult.HasOption(busIdOption))
-                {
-                    invocationContext.ExitCode = (int)
-                        await commandHandlers.Bind(invocationContext.ParseResult.GetValueForOption(busIdOption),
+                invocationContext.ExitCode = invocationContext.ParseResult.HasOption(busIdOption)
+                    ? (int)await commandHandlers.Bind(invocationContext.ParseResult.GetValueForOption(busIdOption),
+                            invocationContext.ParseResult.HasOption(forceOption),
+                            invocationContext.Console, invocationContext.GetCancellationToken())
+                    : (int)await commandHandlers.Bind(invocationContext.ParseResult.GetValueForOption(hardwareIdOption),
                             invocationContext.ParseResult.HasOption(forceOption),
                             invocationContext.Console, invocationContext.GetCancellationToken());
-                }
-                else
-                {
-                    invocationContext.ExitCode = (int)
-                        await commandHandlers.Bind(invocationContext.ParseResult.GetValueForOption(hardwareIdOption),
-                            invocationContext.ParseResult.HasOption(forceOption),
-                            invocationContext.Console, invocationContext.GetCancellationToken());
-                }
             });
             rootCommand.AddCommand(bindCommand);
         }
@@ -351,23 +337,13 @@ static class Program
             });
             detachCommand.SetHandler(async invocationContext =>
             {
-                if (invocationContext.ParseResult.HasOption(allOption))
-                {
-                    invocationContext.ExitCode = (int)
-                        await commandHandlers.DetachAll(invocationContext.Console, invocationContext.GetCancellationToken());
-                }
-                else if (invocationContext.ParseResult.HasOption(busIdOption))
-                {
-                    invocationContext.ExitCode = (int)
-                        await commandHandlers.Detach(invocationContext.ParseResult.GetValueForOption(busIdOption),
-                            invocationContext.Console, invocationContext.GetCancellationToken());
-                }
-                else
-                {
-                    invocationContext.ExitCode = (int)
-                        await commandHandlers.Detach(invocationContext.ParseResult.GetValueForOption(hardwareIdOption),
-                            invocationContext.Console, invocationContext.GetCancellationToken());
-                }
+                invocationContext.ExitCode = invocationContext.ParseResult.HasOption(allOption)
+                    ? (int)await commandHandlers.DetachAll(invocationContext.Console, invocationContext.GetCancellationToken())
+                    : invocationContext.ParseResult.HasOption(busIdOption)
+                        ? (int)await commandHandlers.Detach(invocationContext.ParseResult.GetValueForOption(busIdOption),
+                                invocationContext.Console, invocationContext.GetCancellationToken())
+                        : (int)await commandHandlers.Detach(invocationContext.ParseResult.GetValueForOption(hardwareIdOption),
+                                invocationContext.Console, invocationContext.GetCancellationToken());
             });
             rootCommand.AddCommand(detachCommand);
         }
@@ -549,17 +525,10 @@ static class Program
                 });
                 removeCommand.SetHandler(async invocationContext =>
                 {
-                    if (invocationContext.ParseResult.HasOption(allOption))
-                    {
-                        invocationContext.ExitCode = (int)
-                            await commandHandlers.PolicyRemoveAll(invocationContext.Console, invocationContext.GetCancellationToken());
-                    }
-                    else
-                    {
-                        invocationContext.ExitCode = (int)
-                            await commandHandlers.PolicyRemove(invocationContext.ParseResult.GetValueForOption(guidOption),
+                    invocationContext.ExitCode = invocationContext.ParseResult.HasOption(allOption)
+                        ? (int)await commandHandlers.PolicyRemoveAll(invocationContext.Console, invocationContext.GetCancellationToken())
+                        : (int)await commandHandlers.PolicyRemove(invocationContext.ParseResult.GetValueForOption(guidOption),
                                 invocationContext.Console, invocationContext.GetCancellationToken());
-                    }
                 });
                 policyCommand.AddCommand(removeCommand);
             }
@@ -676,29 +645,16 @@ static class Program
             });
             unbindCommand.SetHandler(async invocationContext =>
             {
-                if (invocationContext.ParseResult.HasOption(allOption))
-                {
-                    invocationContext.ExitCode = (int)
-                        await commandHandlers.UnbindAll(invocationContext.Console, invocationContext.GetCancellationToken());
-                }
-                else if (invocationContext.ParseResult.HasOption(busIdOption))
-                {
-                    invocationContext.ExitCode = (int)
-                        await commandHandlers.Unbind(invocationContext.ParseResult.GetValueForOption(busIdOption),
-                            invocationContext.Console, invocationContext.GetCancellationToken());
-                }
-                else if (invocationContext.ParseResult.HasOption(guidOption))
-                {
-                    invocationContext.ExitCode = (int)
-                        await commandHandlers.Unbind(invocationContext.ParseResult.GetValueForOption(guidOption),
-                            invocationContext.Console, invocationContext.GetCancellationToken());
-                }
-                else
-                {
-                    invocationContext.ExitCode = (int)
-                        await commandHandlers.Unbind(invocationContext.ParseResult.GetValueForOption(hardwareIdOption),
-                            invocationContext.Console, invocationContext.GetCancellationToken());
-                }
+                invocationContext.ExitCode = invocationContext.ParseResult.HasOption(allOption)
+                    ? (int)await commandHandlers.UnbindAll(invocationContext.Console, invocationContext.GetCancellationToken())
+                    : invocationContext.ParseResult.HasOption(busIdOption)
+                        ? (int)await commandHandlers.Unbind(invocationContext.ParseResult.GetValueForOption(busIdOption),
+                                invocationContext.Console, invocationContext.GetCancellationToken())
+                        : invocationContext.ParseResult.HasOption(guidOption)
+                            ? (int)await commandHandlers.Unbind(invocationContext.ParseResult.GetValueForOption(guidOption),
+                                    invocationContext.Console, invocationContext.GetCancellationToken())
+                            : (int)await commandHandlers.Unbind(invocationContext.ParseResult.GetValueForOption(hardwareIdOption),
+                                    invocationContext.Console, invocationContext.GetCancellationToken());
             });
             rootCommand.AddCommand(unbindCommand);
         }
@@ -809,11 +765,7 @@ static class Program
         try
         {
             var exitCode = (ExitCode)commandLine.InvokeAsync(args, optionalTestConsole).Result;
-            if (!Enum.IsDefined(exitCode))
-            {
-                throw new UnexpectedResultException($"Unknown exit code {exitCode}");
-            }
-            return exitCode;
+            return Enum.IsDefined(exitCode) ? exitCode : throw new UnexpectedResultException($"Unknown exit code {exitCode}");
         }
         catch (AggregateException ex) when (ex.Flatten().InnerExceptions.Any(e => e is OperationCanceledException))
         {

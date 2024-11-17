@@ -27,7 +27,7 @@ static class UsbIp
     /// <summary>UsbIp: tools/usbip_network.c: usbip_port</summary>
     public const ushort USBIP_PORT = 3240;
 
-    public enum OpCode : ushort
+    internal enum OpCode : ushort
     {
         /// <summary>UsbIp: tools/usbip_network.h</summary>
         OP_REQ_DEVLIST = 0x8005,
@@ -40,7 +40,7 @@ static class UsbIp
         OP_REP_IMPORT = 0x0003,
     }
 
-    public enum Status : uint
+    internal enum Status : uint
     {
         /// <summary>UsbIp: tools/usbip_common.h
         /// <para>Request Completed Successfully</para></summary>
@@ -62,7 +62,7 @@ static class UsbIp
         ST_ERROR
     }
 
-    public enum UsbIpCmd : uint
+    internal enum UsbIpCmd : uint
     {
         /// <summary>UsbIp: drivers/usbip_common.h</summary>
         USBIP_CMD_SUBMIT = 1,
@@ -74,7 +74,7 @@ static class UsbIp
         USBIP_RET_UNLINK,
     }
 
-    public enum UsbIpDir : uint
+    internal enum UsbIpDir : uint
     {
         /// <summary>UsbIp: drivers/usbip_common.h</summary>
         USBIP_DIR_OUT = 0,
@@ -84,7 +84,7 @@ static class UsbIp
 
     /// <summary>UsbIp: drivers/usbip_common.h: usbip_header_basic</summary>
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    public struct UsbIpHeaderBasic
+    internal struct UsbIpHeaderBasic
     {
         public UsbIpCmd command;
         public uint seqnum;
@@ -95,7 +95,7 @@ static class UsbIp
 
     /// <summary>UsbIp: drivers/usbip_common.h: usbip_header_cmd_submit</summary>
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    public struct UsbIpHeaderCmdSubmit
+    internal struct UsbIpHeaderCmdSubmit
     {
         public uint transfer_flags;
         public uint transfer_buffer_length;
@@ -108,7 +108,7 @@ static class UsbIp
 
     /// <summary>UsbIp: drivers/usbip_common.h: usbip_header_ret_submit</summary>
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    public struct UsbIpHeaderRetSubmit
+    internal struct UsbIpHeaderRetSubmit
     {
         public int status;
         public int actual_length;
@@ -119,21 +119,21 @@ static class UsbIp
 
     /// <summary>UsbIp: drivers/usbip_common.h: usbip_header_cmd_unlink</summary>
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    public struct UsbIpHeaderCmdUnlink
+    internal struct UsbIpHeaderCmdUnlink
     {
         public uint seqnum;
     }
 
     /// <summary>UsbIp: drivers/usbip_common.h: usbip_header_ret_unlink</summary>
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    public struct UsbIpHeaderRetUnlink
+    internal struct UsbIpHeaderRetUnlink
     {
         public int status;
     }
 
     /// <summary>UsbIp: drivers/usbip_common.h: usbip_header</summary>
     [StructLayout(LayoutKind.Explicit, Pack = 1)]
-    public struct UsbIpHeader
+    internal struct UsbIpHeader
     {
         [FieldOffset(0)]
         public UsbIpHeaderBasic basic; // renamed, 'base' is a keyword in C#
@@ -150,7 +150,7 @@ static class UsbIp
 
     /// <summary>UsbIp: drivers/usbip_common.h: usbip_iso_packet_descriptor</summary>
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    public struct UsbIpIsoPacketDescriptor
+    internal struct UsbIpIsoPacketDescriptor
     {
         public uint offset;
         public uint length;
@@ -176,7 +176,7 @@ static class UsbIp
     /// <summary>
     /// Read a native header from a big endian stream.
     /// </summary>
-    public static async Task<UsbIpHeader> ReadUsbIpHeaderAsync(this Stream stream, CancellationToken cancellationToken)
+    internal static async Task<UsbIpHeader> ReadUsbIpHeaderAsync(this Stream stream, CancellationToken cancellationToken)
     {
         var bytes = new byte[Unsafe.SizeOf<UsbIpHeader>()];
         await stream.ReadMessageAsync(bytes, cancellationToken);
@@ -187,7 +187,7 @@ static class UsbIp
     /// <summary>
     /// Read native descriptors from a big endian stream.
     /// </summary>
-    public static async Task<UsbIpIsoPacketDescriptor[]> ReadUsbIpIsoPacketDescriptorsAsync(this Stream stream, int count, CancellationToken cancellationToken)
+    internal static async Task<UsbIpIsoPacketDescriptor[]> ReadUsbIpIsoPacketDescriptorsAsync(this Stream stream, int count, CancellationToken cancellationToken)
     {
         var bytes = new byte[count * Unsafe.SizeOf<UsbIpIsoPacketDescriptor>()];
         await stream.ReadMessageAsync(bytes, cancellationToken);
@@ -198,7 +198,7 @@ static class UsbIp
     /// <summary>
     /// Marshal the native header to a big endian byte array.
     /// </summary>
-    public static byte[] ToBytes(this in UsbIpHeader header)
+    internal static byte[] ToBytes(this in UsbIpHeader header)
     {
         var bytes = new byte[Unsafe.SizeOf<UsbIpHeader>()];
         MemoryMarshal.Write(bytes, header);
@@ -209,7 +209,7 @@ static class UsbIp
     /// <summary>
     /// Marshal the native descriptors to a big endian byte array.
     /// </summary>
-    public static byte[] ToBytes(this UsbIpIsoPacketDescriptor[] descriptors)
+    internal static byte[] ToBytes(this UsbIpIsoPacketDescriptor[] descriptors)
     {
         var bytes = MemoryMarshal.Cast<UsbIpIsoPacketDescriptor, byte>(descriptors).ToArray();
         MemoryMarshal.Cast<byte, int>(bytes).ReverseEndianness();

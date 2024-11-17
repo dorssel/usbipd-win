@@ -18,7 +18,7 @@ sealed class Parse_bind_Tests
     public void BusIdSuccess()
     {
         var mock = CreateMock();
-        mock.Setup(m => m.Bind(It.Is<BusId>(busId => busId == TestBusId), false,
+        _ = mock.Setup(m => m.Bind(It.Is<BusId>(busId => busId == TestBusId), false,
             It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Success));
 
         Test(ExitCode.Success, mock, "bind", "--busid", TestBusId.ToString());
@@ -28,7 +28,7 @@ sealed class Parse_bind_Tests
     public void BusIdForceSuccess()
     {
         var mock = CreateMock();
-        mock.Setup(m => m.Bind(It.Is<BusId>(busId => busId == TestBusId), true,
+        _ = mock.Setup(m => m.Bind(It.Is<BusId>(busId => busId == TestBusId), true,
             It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Success));
 
         Test(ExitCode.Success, mock, "bind", "--busid", TestBusId.ToString(), "--force");
@@ -38,7 +38,7 @@ sealed class Parse_bind_Tests
     public void BusIdFailure()
     {
         var mock = CreateMock();
-        mock.Setup(m => m.Bind(It.Is<BusId>(busId => busId == TestBusId), false,
+        _ = mock.Setup(m => m.Bind(It.Is<BusId>(busId => busId == TestBusId), false,
             It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Failure));
 
         Test(ExitCode.Failure, mock, "bind", "--busid", TestBusId.ToString());
@@ -48,7 +48,7 @@ sealed class Parse_bind_Tests
     public void BusIdCanceled()
     {
         var mock = CreateMock();
-        mock.Setup(m => m.Bind(It.Is<BusId>(busId => busId == TestBusId), false,
+        _ = mock.Setup(m => m.Bind(It.Is<BusId>(busId => busId == TestBusId), false,
             It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Throws<OperationCanceledException>();
 
         Test(ExitCode.Canceled, mock, "bind", "--busid", TestBusId.ToString());
@@ -58,7 +58,7 @@ sealed class Parse_bind_Tests
     public void HardwareIdSuccess()
     {
         var mock = CreateMock();
-        mock.Setup(m => m.Bind(It.Is<VidPid>(vidPid => vidPid == TestHardwareId), false,
+        _ = mock.Setup(m => m.Bind(It.Is<VidPid>(vidPid => vidPid == TestHardwareId), false,
             It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Success));
 
         Test(ExitCode.Success, mock, "bind", "--hardware-id", TestHardwareId.ToString());
@@ -68,7 +68,7 @@ sealed class Parse_bind_Tests
     public void HardwareIdForceSuccess()
     {
         var mock = CreateMock();
-        mock.Setup(m => m.Bind(It.Is<VidPid>(vidPid => vidPid == TestHardwareId), true,
+        _ = mock.Setup(m => m.Bind(It.Is<VidPid>(vidPid => vidPid == TestHardwareId), true,
             It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Success));
 
         Test(ExitCode.Success, mock, "bind", "--hardware-id", TestHardwareId.ToString(), "--force");
@@ -78,7 +78,7 @@ sealed class Parse_bind_Tests
     public void HardwareIdFailure()
     {
         var mock = CreateMock();
-        mock.Setup(m => m.Bind(It.Is<VidPid>(vidPid => vidPid == TestHardwareId), false,
+        _ = mock.Setup(m => m.Bind(It.Is<VidPid>(vidPid => vidPid == TestHardwareId), false,
             It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Failure));
 
         Test(ExitCode.Failure, mock, "bind", "--hardware-id", TestHardwareId.ToString());
@@ -88,7 +88,7 @@ sealed class Parse_bind_Tests
     public void HardwareIdCanceled()
     {
         var mock = CreateMock();
-        mock.Setup(m => m.Bind(It.Is<VidPid>(vidPid => vidPid == TestHardwareId), false,
+        _ = mock.Setup(m => m.Bind(It.Is<VidPid>(vidPid => vidPid == TestHardwareId), false,
             It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Throws<OperationCanceledException>();
 
         Test(ExitCode.Canceled, mock, "bind", "--hardware-id", TestHardwareId.ToString());

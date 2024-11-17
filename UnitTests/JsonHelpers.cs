@@ -54,12 +54,12 @@ static class JsonHelpers
             }
             else
             {
-                builder.Append("\r\n");
+                _ = builder.Append("\r\n");
             }
             lineOut = lineOut.Replace("[ ]", "[]");
             var extraIndent = lineOut.TakeWhile(c => c == ' ').ToArray();
 
-            builder.Append(extraIndent).Append(lineOut);
+            _ = builder.Append(extraIndent).Append(lineOut);
         }
         return builder.ToString();
     }

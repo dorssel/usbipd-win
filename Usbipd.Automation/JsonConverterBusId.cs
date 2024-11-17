@@ -13,12 +13,7 @@ public class JsonConverterBusId : JsonConverter<BusId>
 {
     public override BusId Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        if (reader.GetString() is not string text)
-        {
-            throw new InvalidDataException();
-        }
-
-        return BusId.Parse(text);
+        return reader.GetString() is string text ? BusId.Parse(text) : throw new InvalidDataException();
     }
 
     public override void Write(Utf8JsonWriter writer, BusId value, JsonSerializerOptions options)

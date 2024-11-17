@@ -24,7 +24,7 @@ sealed record ExportedDevice(string InstanceId, BusId BusId, Linux.UsbDeviceSpee
     static void Serialize(Stream stream, string value, uint size)
     {
         var buf = new byte[size];
-        Encoding.UTF8.GetBytes(value, 0, value.Length, buf, 0);
+        _ = Encoding.UTF8.GetBytes(value, 0, value.Length, buf, 0);
         stream.Write(buf);
     }
 
@@ -92,12 +92,12 @@ sealed record ExportedDevice(string InstanceId, BusId BusId, Linux.UsbDeviceSpee
             }
         };
         StructToBytes(request, buf);
-        await hub.IoControlAsync(PInvoke.IOCTL_USB_GET_DESCRIPTOR_FROM_NODE_CONNECTION, buf, buf);
+        _ = await hub.IoControlAsync(PInvoke.IOCTL_USB_GET_DESCRIPTOR_FROM_NODE_CONNECTION, buf, buf);
         BytesToStruct(buf.AsSpan(Marshal.SizeOf<USB_DESCRIPTOR_REQUEST>()), out USB_CONFIGURATION_DESCRIPTOR configuration);
         buf = new byte[Marshal.SizeOf<USB_DESCRIPTOR_REQUEST>() + configuration.wTotalLength];
         request.SetupPacket.wLength = configuration.wTotalLength;
         StructToBytes(request, buf);
-        await hub.IoControlAsync(PInvoke.IOCTL_USB_GET_DESCRIPTOR_FROM_NODE_CONNECTION, buf, buf);
+        _ = await hub.IoControlAsync(PInvoke.IOCTL_USB_GET_DESCRIPTOR_FROM_NODE_CONNECTION, buf, buf);
 
         var offset = Marshal.SizeOf<USB_DESCRIPTOR_REQUEST>();
         while (offset < buf.Length)
@@ -134,12 +134,12 @@ sealed record ExportedDevice(string InstanceId, BusId BusId, Linux.UsbDeviceSpee
 
         var hubInterfacePath = ConfigurationManager.GetHubInterfacePath(device.StubInstanceId ?? device.InstanceId);
         using var hubFile = new DeviceFile(hubInterfacePath);
-        using var cancellationTokenRegistration = cancellationToken.Register(() => hubFile.Dispose());
+        using var cancellationTokenRegistration = cancellationToken.Register(hubFile.Dispose);
         try
         {
             var data = new USB_NODE_CONNECTION_INFORMATION_EX() { ConnectionIndex = device.BusId.Value.Port };
             var buf = StructToBytes(data);
-            await hubFile.IoControlAsync(PInvoke.IOCTL_USB_GET_NODE_CONNECTION_INFORMATION_EX, buf, buf);
+            _ = await hubFile.IoControlAsync(PInvoke.IOCTL_USB_GET_NODE_CONNECTION_INFORMATION_EX, buf, buf);
             BytesToStruct(buf, out data);
 
             var speed = MapWindowsSpeedToLinuxSpeed((USB_DEVICE_SPEED)data.Speed);
@@ -151,7 +151,7 @@ sealed record ExportedDevice(string InstanceId, BusId BusId, Linux.UsbDeviceSpee
                 SupportedUsbProtocols = { ul = (uint)(UsbProtocols.Usb110 | UsbProtocols.Usb200 | UsbProtocols.Usb300) },
             };
             var buf2 = StructToBytes(data2);
-            await hubFile.IoControlAsync(PInvoke.IOCTL_USB_GET_NODE_CONNECTION_INFORMATION_EX_V2, buf2, buf2);
+            _ = await hubFile.IoControlAsync(PInvoke.IOCTL_USB_GET_NODE_CONNECTION_INFORMATION_EX_V2, buf2, buf2);
             BytesToStruct(buf2, out data2);
 
             if ((data2.SupportedUsbProtocols.ul & (uint)UsbProtocols.Usb300) != 0)

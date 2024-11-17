@@ -147,6 +147,8 @@ sealed class AttachedClient
                         await ReplyChannel.Writer.WriteAsync(new(header.basic.seqnum, []), cancellationToken);
                     }
                     break;
+                case UsbIpCmd.USBIP_RET_SUBMIT:
+                case UsbIpCmd.USBIP_RET_UNLINK:
                 default:
                     throw new ProtocolViolationException($"unknown UsbIpCmd {header.basic.command}");
             }

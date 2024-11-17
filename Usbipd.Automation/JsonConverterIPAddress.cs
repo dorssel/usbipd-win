@@ -14,12 +14,7 @@ public class JsonConverterIPAddress : JsonConverter<IPAddress>
 {
     public override IPAddress Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        if (reader.GetString() is not string text)
-        {
-            throw new InvalidDataException();
-        }
-
-        return IPAddress.Parse(text);
+        return reader.GetString() is string text ? IPAddress.Parse(text) : throw new InvalidDataException();
     }
 
     public override void Write(Utf8JsonWriter writer, IPAddress value, JsonSerializerOptions options)

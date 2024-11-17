@@ -102,14 +102,9 @@ sealed partial class CommandHandlers : ICommandHandlers
         if (usbids)
         {
             var vendor = device.HardwareId.Vendor;
-            if (vendor is not null)
-            {
-                return $"{vendor}, {device.HardwareId.Product ?? ConfigurationManager.UnknownDevice}";
-            }
-            else
-            {
-                return ConfigurationManager.UnknownDevice;
-            }
+            return vendor is not null
+                ? $"{vendor}, {device.HardwareId.Product ?? ConfigurationManager.UnknownDevice}"
+                : ConfigurationManager.UnknownDevice;
         }
         else
         {
@@ -125,27 +120,10 @@ sealed partial class CommandHandlers : ICommandHandlers
         foreach (var device in allDevices.Where(d => d.BusId.HasValue).OrderBy(d => d.BusId.GetValueOrDefault()))
         {
             Debug.Assert(device.BusId.HasValue);
-            string state;
-            if (device.IPAddress is not null)
-            {
-                state = "Attached";
-            }
-            else if (device.Guid is not null)
-            {
-                state = device.IsForced ? "Shared (forced)" : "Shared";
-            }
-            else if (device.BusId.Value.IsIncompatibleHub)
-            {
-                state = "Incompatible hub";
-            }
-            else if (Policy.IsAutoBindAllowed(device))
-            {
-                state = "Allowed";
-            }
-            else
-            {
-                state = "Not shared";
-            }
+            var state = device.IPAddress is not null ? "Attached"
+                : device.Guid is not null ? device.IsForced ? "Shared (forced)" : "Shared"
+                : device.BusId.Value.IsIncompatibleHub ? "Incompatible hub"
+                : Policy.IsAutoBindAllowed(device) ? "Allowed" : "Not shared";
             console.Write($"{(device.BusId.Value.IsIncompatibleHub ? string.Empty : device.BusId.Value),-5}  ");
             console.Write($"{device.HardwareId,-9}  ");
             console.WriteTruncated(GetDescription(device, usbids), 60, true);
@@ -164,14 +142,14 @@ sealed partial class CommandHandlers : ICommandHandlers
         }
         console.WriteLine(string.Empty);
 
-        console.CheckAndReportServerRunning(false);
+        _ = console.CheckAndReportServerRunning(false);
         console.ReportIfForceNeeded();
         return Task.FromResult(ExitCode.Success);
     }
 
     static ExitCode Bind(BusId busId, bool force, IConsole console)
     {
-        var device = UsbDevice.GetAll().Where(d => d.BusId.HasValue && d.BusId.Value == busId).SingleOrDefault();
+        var device = UsbDevice.GetAll().SingleOrDefault(d => d.BusId.HasValue && d.BusId.Value == busId);
         if (device is null)
         {
             console.ReportError($"There is no device with busid '{busId}'.");
@@ -209,7 +187,7 @@ sealed partial class CommandHandlers : ICommandHandlers
                 console.ReportRebootRequired();
             }
         }
-        console.CheckAndReportServerRunning(false);
+        _ = console.CheckAndReportServerRunning(false);
         return ExitCode.Success;
     }
 
@@ -220,16 +198,14 @@ sealed partial class CommandHandlers : ICommandHandlers
 
     Task<ExitCode> ICommandHandlers.Bind(VidPid vidPid, bool force, IConsole console, CancellationToken cancellationToken)
     {
-        if (GetBusIdByHardwareId(vidPid, console) is not BusId busId)
-        {
-            return Task.FromResult(ExitCode.Failure);
-        }
-        return Task.FromResult(Bind(busId, force, console));
+        return GetBusIdByHardwareId(vidPid, console) is BusId busId
+            ? Task.FromResult(Bind(busId, force, console))
+            : Task.FromResult(ExitCode.Failure);
     }
 
     Task<ExitCode> ICommandHandlers.Unbind(BusId busId, IConsole console, CancellationToken cancellationToken)
     {
-        var device = UsbDevice.GetAll().Where(d => d.BusId.HasValue && d.BusId.Value == busId).SingleOrDefault();
+        var device = UsbDevice.GetAll().SingleOrDefault(d => d.BusId.HasValue && d.BusId.Value == busId);
         if (device is null)
         {
             console.ReportError($"There is no device with busid '{busId}'.");
@@ -284,7 +260,7 @@ sealed partial class CommandHandlers : ICommandHandlers
                     reboot = true;
                 }
             }
-            catch (Exception ex) when (ex is Win32Exception || ex is ConfigurationManagerException)
+            catch (Exception ex) when (ex is Win32Exception or ConfigurationManagerException)
             {
                 driverError = true;
             }
@@ -302,7 +278,7 @@ sealed partial class CommandHandlers : ICommandHandlers
 
     Task<ExitCode> ICommandHandlers.Unbind(Guid guid, IConsole console, CancellationToken cancellationToken)
     {
-        var device = RegistryUtils.GetBoundDevices().Where(d => d.Guid.HasValue && d.Guid.Value == guid).SingleOrDefault();
+        var device = RegistryUtils.GetBoundDevices().SingleOrDefault(d => d.Guid.HasValue && d.Guid.Value == guid);
         if (device is null)
         {
             console.ReportError($"There is no device with guid '{guid:D}'.");
@@ -338,7 +314,7 @@ sealed partial class CommandHandlers : ICommandHandlers
                     reboot = true;
                 }
             }
-            catch (Exception ex) when (ex is Win32Exception || ex is ConfigurationManagerException)
+            catch (Exception ex) when (ex is Win32Exception or ConfigurationManagerException)
             {
                 driverError = true;
             }
@@ -356,7 +332,7 @@ sealed partial class CommandHandlers : ICommandHandlers
 
     async Task<ExitCode> ICommandHandlers.AttachWsl(BusId busId, bool autoAttach, string? distribution, IConsole console, CancellationToken cancellationToken)
     {
-        var device = UsbDevice.GetAll().Where(d => d.BusId.HasValue && d.BusId.Value == busId).SingleOrDefault();
+        var device = UsbDevice.GetAll().SingleOrDefault(d => d.BusId.HasValue && d.BusId.Value == busId);
         if (device is null)
         {
             console.ReportError($"There is no device with busid '{busId}'.");
@@ -374,21 +350,16 @@ sealed partial class CommandHandlers : ICommandHandlers
             return ExitCode.Failure;
         }
 
-        if (!console.CheckAndReportServerRunning(true))
-        {
-            return ExitCode.Failure;
-        }
-
-        return await Wsl.Attach(busId, autoAttach, distribution, console, cancellationToken);
+        return console.CheckAndReportServerRunning(true)
+            ? await Wsl.Attach(busId, autoAttach, distribution, console, cancellationToken)
+            : ExitCode.Failure;
     }
 
     async Task<ExitCode> ICommandHandlers.AttachWsl(VidPid vidPid, bool autoAttach, string? distribution, IConsole console, CancellationToken cancellationToken)
     {
-        if (GetBusIdByHardwareId(vidPid, console) is not BusId busId)
-        {
-            return ExitCode.Failure;
-        }
-        return await ((ICommandHandlers)this).AttachWsl(busId, autoAttach, distribution, console, cancellationToken);
+        return GetBusIdByHardwareId(vidPid, console) is BusId busId
+            ? await ((ICommandHandlers)this).AttachWsl(busId, autoAttach, distribution, console, cancellationToken)
+            : ExitCode.Failure;
     }
 
     static ExitCode Detach(IEnumerable<UsbDevice> devices, IConsole console)
@@ -413,7 +384,7 @@ sealed partial class CommandHandlers : ICommandHandlers
 
     Task<ExitCode> ICommandHandlers.Detach(BusId busId, IConsole console, CancellationToken cancellationToken)
     {
-        var device = UsbDevice.GetAll().Where(d => d.BusId.HasValue && d.BusId.Value == busId).SingleOrDefault();
+        var device = UsbDevice.GetAll().SingleOrDefault(d => d.BusId.HasValue && d.BusId.Value == busId);
         if (device is null)
         {
             console.ReportError($"There is no device with busid '{busId}'.");
@@ -513,6 +484,8 @@ sealed partial class CommandHandlers : ICommandHandlers
                     console.Write($"{(autoBind.BusId.HasValue ? autoBind.BusId.Value : string.Empty),-5}  ");
                     console.Write($"{(autoBind.HardwareId.HasValue ? autoBind.HardwareId.Value : string.Empty),-9}");
                     break;
+                default:
+                    throw new UnexpectedResultException();
             }
             console.WriteLine(string.Empty);
         }

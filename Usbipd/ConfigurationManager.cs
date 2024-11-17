@@ -56,12 +56,11 @@ static partial class ConfigurationManager
 
     static unsafe object ConvertProperty(DEVPROPTYPE propertyType, byte* pBuffer, int propertyBufferSize) // DevSkim: ignore DS172412
     {
-        return propertyType switch
-        {
-            DEVPROPTYPE.DEVPROP_TYPE_STRING => new string((char*)pBuffer, 0, propertyBufferSize / sizeof(char)).TrimEnd('\0'),
-            DEVPROPTYPE.DEVPROP_TYPE_STRING_LIST => new string((char*)pBuffer, 0, propertyBufferSize / sizeof(char)).Split('\0', StringSplitOptions.RemoveEmptyEntries),
-            _ => throw new NotImplementedException($"property type {propertyType}"),
-        };
+        return propertyType == DEVPROPTYPE.DEVPROP_TYPE_STRING
+            ? new string((char*)pBuffer, 0, propertyBufferSize / sizeof(char)).TrimEnd('\0')
+            : propertyType == DEVPROPTYPE.DEVPROP_TYPE_STRING_LIST
+                ? (object)new string((char*)pBuffer, 0, propertyBufferSize / sizeof(char)).Split('\0', StringSplitOptions.RemoveEmptyEntries)
+                : throw new NotImplementedException($"property type {propertyType}");
     }
 
     static object Get_Device_Interface_Property(string deviceInterface, in DEVPROPKEY devPropKey)
@@ -158,11 +157,7 @@ static partial class ConfigurationManager
         }
         var bus = ushort.Parse(match.Groups[2].Value, CultureInfo.InvariantCulture);
         var port = ushort.Parse(match.Groups[1].Value, CultureInfo.InvariantCulture);
-        if (bus == 0 || port == 0)
-        {
-            return BusId.IncompatibleHub;
-        }
-        return new(bus, port);
+        return bus == 0 || port == 0 ? BusId.IncompatibleHub : new(bus, port);
     }
 
     public static BusId? GetBusId(string instanceId)
@@ -214,7 +209,7 @@ static partial class ConfigurationManager
             if (!string.IsNullOrEmpty(friendlyName))
             {
                 descriptionList.Add(friendlyName);
-                descriptionSet.Add(friendlyName);
+                _ = descriptionSet.Add(friendlyName);
             }
         }
         catch (ConfigurationManagerException) { }
@@ -239,7 +234,7 @@ static partial class ConfigurationManager
         return string.Join(", ", descriptionList);
     }
 
-    public sealed record ConnectedUsbDevice(uint DeviceNode, string InstanceId);
+    internal sealed record ConnectedUsbDevice(uint DeviceNode, string InstanceId);
 
     public static IEnumerable<ConnectedUsbDevice> GetConnectedUsbDevices()
     {
@@ -285,7 +280,7 @@ static partial class ConfigurationManager
         return Get_Device_Interface_List(PInvoke.GUID_DEVINTERFACE_USB_HUB, hubInstanceId, CM_GET_DEVICE_INTERFACE_LIST_FLAGS.CM_GET_DEVICE_INTERFACE_LIST_PRESENT).Single();
     }
 
-    public sealed record VBoxDevice(uint DeviceNode, string InstanceId, string InterfacePath);
+    internal sealed record VBoxDevice(uint DeviceNode, string InstanceId, string InterfacePath);
 
     public static VBoxDevice GetVBoxDevice(BusId busId)
     {
@@ -377,7 +372,7 @@ static partial class ConfigurationManager
     /// <summary>
     /// See https://docs.microsoft.com/en-us/windows-hardware/drivers/install/porting-from-setupapi-to-cfgmgr32#restart-device
     /// </summary>
-    public sealed class RestartingDevice
+    internal sealed partial class RestartingDevice
         : IDisposable
     {
         public RestartingDevice(string instanceId)
@@ -441,7 +436,7 @@ static partial class ConfigurationManager
             catch (AggregateException ex) when (ex.InnerException is Win32Exception) { }
 
             // This is the reverse of what the constructor accomplished.
-            PInvoke.CM_Setup_DevNode(DeviceNode, PInvoke.CM_SETUP_DEVNODE_READY);
+            _ = PInvoke.CM_Setup_DevNode(DeviceNode, PInvoke.CM_SETUP_DEVNODE_READY);
         }
     }
 }

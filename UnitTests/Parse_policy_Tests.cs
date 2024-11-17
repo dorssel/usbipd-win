@@ -43,7 +43,7 @@ sealed class Parse_policy_Tests
     public void list_Success()
     {
         var mock = CreateMock();
-        mock.Setup(m => m.PolicyList(It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Success));
+        _ = mock.Setup(m => m.PolicyList(It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Success));
 
         Test(ExitCode.Success, mock, "policy", "list");
     }
@@ -70,7 +70,7 @@ sealed class Parse_policy_Tests
     public void add_BusIdSuccess()
     {
         var mock = CreateMock();
-        mock.Setup(m => m.PolicyAdd(It.IsAny<PolicyRule>(),
+        _ = mock.Setup(m => m.PolicyAdd(It.IsAny<PolicyRule>(),
             It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Success));
 
         Test(ExitCode.Success, mock, "policy", "add", "--effect", "Allow", "--operation", "AutoBind", "--busid", TestBusId.ToString());
@@ -80,7 +80,7 @@ sealed class Parse_policy_Tests
     public void add_HardwareIdSuccess()
     {
         var mock = CreateMock();
-        mock.Setup(m => m.PolicyAdd(It.IsAny<PolicyRule>(),
+        _ = mock.Setup(m => m.PolicyAdd(It.IsAny<PolicyRule>(),
             It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Success));
 
         Test(ExitCode.Success, mock, "policy", "add", "--effect", "Allow", "--operation", "AutoBind", "--hardware-id", TestHardwareId.ToString());
@@ -90,7 +90,7 @@ sealed class Parse_policy_Tests
     public void add_BothSuccess()
     {
         var mock = CreateMock();
-        mock.Setup(m => m.PolicyAdd(It.IsAny<PolicyRule>(),
+        _ = mock.Setup(m => m.PolicyAdd(It.IsAny<PolicyRule>(),
             It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Success));
 
         Test(ExitCode.Success, mock, "policy", "add", "--effect", "Allow", "--operation", "AutoBind",
@@ -107,7 +107,7 @@ sealed class Parse_policy_Tests
     public void remove_GuidSuccess()
     {
         var mock = CreateMock();
-        mock.Setup(m => m.PolicyRemove(It.IsAny<Guid>(),
+        _ = mock.Setup(m => m.PolicyRemove(It.IsAny<Guid>(),
             It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Success));
 
         Test(ExitCode.Success, mock, "policy", "remove", "--guid", TestGuid.ToString());
@@ -117,7 +117,7 @@ sealed class Parse_policy_Tests
     public void remove_AllSuccess()
     {
         var mock = CreateMock();
-        mock.Setup(m => m.PolicyRemoveAll(It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Success));
+        _ = mock.Setup(m => m.PolicyRemoveAll(It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Success));
 
         Test(ExitCode.Success, mock, "policy", "remove", "--all");
     }

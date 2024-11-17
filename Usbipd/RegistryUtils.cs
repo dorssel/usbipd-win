@@ -25,7 +25,10 @@ static class RegistryUtils
     static readonly Lazy<RegistryKey> ReadOnlyBaseKey = new(() => OpenBaseKey(false));
     static readonly Lazy<RegistryKey> WritableBaseKey = new(() => OpenBaseKey(true));
 
-    static RegistryKey BaseKey(bool writable) => (writable ? WritableBaseKey : ReadOnlyBaseKey).Value;
+    static RegistryKey BaseKey(bool writable)
+    {
+        return (writable ? WritableBaseKey : ReadOnlyBaseKey).Value;
+    }
 
     const string ApplicationFolderName = "APPLICATIONFOLDER";
     const string DevicesName = "Devices";
@@ -120,7 +123,7 @@ static class RegistryUtils
         // .NET does not have this functionality: delete a key to which you have rights while
         // you do not have rights to the containing key. So, we must use the API directly.
         // Instead of checking the return value we will check if the Attached key is actually gone.
-        PInvoke.RegDeleteKey(deviceKey.Handle, AttachedName);
+        _ = PInvoke.RegDeleteKey(deviceKey.Handle, AttachedName);
         using var attached = deviceKey.OpenSubKey(AttachedName, false);
         return attached is null;
     }
@@ -128,11 +131,7 @@ static class RegistryUtils
     public static bool SetDeviceAsDetached(Guid guid)
     {
         using var deviceKey = GetDeviceKey(guid, false);
-        if (deviceKey is null)
-        {
-            return true;
-        }
-        return RemoveAttachedSubKey(deviceKey);
+        return deviceKey is null || RemoveAttachedSubKey(deviceKey);
     }
 
     public static bool SetAllDevicesAsDetached()
@@ -170,7 +169,7 @@ static class RegistryUtils
             if (Guid.TryParseExact(subKeyName, "B", out var guid))
             {
                 // Sanitize uniqueness.
-                guids.Add(guid);
+                _ = guids.Add(guid);
             }
         }
         var ignoreAttached = !Server.IsRunning();
@@ -288,7 +287,7 @@ static class RegistryUtils
             if (Guid.TryParseExact(subKeyName, "B", out var guid))
             {
                 // Sanitize uniqueness.
-                guids.Add(guid);
+                _ = guids.Add(guid);
             }
         }
 

@@ -48,10 +48,7 @@ sealed class VidPid_Tests
             "0000:000g",
         ];
 
-        public static IEnumerable<string[]> Invalid
-        {
-            get => from value in _Invalid select new string[] { value };
-        }
+        public static IEnumerable<string[]> Invalid => from value in _Invalid select new string[] { value };
 
         static readonly string[] _Valid = [
             "0000:0000",
@@ -70,10 +67,7 @@ sealed class VidPid_Tests
             "fFfF:FfFf",
         ];
 
-        public static IEnumerable<string[]> Valid
-        {
-            get => from value in _Valid select new string[] { value };
-        }
+        public static IEnumerable<string[]> Valid => from value in _Valid select new string[] { value };
 
         static int ExpectedCompare(string left, string right)
         {
@@ -89,10 +83,7 @@ sealed class VidPid_Tests
                 leftPid > rightPid ? 1 : 0;
         }
 
-        public static IEnumerable<object[]> Compare
-        {
-            get => from left in _Valid from right in _Valid select new object[] { left, right, ExpectedCompare(left, right) };
-        }
+        public static IEnumerable<object[]> Compare => from left in _Valid from right in _Valid select new object[] { left, right, ExpectedCompare(left, right) };
     }
 
     [TestMethod]
@@ -122,7 +113,7 @@ sealed class VidPid_Tests
     [DynamicData(nameof(VidPidData.Invalid), typeof(VidPidData))]
     public void ParseInvalid(string text)
     {
-        Assert.ThrowsException<FormatException>(() =>
+        _ = Assert.ThrowsException<FormatException>(() =>
         {
             var vidPid = VidPid.Parse(text);
         });
@@ -254,10 +245,7 @@ sealed class VidPid_Tests
             "0000:0000",
         ];
 
-        public static IEnumerable<string[]> Invalid
-        {
-            get => from value in _Invalid select new string[] { value };
-        }
+        public static IEnumerable<string[]> Invalid => from value in _Invalid select new string[] { value };
 
         static readonly string[] _Valid = [
             "VID_0000&PID_0000",
@@ -277,17 +265,14 @@ sealed class VidPid_Tests
             "xxxVID_0000&PID_0000xxx",
         ];
 
-        public static IEnumerable<string[]> Valid
-        {
-            get => from value in _Valid select new string[] { value };
-        }
+        public static IEnumerable<string[]> Valid => from value in _Valid select new string[] { value };
     }
 
     [TestMethod]
     [DynamicData(nameof(HardwareIdData.Invalid), typeof(HardwareIdData))]
     public void FromHardwareOrInstanceIdInvalid(string text)
     {
-        Assert.ThrowsException<FormatException>(() =>
+        _ = Assert.ThrowsException<FormatException>(() =>
         {
             var vidPid = VidPid.FromHardwareOrInstanceId(text);
         });

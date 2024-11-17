@@ -49,7 +49,7 @@ sealed class Tools_Tests
         {
             memoryStream.ReadMessageAsync(buf, CancellationToken.None).Wait();
         });
-        Assert.IsInstanceOfType(exception.InnerException, typeof(EndOfStreamException));
+        Assert.IsInstanceOfType<EndOfStreamException>(exception.InnerException);
     }
 
     [TestMethod]
@@ -61,7 +61,7 @@ sealed class Tools_Tests
         {
             memoryStream.ReadMessageAsync(buf, CancellationToken.None).Wait();
         });
-        Assert.IsInstanceOfType(exception.InnerException, typeof(ProtocolViolationException));
+        Assert.IsInstanceOfType<ProtocolViolationException>(exception.InnerException);
     }
 
     [TestMethod]
@@ -74,7 +74,7 @@ sealed class Tools_Tests
         var buf = new byte[TestStreamBytes.Length - 1];
         writeStream.Write(TestStreamBytes.AsSpan(0, 1));
         var task = readStream.ReadMessageAsync(buf, CancellationToken.None);
-        task.Wait(100);
+        _ = task.Wait(100);
         Assert.AreEqual(TaskStatus.WaitingForActivation, task.Status);
         writeStream.Write(TestStreamBytes.AsSpan(1));
         task.Wait();
@@ -115,7 +115,7 @@ sealed class Tools_Tests
     public void StructToBytes_Span_Short()
     {
         var buf = new byte[TestStructBytes.Length - 1];
-        Assert.ThrowsException<ArgumentException>(() =>
+        _ = Assert.ThrowsException<ArgumentException>(() =>
         {
             StructToBytes(TestStruct, buf);
         });
@@ -138,7 +138,7 @@ sealed class Tools_Tests
     [TestMethod]
     public void BytesToStruct_out_Short()
     {
-        Assert.ThrowsException<ArgumentException>(() =>
+        _ = Assert.ThrowsException<ArgumentException>(() =>
         {
             BytesToStruct(TestStructBytes.AsSpan()[0..^1], out TestStructType s);
         });
@@ -154,7 +154,7 @@ sealed class Tools_Tests
     [TestMethod]
     public void BytesToStruct_Short()
     {
-        Assert.ThrowsException<ArgumentException>(() =>
+        _ = Assert.ThrowsException<ArgumentException>(() =>
         {
             _ = BytesToStruct<TestStructType>(TestStructBytes.AsSpan()[0..^1]);
         });
@@ -171,10 +171,7 @@ sealed class Tools_Tests
             { (USB_DEVICE_SPEED)0x0badf00d, UsbDeviceSpeed.USB_SPEED_UNKNOWN },
         };
 
-        public static IEnumerable<object[]> KnownGood
-        {
-            get => from value in _KnownGood select new object[] { value.Key, value.Value };
-        }
+        public static IEnumerable<object[]> KnownGood => from value in _KnownGood select new object[] { value.Key, value.Value };
     }
 
     [TestMethod]
@@ -198,10 +195,7 @@ sealed class Tools_Tests
             { (UsbSupError)0xbaadf00d, Errno.EPROTO },
         };
 
-        public static IEnumerable<object[]> KnownGood
-        {
-            get => from value in _KnownGood select new object[] { value.Key, value.Value };
-        }
+        public static IEnumerable<object[]> KnownGood => from value in _KnownGood select new object[] { value.Key, value.Value };
     }
 
     [TestMethod]

@@ -16,11 +16,11 @@ static class WinSDK
     /// <summary>WinSDK: usbioctl.h: USB_DESCRIPTOR_REQUEST</summary>
     /// NOTE: CsWin32 gets this one wrong; its version is too long by one byte (probably due to Data[0]).
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    public struct USB_DESCRIPTOR_REQUEST
+    internal struct USB_DESCRIPTOR_REQUEST
     {
         public uint ConnectionIndex;
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
-        public struct AnonymousSetupPacket
+        internal struct AnonymousSetupPacket
         {
             public byte bmRequest;
             public byte bRequest;
@@ -35,7 +35,7 @@ static class WinSDK
     /// <summary>WinSDK: usbioctl.h: USB_NODE_CONNECTION_INFORMATION_EX</summary>
     /// NOTE: CsWin32 gets this one wrong; its version is too long (probably due to PipeList[0]).
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    public struct USB_NODE_CONNECTION_INFORMATION_EX
+    internal struct USB_NODE_CONNECTION_INFORMATION_EX
     {
         public uint ConnectionIndex;
         public USB_DEVICE_DESCRIPTOR DeviceDescriptor;
@@ -51,22 +51,22 @@ static class WinSDK
 
     /// <summary>WinSDK: usbioctl.h: USB_PROTOCOLS</summary>
     [Flags]
-    public enum UsbProtocols : uint
+    internal enum UsbProtocols : uint
     {
         None = 0,
-        Usb110 = (1 << 0),
-        Usb200 = (1 << 1),
-        Usb300 = (1 << 2),
+        Usb110 = 1 << 0,
+        Usb200 = 1 << 1,
+        Usb300 = 1 << 2,
     }
 
     /// <summary>WinSDK: usbioctl.h: USB_NODE_CONNECTION_INFORMATION_EX_V2_FLAGS</summary>
     [Flags]
-    public enum UsbNodeConnectionInformationExV2Flags : uint
+    internal enum UsbNodeConnectionInformationExV2Flags : uint
     {
-        DeviceIsOperatingAtSuperSpeedOrHigher = (1 << 0),
-        DeviceIsSuperSpeedCapableOrHigher = (1 << 1),
-        DeviceIsOperatingAtSuperSpeedPlusOrHigher = (1 << 2),
-        DeviceIsSuperSpeedPlusCapableOrHigher = (1 << 3),
+        DeviceIsOperatingAtSuperSpeedOrHigher = 1 << 0,
+        DeviceIsSuperSpeedCapableOrHigher = 1 << 1,
+        DeviceIsOperatingAtSuperSpeedPlusOrHigher = 1 << 2,
+        DeviceIsSuperSpeedPlusCapableOrHigher = 1 << 3,
     }
 
     /// <summary>WinSDK: setupapi.h: ERROR_NO_DRIVER_SELECTED</summary>

@@ -11,7 +11,7 @@ static class VBoxUsb
 {
     /// <summary>VBoxUsb: usblib-win.h: USBSUP_CLAIMDEV</summary>
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    public struct UsbSupClaimDev
+    internal struct UsbSupClaimDev
     {
         readonly byte bInterfaceNumber;
         [MarshalAs(UnmanagedType.U1)]
@@ -24,7 +24,7 @@ static class VBoxUsb
     public static readonly Guid GUID_CLASS_VBOXUSB = new(0x873fdf, 0xCAFE, 0x80EE, 0xaa, 0x5e, 0x0, 0xc0, 0x4f, 0xb1, 0x72, 0xb);
 
     /// <summary>VBoxUsb: usblib-win.h</summary>
-    public enum SUPUSB_IOCTL : uint
+    internal enum SUPUSB_IOCTL : uint
     {
         GET_DEVICE = (PInvoke.FILE_DEVICE_UNKNOWN << 16) | (PInvoke.FILE_WRITE_ACCESS << 14) | (0x603 << 2) | (PInvoke.METHOD_BUFFERED),
         SEND_URB = (PInvoke.FILE_DEVICE_UNKNOWN << 16) | (PInvoke.FILE_WRITE_ACCESS << 14) | (0x607 << 2) | (PInvoke.METHOD_BUFFERED),
@@ -46,14 +46,14 @@ static class VBoxUsb
 
     /// <summary>VBoxUsb: usblib-win.h: USBSUP_VERSION</summary>
     [StructLayout(LayoutKind.Sequential, Pack = 4)]
-    public struct UsbSupVersion
+    internal struct UsbSupVersion
     {
         public uint major;
         public uint minor;
     }
 
     /// <summary>VBoxUsb: usblib-win.h: USBSUP_TRANSFER_TYPE</summary>
-    public enum UsbSupTransferType : uint
+    internal enum UsbSupTransferType : uint
     {
         USBSUP_TRANSFER_TYPE_CTRL = 0,
         USBSUP_TRANSFER_TYPE_ISOC,
@@ -63,7 +63,7 @@ static class VBoxUsb
     };
 
     /// <summary>VBoxUsb: usblib-win.h: USBSUP_DIRECTION</summary>
-    public enum UsbSupDirection : uint
+    internal enum UsbSupDirection : uint
     {
         USBSUP_DIRECTION_SETUP = 0,
         USBSUP_DIRECTION_IN,
@@ -72,14 +72,14 @@ static class VBoxUsb
 
     /// <summary>VBoxUsb: usblib-win.h: USBSUP_XFER_FLAG</summary>
     [Flags]
-    public enum UsbSupXferFlags : uint
+    internal enum UsbSupXferFlags : uint
     {
         USBSUP_FLAG_NONE = 0,
         USBSUP_FLAG_SHORT_OK = 1 << 0,
     }
 
     /// <summary>VBoxUsb: usblib-win.h: USBSUP_ERROR</summary>
-    public enum UsbSupError : uint
+    internal enum UsbSupError : uint
     {
         USBSUP_XFER_OK = 0,
         USBSUP_XFER_STALL,
@@ -92,7 +92,7 @@ static class VBoxUsb
 
     /// <summary>VBoxUsb: usblib-win.h: USBSUP_ISOCPKT</summary>
     [StructLayout(LayoutKind.Sequential, Pack = 4)]
-    public struct UsbSupIsoPkt
+    internal struct UsbSupIsoPkt
     {
         public ushort cb;     /* [in/out] packet size/size transferred */
         public ushort off;    /* [in] offset of packet in buffer */
@@ -101,7 +101,7 @@ static class VBoxUsb
 
     /// <summary>VBoxUsb: usblib-win.h: USBSUP_URB</summary>
     [StructLayout(LayoutKind.Sequential, Pack = 4)]
-    public struct UsbSupUrb
+    internal struct UsbSupUrb
     {
         public UsbSupTransferType type;           /* [in] USBSUP_TRANSFER_TYPE_XXX */
         public uint ep;             /* [in] index to dev->pipe */
@@ -117,14 +117,14 @@ static class VBoxUsb
 
     /// <summary>VBoxUsb: usblib-win.h: USBSUP_SET_CONFIG</summary>
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    public struct UsbSupSetConfig
+    internal struct UsbSupSetConfig
     {
         public byte bConfigurationValue;
     }
 
     /// <summary>VBoxUsb: usblib-win.h: USBSUP_SELECT_INTERFACE</summary>
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    public struct UsbSupSelectInterface
+    internal struct UsbSupSelectInterface
     {
         public byte bInterfaceNumber;
         public byte bAlternateSetting;
@@ -132,7 +132,7 @@ static class VBoxUsb
 
     /// <summary>VBoxUsb: usblib-win.h: USBSUP_CLEAR_ENDPOINT</summary>
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    public struct UsbSupClearEndpoint
+    internal struct UsbSupClearEndpoint
     {
         public byte bEndpoint;
     }

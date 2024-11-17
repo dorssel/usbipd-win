@@ -11,7 +11,7 @@ using static Usbipd.Interop.VBoxUsbMon;
 
 namespace Usbipd;
 
-static class ConsoleTools
+static partial class ConsoleTools
 {
     public static IEnumerable<string> Wrap(string text, int width)
     {
@@ -19,19 +19,19 @@ static class ConsoleTools
 
         void FirstWord(string word)
         {
-            lineBuilder.Append(word);
+            _ = lineBuilder.Append(word);
             if (word.Length == width)
             {
                 // If the first word on a line is exactly the original width, add an extra space
                 // so Windows Terminal does not glue the next word to it on resize.
-                lineBuilder.Append(' ');
+                _ = lineBuilder.Append(' ');
             }
         }
 
         string Flush()
         {
             var result = lineBuilder.ToString();
-            lineBuilder.Clear();
+            _ = lineBuilder.Clear();
             return result;
         }
 
@@ -52,7 +52,7 @@ static class ConsoleTools
                 }
                 else
                 {
-                    lineBuilder.Append(' ').Append(word);
+                    _ = lineBuilder.Append(' ').Append(word);
                 }
             }
             yield return Flush();
@@ -111,7 +111,7 @@ static class ConsoleTools
     }
 
     /// <summary>
-    /// <para><see cref="CommandLineApplication"/> is rather old and uses the "old style" errors without a terminating period.</para>
+    /// <para>Some "old style" errors don't have a terminating period.</para>
     /// <para>Some WinAPI errors (originating from FormatMessage) have a terminating newline.</para>
     /// This function normalizes all errors to
     /// <list type="bullet">
@@ -134,7 +134,7 @@ static class ConsoleTools
         console.Error.WriteLine($"{Program.ApplicationName}: {level}: {EnforceFinalPeriod(text)}");
     }
 
-    sealed class TemporaryColor
+    sealed partial class TemporaryColor
         : IDisposable
     {
         readonly bool NeedReset;

@@ -14,7 +14,7 @@ using static Usbipd.Interop.VBoxUsb;
 
 namespace Usbipd;
 
-sealed class PcapNg
+sealed partial class PcapNg
     : IDisposable
 {
     public PcapNg(IConfiguration config, ILogger<PcapNg> logger)
@@ -65,7 +65,7 @@ sealed class PcapNg
             UsbSupTransferType.USBSUP_TRANSFER_TYPE_INTR => 1,
             UsbSupTransferType.USBSUP_TRANSFER_TYPE_MSG => 2,
             UsbSupTransferType.USBSUP_TRANSFER_TYPE_BULK => 3,
-            _ => throw new ArgumentOutOfRangeException(nameof(type)),
+            UsbSupTransferType.USBSUP_TRANSFER_TYPE_CTRL or _ => throw new ArgumentOutOfRangeException(nameof(type)),
         };
     }
 
@@ -168,7 +168,7 @@ sealed class PcapNg
         usbmon.Write((uint)(timestamp % 1000000)); // micro seconds
         usbmon.Write(-115); // -EINPROGRESS
         usbmon.Write(cmdSubmit.transfer_buffer_length); // length
-        usbmon.Write(data.Length + packetDescriptors.Length * 16); // actual
+        usbmon.Write(data.Length + (packetDescriptors.Length * 16)); // actual
         usbmon.Write((uint)0); // ISO error count
         usbmon.Write((uint)packetDescriptors.Length);
         usbmon.Write(cmdSubmit.interval);
@@ -209,7 +209,7 @@ sealed class PcapNg
         usbmon.Write((uint)(timestamp % 1000000)); // micro seconds
         usbmon.Write(retSubmit.status);
         usbmon.Write(retSubmit.actual_length); // length
-        usbmon.Write(data.Length + packetDescriptors.Length * 16); // actual
+        usbmon.Write(data.Length + (packetDescriptors.Length * 16)); // actual
         usbmon.Write((uint)retSubmit.error_count); // ISO error count
         usbmon.Write((uint)packetDescriptors.Length);
         usbmon.Write(cmdSubmit.interval);
@@ -345,7 +345,7 @@ sealed class PcapNg
                 }
                 try
                 {
-                    await BlockChannel.Reader.WaitToReadAsync(flushTimer.Token);
+                    _ = await BlockChannel.Reader.WaitToReadAsync(flushTimer.Token);
                     while (BlockChannel.Reader.TryRead(out var block))
                     {
                         await Stream.WriteAsync(block, CancellationToken.None);
@@ -405,7 +405,7 @@ sealed class PcapNg
 
     static void AddOption(BinaryWriter block, ushort code, byte value)
     {
-        AddOption(block, code, new byte[] { value });
+        AddOption(block, code, [value]);
     }
 
     static void AddOption(BinaryWriter block, ushort code, ulong value)
@@ -483,8 +483,8 @@ sealed class PcapNg
         block.Write(0); // interface ID
         block.Write((uint)(timestamp >> 32));
         block.Write((uint)timestamp);
-        AddOption(block, 2, BitConverter.GetBytes((uint)(TimestampBase >> 32)).Concat(BitConverter.GetBytes((uint)TimestampBase)).ToArray()); // isb_starttime
-        AddOption(block, 3, BitConverter.GetBytes((uint)(timestamp >> 32)).Concat(BitConverter.GetBytes((uint)timestamp)).ToArray()); // isb_endtime
+        AddOption(block, 2, [.. BitConverter.GetBytes((uint)(TimestampBase >> 32)), .. BitConverter.GetBytes((uint)TimestampBase)]); // isb_starttime
+        AddOption(block, 3, [.. BitConverter.GetBytes((uint)(timestamp >> 32)), .. BitConverter.GetBytes((uint)timestamp)]); // isb_endtime
         AddOption(block, 4, TotalPacketsWritten); // isb_ifrecv
         AddOption(block, 5, 0ul); // isb_ifdrop
         AddOption(block, 6, TotalPacketsWritten); // isb_filteraccept
@@ -516,7 +516,7 @@ sealed class PcapNg
         block.Write(0); // opt_endofopt
         var length = (uint)block.Seek(0, SeekOrigin.Current) + 4;
         block.Write(length); // block total length
-        block.Seek(4, SeekOrigin.Begin);
+        _ = block.Seek(4, SeekOrigin.Begin);
         block.Write(length); // block total length
         block.Flush();
         var memoryStream = (MemoryStream)block.BaseStream;

@@ -18,8 +18,10 @@ public sealed partial class Device
 #if !NETSTANDARD
     [JsonConstructor]
     public Device(string instanceId, string description, bool isForced, BusId? busId, Guid? persistedGuid, string? stubInstanceId, IPAddress? clientIPAddress)
-        => (InstanceId, Description, IsForced, BusId, PersistedGuid, StubInstanceId, ClientIPAddress)
-        = (instanceId, description, isForced, busId, persistedGuid, stubInstanceId, clientIPAddress);
+    {
+        (InstanceId, Description, IsForced, BusId, PersistedGuid, StubInstanceId, ClientIPAddress)
+            = (instanceId, description, isForced, busId, persistedGuid, stubInstanceId, clientIPAddress);
+    }
 #endif
 
     [DataMember]
@@ -104,15 +106,15 @@ public sealed partial class Device
 #if !NETSTANDARD
     [JsonIgnore]
 #endif
-    public bool IsBound { get => PersistedGuid is not null; }
+    public bool IsBound => PersistedGuid is not null;
 
 #if !NETSTANDARD
     [JsonIgnore]
 #endif
-    public bool IsConnected { get => BusId is not null; }
+    public bool IsConnected => BusId is not null;
 
 #if !NETSTANDARD
     [JsonIgnore]
 #endif
-    public bool IsAttached { get => ClientIPAddress is not null; }
+    public bool IsAttached => ClientIPAddress is not null;
 }

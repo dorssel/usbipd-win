@@ -6,7 +6,7 @@ using Microsoft.Win32;
 
 namespace UnitTests;
 
-sealed class TempRegistry : IDisposable
+sealed partial class TempRegistry : IDisposable
 {
     public string Name { get; } = Guid.NewGuid().ToString("B");
     public RegistryKey Key { get; }

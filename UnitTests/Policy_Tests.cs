@@ -31,7 +31,10 @@ sealed class Policy_Tests
         BaseTempRegistryKey.Dispose();
     }
 
-    static TempRegistry CreateTempRegistry() => new(BaseTempRegistryKey.Key);
+    static TempRegistry CreateTempRegistry()
+    {
+        return new(BaseTempRegistryKey.Key);
+    }
 
     [TestMethod]
     public void Constructor_Success()
@@ -96,9 +99,9 @@ sealed class Policy_Tests
     [DynamicData(nameof(AutoBindData.Invalid), typeof(AutoBindData))]
     public void Match_Invalid_AutoBind(PolicyRuleAutoBind rule)
     {
-        Assert.ThrowsException<InvalidOperationException>(() =>
+        _ = Assert.ThrowsException<InvalidOperationException>(() =>
         {
-            rule.Matches(CreateTestUsbDevice(TestBusId, TestHardwareId));
+            _ = rule.Matches(CreateTestUsbDevice(TestBusId, TestHardwareId));
         });
     }
 

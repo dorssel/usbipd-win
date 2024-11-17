@@ -8,7 +8,10 @@ namespace UnitTests;
 
 abstract class ParseTestBase
 {
-    internal static Mock<ICommandHandlers> CreateMock() => new(MockBehavior.Strict);
+    internal static Mock<ICommandHandlers> CreateMock()
+    {
+        return new(MockBehavior.Strict);
+    }
 
     internal static void Test(ExitCode expect, params string[] args)
     {

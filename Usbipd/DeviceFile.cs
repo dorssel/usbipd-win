@@ -12,7 +12,7 @@ using Windows.Win32.Storage.FileSystem;
 
 namespace Usbipd;
 
-sealed class DeviceFile : IDisposable
+sealed partial class DeviceFile : IDisposable
 {
     public DeviceFile(string fileName)
     {

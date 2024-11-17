@@ -14,7 +14,7 @@ sealed class Parse_server_Tests
     public void Success()
     {
         var mock = CreateMock();
-        mock.Setup(m => m.Server(It.Is<string[]>(array => array.SequenceEqual(Array.Empty<string>())),
+        _ = mock.Setup(m => m.Server(It.Is<string[]>(array => array.SequenceEqual(Array.Empty<string>())),
             It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Success));
 
         Test(ExitCode.Success, mock, "server");
@@ -32,7 +32,7 @@ sealed class Parse_server_Tests
         };
 
         var mock = CreateMock();
-        mock.Setup(m => m.Server(It.Is<string[]>(array => array.SequenceEqual(testArgs)),
+        _ = mock.Setup(m => m.Server(It.Is<string[]>(array => array.SequenceEqual(testArgs)),
             It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Success));
 
         Test(ExitCode.Success, mock, testArgs.Prepend("server").ToArray());
@@ -42,7 +42,7 @@ sealed class Parse_server_Tests
     public void Failure()
     {
         var mock = CreateMock();
-        mock.Setup(m => m.Server(It.Is<string[]>(array => array.SequenceEqual(Array.Empty<string>())),
+        _ = mock.Setup(m => m.Server(It.Is<string[]>(array => array.SequenceEqual(Array.Empty<string>())),
             It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Failure));
 
         Test(ExitCode.Failure, mock, "server");
@@ -52,7 +52,7 @@ sealed class Parse_server_Tests
     public void Canceled()
     {
         var mock = CreateMock();
-        mock.Setup(m => m.Server(It.Is<string[]>(array => array.SequenceEqual(Array.Empty<string>())),
+        _ = mock.Setup(m => m.Server(It.Is<string[]>(array => array.SequenceEqual(Array.Empty<string>())),
             It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Throws<OperationCanceledException>();
 
         Test(ExitCode.Canceled, mock, "server");

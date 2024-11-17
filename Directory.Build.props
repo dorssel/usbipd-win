@@ -9,7 +9,7 @@ SPDX-License-Identifier: GPL-3.0-only
   <PropertyGroup>
     <!-- Use the latest .NET SDK -->
     <!-- This product requires Windows 10 (Windows Server 2019) or higher -->
-    <MainTargetFramework>net8.0-windows10.0.17763</MainTargetFramework>
+    <MainTargetFramework>net9.0-windows10.0.17763</MainTargetFramework>
   </PropertyGroup>
 
   <!-- Sane defaults; override in project where needed -->
@@ -32,7 +32,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
 
     <!-- Use the latest C# language standard -->
-    <LangVersion>12.0</LangVersion>
+    <LangVersion>13.0</LangVersion>
     <ImplicitUsings>enable</ImplicitUsings>
 
     <!-- Be very strict -->
@@ -50,6 +50,11 @@ SPDX-License-Identifier: GPL-3.0-only
     <IsPublishable>false</IsPublishable>
     <GenerateDependencyFile>false</GenerateDependencyFile>
     <AccelerateBuildsInVisualStudio>true</AccelerateBuildsInVisualStudio>
+    <!--
+    See https://github.com/dotnet/roslyn/issues/41640
+    -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>CS1591</NoWarn>
 
     <!-- Deterministic builds -->
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
@@ -66,5 +71,13 @@ SPDX-License-Identifier: GPL-3.0-only
     <PackageReference Include="GitVersion.MsBuild" PrivateAssets="all" />
     <Compile Include="$(MSBuildThisFileDirectory)Fake_GitVersionInformation.cs" Condition=" '$(MSBuildRuntimeType)' != 'Core' " />
   </ItemGroup>
+
+  <PropertyGroup Condition=" '$(MSBuildRuntimeType)' != 'Core' ">
+    <GitVersion_FullSemVer>0.9.99+999</GitVersion_FullSemVer>
+    <GitVersion_MajorMinorPatch>0.9.99</GitVersion_MajorMinorPatch>
+    <GitVersion_Major>0</GitVersion_Major>
+    <GitVersion_Minor>9</GitVersion_Minor>
+    <GitVersion_Patch>99</GitVersion_Patch>
+  </PropertyGroup>
 
 </Project>

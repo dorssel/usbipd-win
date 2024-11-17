@@ -128,15 +128,14 @@ sealed class UsbIdsSourceGenerator : IIncrementalGenerator
             }
             offset = strings.Length;
             offsets.Add(s, offset);
-            strings.Append(s);
-            strings.Append('\0');
+            _ = strings.Append(s).Append('\0');
             return offset;
         }
 
         foreach (var v in vendors)
         {
             var offset = GetOffset(v.Value.Name);
-            vendorLookup.Append($$"""
+            _ = vendorLookup.Append($$"""
                         0x{{v.Key:x4}}0000{{offset:x8}},
 
                 """);
@@ -144,7 +143,7 @@ sealed class UsbIdsSourceGenerator : IIncrementalGenerator
             foreach (var p in v.Value.Products)
             {
                 offset = GetOffset(p.Value);
-                productLookup.Append($$"""
+                _ = productLookup.Append($$"""
                         0x{{v.Key:x4}}{{p.Key:x4}}{{offset:x8}},
 
                 """);
