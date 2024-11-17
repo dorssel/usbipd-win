@@ -11,7 +11,7 @@ using static Usbipd.Tools;
 
 namespace Usbipd;
 
-sealed class VBoxUsbMon : IDisposable
+sealed partial class VBoxUsbMon : IDisposable
 {
     readonly DeviceFile UsbMonitor = new(USBMON_DEVICE_NAME);
 
@@ -33,13 +33,15 @@ sealed class VBoxUsbMon : IDisposable
         return ServiceController.GetDevices().Any(sc => sc.ServiceName.Equals(ServiceName, StringComparison.InvariantCultureIgnoreCase));
     }
 
-    public static bool IsVersionSupported(UsbSupVersion version) =>
-        (version.major == USBMON_MAJOR_VERSION) && (version.minor >= USBMON_MINOR_VERSION);
+    public static bool IsVersionSupported(UsbSupVersion version)
+    {
+        return (version.major == USBMON_MAJOR_VERSION) && (version.minor >= USBMON_MINOR_VERSION);
+    }
 
     public async Task<UsbSupVersion> GetVersion()
     {
         var output = new byte[Marshal.SizeOf<UsbSupVersion>()];
-        await UsbMonitor.IoControlAsync(SUPUSBFLT_IOCTL.GET_VERSION, null, output);
+        _ = await UsbMonitor.IoControlAsync(SUPUSBFLT_IOCTL.GET_VERSION, null, output);
         BytesToStruct(output, out UsbSupVersion version);
         return version;
     }
@@ -56,19 +58,16 @@ sealed class VBoxUsbMon : IDisposable
         filter.SetMatch(UsbFilterIdx.PORT, UsbFilterMatch.NUM_EXACT, device.BusId.Port);
 
         var output = new byte[Marshal.SizeOf<UsbSupFltAddOut>()];
-        await UsbMonitor.IoControlAsync(SUPUSBFLT_IOCTL.ADD_FILTER, StructToBytes(filter), output);
+        _ = await UsbMonitor.IoControlAsync(SUPUSBFLT_IOCTL.ADD_FILTER, StructToBytes(filter), output);
         var fltAddOut = BytesToStruct<UsbSupFltAddOut>(output);
-        if (fltAddOut.rc != 0 /* VINF_SUCCESS */)
-        {
-            throw new UnexpectedResultException($"SUPUSBFLT_IOCTL_ADD_FILTER failed with returnCode {fltAddOut.rc}");
-        }
-        return fltAddOut.uId;
+        return fltAddOut.rc == 0 ? fltAddOut.uId
+            : throw new UnexpectedResultException($"SUPUSBFLT_IOCTL_ADD_FILTER failed with returnCode {fltAddOut.rc}");
     }
 
     public async Task RemoveFilter(ulong filterId)
     {
         var output = new byte[sizeof(int)];
-        await UsbMonitor.IoControlAsync(SUPUSBFLT_IOCTL.REMOVE_FILTER, BitConverter.GetBytes(filterId), output);
+        _ = await UsbMonitor.IoControlAsync(SUPUSBFLT_IOCTL.REMOVE_FILTER, BitConverter.GetBytes(filterId), output);
         var rc = BitConverter.ToInt32(output);
         if (rc != 0 /* VINF_SUCCESS */)
         {

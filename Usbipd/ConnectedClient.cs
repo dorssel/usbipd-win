@@ -40,6 +40,8 @@ sealed class ConnectedClient(ILogger<ConnectedClient> logger, ClientContext clie
                 case OpCode.OP_REQ_IMPORT:
                     await HandleRequestImportAsync(cancellationToken);
                     break;
+                case OpCode.OP_REP_DEVLIST:
+                case OpCode.OP_REP_IMPORT:
                 default:
                     throw new ProtocolViolationException($"unexpected opcode {opCode}");
             }
@@ -48,7 +50,7 @@ sealed class ConnectedClient(ILogger<ConnectedClient> logger, ClientContext clie
         {
             // EndOfStream is client hang ups and OperationCanceled is detachments;
             // neither are an error but part of normal functionality.
-            if (!(ex is EndOfStreamException || ex is OperationCanceledException))
+            if (ex is not (EndOfStreamException or OperationCanceledException))
             {
                 Logger.ClientError(ex);
             }
@@ -201,7 +203,7 @@ sealed class ConnectedClient(ILogger<ConnectedClient> logger, ClientContext clie
                 // setup token to free device
                 using var attachedClientTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
                 using var cancelEvent = new AutoResetEvent(false);
-                ThreadPool.RegisterWaitForSingleObject(cancelEvent, (state, timedOut) =>
+                _ = ThreadPool.RegisterWaitForSingleObject(cancelEvent, (state, timedOut) =>
                 {
                     Logger.Debug("Unbind or unplug while attached");
                     try
@@ -227,12 +229,9 @@ sealed class ConnectedClient(ILogger<ConnectedClient> logger, ClientContext clie
                     };
                     PInvoke.CM_Register_Notification(filter, (void*)cancelEvent.SafeWaitHandle.DangerousGetHandle(), static (notify, context, action, eventData, eventDataSize) =>
                     {
-                        switch (action)
+                        if (action is CM_NOTIFY_ACTION.CM_NOTIFY_ACTION_DEVICEREMOVEPENDING or CM_NOTIFY_ACTION.CM_NOTIFY_ACTION_DEVICEREMOVECOMPLETE)
                         {
-                            case CM_NOTIFY_ACTION.CM_NOTIFY_ACTION_DEVICEREMOVEPENDING:
-                            case CM_NOTIFY_ACTION.CM_NOTIFY_ACTION_DEVICEREMOVECOMPLETE:
-                                PInvoke.SetEvent((HANDLE)(nint)context);
-                                break;
+                            _ = PInvoke.SetEvent((HANDLE)(nint)context);
                         }
                         return (uint)WIN32_ERROR.ERROR_SUCCESS;
                     }, out notification).ThrowOnError(nameof(PInvoke.CM_Register_Notification));
@@ -252,7 +251,7 @@ sealed class ConnectedClient(ILogger<ConnectedClient> logger, ClientContext clie
             {
                 notification?.Dispose();
 
-                RegistryUtils.SetDeviceAsDetached(device.Guid.Value);
+                _ = RegistryUtils.SetDeviceAsDetached(device.Guid.Value);
 
                 ClientContext.AttachedDevice.Dispose();
 
@@ -305,22 +304,15 @@ sealed class ConnectedClient(ILogger<ConnectedClient> logger, ClientContext clie
         }
 
         var opCode = (OpCode)BinaryPrimitives.ReadUInt16BigEndian(buf.AsSpan(2));
-        if (!Enum.IsDefined(typeof(OpCode), opCode))
+        if (!Enum.IsDefined(opCode))
         {
             throw new ProtocolViolationException($"illegal opcode: {(ushort)opCode}");
         }
 
         var status = (Status)BinaryPrimitives.ReadUInt32BigEndian(buf.AsSpan(4));
-        if (!Enum.IsDefined(typeof(Status), status))
-        {
-            throw new ProtocolViolationException($"illegal status: {status}");
-        }
-        if (status != Status.ST_OK)
-        {
-            throw new ProtocolViolationException($"error status at peer: {status}");
-        }
-
-        return opCode;
+        return Enum.IsDefined(status) ? status == Status.ST_OK ? opCode
+            : throw new ProtocolViolationException($"error status at peer: {status}")
+            : throw new ProtocolViolationException($"illegal status: {status}");
     }
 
     async Task SendOpCodeAsync(OpCode opCode, Status status)

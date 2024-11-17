@@ -13,7 +13,7 @@ sealed class GlobalFixture
     public static void AssemblyInitialize(TestContext context)
     {
         _ = context;
-        Directory.CreateDirectory(TemporaryDirectory);
+        _ = Directory.CreateDirectory(TemporaryDirectory);
     }
 
     [AssemblyCleanup]

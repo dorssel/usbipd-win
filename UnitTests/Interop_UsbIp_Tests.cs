@@ -92,7 +92,7 @@ sealed class Interop_UsbIp_Tests
         {
             memoryStream.ReadUsbIpHeaderAsync(CancellationToken.None).Wait();
         });
-        Assert.IsInstanceOfType(exception.InnerException, typeof(EndOfStreamException));
+        Assert.IsInstanceOfType<EndOfStreamException>(exception.InnerException);
     }
 
     [TestMethod]
@@ -103,7 +103,7 @@ sealed class Interop_UsbIp_Tests
         {
             memoryStream.ReadUsbIpHeaderAsync(CancellationToken.None).Wait();
         });
-        Assert.IsInstanceOfType(exception.InnerException, typeof(ProtocolViolationException));
+        Assert.IsInstanceOfType<ProtocolViolationException>(exception.InnerException);
     }
 
     [TestMethod]
@@ -150,7 +150,7 @@ sealed class Interop_UsbIp_Tests
         {
             memoryStream.ReadUsbIpIsoPacketDescriptorsAsync(1, CancellationToken.None).Wait();
         });
-        Assert.IsInstanceOfType(exception.InnerException, typeof(EndOfStreamException));
+        Assert.IsInstanceOfType<EndOfStreamException>(exception.InnerException);
     }
 
     [TestMethod]
@@ -161,7 +161,7 @@ sealed class Interop_UsbIp_Tests
         {
             memoryStream.ReadUsbIpIsoPacketDescriptorsAsync(1, CancellationToken.None).Wait();
         });
-        Assert.IsInstanceOfType(exception.InnerException, typeof(ProtocolViolationException));
+        Assert.IsInstanceOfType<ProtocolViolationException>(exception.InnerException);
     }
 
     [TestMethod]
@@ -190,7 +190,7 @@ sealed class Interop_UsbIp_Tests
         {
             memoryStream.ReadUsbIpIsoPacketDescriptorsAsync(2, CancellationToken.None).Wait();
         });
-        Assert.IsInstanceOfType(exception.InnerException, typeof(ProtocolViolationException));
+        Assert.IsInstanceOfType<ProtocolViolationException>(exception.InnerException);
     }
 
     [TestMethod]
@@ -198,9 +198,9 @@ sealed class Interop_UsbIp_Tests
     {
         var usbIpIsoPacketDescriptors = new UsbIpIsoPacketDescriptor[]
         {
-            new UsbIpIsoPacketDescriptor(),
+            new(),
             TestUsbIpIsoPacketDescriptor,
-            new UsbIpIsoPacketDescriptor(),
+            new(),
         };
         var bytes = usbIpIsoPacketDescriptors.ToBytes();
         Assert.IsTrue(bytes.SequenceEqual(new byte[TestUsbIpIsoPacketDescriptorBytes.Length]

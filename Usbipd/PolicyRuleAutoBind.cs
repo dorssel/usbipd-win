@@ -13,25 +13,16 @@ sealed record PolicyRuleAutoBind(PolicyRuleEffect effect, BusId? BusId, VidPid? 
     const string BusIdName = "BusId";
     const string HardwareIdName = "HardwareId";
 
-    public override bool IsValid() => (BusId.HasValue || HardwareId.HasValue) && !(BusId.HasValue && BusId.Value.IsIncompatibleHub);
+    public override bool IsValid()
+    {
+        return (BusId.HasValue || HardwareId.HasValue) && !(BusId.HasValue && BusId.Value.IsIncompatibleHub);
+    }
 
     public override bool Matches(UsbDevice usbDevice)
     {
-        if (!IsValid())
-        {
-            throw new InvalidOperationException("Invalid policy rule");
-        }
-
-        if (BusId.HasValue && BusId.Value != usbDevice.BusId)
-        {
-            return false;
-        }
-        if (HardwareId.HasValue && HardwareId.Value != usbDevice.HardwareId)
-        {
-            return false;
-        }
-
-        return true;
+        return IsValid()
+            ? (!BusId.HasValue || BusId.Value == usbDevice.BusId) && (!HardwareId.HasValue || HardwareId.Value == usbDevice.HardwareId)
+            : throw new InvalidOperationException("Invalid policy rule");
     }
 
     public override void Save(RegistryKey registryKey)

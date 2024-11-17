@@ -46,11 +46,11 @@ sealed partial class CommandHandlers : ICommandHandlers
                     defaultConfig.Add("Logging:EventLog:LogLevel:Default", "None");
                 }
                 // set the above as defaults
-                builder.AddInMemoryCollection(defaultConfig);
+                _ = builder.AddInMemoryCollection(defaultConfig);
                 // allow overrides from the environment
-                builder.AddEnvironmentVariables();
+                _ = builder.AddEnvironmentVariables();
                 // allow overrides from the command line
-                builder.AddCommandLine(args);
+                _ = builder.AddCommandLine(args);
             })
             .ConfigureLogging((context, logging) =>
             {
@@ -58,18 +58,18 @@ sealed partial class CommandHandlers : ICommandHandlers
                 {
                     EventLog.CreateEventSource(Program.Product, "Application");
                 }
-                logging.AddEventLog(settings =>
+                _ = logging.AddEventLog(settings =>
                 {
                     settings.SourceName = Program.Product;
                 });
             })
             .ConfigureServices((hostContext, services) =>
             {
-                services.AddHostedService<Server>();
-                services.AddSingleton<PcapNg>();
-                services.AddScoped<ClientContext>();
-                services.AddScoped<ConnectedClient>();
-                services.AddScoped<AttachedClient>();
+                _ = services.AddHostedService<Server>();
+                _ = services.AddSingleton<PcapNg>();
+                _ = services.AddScoped<ClientContext>();
+                _ = services.AddScoped<ConnectedClient>();
+                _ = services.AddScoped<AttachedClient>();
             })
             .Build();
 

@@ -4,7 +4,7 @@
 
 namespace Usbipd;
 
-public sealed class UnexpectedResultException : Exception
+sealed class UnexpectedResultException : Exception
 {
     public UnexpectedResultException()
     {

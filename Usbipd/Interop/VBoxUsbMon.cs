@@ -14,7 +14,7 @@ static class VBoxUsbMon
     public const uint USBFILTER_MAGIC = 0x19670408;
 
     /// <summary>VBoxUsb: usbfilter.h: USBFILTERIDX</summary>
-    public enum UsbFilterType : uint
+    internal enum UsbFilterType : uint
     {
         INVALID = 0,
         FIRST,
@@ -26,7 +26,7 @@ static class VBoxUsbMon
     }
 
     /// <summary>VBoxUsb: usbfilter.h: USBFILTERMATCH</summary>
-    public enum UsbFilterMatch : ushort
+    internal enum UsbFilterMatch : ushort
     {
         INVALID = 0,
         IGNORE,
@@ -47,7 +47,7 @@ static class VBoxUsbMon
     }
 
     /// <summary>VBoxUsb: usbfilter.h: USBFILTERIDX</summary>
-    public enum UsbFilterIdx : uint
+    internal enum UsbFilterIdx : uint
     {
         VENDOR_ID = 0,
         PRODUCT_ID,
@@ -66,7 +66,7 @@ static class VBoxUsbMon
 
     /// <summary>VBoxUsb: usbfilter.h: USBFILTERFIELD</summary>
     [StructLayout(LayoutKind.Sequential, Pack = 4)]
-    public struct UsbFilterField
+    internal struct UsbFilterField
     {
         public UsbFilterMatch enmMatch;
         public ushort u16Value;
@@ -74,7 +74,7 @@ static class VBoxUsbMon
 
     /// <summary>VBoxUsb: usbfilter.h: USBFILTER</summary>
     [StructLayout(LayoutKind.Sequential, Pack = 4)]
-    public struct UsbFilter
+    internal struct UsbFilter
     {
         uint u32Magic;
         UsbFilterType enmType;
@@ -109,7 +109,7 @@ static class VBoxUsbMon
 
     /// <summary>VBoxUsb: usblib-win.h: USBSUP_FLTADDOUT</summary>
     [StructLayout(LayoutKind.Sequential, Pack = 4)]
-    public struct UsbSupFltAddOut
+    internal struct UsbSupFltAddOut
     {
         public ulong uId;
         public int rc;
@@ -121,7 +121,7 @@ static class VBoxUsbMon
     public const string USBMON_DEVICE_NAME = @"\\.\VBoxUSBMon";
 
     /// <summary>VBoxUsb: usblib-win.h</summary>
-    public enum SUPUSBFLT_IOCTL : uint
+    internal enum SUPUSBFLT_IOCTL : uint
     {
         GET_VERSION = (PInvoke.FILE_DEVICE_UNKNOWN << 16) | (PInvoke.FILE_WRITE_ACCESS << 14) | (0x610 << 2) | (PInvoke.METHOD_BUFFERED),
         ADD_FILTER = (PInvoke.FILE_DEVICE_UNKNOWN << 16) | (PInvoke.FILE_WRITE_ACCESS << 14) | (0x611 << 2) | (PInvoke.METHOD_BUFFERED),
@@ -137,7 +137,7 @@ static class VBoxUsbMon
 
     /// <summary>VBoxUsb: usblib-win.h: USBSUP_VERSION</summary>
     [StructLayout(LayoutKind.Sequential, Pack = 4)]
-    public struct UsbSupVersion
+    internal struct UsbSupVersion
     {
         public uint major;
         public uint minor;

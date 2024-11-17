@@ -10,5 +10,7 @@ namespace Usbipd;
 static class ParseResultExtensions
 {
     public static T? GetValueForOptionOrNull<T>(this ParseResult parseResult, Option<T> option) where T : struct
-        => parseResult.HasOption(option) ? parseResult.GetValueForOption(option) : null;
+    {
+        return parseResult.HasOption(option) ? parseResult.GetValueForOption(option) : null;
+    }
 }

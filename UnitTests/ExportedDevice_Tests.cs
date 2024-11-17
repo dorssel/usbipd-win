@@ -22,7 +22,7 @@ sealed class ExportedDevice_Tests
         DeviceProtocol: 0x67,
         ConfigurationValue: 3,
         NumConfigurations: 4,
-        Interfaces: new() { (1, 2, 3), (4, 5, 6) }
+        Interfaces: [(1, 2, 3), (4, 5, 6)]
     );
 
     /// <summary>

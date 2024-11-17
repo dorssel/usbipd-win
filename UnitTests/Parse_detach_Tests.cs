@@ -18,7 +18,7 @@ sealed class Parse_detach_Tests
     public void AllSuccess()
     {
         var mock = CreateMock();
-        mock.Setup(m => m.DetachAll(
+        _ = mock.Setup(m => m.DetachAll(
             It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Success));
 
         Test(ExitCode.Success, mock, "detach", "--all");
@@ -28,7 +28,7 @@ sealed class Parse_detach_Tests
     public void AllFailure()
     {
         var mock = CreateMock();
-        mock.Setup(m => m.DetachAll(
+        _ = mock.Setup(m => m.DetachAll(
             It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Failure));
 
         Test(ExitCode.Failure, mock, "detach", "--all");
@@ -38,7 +38,7 @@ sealed class Parse_detach_Tests
     public void AllCanceled()
     {
         var mock = CreateMock();
-        mock.Setup(m => m.DetachAll(
+        _ = mock.Setup(m => m.DetachAll(
             It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Throws<OperationCanceledException>();
 
         Test(ExitCode.Canceled, mock, "detach", "--all");
@@ -48,7 +48,7 @@ sealed class Parse_detach_Tests
     public void BusIdSuccess()
     {
         var mock = CreateMock();
-        mock.Setup(m => m.Detach(It.Is<BusId>(busId => busId == TestBusId),
+        _ = mock.Setup(m => m.Detach(It.Is<BusId>(busId => busId == TestBusId),
             It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Success));
 
         Test(ExitCode.Success, mock, "detach", "--busid", TestBusId.ToString());
@@ -58,7 +58,7 @@ sealed class Parse_detach_Tests
     public void BusIdFailure()
     {
         var mock = CreateMock();
-        mock.Setup(m => m.Detach(It.Is<BusId>(busId => busId == TestBusId),
+        _ = mock.Setup(m => m.Detach(It.Is<BusId>(busId => busId == TestBusId),
             It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Failure));
 
         Test(ExitCode.Failure, mock, "detach", "--busid", TestBusId.ToString());
@@ -68,7 +68,7 @@ sealed class Parse_detach_Tests
     public void BusIdCanceled()
     {
         var mock = CreateMock();
-        mock.Setup(m => m.Detach(It.Is<BusId>(busId => busId == TestBusId),
+        _ = mock.Setup(m => m.Detach(It.Is<BusId>(busId => busId == TestBusId),
             It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Throws<OperationCanceledException>();
 
         Test(ExitCode.Canceled, mock, "detach", "--busid", TestBusId.ToString());
@@ -78,7 +78,7 @@ sealed class Parse_detach_Tests
     public void HardwareIdSuccess()
     {
         var mock = CreateMock();
-        mock.Setup(m => m.Detach(It.Is<VidPid>(vidPid => vidPid == TestHardwareId),
+        _ = mock.Setup(m => m.Detach(It.Is<VidPid>(vidPid => vidPid == TestHardwareId),
             It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Success));
 
         Test(ExitCode.Success, mock, "detach", "--hardware-id", TestHardwareId.ToString());
@@ -88,7 +88,7 @@ sealed class Parse_detach_Tests
     public void HardwareIdFailure()
     {
         var mock = CreateMock();
-        mock.Setup(m => m.Detach(It.Is<VidPid>(vidPid => vidPid == TestHardwareId),
+        _ = mock.Setup(m => m.Detach(It.Is<VidPid>(vidPid => vidPid == TestHardwareId),
             It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Failure));
 
         Test(ExitCode.Failure, mock, "detach", "--hardware-id", TestHardwareId.ToString());
@@ -98,7 +98,7 @@ sealed class Parse_detach_Tests
     public void HardwareIdCanceled()
     {
         var mock = CreateMock();
-        mock.Setup(m => m.Detach(It.Is<VidPid>(vidPid => vidPid == TestHardwareId),
+        _ = mock.Setup(m => m.Detach(It.Is<VidPid>(vidPid => vidPid == TestHardwareId),
             It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Throws<OperationCanceledException>();
 
         Test(ExitCode.Canceled, mock, "detach", "--hardware-id", TestHardwareId.ToString());

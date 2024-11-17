@@ -4,7 +4,7 @@
 
 namespace UnitTests;
 
-sealed class TemporaryFile : IDisposable
+sealed partial class TemporaryFile : IDisposable
 {
     static long Count;
 

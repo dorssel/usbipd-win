@@ -8,7 +8,7 @@ using Usbipd.Automation;
 
 namespace Usbipd;
 
-sealed class ClientContext : IDisposable
+sealed partial class ClientContext : IDisposable
 {
     public TcpClient TcpClient { get; set; } = new();
     /// <summary>

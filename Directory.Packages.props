@@ -9,7 +9,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <!-- all -->
     <PackageVersion Include="GitVersion.MsBuild" Version="6.0.5" />
     <!-- Usbipd -->
-    <PackageVersion Include="Microsoft.Extensions.Hosting.WindowsServices" Version="8.0.1" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting.WindowsServices" Version="9.0.0" />
     <PackageVersion Include="Microsoft.Windows.CsWin32" Version="0.3.106" />
     <PackageVersion Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
     <!-- UsbIds -->
@@ -25,7 +25,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <PackageVersion Include="Moq" Version="4.20.72" />
     <PackageVersion Include="MSTest.TestAdapter" Version="3.6.3" />
     <PackageVersion Include="MSTest.TestFramework" Version="3.6.3" />
-    <PackageVersion Include="System.IO.Pipelines" Version="8.0.0" />
+    <PackageVersion Include="System.IO.Pipelines" Version="9.0.0" />
     <PackageVersion Include="coverlet.collector" Version="6.0.2" />
   </ItemGroup>
 </Project>

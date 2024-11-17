@@ -23,7 +23,7 @@ sealed class DeviceFile_Tests
     public void Constructor_FileNotFound()
     {
         using var temporaryFile = new TemporaryFile();
-        Assert.ThrowsException<Win32Exception>(() =>
+        _ = Assert.ThrowsException<Win32Exception>(() =>
         {
             using var deviceFile = new DeviceFile(temporaryFile.AbsolutePath);
         });
@@ -35,7 +35,7 @@ sealed class DeviceFile_Tests
         using var temporaryFile = new TemporaryFile(true);
         var deviceFile = new DeviceFile(temporaryFile.AbsolutePath);
         deviceFile.Dispose();
-        Assert.ThrowsException<ObjectDisposedException>(() =>
+        _ = Assert.ThrowsException<ObjectDisposedException>(() =>
         {
             _ = deviceFile.DangerousGetHandle();
         });
@@ -104,7 +104,7 @@ sealed class DeviceFile_Tests
         {
             deviceFile.IoControlAsync(TEST_IOCTL.FSCTL_QUERY_ALLOCATED_RANGES, null, null).Wait();
         });
-        Assert.IsInstanceOfType(exception.InnerException, typeof(Win32Exception));
+        Assert.IsInstanceOfType<Win32Exception>(exception.InnerException);
     }
 
     [TestMethod]
@@ -118,6 +118,6 @@ sealed class DeviceFile_Tests
         {
             deviceFile.IoControlAsync(TEST_IOCTL.FSCTL_QUERY_ALLOCATED_RANGES, Tools.StructToBytes(rangeBuffer), outputBuffer).Wait();
         });
-        Assert.IsInstanceOfType(exception.InnerException, typeof(ProtocolViolationException));
+        Assert.IsInstanceOfType<ProtocolViolationException>(exception.InnerException);
     }
 }

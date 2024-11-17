@@ -9,7 +9,7 @@ using Windows.Win32.Foundation;
 
 namespace Usbipd;
 
-public sealed class ConfigurationManagerException : Win32Exception
+sealed class ConfigurationManagerException : Win32Exception
 {
     internal CONFIGRET ConfigRet { get; init; }
 

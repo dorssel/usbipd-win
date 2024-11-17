@@ -8,7 +8,7 @@ static class Linux
 {
     /// <summary>linux: ch9.h: usb_device_speed
     /// <para><seealso cref="Windows.Win32.Devices.Usb.USB_DEVICE_SPEED"/></para></summary>
-    public enum UsbDeviceSpeed : uint
+    internal enum UsbDeviceSpeed : uint
     {
         USB_SPEED_UNKNOWN = 0,
         USB_SPEED_LOW, USB_SPEED_FULL, // usb 1.1
@@ -18,7 +18,7 @@ static class Linux
         USB_SPEED_SUPER_PLUS,          // usb 3.1
     }
 
-    public enum Errno : int
+    internal enum Errno : int
     {
         SUCCESS = 0,
         /// <summary>linux: errno-base.h</summary>

@@ -4,7 +4,7 @@
 
 namespace Usbipd;
 
-public enum PolicyRuleOperation
+enum PolicyRuleOperation
 {
     AutoBind,
 }

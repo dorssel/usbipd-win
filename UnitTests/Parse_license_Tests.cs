@@ -14,7 +14,7 @@ sealed class Parse_license_Tests
     public void Success()
     {
         var mock = CreateMock();
-        mock.Setup(m => m.License(
+        _ = mock.Setup(m => m.License(
             It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Success));
 
         Test(ExitCode.Success, mock, "license");
@@ -24,7 +24,7 @@ sealed class Parse_license_Tests
     public void Failure()
     {
         var mock = CreateMock();
-        mock.Setup(m => m.License(
+        _ = mock.Setup(m => m.License(
             It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Failure));
 
         Test(ExitCode.Failure, mock, "license");
@@ -34,7 +34,7 @@ sealed class Parse_license_Tests
     public void Canceled()
     {
         var mock = CreateMock();
-        mock.Setup(m => m.License(
+        _ = mock.Setup(m => m.License(
             It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Throws<OperationCanceledException>();
 
         Test(ExitCode.Canceled, mock, "license");

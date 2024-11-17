@@ -4,7 +4,7 @@
 
 namespace Usbipd;
 
-public enum ExitCode
+enum ExitCode
 {
     Success = 0,
     Failure = 1,

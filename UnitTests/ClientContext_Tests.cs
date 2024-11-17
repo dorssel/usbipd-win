@@ -44,7 +44,7 @@ sealed class ClientContext_Tests
     {
         var clientContext = new ClientContext();
         ((IDisposable)clientContext).Dispose();
-        Assert.ThrowsException<ObjectDisposedException>(() =>
+        _ = Assert.ThrowsException<ObjectDisposedException>(() =>
         {
             clientContext.TcpClient.Connect(IPAddress.Loopback, 1234);
         });

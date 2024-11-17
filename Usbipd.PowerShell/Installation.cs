@@ -22,11 +22,7 @@ static class Installation
         // HKEY_LOCAL_MACHINE\SOFTWARE\usbipd-win\Devices
 
         var match = Regex.Match(regOutput, @$"^\s*{valueName}\s+REG_SZ\s+(.*)$", RegexOptions.Multiline);
-        if (!match.Success)
-        {
-            throw new ApplicationFailedException("usbipd-win is not installed.");
-        }
-        return match.Groups[1].Value.TrimEnd();
+        return match.Success ? match.Groups[1].Value.TrimEnd() : throw new ApplicationFailedException("usbipd-win is not installed.");
     }
 
     public static string ExePath
@@ -81,7 +77,7 @@ static class Installation
                 throw new ApplicationFailedException($"PowerShell module version {GitVersionInformation.MajorMinorPatch} does not match installed usbipd-win version {version}.");
             }
 #if DEBUG
-            return Path.GetFullPath(Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetCallingAssembly().Location), @"..\..\..\..\Usbipd\bin\x64\Debug\net8.0-windows10.0.17763\win-x64\usbipd.exe"));
+            return Path.GetFullPath(Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetCallingAssembly().Location), @"..\..\..\..\Usbipd\bin\x64\Debug\net9.0-windows10.0.17763\win-x64\usbipd.exe"));
 #else
             return exeFile;
 #endif
