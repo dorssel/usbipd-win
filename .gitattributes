@@ -21,6 +21,7 @@
 *.csproj   text
 *.cs       text eol=crlf
 *.props    text
+*.targets  text
 
 *.wixproj   text
 *.wxs       text

@@ -37,8 +37,6 @@ SPDX-License-Identifier: GPL-3.0-only
     <SelfContained>false</SelfContained>
     <IsPackable>false</IsPackable>
     <IsPublishable>false</IsPublishable>
-    <DebugType Condition=" '$(Configuration)' == 'Release' ">None</DebugType>
-    <CopyOutputSymbolsToPublishDirectory>false</CopyOutputSymbolsToPublishDirectory>
     <SatelliteResourceLanguages>en-US</SatelliteResourceLanguages>
     <GenerateDependencyFile>false</GenerateDependencyFile>
     <!--

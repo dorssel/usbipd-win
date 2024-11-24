@@ -29,6 +29,7 @@ XML_XMLLINT_FILE_EXTENSIONS:
   - .csproj
   - .props
   - .pubxml
+  - .targets
   - .wixproj
   - .wxs
 # Exclude verbatim copies of external sources that are not under our control.

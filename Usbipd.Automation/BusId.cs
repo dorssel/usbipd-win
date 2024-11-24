@@ -32,12 +32,26 @@ public readonly record struct BusId
         {
             throw new ArgumentOutOfRangeException(nameof(port));
         }
-        Bus = bus;
-        Port = port;
+        (Bus, Port) = (bus, port);
     }
 
-    public ushort Bus { get; }
-    public ushort Port { get; }
+    public ushort Bus
+    {
+        get;
+#if !NETSTANDARD
+        // Required for MSTest DynamicData (de)serialization.
+        init;
+#endif
+    }
+
+    public ushort Port
+    {
+        get;
+#if !NETSTANDARD
+        // Required for MSTest DynamicData (de)serialization.
+        init;
+#endif
+    }
 
     /// <summary>
     /// The special value 0-0 for hubs that do not expose a compatible busid.

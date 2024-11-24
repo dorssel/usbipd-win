@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: GPL-3.0-only
 
+using System.Data;
 using Microsoft.Win32;
 using Usbipd.Automation;
 
@@ -25,7 +26,7 @@ sealed class Policy_Tests
         BaseTempRegistryKey = new TempRegistry(Registry.CurrentUser);
     }
 
-    [ClassCleanup]
+    [ClassCleanup(ClassCleanupBehavior.EndOfClass)]
     public static void ClassCleanup()
     {
         BaseTempRegistryKey.Dispose();
@@ -44,6 +45,8 @@ sealed class Policy_Tests
 
     sealed class AutoBindData
     {
+        // NOTE: MSTest cannot serialize PolicyRuleAutoBind (yet), so we have to deconstruct/reconstruct.
+
         static readonly PolicyRuleAutoBind[] _Valid = [
             new(PolicyRuleEffect.Allow, TestBusId, null),
             new(PolicyRuleEffect.Allow, null, TestHardwareId),
@@ -56,17 +59,19 @@ sealed class Policy_Tests
             new(PolicyRuleEffect.Allow, BusId.IncompatibleHub, TestHardwareId),
         ];
 
-        public static IEnumerable<PolicyRuleAutoBind[]> Valid
-            => from value in _Valid select new PolicyRuleAutoBind[] { value };
+        public static IEnumerable<object?[]> Valid
+            => from rule in _Valid select new object?[] { rule.Effect, rule.BusId, rule.HardwareId };
 
-        public static IEnumerable<PolicyRuleAutoBind[]> Invalid
-            => from value in _Invalid select new PolicyRuleAutoBind[] { value };
+        public static IEnumerable<object?[]> Invalid
+            => from rule in _Invalid select new object?[] { rule.Effect, rule.BusId, rule.HardwareId };
     }
 
     [TestMethod]
     [DynamicData(nameof(AutoBindData.Valid), typeof(AutoBindData))]
-    public void Persist_AutoBind(PolicyRuleAutoBind rule)
+    public void Persist_AutoBind(PolicyRuleEffect effect, BusId? busId, VidPid? hardwareId)
     {
+        var rule = new PolicyRuleAutoBind(effect, busId, hardwareId);
+
         using var tempRegistry = CreateTempRegistry();
         rule.Save(tempRegistry.Key);
 
@@ -78,15 +83,19 @@ sealed class Policy_Tests
 
     [TestMethod]
     [DynamicData(nameof(AutoBindData.Valid), typeof(AutoBindData))]
-    public void Valid_AutoBind(PolicyRuleAutoBind rule)
+    public void Valid_AutoBind(PolicyRuleEffect effect, BusId? busId, VidPid? hardwareId)
     {
+        var rule = new PolicyRuleAutoBind(effect, busId, hardwareId);
+
         Assert.IsTrue(rule.IsValid());
     }
 
     [TestMethod]
     [DynamicData(nameof(AutoBindData.Invalid), typeof(AutoBindData))]
-    public void Invalid_AutoBind(PolicyRuleAutoBind rule)
+    public void Invalid_AutoBind(PolicyRuleEffect effect, BusId? busId, VidPid? hardwareId)
     {
+        var rule = new PolicyRuleAutoBind(effect, busId, hardwareId);
+
         Assert.IsFalse(rule.IsValid());
     }
 
@@ -97,8 +106,10 @@ sealed class Policy_Tests
 
     [TestMethod]
     [DynamicData(nameof(AutoBindData.Invalid), typeof(AutoBindData))]
-    public void Match_Invalid_AutoBind(PolicyRuleAutoBind rule)
+    public void Match_Invalid_AutoBind(PolicyRuleEffect effect, BusId? busId, VidPid? hardwareId)
     {
+        var rule = new PolicyRuleAutoBind(effect, busId, hardwareId);
+
         _ = Assert.ThrowsException<InvalidOperationException>(() =>
         {
             _ = rule.Matches(CreateTestUsbDevice(TestBusId, TestHardwareId));
@@ -107,8 +118,10 @@ sealed class Policy_Tests
 
     [TestMethod]
     [DynamicData(nameof(AutoBindData.Valid), typeof(AutoBindData))]
-    public void Match_Valid_AutoBind(PolicyRuleAutoBind rule)
+    public void Match_Valid_AutoBind(PolicyRuleEffect effect, BusId? busId, VidPid? hardwareId)
     {
+        var rule = new PolicyRuleAutoBind(effect, busId, hardwareId);
+
         Assert.IsTrue(rule.Matches(CreateTestUsbDevice(TestBusId, TestHardwareId)));
         Assert.IsFalse(rule.Matches(CreateTestUsbDevice(OtherBusId, OtherHardwareId)));
         if (rule.BusId is null)
