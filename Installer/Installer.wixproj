@@ -6,12 +6,13 @@ SPDX-License-Identifier: GPL-3.0-only
 -->
 <Project Sdk="WixToolset.Sdk">
   <PropertyGroup>
+    <Platform>x64</Platform>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <GenerateGitVersionInformation>false</GenerateGitVersionInformation>
     <UpdateAssemblyInfo>false</UpdateAssemblyInfo>
     <OutputName>usbipd-win</OutputName>
     <PublishDir>..\Usbipd\bin\publish</PublishDir>
-    <PowerShellDir>..\Usbipd.PowerShell\bin\$(Configuration)\netstandard2.0</PowerShellDir>
+    <PowerShellDir>..\Usbipd.PowerShell\bin\publish</PowerShellDir>
     <DefineConstants>PublishDir=$(PublishDir);PowerShellDir=$(PowerShellDir);DriversDir=..\Drivers;Copyright=$(Copyright)</DefineConstants>
     <Pedantic>true</Pedantic>
   </PropertyGroup>
@@ -55,10 +56,7 @@ SPDX-License-Identifier: GPL-3.0-only
       <Output TaskParameter="Value" PropertyName="DefineConstants" />
     </CreateProperty>
   </Target>
-  <Target Name="PublishUsbipd" BeforeTargets="BeforeBuild">
-    <Message Importance="high" Text="Publishing pre-built usbipd-win" />
-    <RemoveDir Directories="$(PublishDir)" />
-    <MakeDir Directories="$(PublishDir)" />
-    <Exec Command="dotnet publish --nologo --no-restore --no-build --framework $(MainTargetFramework) ..\Usbipd" />
+  <Target Name="AssumePublishedDependencies" BeforeTargets="BeforeBuild">
+    <Message Importance="high" Text="Making installer for (assumed) pre-published Usbipd and Usbipd.PowerShell" />
   </Target>
 </Project>

@@ -7,7 +7,8 @@ SPDX-License-Identifier: GPL-3.0-only
 <Project Sdk="Microsoft.NET.Sdk.Worker">
 
   <PropertyGroup>
-    <TargetFrameworks>$(MainTargetFramework)</TargetFrameworks>
+    <TargetFramework>$(MainTargetFramework)</TargetFramework>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <OutputType>Exe</OutputType>
     <ApplicationManifest>app.manifest</ApplicationManifest>
 
@@ -17,7 +18,6 @@ SPDX-License-Identifier: GPL-3.0-only
     <PublishProfile>Properties\PublishProfiles\InputForInstaller.pubxml</PublishProfile>
     <PublishAot>true</PublishAot>
     <OptimizationPreference>Speed</OptimizationPreference>
-    <CopyOutputSymbolsToPublishDirectory>false</CopyOutputSymbolsToPublishDirectory>
 
     <AssemblyName>usbipd</AssemblyName>
   </PropertyGroup>
@@ -42,23 +42,9 @@ SPDX-License-Identifier: GPL-3.0-only
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="wsl\auto-attach.sh;wsl\usbip;WSL\README.md">
+    <None Update="WSL\**">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-
-  <Target Name="RemoveTranslations" BeforeTargets="Build">
-    <ItemGroup>
-      <Translations Include="$(OutputPath)\**\System.CommandLine.resources.dll" />
-    </ItemGroup>
-    <RemoveDir Directories="@(Translations->DirectoryName())" />
-  </Target>
-
-  <Target Name="RemoveDebug" AfterTargets="Publish">
-    <ItemGroup>
-      <DebugFiles Include="$(PublishDir)\**\*.pdb" />
-    </ItemGroup>
-    <Delete Files="@(DebugFiles)" />
-  </Target>
 
 </Project>

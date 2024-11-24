@@ -2,6 +2,5 @@
 //
 // SPDX-License-Identifier: GPL-3.0-only
 
-[assembly: CLSCompliant(false)]
+[assembly: Parallelize(Scope = ExecutionScope.MethodLevel)]
 [assembly: DiscoverInternals]
-[assembly: Parallelize(Workers = 0, Scope = ExecutionScope.MethodLevel)]

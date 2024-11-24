@@ -4,22 +4,23 @@ SPDX-FileCopyrightText: 2022 Frans van Dorsselaer
 
 SPDX-License-Identifier: GPL-3.0-only
 -->
-<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="MSTest.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>$(MainTargetFramework)</TargetFrameworks>
+    <TargetFramework>$(MainTargetFramework)</TargetFramework>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
     <IsAotCompatible>false</IsAotCompatible>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <!-- Updates to transitive MSTest.Sdk dependencies -->
+    <MicrosoftNETTestSdkVersion>17.12.0</MicrosoftNETTestSdkVersion>
+  </PropertyGroup>
+
   <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="Microsoft.Windows.CsWin32" PrivateAssets="all" />
     <PackageReference Include="Moq" />
-    <PackageReference Include="MSTest.TestAdapter" />
-    <PackageReference Include="MSTest.TestFramework" />
-    <PackageReference Include="System.IO.Pipelines" />
-    <PackageReference Include="coverlet.collector" PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup>

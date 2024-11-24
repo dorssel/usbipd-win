@@ -10,22 +10,11 @@ SPDX-License-Identifier: GPL-3.0-only
     <!-- Use the latest .NET SDK -->
     <!-- This product requires Windows 10 (Windows Server 2019) or higher -->
     <MainTargetFramework>net9.0-windows10.0.17763</MainTargetFramework>
+    <!-- This product only supports x64 (the only architecture supported by VBoxUsb) -->
+    <Platforms>x64</Platforms>
   </PropertyGroup>
 
   <!-- Sane defaults; override in project where needed -->
-
-  <PropertyGroup Condition="$(TargetFramework) == 'netstandard2.0'">
-    <!-- For PowerShell, we support everything -->
-    <Platforms>AnyCPU</Platforms>
-    <Platform>AnyCPU</Platform>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="$(TargetFramework) != 'netstandard2.0'">
-    <!-- This product only supports x64 (the only architecture supported by VBoxUsb) -->
-    <Platforms>x64</Platforms>
-    <Platform>x64</Platform>
-    <IsAotCompatible>true</IsAotCompatible>
-  </PropertyGroup>
 
   <PropertyGroup>
     <!-- This allows building on Linux; however, building the installer requires Windows -->
@@ -48,12 +37,15 @@ SPDX-License-Identifier: GPL-3.0-only
     <SelfContained>false</SelfContained>
     <IsPackable>false</IsPackable>
     <IsPublishable>false</IsPublishable>
+    <DebugType Condition=" '$(Configuration)' == 'Release' ">None</DebugType>
+    <CopyOutputSymbolsToPublishDirectory>false</CopyOutputSymbolsToPublishDirectory>
+    <SatelliteResourceLanguages>en-US</SatelliteResourceLanguages>
     <GenerateDependencyFile>false</GenerateDependencyFile>
-    <AccelerateBuildsInVisualStudio>true</AccelerateBuildsInVisualStudio>
     <!--
     See https://github.com/dotnet/roslyn/issues/41640
     -->
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <PublishDocumentationFiles>false</PublishDocumentationFiles>
     <NoWarn>CS1591</NoWarn>
 
     <!-- Deterministic builds -->
