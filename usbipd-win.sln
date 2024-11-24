@@ -22,10 +22,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 	EndProjectSection
 EndProject
 Project("{B7DD6F7E-DEF8-4E67-B5B7-07EF123DB6F0}") = "Installer", "Installer\Installer.wixproj", "{080EF94C-A8EC-4975-A697-BBF8C1A56055}"
-	ProjectSection(ProjectDependencies) = postProject
-		{3C3ED2C8-54D0-48D4-8BF4-78220D4A9E20} = {3C3ED2C8-54D0-48D4-8BF4-78220D4A9E20}
-		{5CE75792-6F4F-4B16-83E6-29052C6E0D8D} = {5CE75792-6F4F-4B16-83E6-29052C6E0D8D}
-	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UnitTests", "UnitTests\UnitTests.csproj", "{03DA15B4-7F40-4EF3-814B-9050C7A671B5}"
 EndProject
