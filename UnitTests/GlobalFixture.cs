@@ -5,7 +5,7 @@
 namespace UnitTests;
 
 [TestClass]
-sealed class GlobalFixture
+static class GlobalFixture
 {
     public static string TemporaryDirectory { get; } = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
 
@@ -19,6 +19,10 @@ sealed class GlobalFixture
     [AssemblyCleanup]
     public static void AssemblyCleanup()
     {
-        Directory.Delete(TemporaryDirectory, true);
+        try
+        {
+            Directory.Delete(TemporaryDirectory, true);
+        }
+        catch (DirectoryNotFoundException) { }
     }
 }

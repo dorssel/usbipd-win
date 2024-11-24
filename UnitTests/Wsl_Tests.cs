@@ -26,35 +26,36 @@ sealed class Wsl_Tests
             ("0::1.2.3.4/24", "0::1.2.3.4"),
         ];
 
-        static (IPAddress address, IPAddress mask) FromCIDR(string cidr)
-        {
-            var cidrParts = cidr.Split('/');
-            return (IPAddress.Parse(cidrParts[0]), new IPAddress(BinaryPrimitives.ReverseEndianness(unchecked((uint)(-1L << (32 - int.Parse(cidrParts[1])))))));
-        }
-
         public static IEnumerable<object[]> TestData
         {
             get
             {
                 foreach (var (host, client) in SameNetworkData)
                 {
-                    var (hostAddress, hostMask) = FromCIDR(host);
-                    yield return new object[] { hostAddress, hostMask, IPAddress.Parse(client), true };
+                    yield return new object[] { host, client, true };
                 }
                 foreach (var (host, client) in DifferentNetworkData)
                 {
-                    var (hostAddress, hostMask) = FromCIDR(host);
-                    yield return new object[] { hostAddress, hostMask, IPAddress.Parse(client), false };
+                    yield return new object[] { host, client, false };
                 }
                 yield break;
             }
         }
     }
 
+    static (IPAddress address, IPAddress mask) FromCIDR(string cidr)
+    {
+        var cidrParts = cidr.Split('/');
+        return (IPAddress.Parse(cidrParts[0]), new IPAddress(BinaryPrimitives.ReverseEndianness(unchecked((uint)(-1L << (32 - int.Parse(cidrParts[1])))))));
+    }
+
     [TestMethod]
     [DynamicData(nameof(NetworkData.TestData), typeof(NetworkData))]
-    public void IsOnSameIPv4Network(IPAddress hostAddress, IPAddress hostMask, IPAddress clientAddress, bool expected)
+    public void IsOnSameIPv4Network(string host, string client, bool expected)
     {
+        var (hostAddress, hostMask) = FromCIDR(host);
+        var clientAddress = IPAddress.Parse(client);
+
         var result = Wsl.IsOnSameIPv4Network(hostAddress, hostMask, clientAddress);
         Assert.AreEqual(expected, result);
     }
