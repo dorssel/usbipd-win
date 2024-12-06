@@ -43,11 +43,13 @@ static partial class ConfigurationManager
         {
             fixed (char* pDeviceId = deviceId)
             {
-                PInvoke.CM_Get_Device_Interface_List_Size(out var bufferLen, interfaceClassGuid, pDeviceId, flags).ThrowOnError(nameof(PInvoke.CM_Get_Device_Interface_List_Size));
+                PInvoke.CM_Get_Device_Interface_List_Size(out var bufferLen, interfaceClassGuid, pDeviceId, flags)
+                    .ThrowOnError(nameof(PInvoke.CM_Get_Device_Interface_List_Size));
                 var deviceInterfaceList = new string('\0', (int)bufferLen);
                 fixed (char* buffer = deviceInterfaceList)
                 {
-                    PInvoke.CM_Get_Device_Interface_List(interfaceClassGuid, pDeviceId, buffer, bufferLen, flags).ThrowOnError(nameof(PInvoke.CM_Get_Device_Interface_List_Size));
+                    PInvoke.CM_Get_Device_Interface_List(interfaceClassGuid, pDeviceId, buffer, bufferLen, flags)
+                        .ThrowOnError(nameof(PInvoke.CM_Get_Device_Interface_List_Size));
                 }
                 return deviceInterfaceList.Split('\0', StringSplitOptions.RemoveEmptyEntries);
             }
@@ -76,7 +78,8 @@ static partial class ConfigurationManager
             var buffer = new byte[propertyBufferSize];
             fixed (byte* pBuffer = buffer)
             {
-                PInvoke.CM_Get_Device_Interface_Property(deviceInterface, devPropKey, out propertyType, pBuffer, ref propertyBufferSize, 0).ThrowOnError(nameof(PInvoke.CM_Get_Device_Interface_Property));
+                PInvoke.CM_Get_Device_Interface_Property(deviceInterface, devPropKey, out propertyType, pBuffer, ref propertyBufferSize, 0)
+                    .ThrowOnError(nameof(PInvoke.CM_Get_Device_Interface_Property));
                 return ConvertProperty(propertyType, pBuffer, (int)propertyBufferSize);
             }
         }
@@ -95,7 +98,8 @@ static partial class ConfigurationManager
             var buffer = new byte[propertyBufferSize];
             fixed (byte* pBuffer = buffer)
             {
-                PInvoke.CM_Get_DevNode_Property(deviceNode, devPropKey, out propertyType, pBuffer, ref propertyBufferSize, 0).ThrowOnError(nameof(PInvoke.CM_Get_DevNode_Property));
+                PInvoke.CM_Get_DevNode_Property(deviceNode, devPropKey, out propertyType, pBuffer, ref propertyBufferSize, 0)
+                    .ThrowOnError(nameof(PInvoke.CM_Get_DevNode_Property));
                 return ConvertProperty(propertyType, pBuffer, (int)propertyBufferSize);
             }
         }
@@ -126,7 +130,8 @@ static partial class ConfigurationManager
     static Dictionary<uint, string> GetHubs()
     {
         var hubs = new Dictionary<uint, string>();
-        var hubInterfaces = Get_Device_Interface_List(PInvoke.GUID_DEVINTERFACE_USB_HUB, null, CM_GET_DEVICE_INTERFACE_LIST_FLAGS.CM_GET_DEVICE_INTERFACE_LIST_PRESENT);
+        var hubInterfaces = Get_Device_Interface_List(PInvoke.GUID_DEVINTERFACE_USB_HUB, null,
+            CM_GET_DEVICE_INTERFACE_LIST_FLAGS.CM_GET_DEVICE_INTERFACE_LIST_PRESENT);
         foreach (var hubInterface in hubInterfaces)
         {
             try
@@ -189,7 +194,8 @@ static partial class ConfigurationManager
 
     public static string GetDescription(uint deviceNode)
     {
-        var isCompositeDevice = Get_DevNode_Property(deviceNode, PInvoke.DEVPKEY_Device_CompatibleIds) is string[] compatibleIds && compatibleIds.Contains(@"USB\COMPOSITE");
+        var isCompositeDevice = Get_DevNode_Property(deviceNode, PInvoke.DEVPKEY_Device_CompatibleIds) is string[] compatibleIds
+            && compatibleIds.Contains(@"USB\COMPOSITE");
         if (!isCompositeDevice)
         {
             // NAME is FriendlyName (if it exists), or else it is Description (if it exists), or else UnknownDevice
@@ -277,14 +283,16 @@ static partial class ConfigurationManager
     {
         PInvoke.CM_Get_Parent(out var hubDeviceNode, deviceNode, 0).ThrowOnError(nameof(PInvoke.CM_Get_Parent));
         var hubInstanceId = (string)Get_DevNode_Property(hubDeviceNode, PInvoke.DEVPKEY_Device_InstanceId);
-        return Get_Device_Interface_List(PInvoke.GUID_DEVINTERFACE_USB_HUB, hubInstanceId, CM_GET_DEVICE_INTERFACE_LIST_FLAGS.CM_GET_DEVICE_INTERFACE_LIST_PRESENT).Single();
+        return Get_Device_Interface_List(PInvoke.GUID_DEVINTERFACE_USB_HUB, hubInstanceId,
+            CM_GET_DEVICE_INTERFACE_LIST_FLAGS.CM_GET_DEVICE_INTERFACE_LIST_PRESENT).Single();
     }
 
     internal sealed record VBoxDevice(uint DeviceNode, string InstanceId, string InterfacePath);
 
     public static VBoxDevice GetVBoxDevice(BusId busId)
     {
-        var deviceInterfaces = Get_Device_Interface_List(Interop.VBoxUsb.GUID_CLASS_VBOXUSB, null, CM_GET_DEVICE_INTERFACE_LIST_FLAGS.CM_GET_DEVICE_INTERFACE_LIST_PRESENT);
+        var deviceInterfaces = Get_Device_Interface_List(Interop.VBoxUsb.GUID_CLASS_VBOXUSB, null,
+            CM_GET_DEVICE_INTERFACE_LIST_FLAGS.CM_GET_DEVICE_INTERFACE_LIST_PRESENT);
         foreach (var deviceInterface in deviceInterfaces)
         {
             // This may fail due to a race condition between a device being removed and querying its details.
@@ -324,7 +332,8 @@ static partial class ConfigurationManager
         // This gets all the VBox driver installations ever installed, even those
         // that are not currently installed for a device and for devices that are not
         // plugged in now.
-        var deviceInterfaces = Get_Device_Interface_List(Interop.VBoxUsb.GUID_CLASS_VBOXUSB, null, CM_GET_DEVICE_INTERFACE_LIST_FLAGS.CM_GET_DEVICE_INTERFACE_LIST_ALL_DEVICES);
+        var deviceInterfaces = Get_Device_Interface_List(Interop.VBoxUsb.GUID_CLASS_VBOXUSB, null,
+            CM_GET_DEVICE_INTERFACE_LIST_FLAGS.CM_GET_DEVICE_INTERFACE_LIST_ALL_DEVICES);
         foreach (var deviceInterface in deviceInterfaces)
         {
             string deviceId;
@@ -363,7 +372,8 @@ static partial class ConfigurationManager
             {
                 fixed (DEVPROPKEY* pDevPropKey = &PInvoke.DEVPKEY_Device_FriendlyName)
                 {
-                    PInvoke.CM_Set_DevNode_Property(deviceNode, pDevPropKey, DEVPROPTYPE.DEVPROP_TYPE_STRING, (byte*)pValue, (uint)(friendlyName.Length + 1) * sizeof(char), 0).ThrowOnError(nameof(PInvoke.CM_Set_DevNode_Property));
+                    PInvoke.CM_Set_DevNode_Property(deviceNode, pDevPropKey, DEVPROPTYPE.DEVPROP_TYPE_STRING, (byte*)pValue,
+                        (uint)(friendlyName.Length + 1) * sizeof(char), 0).ThrowOnError(nameof(PInvoke.CM_Set_DevNode_Property));
                 }
             }
         }
@@ -389,7 +399,8 @@ static partial class ConfigurationManager
                 var vetoName = new string('\0', (int)PInvoke.MAX_PATH);
                 fixed (char* pVetoName = vetoName)
                 {
-                    var cr = PInvoke.CM_Query_And_Remove_SubTree(DeviceNode, &vetoType, pVetoName, PInvoke.MAX_PATH, PInvoke.CM_REMOVE_NO_RESTART | PInvoke.CM_REMOVE_UI_NOT_OK);
+                    var cr = PInvoke.CM_Query_And_Remove_SubTree(DeviceNode, &vetoType, pVetoName, PInvoke.MAX_PATH,
+                        PInvoke.CM_REMOVE_NO_RESTART | PInvoke.CM_REMOVE_UI_NOT_OK);
                     if (cr == CONFIGRET.CR_REMOVE_VETOED)
                     {
                         vetoName = vetoName.TrimEnd('\0');

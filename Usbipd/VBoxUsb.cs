@@ -26,7 +26,8 @@ static class VBoxUsb
                 BytesToStruct(output, out UsbSupVersion version);
                 if ((version.major != USBDRV_MAJOR_VERSION) || (version.minor < USBDRV_MINOR_VERSION))
                 {
-                    throw new NotSupportedException($"device version not supported: {version.major}.{version.minor}, expected {USBDRV_MAJOR_VERSION}.{USBDRV_MINOR_VERSION}");
+                    throw new NotSupportedException(
+                        $"device version not supported: {version.major}.{version.minor}, expected {USBDRV_MAJOR_VERSION}.{USBDRV_MINOR_VERSION}");
                 }
             }
             {

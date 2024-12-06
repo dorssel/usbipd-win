@@ -227,7 +227,8 @@ sealed class ConnectedClient(ILogger<ConnectedClient> logger, ClientContext clie
                             },
                         },
                     };
-                    PInvoke.CM_Register_Notification(filter, (void*)cancelEvent.SafeWaitHandle.DangerousGetHandle(), static (notify, context, action, eventData, eventDataSize) =>
+                    PInvoke.CM_Register_Notification(filter, (void*)cancelEvent.SafeWaitHandle.DangerousGetHandle(),
+                        static (notify, context, action, eventData, eventDataSize) =>
                     {
                         if (action is CM_NOTIFY_ACTION.CM_NOTIFY_ACTION_DEVICEREMOVEPENDING or CM_NOTIFY_ACTION.CM_NOTIFY_ACTION_DEVICEREMOVECOMPLETE)
                         {
@@ -238,8 +239,10 @@ sealed class ConnectedClient(ILogger<ConnectedClient> logger, ClientContext clie
                 }
 
                 // Detect unbind.
-                using var attachedKey = RegistryUtils.SetDeviceAsAttached(device.Guid.Value, device.BusId.Value, ClientContext.ClientAddress, vboxDevice.InstanceId);
-                var lresult = PInvoke.RegNotifyChangeKeyValue(attachedKey.Handle, false, Windows.Win32.System.Registry.REG_NOTIFY_FILTER.REG_NOTIFY_THREAD_AGNOSTIC, cancelEvent.SafeWaitHandle, true);
+                using var attachedKey = RegistryUtils.SetDeviceAsAttached(device.Guid.Value, device.BusId.Value, ClientContext.ClientAddress,
+                    vboxDevice.InstanceId);
+                var lresult = PInvoke.RegNotifyChangeKeyValue(attachedKey.Handle, false,
+                    Windows.Win32.System.Registry.REG_NOTIFY_FILTER.REG_NOTIFY_THREAD_AGNOSTIC, cancelEvent.SafeWaitHandle, true);
                 if (lresult != WIN32_ERROR.ERROR_SUCCESS)
                 {
                     throw new Win32Exception((int)lresult, nameof(PInvoke.RegNotifyChangeKeyValue));
@@ -300,7 +303,8 @@ sealed class ConnectedClient(ILogger<ConnectedClient> logger, ClientContext clie
         var version = BinaryPrimitives.ReadUInt16BigEndian(buf.AsSpan(0));
         if (version != USBIP_VERSION)
         {
-            throw new ProtocolViolationException($"USB/IP protocol version mismatch: expected {USBIP_VERSION.UsbIpVersionToVersion()}, got {version.UsbIpVersionToVersion()}");
+            throw new ProtocolViolationException(
+                $"USB/IP protocol version mismatch: expected {USBIP_VERSION.UsbIpVersionToVersion()}, got {version.UsbIpVersionToVersion()}");
         }
 
         var opCode = (OpCode)BinaryPrimitives.ReadUInt16BigEndian(buf.AsSpan(2));

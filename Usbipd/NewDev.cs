@@ -28,7 +28,8 @@ static class NewDev
             };
             unsafe // DevSkim: ignore DS172412
             {
-                PInvoke.SetupDiOpenDeviceInfo(deviceInfoSet, originalInstanceId, default, 0, &deviceInfoData).ThrowOnError(nameof(PInvoke.SetupDiOpenDeviceInfo));
+                PInvoke.SetupDiOpenDeviceInfo(deviceInfoSet, originalInstanceId, default, 0, &deviceInfoData)
+                    .ThrowOnError(nameof(PInvoke.SetupDiOpenDeviceInfo));
             }
             BOOL tmpReboot;
             unsafe // DevSkim: ignore DS172412
@@ -59,7 +60,8 @@ static class NewDev
             };
             unsafe // DevSkim: ignore DS172412
             {
-                PInvoke.SetupDiOpenDeviceInfo(deviceInfoSet, originalInstanceId, default, 0, &deviceInfoData).ThrowOnError(nameof(PInvoke.SetupDiOpenDeviceInfo));
+                PInvoke.SetupDiOpenDeviceInfo(deviceInfoSet, originalInstanceId, default, 0, &deviceInfoData)
+                    .ThrowOnError(nameof(PInvoke.SetupDiOpenDeviceInfo));
             }
             var deviceInstallParams = new SP_DEVINSTALL_PARAMS_W()
             {
@@ -68,16 +70,19 @@ static class NewDev
                 FlagsEx = SETUP_DI_DEVICE_INSTALL_FLAGS_EX.DI_FLAGSEX_ALLOWEXCLUDEDDRVS,
                 DriverPath = @$"{RegistryUtils.InstallationFolder ?? throw new UnexpectedResultException("not installed")}\Drivers\VBoxUSB.inf",
             };
-            PInvoke.SetupDiSetDeviceInstallParams(deviceInfoSet, deviceInfoData, deviceInstallParams).ThrowOnError(nameof(PInvoke.SetupDiSetDeviceInstallParams));
+            PInvoke.SetupDiSetDeviceInstallParams(deviceInfoSet, deviceInfoData, deviceInstallParams)
+                .ThrowOnError(nameof(PInvoke.SetupDiSetDeviceInstallParams));
             unsafe // DevSkim: ignore DS172412
             {
-                PInvoke.SetupDiBuildDriverInfoList(deviceInfoSet, &deviceInfoData, SETUP_DI_DRIVER_TYPE.SPDIT_CLASSDRIVER).ThrowOnError(nameof(PInvoke.SetupDiBuildDriverInfoList));
+                PInvoke.SetupDiBuildDriverInfoList(deviceInfoSet, &deviceInfoData, SETUP_DI_DRIVER_TYPE.SPDIT_CLASSDRIVER)
+                    .ThrowOnError(nameof(PInvoke.SetupDiBuildDriverInfoList));
             }
             var driverInfoData = new SP_DRVINFO_DATA_V2_W()
             {
                 cbSize = (uint)Marshal.SizeOf<SP_DRVINFO_DATA_V2_W>(),
             };
-            PInvoke.SetupDiEnumDriverInfo(deviceInfoSet, deviceInfoData, SETUP_DI_DRIVER_TYPE.SPDIT_CLASSDRIVER, 0, ref driverInfoData).ThrowOnError(nameof(PInvoke.SetupDiEnumDriverInfo));
+            PInvoke.SetupDiEnumDriverInfo(deviceInfoSet, deviceInfoData, SETUP_DI_DRIVER_TYPE.SPDIT_CLASSDRIVER, 0, ref driverInfoData)
+                .ThrowOnError(nameof(PInvoke.SetupDiEnumDriverInfo));
             BOOL tmpReboot;
             unsafe // DevSkim: ignore DS172412
             {

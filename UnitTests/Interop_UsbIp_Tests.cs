@@ -138,7 +138,9 @@ sealed class Interop_UsbIp_Tests
         Assert.AreEqual(1, usbIpIsoPacketDescriptors.Length);
         Assert.AreEqual(TestUsbIpIsoPacketDescriptor.offset, usbIpIsoPacketDescriptors[0].offset);
         Assert.AreEqual(TestUsbIpIsoPacketDescriptor.length, usbIpIsoPacketDescriptors[0].length);
+#pragma warning disable MSTEST0017 // Assertion arguments should be passed in the correct order
         Assert.AreEqual(TestUsbIpIsoPacketDescriptor.actual_length, usbIpIsoPacketDescriptors[0].actual_length);
+#pragma warning restore MSTEST0017 // Assertion arguments should be passed in the correct order
         Assert.AreEqual(TestUsbIpIsoPacketDescriptor.status, usbIpIsoPacketDescriptors[0].status);
     }
 
@@ -177,7 +179,9 @@ sealed class Interop_UsbIp_Tests
         Assert.AreEqual(0u, usbIpIsoPacketDescriptors[0].status);
         Assert.AreEqual(TestUsbIpIsoPacketDescriptor.offset, usbIpIsoPacketDescriptors[1].offset);
         Assert.AreEqual(TestUsbIpIsoPacketDescriptor.length, usbIpIsoPacketDescriptors[1].length);
+#pragma warning disable MSTEST0017 // Assertion arguments should be passed in the correct order
         Assert.AreEqual(TestUsbIpIsoPacketDescriptor.actual_length, usbIpIsoPacketDescriptors[1].actual_length);
+#pragma warning restore MSTEST0017 // Assertion arguments should be passed in the correct order
         Assert.AreEqual(TestUsbIpIsoPacketDescriptor.status, usbIpIsoPacketDescriptors[1].status);
     }
 

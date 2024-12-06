@@ -40,7 +40,8 @@ sealed class AttachedClient
     {
         if (!AttachedEndpoints.TryGetValue(rawEndpoint, out var attachedEndpoint))
         {
-            attachedEndpoint = new AttachedEndpoint(LoggerFactory.CreateLogger($"{ClientContext.AttachedBusId!.Value}.{rawEndpoint & 0x0f}"), ClientContext, Pcap, rawEndpoint, ReplyChannel, cancellationToken);
+            attachedEndpoint = new AttachedEndpoint(LoggerFactory.CreateLogger($"{ClientContext.AttachedBusId!.Value}.{rawEndpoint & 0x0f}"), ClientContext,
+                Pcap, rawEndpoint, ReplyChannel, cancellationToken);
             AttachedEndpoints.Add(rawEndpoint, attachedEndpoint);
         }
         return attachedEndpoint;
@@ -69,7 +70,9 @@ sealed class AttachedClient
     //    URBs; it can only abort entire endpoints, which cancels all URBs for that endpoint at once.
     //    This is very different from Linux; it is handled by the AttachedEndpoint class.
 
+#pragma warning disable IDE1006 // Naming Styles
     readonly record struct PendingUnlink(uint unlink_seqnum, uint submit_seqnum);
+#pragma warning restore IDE1006 // Naming Styles
     readonly ConcurrentQueue<PendingUnlink> PendingUnlinks = new();
 
     public async Task RunAsync(CancellationToken cancellationToken)
@@ -105,9 +108,9 @@ sealed class AttachedClient
                     }
                     // Only write the reply if it was an actual SUBMIT request that was still pending after processing UNLINK.
                     // All dummy UNLINK replies from the reader and all SUBMIT replies for already UNLINKed URBs are simply dropped.
-                    if (PendingSubmits.TryRemove(reply.seqnum, out var _))
+                    if (PendingSubmits.TryRemove(reply.Seqnum, out var _))
                     {
-                        await Stream.WriteAsync(reply.bytes, cancellationToken);
+                        await Stream.WriteAsync(reply.Bytes, cancellationToken);
                     }
                 }
             }

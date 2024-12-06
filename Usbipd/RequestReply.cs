@@ -4,4 +4,4 @@
 
 namespace Usbipd;
 
-readonly record struct RequestReply(uint seqnum, byte[] bytes);
+readonly record struct RequestReply(uint Seqnum, byte[] Bytes);

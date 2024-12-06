@@ -83,7 +83,8 @@ sealed class VidPid_Tests
                 leftPid > rightPid ? 1 : 0;
         }
 
-        public static IEnumerable<object[]> Compare => from left in _Valid from right in _Valid select new object[] { left, right, ExpectedCompare(left, right) };
+        public static IEnumerable<object[]> Compare
+            => from left in _Valid from right in _Valid select new object[] { left, right, ExpectedCompare(left, right) };
     }
 
     [TestMethod]

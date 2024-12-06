@@ -680,7 +680,8 @@ static class Program
             });
             wslCommand.SetHandler(invocationContext =>
             {
-                ConsoleTools.ReportError(invocationContext.Console, $"The 'wsl' subcommand has been removed. Learn about the new syntax at {Wsl.AttachWslUrl}.");
+                ConsoleTools.ReportError(invocationContext.Console,
+                    $"The 'wsl' subcommand has been removed. Learn about the new syntax at {Wsl.AttachWslUrl}.");
                 invocationContext.ExitCode = (int)ExitCode.ParseError;
             });
             rootCommand.AddCommand(wslCommand);

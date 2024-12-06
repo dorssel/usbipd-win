@@ -146,7 +146,8 @@ sealed partial class PcapNg
         BlockChannel.Writer.WriteAsync(CreateEnhancedPacketBlock(0, usbmon)).AsTask().Wait();
     }
 
-    public void DumpPacketIsoRequest(UsbIpHeaderBasic basic, UsbIpHeaderCmdSubmit cmdSubmit, UsbIpIsoPacketDescriptor[] packetDescriptors, ReadOnlySpan<byte> data)
+    public void DumpPacketIsoRequest(UsbIpHeaderBasic basic, UsbIpHeaderCmdSubmit cmdSubmit, UsbIpIsoPacketDescriptor[] packetDescriptors,
+        ReadOnlySpan<byte> data)
     {
         if (!Enabled)
         {
@@ -187,7 +188,8 @@ sealed partial class PcapNg
         BlockChannel.Writer.WriteAsync(CreateEnhancedPacketBlock(0, usbmon)).AsTask().Wait();
     }
 
-    public void DumpPacketIsoReply(UsbIpHeaderBasic basic, UsbIpHeaderCmdSubmit cmdSubmit, UsbIpHeaderRetSubmit retSubmit, UsbIpIsoPacketDescriptor[] packetDescriptors, ReadOnlySpan<byte> data)
+    public void DumpPacketIsoReply(UsbIpHeaderBasic basic, UsbIpHeaderCmdSubmit cmdSubmit, UsbIpHeaderRetSubmit retSubmit,
+        UsbIpIsoPacketDescriptor[] packetDescriptors, ReadOnlySpan<byte> data)
     {
         if (!Enabled)
         {
