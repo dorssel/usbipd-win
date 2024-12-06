@@ -18,7 +18,8 @@ namespace Usbipd;
 
 sealed class AttachedEndpoint
 {
-    public AttachedEndpoint(ILogger logger, ClientContext clientContext, PcapNg pcap, byte rawEndpoint, Channel<RequestReply> replyChannel, CancellationToken cancellationToken)
+    public AttachedEndpoint(ILogger logger, ClientContext clientContext, PcapNg pcap, byte rawEndpoint, Channel<RequestReply> replyChannel,
+        CancellationToken cancellationToken)
     {
         Logger = logger;
         Logger.Debug("Endpoint created");
@@ -177,7 +178,8 @@ sealed class AttachedEndpoint
                     }
                 }
 
-                Pcap.DumpPacketIsoReply(basic, submit, header.ret_submit, packetDescriptors, basic.direction == UsbIpDir.USBIP_DIR_IN ? retBuf.AsSpan(0, header.ret_submit.actual_length) : ReadOnlySpan<byte>.Empty);
+                Pcap.DumpPacketIsoReply(basic, submit, header.ret_submit, packetDescriptors,
+                    basic.direction == UsbIpDir.USBIP_DIR_IN ? retBuf.AsSpan(0, header.ret_submit.actual_length) : ReadOnlySpan<byte>.Empty);
                 using var replyStream = new MemoryStream();
                 replyStream.Write(header.ToBytes());
                 if (basic.direction == UsbIpDir.USBIP_DIR_IN)
@@ -401,7 +403,8 @@ sealed class AttachedEndpoint
                 Logger.Debug($"{urb.error} -> {ConvertError(urb.error)} -> {header.ret_submit.status}");
             }
 
-            Pcap.DumpPacketNonIsoReply(basic, submit, header.ret_submit, basic.direction == UsbIpDir.USBIP_DIR_IN ? buf.AsSpan(payloadOffset, header.ret_submit.actual_length) : ReadOnlySpan<byte>.Empty);
+            Pcap.DumpPacketNonIsoReply(basic, submit, header.ret_submit,
+                basic.direction == UsbIpDir.USBIP_DIR_IN ? buf.AsSpan(payloadOffset, header.ret_submit.actual_length) : ReadOnlySpan<byte>.Empty);
             using var replyStream = new MemoryStream();
             replyStream.Write(header.ToBytes());
             if (basic.direction == UsbIpDir.USBIP_DIR_IN)

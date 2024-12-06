@@ -113,7 +113,8 @@ sealed class BusId_Tests
                 : 0;
         }
 
-        public static IEnumerable<object[]> Compare => from left in _Valid from right in _Valid select new object[] { left, right, ExpectedCompare(left, right) };
+        public static IEnumerable<object[]> Compare
+            => from left in _Valid from right in _Valid select new object[] { left, right, ExpectedCompare(left, right) };
     }
 
     static ushort BusFromValidBusId(string text)

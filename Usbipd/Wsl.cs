@@ -62,7 +62,8 @@ static partial class Wsl
     }
 
     static async Task<(int ExitCode, string StandardOutput, string StandardError, MemoryStream BinaryOutput)>
-        RunWslAsync((string distribution, string directory)? linux, Action<string, bool>? outputCallback, bool binaryOutput, CancellationToken cancellationToken, params string[] arguments)
+        RunWslAsync((string distribution, string directory)? linux, Action<string, bool>? outputCallback, bool binaryOutput,
+        CancellationToken cancellationToken, params string[] arguments)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -236,7 +237,8 @@ static partial class Wsl
             // check (b1)
             if (distributions.FirstOrDefault(d => d.Name.Equals(distribution, StringComparison.OrdinalIgnoreCase)) is not Distribution selectedDistribution)
             {
-                console.ReportError($"The WSL distribution '{distribution}' does not exist. Learn how to list all installed distributions at {ListDistributionsUrl}.");
+                console.ReportError(
+                    $"The WSL distribution '{distribution}' does not exist. Learn how to list all installed distributions at {ListDistributionsUrl}.");
                 return ExitCode.Failure;
             }
 
@@ -418,7 +420,8 @@ static partial class Wsl
                 // Get all non-loopback unicast IPv4 addresses for WSL.
                 var clientAddresses = new List<IPAddress>();
                 {
-                    // We use 'cat /proc/net/fib_trie', where we assume 'cat' is available on all distributions and /proc/net/fib_trie is supported by the WSL kernel.
+                    // We use 'cat /proc/net/fib_trie', where we assume 'cat' is available on all distributions
+                    // and /proc/net/fib_trie is supported by the WSL kernel.
                     var ipResult = await RunWslAsync((distribution, "/"), null, false, cancellationToken, "cat", "/proc/net/fib_trie");
                     if (ipResult.ExitCode == 0)
                     {
@@ -485,7 +488,8 @@ static partial class Wsl
                     .Where(ua => !IsOnSameIPv4Network(IPAddress.Loopback, IPAddress.Parse("255.0.0.0"), ua.Address));
 
                 // Find any match; we'll just take the first.
-                if (hostAddresses.FirstOrDefault(ha => clientAddresses.Any(ca => IsOnSameIPv4Network(ha.Address, ha.IPv4Mask, ca))) is not UnicastIPAddressInformation matchHost)
+                if (hostAddresses.FirstOrDefault(ha
+                    => clientAddresses.Any(ca => IsOnSameIPv4Network(ha.Address, ha.IPv4Mask, ca))) is not UnicastIPAddressInformation matchHost)
                 {
                     console.ReportError("The host IP address for the WSL virtual switch could not be found.");
                     return ExitCode.Failure;
@@ -507,7 +511,8 @@ static partial class Wsl
             try
             {
                 // With minimal requirements (bash only) try to connect from WSL to our server.
-                var pingResult = await RunWslAsync((distribution, "/"), null, false, linkedTokenSource.Token, "bash", "-c", $"echo < /dev/tcp/{hostAddress}/{Interop.UsbIp.USBIP_PORT}");
+                var pingResult = await RunWslAsync((distribution, "/"), null, false, linkedTokenSource.Token, "bash", "-c", 
+                    $"echo < /dev/tcp/{hostAddress}/{Interop.UsbIp.USBIP_PORT}");
                 if (pingResult.StandardError.Contains("refused"))
                 {
                     // If the output contains "refused", then the test was executed and failed, irrespective of the exit code.
@@ -577,14 +582,16 @@ static partial class Wsl
             if (line.Contains("Device busy"))
             {
                 // We have already checked that the device is not attached to some other client.
-                console.ReportWarning("The device appears to be used by Windows; stop the software using the device, or bind the device using the '--force' option.");
+                console.ReportWarning(
+                    "The device appears to be used by Windows; stop the software using the device, or bind the device using the '--force' option.");
             }
         }
 
         // Finally, call 'usbip attach', or run the auto-attach.sh script.
         if (!autoAttach)
         {
-            var wslResult = await RunWslAsync((distribution, WslMountPoint), FilterUsbip, false, cancellationToken, "./usbip", "attach", $"--remote={hostAddress}", $"--busid={busId}");
+            var wslResult = await RunWslAsync((distribution, WslMountPoint), FilterUsbip, false, cancellationToken, "./usbip", "attach",
+                $"--remote={hostAddress}", $"--busid={busId}");
             if (wslResult.ExitCode != 0)
             {
                 console.ReportError($"Failed to attach device with busid '{busId}'.");
@@ -595,7 +602,8 @@ static partial class Wsl
         {
             console.ReportInfo("Starting endless attach loop; press Ctrl+C to quit.");
 
-            _ = await RunWslAsync((distribution, WslMountPoint), FilterUsbip, false, cancellationToken, "./auto-attach.sh", hostAddress.ToString(), busId.ToString());
+            _ = await RunWslAsync((distribution, WslMountPoint), FilterUsbip, false, cancellationToken, "./auto-attach.sh", hostAddress.ToString(),
+                busId.ToString());
             // This process always ends in failure, as it is supposed to run an endless loop.
             // This may be intended by the user (Ctrl+C, WSL shutdown), others may be real errors.
             // There is no way to tell the difference...

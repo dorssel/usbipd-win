@@ -24,8 +24,8 @@ sealed class Interop_VBoxUsbMon_Tests
     {
         var usbFilter = UsbFilter.Create(UsbFilterType.CAPTURE);
         usbFilter.SetMatch(UsbFilterIdx.DEVICE_CLASS, (UsbFilterMatch)0x1234, 0x5678);
-        Assert.AreEqual((ushort)usbFilter.aFields[(int)UsbFilterIdx.DEVICE_CLASS].enmMatch, 0x1234);
-        Assert.AreEqual(usbFilter.aFields[(int)UsbFilterIdx.DEVICE_CLASS].u16Value, 0x5678);
+        Assert.AreEqual(0x1234, (ushort)usbFilter.aFields[(int)UsbFilterIdx.DEVICE_CLASS].enmMatch);
+        Assert.AreEqual(0x5678, usbFilter.aFields[(int)UsbFilterIdx.DEVICE_CLASS].u16Value);
         for (var i = 0; i < usbFilter.aFields.Length; ++i)
         {
             if (i != (int)UsbFilterIdx.DEVICE_CLASS)

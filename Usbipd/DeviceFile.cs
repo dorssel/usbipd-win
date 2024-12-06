@@ -56,7 +56,8 @@ sealed partial class DeviceFile : IDisposable
                 {
                     if (exactOutput && ((output?.Length ?? 0) != numBytes))
                     {
-                        taskCompletionSource.SetException(new ProtocolViolationException($"DeviceIoControl returned {numBytes} bytes, expected {output?.Length ?? 0}"));
+                        taskCompletionSource.SetException(
+                            new ProtocolViolationException($"DeviceIoControl returned {numBytes} bytes, expected {output?.Length ?? 0}"));
                     }
                     else
                     {

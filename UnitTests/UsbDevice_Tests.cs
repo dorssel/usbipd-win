@@ -29,12 +29,12 @@ sealed class UsbDevice_Tests
             IPAddress: TestIPAddress,
             StubInstanceId: TestStubInstanceId
         );
-        Assert.AreEqual(device.InstanceId, TestInstanceId);
-        Assert.AreEqual(device.Description, TestDescription);
-        Assert.AreEqual(device.BusId, TestBusId);
-        Assert.AreEqual(device.Guid, TestGuid);
+        Assert.AreEqual(TestInstanceId, device.InstanceId);
+        Assert.AreEqual(TestDescription, device.Description);
+        Assert.AreEqual(TestBusId, device.BusId);
+        Assert.AreEqual(TestGuid, device.Guid);
         Assert.IsFalse(device.IsForced);
-        Assert.AreEqual(device.IPAddress, TestIPAddress);
-        Assert.AreEqual(device.StubInstanceId, TestStubInstanceId);
+        Assert.AreEqual(TestIPAddress, device.IPAddress);
+        Assert.AreEqual(TestStubInstanceId, device.StubInstanceId);
     }
 }

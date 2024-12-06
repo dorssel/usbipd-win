@@ -14,7 +14,8 @@ static class UsbIp
     /// <summary>
     /// UsbIp: tools/configure.ac
     /// <para/>
-    /// See <see href="https://www.kernel.org/doc/html/latest/usb/usbip_protocol.html">USB/IP protocol</see> and <see cref="Tools.UsbIpVersionToVersion(ushort)"/>.
+    /// See <see href="https://www.kernel.org/doc/html/latest/usb/usbip_protocol.html">USB/IP protocol</see>
+    /// and <see cref="Tools.UsbIpVersionToVersion(ushort)"/>.
     /// </summary>
     public const ushort USBIP_VERSION = 0x0111;
 
@@ -187,7 +188,8 @@ static class UsbIp
     /// <summary>
     /// Read native descriptors from a big endian stream.
     /// </summary>
-    internal static async Task<UsbIpIsoPacketDescriptor[]> ReadUsbIpIsoPacketDescriptorsAsync(this Stream stream, int count, CancellationToken cancellationToken)
+    internal static async Task<UsbIpIsoPacketDescriptor[]> ReadUsbIpIsoPacketDescriptorsAsync(this Stream stream, int count,
+        CancellationToken cancellationToken)
     {
         var bytes = new byte[count * Unsafe.SizeOf<UsbIpIsoPacketDescriptor>()];
         await stream.ReadMessageAsync(bytes, cancellationToken);

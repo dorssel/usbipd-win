@@ -40,7 +40,7 @@ sealed class Parse_policy_Tests
     }
 
     [TestMethod]
-    public void list_Success()
+    public void List_Success()
     {
         var mock = CreateMock();
         _ = mock.Setup(m => m.PolicyList(It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Success));
@@ -49,25 +49,25 @@ sealed class Parse_policy_Tests
     }
 
     [TestMethod]
-    public void list_Help()
+    public void List_Help()
     {
         Test(ExitCode.Success, "policy", "list", "--help");
     }
 
     [TestMethod]
-    public void list_OptionInvalid()
+    public void List_OptionInvalid()
     {
         Test(ExitCode.ParseError, "policy", "list", "--invalid-option");
     }
 
     [TestMethod]
-    public void list_StrayArgument()
+    public void List_StrayArgument()
     {
         Test(ExitCode.ParseError, "policy", "list", "stray-argument");
     }
 
     [TestMethod]
-    public void add_BusIdSuccess()
+    public void Add_BusIdSuccess()
     {
         var mock = CreateMock();
         _ = mock.Setup(m => m.PolicyAdd(It.IsAny<PolicyRule>(),
@@ -77,7 +77,7 @@ sealed class Parse_policy_Tests
     }
 
     [TestMethod]
-    public void add_HardwareIdSuccess()
+    public void Add_HardwareIdSuccess()
     {
         var mock = CreateMock();
         _ = mock.Setup(m => m.PolicyAdd(It.IsAny<PolicyRule>(),
@@ -87,7 +87,7 @@ sealed class Parse_policy_Tests
     }
 
     [TestMethod]
-    public void add_BothSuccess()
+    public void Add_BothSuccess()
     {
         var mock = CreateMock();
         _ = mock.Setup(m => m.PolicyAdd(It.IsAny<PolicyRule>(),
@@ -98,13 +98,13 @@ sealed class Parse_policy_Tests
     }
 
     [TestMethod]
-    public void add_MissingCondition()
+    public void Add_MissingCondition()
     {
         Test(ExitCode.ParseError, "policy", "add", "--effect", "Allow", "--operation", "AutoBind", TestHardwareId.ToString());
     }
 
     [TestMethod]
-    public void remove_GuidSuccess()
+    public void Remove_GuidSuccess()
     {
         var mock = CreateMock();
         _ = mock.Setup(m => m.PolicyRemove(It.IsAny<Guid>(),
@@ -114,7 +114,7 @@ sealed class Parse_policy_Tests
     }
 
     [TestMethod]
-    public void remove_AllSuccess()
+    public void Remove_AllSuccess()
     {
         var mock = CreateMock();
         _ = mock.Setup(m => m.PolicyRemoveAll(It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Success));
@@ -123,13 +123,13 @@ sealed class Parse_policy_Tests
     }
 
     [TestMethod]
-    public void remove_MissingOption()
+    public void Remove_MissingOption()
     {
         Test(ExitCode.ParseError, "policy", "remove");
     }
 
     [TestMethod]
-    public void remove_TooManyOptions()
+    public void Remove_TooManyOptions()
     {
         Test(ExitCode.ParseError, "policy", "remove", "--all", "--guid", TestGuid.ToString());
     }
