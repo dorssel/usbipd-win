@@ -30,7 +30,7 @@
 *.png       binary
 *.xcf       binary
 
-usb.ids   text eol=lf 
+usb.ids   text eol=lf
 
 # VBoxUsb drivers
 *.cat   binary

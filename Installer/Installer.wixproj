@@ -52,7 +52,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <CreateProperty Value="$(DefineConstants);ProductCode=EA1D5623-E6A7-4E4A-9259-E39722$([System.Byte]::Parse($(GitVersion_Major)).ToString(X2))$([System.Byte]::Parse($(GitVersion_Minor)).ToString(X2))$([System.Byte]::Parse($(GitVersion_Patch)).ToString(X2))">
       <Output TaskParameter="Value" PropertyName="DefineConstants" />
     </CreateProperty>
-    <CreateProperty Value="$(DefineConstants);GitVersion_MajorMinorPatch=$(GitVersion_MajorMinorPatch)" Condition=" '$(MSBuildRuntimeType)' != 'Core' " >
+    <CreateProperty Value="$(DefineConstants);GitVersion_MajorMinorPatch=$(GitVersion_MajorMinorPatch)" Condition=" '$(MSBuildRuntimeType)' != 'Core' ">
       <Output TaskParameter="Value" PropertyName="DefineConstants" />
     </CreateProperty>
   </Target>

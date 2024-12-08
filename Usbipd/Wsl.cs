@@ -511,7 +511,7 @@ static partial class Wsl
             try
             {
                 // With minimal requirements (bash only) try to connect from WSL to our server.
-                var pingResult = await RunWslAsync((distribution, "/"), null, false, linkedTokenSource.Token, "bash", "-c", 
+                var pingResult = await RunWslAsync((distribution, "/"), null, false, linkedTokenSource.Token, "bash", "-c",
                     $"echo < /dev/tcp/{hostAddress}/{Interop.UsbIp.USBIP_PORT}");
                 if (pingResult.StandardError.Contains("refused"))
                 {
