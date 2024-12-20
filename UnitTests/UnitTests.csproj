@@ -13,11 +13,6 @@ SPDX-License-Identifier: GPL-3.0-only
     <IsAotCompatible>false</IsAotCompatible>
   </PropertyGroup>
 
-  <PropertyGroup>
-    <!-- Updates to transitive MSTest.Sdk dependencies -->
-    <MicrosoftNETTestSdkVersion>17.12.0</MicrosoftNETTestSdkVersion>
-  </PropertyGroup>
-
   <ItemGroup>
     <PackageReference Include="Microsoft.Windows.CsWin32" PrivateAssets="all" />
     <PackageReference Include="Moq" />
