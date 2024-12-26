@@ -7,7 +7,7 @@ SPDX-License-Identifier: GPL-3.0-only
 <Project>
   <ItemGroup>
     <!-- all -->
-    <PackageVersion Include="GitVersion.MsBuild" Version="6.0.5" />
+    <PackageVersion Include="Dorssel.GitVersion.MsBuild" Version="1.1.0" />
     <!-- Usbipd -->
     <PackageVersion Include="Microsoft.Extensions.Hosting.WindowsServices" Version="9.0.0" />
     <PackageVersion Include="Microsoft.Windows.CsWin32" Version="0.3.106" />

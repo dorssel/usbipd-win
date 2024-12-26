@@ -82,7 +82,9 @@ jobs:
         uses: actions/setup-dotnet@v4
 
       - name: Install dependencies
-        run: dotnet restore
+        run: |
+          dotnet tool restore
+          dotnet restore
 
       - name: Build
         run: dotnet build --configuration Release --no-restore

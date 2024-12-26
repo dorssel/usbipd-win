@@ -21,9 +21,6 @@ SPDX-License-Identifier: GPL-3.0-only
     <PackageReference Include="WixToolset.UI.wixext" />
     <PackageReference Include="WixToolset.Util.wixext" />
   </ItemGroup>
-  <ItemGroup>
-    <Compile Remove="..\Fake_GitVersionInformation.cs" Condition=" '$(MSBuildRuntimeType)' != 'Core' " />
-  </ItemGroup>
   <Target Name="SetTarget" AfterTargets="GetVersion">
     <!--
     Now that we have determined the version, augment the OutputName to include the version number.
@@ -50,9 +47,6 @@ SPDX-License-Identifier: GPL-3.0-only
     The alternative (WiX AllowSameVersionUpgrades) causes ICE61.
     -->
     <CreateProperty Value="$(DefineConstants);ProductCode=EA1D5623-E6A7-4E4A-9259-E39722$([System.Byte]::Parse($(GitVersion_Major)).ToString(X2))$([System.Byte]::Parse($(GitVersion_Minor)).ToString(X2))$([System.Byte]::Parse($(GitVersion_Patch)).ToString(X2))">
-      <Output TaskParameter="Value" PropertyName="DefineConstants" />
-    </CreateProperty>
-    <CreateProperty Value="$(DefineConstants);GitVersion_MajorMinorPatch=$(GitVersion_MajorMinorPatch)" Condition=" '$(MSBuildRuntimeType)' != 'Core' ">
       <Output TaskParameter="Value" PropertyName="DefineConstants" />
     </CreateProperty>
   </Target>

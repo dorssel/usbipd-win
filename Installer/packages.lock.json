@@ -2,11 +2,11 @@
   "version": 2,
   "dependencies": {
     "native,Version=v0.0": {
-      "GitVersion.MsBuild": {
+      "Dorssel.GitVersion.MsBuild": {
         "type": "Direct",
-        "requested": "[6.0.5, )",
-        "resolved": "6.0.5",
-        "contentHash": "vjqDQVrYXbuokLtp5OryzvumVDF9THjpAiURAehKWEe2PEkxEzOQuedFdiSf9wChL6nxCRrL+rNZ5VhcDf6xYQ=="
+        "requested": "[1.1.0, )",
+        "resolved": "1.1.0",
+        "contentHash": "oabDrUuI3t6viTgMJPb6M6fYYHZBFkHG5QPNPJvIQayKi2LhEgIEeiyfyUKr1RQrr1imDEI4z8VOgEUndfzVnw=="
       },
       "WixToolset.Firewall.wixext": {
         "type": "Direct",
