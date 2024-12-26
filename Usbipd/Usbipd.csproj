@@ -17,6 +17,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <IsPublishable>true</IsPublishable>
     <PublishProfile>Properties\PublishProfiles\InputForInstaller.pubxml</PublishProfile>
     <PublishAot>true</PublishAot>
+    <CopyOutputSymbolsToPublishDirectory>false</CopyOutputSymbolsToPublishDirectory>
     <OptimizationPreference>Speed</OptimizationPreference>
 
     <AssemblyName>usbipd</AssemblyName>
