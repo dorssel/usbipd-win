@@ -30,7 +30,7 @@ sealed class ConnectedClient(ILogger<ConnectedClient> logger, ClientContext clie
     {
         try
         {
-            var opCode = await RecvOpCodeAsync(cancellationToken);
+            var opCode = await ReceiveOpCodeAsync(cancellationToken);
             Logger.Debug($"Received opcode: {opCode}");
             switch (opCode)
             {
@@ -138,11 +138,11 @@ sealed class ConnectedClient(ILogger<ConnectedClient> logger, ClientContext clie
                 {
                     // The device is not currently bound, but it is allowed by the policy. Auto-bind it now...
                     Logger.AutoBind(ClientContext.ClientAddress, busId, bindDevice.InstanceId);
-                    RegistryUtils.Persist(bindDevice.InstanceId, bindDevice.Description);
+                    RegistryUtilities.Persist(bindDevice.InstanceId, bindDevice.Description);
                 }
             }
 
-            var device = RegistryUtils.GetBoundDevices().SingleOrDefault(d => d.BusId.HasValue && d.BusId.Value == busId);
+            var device = RegistryUtilities.GetBoundDevices().SingleOrDefault(d => d.BusId.HasValue && d.BusId.Value == busId);
             if (device is null)
             {
                 await SendOpCodeAsync(OpCode.OP_REP_IMPORT, Status.ST_NODEV);
@@ -239,13 +239,13 @@ sealed class ConnectedClient(ILogger<ConnectedClient> logger, ClientContext clie
                 }
 
                 // Detect unbind.
-                using var attachedKey = RegistryUtils.SetDeviceAsAttached(device.Guid.Value, device.BusId.Value, ClientContext.ClientAddress,
+                using var attachedKey = RegistryUtilities.SetDeviceAsAttached(device.Guid.Value, device.BusId.Value, ClientContext.ClientAddress,
                     vboxDevice.InstanceId);
-                var lresult = PInvoke.RegNotifyChangeKeyValue(attachedKey.Handle, false,
+                var result = PInvoke.RegNotifyChangeKeyValue(attachedKey.Handle, false,
                     Windows.Win32.System.Registry.REG_NOTIFY_FILTER.REG_NOTIFY_THREAD_AGNOSTIC, cancelEvent.SafeWaitHandle, true);
-                if (lresult != WIN32_ERROR.ERROR_SUCCESS)
+                if (result != WIN32_ERROR.ERROR_SUCCESS)
                 {
-                    throw new Win32Exception((int)lresult, nameof(PInvoke.RegNotifyChangeKeyValue));
+                    throw new Win32Exception((int)result, nameof(PInvoke.RegNotifyChangeKeyValue));
                 }
 
                 await ServiceProvider.GetRequiredService<AttachedClient>().RunAsync(attachedClientTokenSource.Token);
@@ -254,7 +254,7 @@ sealed class ConnectedClient(ILogger<ConnectedClient> logger, ClientContext clie
             {
                 notification?.Dispose();
 
-                _ = RegistryUtils.SetDeviceAsDetached(device.Guid.Value);
+                _ = RegistryUtilities.SetDeviceAsDetached(device.Guid.Value);
 
                 ClientContext.AttachedDevice.Dispose();
 
@@ -294,7 +294,7 @@ sealed class ConnectedClient(ILogger<ConnectedClient> logger, ClientContext clie
         }
     }
 
-    async Task<OpCode> RecvOpCodeAsync(CancellationToken cancellationToken)
+    async Task<OpCode> ReceiveOpCodeAsync(CancellationToken cancellationToken)
     {
         var buf = new byte[8];
         await Stream.ReadMessageAsync(buf, cancellationToken);

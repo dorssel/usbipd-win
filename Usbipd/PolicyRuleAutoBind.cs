@@ -7,8 +7,8 @@ using Usbipd.Automation;
 
 namespace Usbipd;
 
-sealed record PolicyRuleAutoBind(PolicyRuleEffect effect, BusId? BusId, VidPid? HardwareId)
-    : PolicyRule(effect, PolicyRuleOperation.AutoBind)
+sealed record PolicyRuleAutoBind(PolicyRuleEffect Effect, BusId? BusId, VidPid? HardwareId)
+    : PolicyRule(Effect, PolicyRuleOperation.AutoBind)
 {
     const string BusIdName = "BusId";
     const string HardwareIdName = "HardwareId";

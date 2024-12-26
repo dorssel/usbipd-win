@@ -110,10 +110,10 @@ sealed record ExportedDevice(string InstanceId, BusId BusId, Linux.UsbDeviceSpee
             }
             if (common.bDescriptorType == PInvoke.USB_INTERFACE_DESCRIPTOR_TYPE)
             {
-                BytesToStruct(buf.AsSpan(offset), out USB_INTERFACE_DESCRIPTOR iface);
-                if (iface.bAlternateSetting == 0)
+                BytesToStruct(buf.AsSpan(offset), out USB_INTERFACE_DESCRIPTOR descriptor);
+                if (descriptor.bAlternateSetting == 0)
                 {
-                    result.Add(new(iface.bInterfaceClass, iface.bInterfaceSubClass, iface.bInterfaceProtocol));
+                    result.Add(new(descriptor.bInterfaceClass, descriptor.bInterfaceSubClass, descriptor.bInterfaceProtocol));
                 }
             }
             offset += common.bLength;

@@ -201,10 +201,8 @@ sealed class AttachedEndpoint
         }
         finally
         {
-            _ = Task.WhenAll(ioctls).ContinueWith(task =>
-            {
-                gcHandle.Free();
-            }, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+            _ = Task.WhenAll(ioctls).ContinueWith(task => gcHandle.Free(),
+                CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
         }
     }
 
@@ -257,7 +255,7 @@ sealed class AttachedEndpoint
         }
 
         // We now have received the entire SUBMIT request:
-        // - If the request is "special" (reconfig, clear), then we will handle it immediately and await the result.
+        // - If the request is "special" (reconfigure, clear), then we will handle it immediately and await the result.
         //   This means no further requests will be read until the special request has completed.
         // - Otherwise, we will start a new task so that the receiver can continue.
         //   This means multiple URBs can be outstanding awaiting completion.
@@ -329,10 +327,8 @@ sealed class AttachedEndpoint
                     gcHandle.Free();
                     throw;
                 }
-                _ = ioctl.ContinueWith(task =>
-                {
-                    gcHandle.Free();
-                }, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+                _ = ioctl.ContinueWith(task => gcHandle.Free(),
+                    CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
             }
             else
             {

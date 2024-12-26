@@ -21,7 +21,7 @@ public readonly record struct BusId
     public BusId(ushort bus, ushort port)
     {
         // Do not allow the explicit creation of the special IncompatibleHub value.
-        // Instead, use the static IncompatibleHub field (preferrable) or "default".
+        // Instead, use the static IncompatibleHub field (preferable) or "default".
         // USB supports up to 127 devices, but that would require multiple hubs; the "per hub" port will never be >99.
         // And if you have more than 99 hubs on one system, then you win a prize! (but we're not going to support it...)
         if (bus is 0 or > 99)

@@ -12,7 +12,7 @@ using Windows.Win32;
 
 namespace Usbipd;
 
-static class RegistryUtils
+static class RegistryUtilities
 {
     const string DevicesRegistryPath = @"SOFTWARE\usbipd-win";
 

@@ -37,7 +37,7 @@ sealed record UsbDevice(string InstanceId, string Description, bool IsForced,
     /// </summary>
     public static IEnumerable<UsbDevice> GetAll()
     {
-        var usbDevices = new Dictionary<string, UsbDevice>(RegistryUtils.GetBoundDevices().Select(d => KeyValuePair.Create(d.InstanceId, d)));
+        var usbDevices = new Dictionary<string, UsbDevice>(RegistryUtilities.GetBoundDevices().Select(d => KeyValuePair.Create(d.InstanceId, d)));
         foreach (var device in ConfigurationManager.GetConnectedUsbDevices())
         {
             if (usbDevices.ContainsKey(device.InstanceId))

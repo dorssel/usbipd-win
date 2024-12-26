@@ -31,12 +31,12 @@ static class Tools
         {
             return;
         }
-        var rlen = await stream.ReadAtLeastAsync(buf, 1, true, cancellationToken);
-        if (rlen < buf.Length)
+        var readLength = await stream.ReadAtLeastAsync(buf, 1, true, cancellationToken);
+        if (readLength < buf.Length)
         {
             try
             {
-                await stream.ReadExactlyAsync(buf[rlen..], cancellationToken);
+                await stream.ReadExactlyAsync(buf[readLength..], cancellationToken);
             }
             catch (EndOfStreamException)
             {
