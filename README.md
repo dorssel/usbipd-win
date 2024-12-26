@@ -8,7 +8,7 @@ SPDX-License-Identifier: GPL-3.0-only
 
 [![Build](https://github.com/dorssel/usbipd-win/workflows/Build/badge.svg?branch=master)](https://github.com/dorssel/usbipd-win/actions?query=workflow%3ABuild+branch%3Amaster)
 [![CodeQL](https://github.com/dorssel/usbipd-win/workflows/CodeQL/badge.svg?branch=master)](https://github.com/dorssel/usbipd-win/actions?query=workflow%3ACodeQL+branch%3Amaster)
-[![MegaLinter](https://github.com/dorssel/usbipd-win/workflows/lint.yml/badge.svg?branch=master)](https://github.com/dorssel/usbipd-win/actions?query=workflow%3ALint+branch%3Amaster)
+[![MegaLinter](https://github.com/dorssel/usbipd-win/actions/workflows/lint.yml/badge.svg?branch=master)](https://github.com/dorssel/usbipd-win/actions?query=workflow%3ALint+branch%3Amaster)
 [![REUSE status](https://api.reuse.software/badge/github.com/dorssel/usbipd-win)](https://api.reuse.software/info/github.com/dorssel/usbipd-win)
 [![Codecov](https://codecov.io/gh/dorssel/usbipd-win/branch/master/graph/badge.svg?token=L0QI0AZRJI)](https://codecov.io/gh/dorssel/usbipd-win)
 [![GitHub all releases](https://img.shields.io/github/downloads/dorssel/usbipd-win/total?logo=github)](https://github.com/dorssel/usbipd-win/releases)
