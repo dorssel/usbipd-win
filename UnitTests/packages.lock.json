@@ -8,6 +8,12 @@
         "resolved": "1.1.0",
         "contentHash": "oabDrUuI3t6viTgMJPb6M6fYYHZBFkHG5QPNPJvIQayKi2LhEgIEeiyfyUKr1RQrr1imDEI4z8VOgEUndfzVnw=="
       },
+      "Microsoft.NET.ILLink.Tasks": {
+        "type": "Direct",
+        "requested": "[9.0.0, )",
+        "resolved": "9.0.0",
+        "contentHash": "zAwp213evC3UkimtVXRb+Dlgc/40QG145nmZDtp2LO9zJJMfrp+i/87BnXN7tRXEA4liyzdFkjqG1HE8/RPb4A=="
+      },
       "Microsoft.NET.Test.Sdk": {
         "type": "Direct",
         "requested": "[17.12.0, )",

@@ -38,12 +38,8 @@ SPDX-License-Identifier: GPL-3.0-only
     <SelfContained>false</SelfContained>
     <IsPackable>false</IsPackable>
     <IsPublishable>false</IsPublishable>
-    <IsTrimmable Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net6.0'))">true</IsTrimmable>
-    <IsAotCompatible Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net7.0'))">true</IsAotCompatible>
     <GenerateDependencyFile>false</GenerateDependencyFile>
-    <!--
-    See https://github.com/dotnet/roslyn/issues/41640
-    -->
+    <!-- See https://github.com/dotnet/roslyn/issues/41640 -->
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <PublishDocumentationFiles>false</PublishDocumentationFiles>
     <NoWarn>CS1591</NoWarn>
