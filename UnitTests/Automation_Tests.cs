@@ -174,7 +174,7 @@ sealed class Automation_Tests
     }
 
     [TestMethod]
-    public void Device_PeristedGuid()
+    public void Device_PersistedGuid()
     {
         var device = new Device()
         {

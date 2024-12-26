@@ -507,7 +507,7 @@ static class Program
                     ArgumentHelpName = "GUID",
                     Description = "Remove the policy rule having <GUID>",
                 }.AddCompletions(completionContext => CompletionGuard(completionContext, () =>
-                    RegistryUtils.GetPolicyRules().Select(r => r.Key.ToString("D"))));
+                    RegistryUtilities.GetPolicyRules().Select(r => r.Key.ToString("D"))));
                 //
                 //  policy remove
                 //
@@ -610,7 +610,7 @@ static class Program
                 ArgumentHelpName = "GUID",
                 Description = "Stop sharing persisted device having <GUID>",
             }.AddCompletions(completionContext => CompletionGuard(completionContext, () =>
-                RegistryUtils.GetBoundDevices().Where(d => !d.BusId.HasValue).Select(d => d.Guid.GetValueOrDefault().ToString("D"))));
+                RegistryUtilities.GetBoundDevices().Where(d => !d.BusId.HasValue).Select(d => d.Guid.GetValueOrDefault().ToString("D"))));
             //
             //  unbind [--hardware-id <VID>:<PID>]
             //

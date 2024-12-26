@@ -68,7 +68,7 @@ static class NewDev
                 cbSize = (uint)Marshal.SizeOf<SP_DEVINSTALL_PARAMS_W>(),
                 Flags = SETUP_DI_DEVICE_INSTALL_FLAGS.DI_ENUMSINGLEINF,
                 FlagsEx = SETUP_DI_DEVICE_INSTALL_FLAGS_EX.DI_FLAGSEX_ALLOWEXCLUDEDDRVS,
-                DriverPath = @$"{RegistryUtils.InstallationFolder ?? throw new UnexpectedResultException("not installed")}\Drivers\VBoxUSB.inf",
+                DriverPath = @$"{RegistryUtilities.InstallationFolder ?? throw new UnexpectedResultException("not installed")}\Drivers\VBoxUSB.inf",
             };
             PInvoke.SetupDiSetDeviceInstallParams(deviceInfoSet, deviceInfoData, deviceInstallParams)
                 .ThrowOnError(nameof(PInvoke.SetupDiSetDeviceInstallParams));

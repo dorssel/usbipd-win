@@ -17,7 +17,7 @@ interface ICommandHandlers
     public Task<ExitCode> Detach(VidPid vidPid, IConsole console, CancellationToken cancellationToken);
     public Task<ExitCode> DetachAll(IConsole console, CancellationToken cancellationToken);
     public Task<ExitCode> License(IConsole console, CancellationToken cancellationToken);
-    public Task<ExitCode> List(bool usbids, IConsole console, CancellationToken cancellationToken);
+    public Task<ExitCode> List(bool usbIds, IConsole console, CancellationToken cancellationToken);
     public Task<ExitCode> Server(string[] args, IConsole console, CancellationToken cancellationToken);
     public Task<ExitCode> Unbind(BusId busId, IConsole console, CancellationToken cancellationToken);
     public Task<ExitCode> Unbind(Guid guid, IConsole console, CancellationToken cancellationToken);

@@ -316,8 +316,8 @@ static partial class ConfigurationManager
         try
         {
             var deviceNode = Locate_DevNode(instanceId, false);
-            var driverDesc = (string)Get_DevNode_Property(deviceNode, PInvoke.DEVPKEY_Device_DriverDesc);
-            return driverDesc == "VirtualBox USB";
+            var driverDescription = (string)Get_DevNode_Property(deviceNode, PInvoke.DEVPKEY_Device_DriverDesc);
+            return driverDescription == "VirtualBox USB";
         }
         catch (ConfigurationManagerException)
         {

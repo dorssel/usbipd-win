@@ -67,19 +67,19 @@ sealed class ConsoleTools_Tests
     [DataRow("VID_80EE&PID_CAFE", false)]
     [DataRow("VID_12AB&PID_34CD", true)]
 
-    public void CheckNoStub(string hardwareId, bool nostub)
+    public void CheckNoStub(string hardwareId, bool noStub)
     {
-        var vidpid = VidPid.FromHardwareOrInstanceId(hardwareId);
+        var vidPid = VidPid.FromHardwareOrInstanceId(hardwareId);
         var console = new TestConsole();
-        if (nostub)
+        if (noStub)
         {
-            Assert.IsTrue(ConsoleTools.CheckNoStub(vidpid, console));
+            Assert.IsTrue(ConsoleTools.CheckNoStub(vidPid, console));
             Assert.IsTrue(string.IsNullOrEmpty(console.Out.ToString()));
             Assert.IsTrue(string.IsNullOrEmpty(console.Error.ToString()));
         }
         else
         {
-            Assert.IsFalse(ConsoleTools.CheckNoStub(vidpid, console));
+            Assert.IsFalse(ConsoleTools.CheckNoStub(vidPid, console));
             Assert.IsTrue(string.IsNullOrEmpty(console.Out.ToString()));
             Assert.IsFalse(string.IsNullOrEmpty(console.Error.ToString()));
         }

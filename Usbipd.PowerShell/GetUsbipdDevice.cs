@@ -39,8 +39,8 @@ public class GetUsbipdDeviceCommand : Cmdlet
 
         var captureTasks = new[]
         {
-            Task.Run(async () => { stdout = await process.StandardOutput.ReadToEndAsync(); }),
-            Task.Run(async () => { stderr = await process.StandardError.ReadToEndAsync(); }),
+            Task.Run(async () => stdout = await process.StandardOutput.ReadToEndAsync()),
+            Task.Run(async () => stderr = await process.StandardError.ReadToEndAsync()),
         };
 
         process.WaitForExit();

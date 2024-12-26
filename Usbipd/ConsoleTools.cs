@@ -182,7 +182,7 @@ static partial class ConsoleTools
     /// <para>
     /// For example, 'list or 'bind' will work fine. But actually attaching is not going to work.
     /// Therefore, such commands will give a warning telling the user that the current action
-    /// is fine, but it will fail later on unless they resolve the situaton.
+    /// is fine, but it will fail later on unless they resolve the situation.
     /// </para>
     ///
     /// <para>
@@ -269,7 +269,7 @@ static partial class ConsoleTools
 
     public static bool CheckWriteAccess(IConsole console)
     {
-        if (!RegistryUtils.HasWriteAccess())
+        if (!RegistryUtilities.HasWriteAccess())
         {
             console.ReportError("Access denied; this operation requires administrator privileges.");
             return false;

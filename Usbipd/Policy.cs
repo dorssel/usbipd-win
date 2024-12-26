@@ -16,7 +16,7 @@ static class Policy
         // Firewalling is not supported yet.
         _ = client;
 
-        var rules = RegistryUtils.GetPolicyRules();
+        var rules = RegistryUtilities.GetPolicyRules();
         var allowed = rules.Values.Where(r => r.Effect == PolicyRuleEffect.Allow);
         var denied = rules.Values.Where(r => r.Effect == PolicyRuleEffect.Deny);
 

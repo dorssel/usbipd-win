@@ -58,10 +58,7 @@ sealed partial class CommandHandlers : ICommandHandlers
                 {
                     EventLog.CreateEventSource(Program.Product, "Application");
                 }
-                _ = logging.AddEventLog(settings =>
-                {
-                    settings.SourceName = Program.Product;
-                });
+                _ = logging.AddEventLog(settings => settings.SourceName = Program.Product);
             })
             .ConfigureServices((hostContext, services) =>
             {

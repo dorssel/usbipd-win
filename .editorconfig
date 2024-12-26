@@ -160,6 +160,11 @@ dotnet_style_qualification_for_method = false:suggestion
 dotnet_style_qualification_for_property = false:suggestion
 dotnet_style_readonly_field = true:suggestion
 dotnet_style_require_accessibility_modifiers = omit_if_default:suggestion
+spelling_checkable_types = strings,identifiers,comments
+spelling_error_severity = information
+spelling_exclusion_path = .github/linters/vs-spell-exclusion.txt
+spelling_languages = en-us
+spelling_use_default_exclusion_dictionary = true
 
 [*.{cs,razor}]
 charset = utf-8-bom
