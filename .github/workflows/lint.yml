@@ -1,0 +1,25 @@
+# SPDX-FileCopyrightText: 2024 Frans van Dorsselaer
+#
+# SPDX-License-Identifier: GPL-3.0-only
+
+---
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+
+name: Lint
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  REUSE:
+    uses: dorssel/workflows/.github/workflows/REUSE.yml@main
+
+  MegaLinterNET:
+    uses: dorssel/workflows/.github/workflows/mega-linter-dotnet.yml@main
