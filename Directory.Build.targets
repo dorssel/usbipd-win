@@ -1,10 +1,21 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <!--
 SPDX-FileCopyrightText: 2024 Frans van Dorsselaer
 
 SPDX-License-Identifier: GPL-3.0-only
 -->
 <Project>
+
+  <PropertyGroup>
+    <!-- This is not set by default, but this is the sane default. -->
+    <IsTrimmable Condition="'$(IsTrimmable)' != 'false' And $([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net6.0'))">true</IsTrimmable>
+    <!-- This is not set by default, but this is the sane default. -->
+    <IsAotCompatible Condition="'$(IsAotCompatible)' != 'false' And $([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net7.0'))">true</IsAotCompatible>
+    <!-- This is set to false by default, but this is a better sane default. -->
+    <!-- See: https://learn.microsoft.com/en-us/dotnet/standard/library-guidance/strong-naming#create-strong-named-net-libraries -->
+    <SignAssembly Condition="$(TargetFramework.Contains('netstandard'))">true</SignAssembly>
+    <AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)\strongname.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
 
   <Target Name="RemoveDebug" AfterTargets="Publish">
     <ItemGroup>
