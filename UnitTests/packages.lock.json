@@ -4,9 +4,9 @@
     "net9.0-windows10.0.17763": {
       "Dorssel.GitVersion.MsBuild": {
         "type": "Direct",
-        "requested": "[1.1.0, )",
-        "resolved": "1.1.0",
-        "contentHash": "oabDrUuI3t6viTgMJPb6M6fYYHZBFkHG5QPNPJvIQayKi2LhEgIEeiyfyUKr1RQrr1imDEI4z8VOgEUndfzVnw=="
+        "requested": "[1.1.1, )",
+        "resolved": "1.1.1",
+        "contentHash": "b3j6DfBrXvmzj1ke7L1Svf09BNpBz9/R8Qk2K/zXarwjBdAN0yADKu3l+azVG8SHrwi95RO3E18fBYuedcrD7Q=="
       },
       "Microsoft.NET.ILLink.Tasks": {
         "type": "Direct",
