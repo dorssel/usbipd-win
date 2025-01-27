@@ -3,14 +3,17 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 using System.CommandLine;
+using System.Net;
 using Usbipd.Automation;
 
 namespace Usbipd;
 
 interface ICommandHandlers
 {
-    public Task<ExitCode> AttachWsl(BusId busId, bool autoAttach, string? distribution, IConsole console, CancellationToken cancellationToken);
-    public Task<ExitCode> AttachWsl(VidPid vidPid, bool autoAttach, string? distribution, IConsole console, CancellationToken cancellationToken);
+    public Task<ExitCode> AttachWsl(BusId busId, bool autoAttach, bool unplugged, string? distribution, IPAddress? hostAddress,
+        IConsole console, CancellationToken cancellationToken);
+    public Task<ExitCode> AttachWsl(VidPid vidPid, bool autoAttach, string? distribution, IPAddress? hostAddress,
+        IConsole console, CancellationToken cancellationToken);
     public Task<ExitCode> Bind(BusId busId, bool force, IConsole console, CancellationToken cancellationToken);
     public Task<ExitCode> Bind(VidPid vidPid, bool force, IConsole console, CancellationToken cancellationToken);
     public Task<ExitCode> Detach(BusId busId, IConsole console, CancellationToken cancellationToken);

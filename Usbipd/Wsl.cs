@@ -189,7 +189,8 @@ static partial class Wsl
     /// <summary>
     /// BusId has already been checked, and the server is running.
     /// </summary>
-    public static async Task<ExitCode> Attach(BusId busId, bool autoAttach, string? distribution, IConsole console, CancellationToken cancellationToken)
+    public static async Task<ExitCode> Attach(BusId busId, bool autoAttach, string? distribution, IPAddress? hostAddress,
+        IConsole console, CancellationToken cancellationToken)
     {
         var wslWindowsPath = Path.Combine(Path.GetDirectoryName(Environment.ProcessPath)!, "WSL");
         if (!Path.Exists(wslWindowsPath))
@@ -407,7 +408,7 @@ static partial class Wsl
         }
 
         // Now find out the IP address of the host.
-        IPAddress hostAddress;
+        if (hostAddress is null)
         {
             var wslResult = await RunWslAsync((distribution, "/"), null, false, cancellationToken, "/bin/wslinfo", "--networking-mode");
             if (wslResult.ExitCode == 0 && wslResult.StandardOutput.Trim() == "mirrored")
