@@ -236,11 +236,14 @@ sealed partial class PcapNg
     static void UpdateChecksum(ref ushort checksum, byte[] data, int offset)
     {
         var v = BinaryPrimitives.ReadUInt16BigEndian(data.AsSpan(offset, 2));
-        if ((uint)checksum + v > ushort.MaxValue)
+        unchecked
         {
-            ++checksum;
+            if ((uint)checksum + v > ushort.MaxValue)
+            {
+                ++checksum;
+            }
+            checksum += v;
         }
-        checksum += v;
     }
 
     static readonly IPEndPoint hostFakeIpv4 = new(IPAddress.Parse("10.0.0.0"), USBIP_PORT);
@@ -269,7 +272,7 @@ sealed partial class PcapNg
         // IPv4 header
         ipv4.Write((byte)0x45); // Version 4, header_size = 5 * sizeof(uint)
         ipv4.Write((byte)0); // DSCP/ECN (unused)
-        ipv4.Write(IPAddress.HostToNetworkOrder((short)(20 + 20 + Unsafe.SizeOf<UsbIpHeader>()))); // IPv4 header + TCP header + UsbIpHeader
+        ipv4.Write(IPAddress.HostToNetworkOrder(unchecked((short)(20 + 20 + Unsafe.SizeOf<UsbIpHeader>())))); // IPv4 header + TCP header + UsbIpHeader
         ipv4.Write((ushort)0); // Id (unused)
         ipv4.Write((ushort)0); // Flags/Offset (unused)
         ipv4.Write((byte)255); // TTL
@@ -279,8 +282,8 @@ sealed partial class PcapNg
         ipv4.Write(destination.Address.GetAddressBytes()); // destination IP address
 
         // TCP header
-        ipv4.Write(IPAddress.HostToNetworkOrder((short)source.Port)); // source port
-        ipv4.Write(IPAddress.HostToNetworkOrder((short)destination.Port)); // destination port
+        ipv4.Write(IPAddress.HostToNetworkOrder(unchecked((short)source.Port))); // source port
+        ipv4.Write(IPAddress.HostToNetworkOrder(unchecked((short)destination.Port))); // destination port
         ipv4.Write(0); // sequence number (unused)
         ipv4.Write(0); // ACK number (unused)
         ipv4.Write((byte)0x50); // data offset (in uint_32), 0 (reserved)
@@ -301,7 +304,7 @@ sealed partial class PcapNg
             {
                 UpdateChecksum(ref checksum, bytes, offset);
             }
-            BinaryPrimitives.WriteUInt16BigEndian(bytes.AsSpan(10, 2), (ushort)~checksum);
+            BinaryPrimitives.WriteUInt16BigEndian(bytes.AsSpan(10, 2), unchecked((ushort)~checksum));
         }
 
         // TCP checksum
@@ -324,7 +327,7 @@ sealed partial class PcapNg
                 // zeros / protocol / TCP Length
                 UpdateChecksum(ref checksum, bytes, offset);
             }
-            BinaryPrimitives.WriteUInt16BigEndian(bytes.AsSpan(36, 2), (ushort)~checksum);
+            BinaryPrimitives.WriteUInt16BigEndian(bytes.AsSpan(36, 2), unchecked((ushort)~checksum));
         }
 
         BlockChannel.Writer.WriteAsync(CreateEnhancedPacketBlock(1, bytes)).AsTask().Wait();
@@ -395,6 +398,12 @@ sealed partial class PcapNg
     {
         // Units are 100 ns.
         return TimestampBase + (ulong)Stopwatch.Elapsed.Ticks;
+    }
+
+    static byte[] TimestampToBytes(ulong value)
+    {
+        // timestamps are written high 32-bits first, irrespective of endianness
+        return [.. BitConverter.GetBytes((uint)(value >> 32)), .. BitConverter.GetBytes(unchecked((uint)value))];
     }
 
     static void AddOption(BinaryWriter block, ushort code, byte[] data)
@@ -469,8 +478,8 @@ sealed partial class PcapNg
 
         using var block = CreateBlock(6);
         block.Write(interfaceId);
-        block.Write((uint)(timestamp >> 32));
-        block.Write((uint)timestamp);
+        // timestamps are written high 32-bits first, irrespective of endianness
+        block.Write(TimestampToBytes(timestamp));
         block.Write(captureLength); // captured packet length
         block.Write(data.Length); // original packet length
         block.Write(data[0..captureLength]);
@@ -483,10 +492,10 @@ sealed partial class PcapNg
 
         using var block = CreateBlock(5);
         block.Write(0); // interface ID
-        block.Write((uint)(timestamp >> 32));
-        block.Write((uint)timestamp);
-        AddOption(block, 2, [.. BitConverter.GetBytes((uint)(TimestampBase >> 32)), .. BitConverter.GetBytes((uint)TimestampBase)]); // isb_starttime
-        AddOption(block, 3, [.. BitConverter.GetBytes((uint)(timestamp >> 32)), .. BitConverter.GetBytes((uint)timestamp)]); // isb_endtime
+        // timestamps are written high 32-bits first, irrespective of endianness
+        block.Write(TimestampToBytes(timestamp));
+        AddOption(block, 2, TimestampToBytes(TimestampBase)); // isb_starttime
+        AddOption(block, 3, TimestampToBytes(timestamp)); // isb_endtime
         AddOption(block, 4, TotalPacketsWritten); // isb_ifrecv
         AddOption(block, 5, 0ul); // isb_ifdrop
         AddOption(block, 6, TotalPacketsWritten); // isb_filteraccept
