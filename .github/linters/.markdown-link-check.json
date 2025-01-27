@@ -1,0 +1,7 @@
+{
+  "ignorePatterns": [
+    {
+      "pattern": "^https://www.gnu.org/licenses/"
+    }
+  ]
+}
