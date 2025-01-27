@@ -9,6 +9,9 @@ using System.CommandLine.Completions;
 using System.CommandLine.Help;
 using System.CommandLine.Parsing;
 using System.Diagnostics;
+using System.Net;
+using System.Net.NetworkInformation;
+using System.Net.Sockets;
 using System.Reflection;
 using Usbipd.Automation;
 using static Usbipd.ConsoleTools;
@@ -51,6 +54,16 @@ static class Program
         return vidPid;
     }
 
+    static IPAddress ParseIPAddress(ArgumentResult argumentResult)
+    {
+        if (!IPAddress.TryParse(argumentResult.Tokens[0].Value, out var ipAddress))
+        {
+            argumentResult.ErrorMessage = LocalizationResources.Instance.ArgumentConversionCannotParseForOption(argumentResult.Tokens[0].Value,
+                (argumentResult.Parent as OptionResult)?.Token?.Value ?? string.Empty, typeof(IPAddress));
+        }
+        return ipAddress ?? IPAddress.None;
+    }
+
     static string OneOfRequiredText(params Option[] options)
     {
         Debug.Assert(options.Length >= 2);
@@ -73,6 +86,19 @@ static class Program
         return $"At least one of the options {list} is required.";
     }
 
+    static string OptionRequiresText(Option option, params Option[] options)
+    {
+        Debug.Assert(options.Length >= 1);
+
+        var names = options.Select(o => $"'--{o.Name}'").ToArray();
+        var list = names.Length == 1
+            ? names[0]
+            : names.Length == 2
+                ? $"{names[0]} and {names[1]}"
+                : string.Join(", ", names[0..(names.Length - 1)]) + ", and " + names[^1];
+        return $"Option '--{option.Name}' requires {list}.";
+    }
+
     static void ValidateOneOf(CommandResult commandResult, params Option[] options)
     {
         Debug.Assert(options.Length >= 2);
@@ -90,6 +116,16 @@ static class Program
         if (!options.Any(option => commandResult.FindResultFor(option) is not null))
         {
             commandResult.ErrorMessage = AtLeastOneOfRequiredText(options);
+        }
+    }
+
+    static void ValidateOptionRequires(CommandResult commandResult, Option option, params Option[] options)
+    {
+        Debug.Assert(options.Length >= 1);
+
+        if (commandResult.FindResultFor(option) is not null && options.Any(option => commandResult.FindResultFor(option) is null))
+        {
+            commandResult.ErrorMessage = OptionRequiresText(option, options);
         }
     }
 
@@ -184,6 +220,38 @@ static class Program
             }.AddCompletions(completionContext => CompletionGuard(completionContext, () =>
                 UsbDevice.GetAll().Where(d => d.BusId.HasValue).GroupBy(d => d.HardwareId).Select(g => g.Key.ToString())));
             //
+            //  attach [--host-ip <IPADDRESS>]
+            //
+            var hostIpOption = new Option<IPAddress>(
+                // NOTE: the alias '-h' is already for '--help' and '-i' is already for '--hardware-id'.
+                aliases: ["--host-ip", "-o"],
+                parseArgument: ParseIPAddress
+            )
+            {
+                ArgumentHelpName = "IPADDRESS",
+                Description = "Use <IPADDRESS> for WSL to connect back to the host",
+            }.AddCompletions(completionContext => CompletionGuard(completionContext, () =>
+                // Get all non-loopback unicast IPv4 addresses.
+                NetworkInterface.GetAllNetworkInterfaces()
+                    .Where(ni => ni.OperationalStatus == OperationalStatus.Up)
+                    .Select(ni => ni.GetIPProperties().UnicastAddresses)
+                    .SelectMany(uac => uac)
+                    .Where(ua => ua.Address.AddressFamily == AddressFamily.InterNetwork)
+                    .Where(ua => ua.Address.GetAddressBytes()[0] != 127)
+                    .Select(ua => ua.Address.ToString())
+                    .Order()
+                    .Distinct()));
+            //
+            //  attach [--unplugged]
+            //
+            var unpluggedOption = new Option<bool>(
+                aliases: ["--unplugged", "-u"]
+            )
+            {
+                Description = "Allows auto-attaching a currently unplugged device",
+                Arity = ArgumentArity.Zero,
+            };
+            //
             //  attach
             //
             var attachCommand = new Command("attach", "Attach a USB device to a client\0"
@@ -191,27 +259,37 @@ static class Program
                 + "\n"
                 + "Currently, only WSL is supported. Other clients need to perform an attach using client-side tooling.\n"
                 + "\n"
-                + OneOfRequiredText(busIdOption, hardwareIdOption))
+                + OneOfRequiredText(busIdOption, hardwareIdOption) + '\n'
+                + OptionRequiresText(unpluggedOption, autoAttachOption, busIdOption))
                 {
                     autoAttachOption,
                     busIdOption,
                     hardwareIdOption,
                     wslOption,
+                    hostIpOption,
+                    unpluggedOption,
                 };
             attachCommand.AddValidator(commandResult =>
             {
                 ValidateOneOf(commandResult, busIdOption, hardwareIdOption);
+            });
+            attachCommand.AddValidator(commandResult =>
+            {
+                ValidateOptionRequires(commandResult, unpluggedOption, autoAttachOption, busIdOption);
             });
             attachCommand.SetHandler(async invocationContext =>
             {
                 invocationContext.ExitCode = invocationContext.ParseResult.HasOption(busIdOption)
                     ? (int)await commandHandlers.AttachWsl(invocationContext.ParseResult.GetValueForOption(busIdOption),
                             invocationContext.ParseResult.HasOption(autoAttachOption),
+                            invocationContext.ParseResult.HasOption(unpluggedOption),
                             invocationContext.ParseResult.GetValueForOption(wslOption),
+                            invocationContext.ParseResult.GetValueForOption(hostIpOption),
                             invocationContext.Console, invocationContext.GetCancellationToken())
                     : (int)await commandHandlers.AttachWsl(invocationContext.ParseResult.GetValueForOption(hardwareIdOption),
                             invocationContext.ParseResult.HasOption(autoAttachOption),
                             invocationContext.ParseResult.GetValueForOption(wslOption),
+                            invocationContext.ParseResult.GetValueForOption(hostIpOption),
                             invocationContext.Console, invocationContext.GetCancellationToken());
             });
             rootCommand.AddCommand(attachCommand);

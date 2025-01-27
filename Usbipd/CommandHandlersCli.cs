@@ -6,6 +6,7 @@
 using System.CommandLine;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Net;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using Usbipd.Automation;
@@ -330,35 +331,44 @@ sealed partial class CommandHandlers : ICommandHandlers
         return Task.FromResult(ExitCode.Success);
     }
 
-    async Task<ExitCode> ICommandHandlers.AttachWsl(BusId busId, bool autoAttach, string? distribution, IConsole console, CancellationToken cancellationToken)
+    async Task<ExitCode> ICommandHandlers.AttachWsl(BusId busId, bool autoAttach, bool unplugged, string? distribution, IPAddress? hostAddress,
+        IConsole console, CancellationToken cancellationToken)
     {
         var device = UsbDevice.GetAll().SingleOrDefault(d => d.BusId.HasValue && d.BusId.Value == busId);
         if (device is null)
         {
-            console.ReportError($"There is no device with busid '{busId}'.");
-            return ExitCode.Failure;
+            if (!autoAttach || !unplugged)
+            {
+                console.ReportError($"There is no device with busid '{busId}'.");
+                return ExitCode.Failure;
+            }
+            // user requested auto-attach, even if a device is currently not plugged in
         }
-        if (!device.Guid.HasValue && !Policy.IsAutoBindAllowed(device))
+        else
         {
-            console.ReportError($"Device is not shared; run 'usbipd bind --busid {busId}' as administrator first.");
-            return ExitCode.Failure;
-        }
-        // We allow auto-attach on devices that are already attached.
-        if (!autoAttach && (device.IPAddress is not null))
-        {
-            console.ReportError($"Device with busid '{busId}' is already attached to a client.");
-            return ExitCode.Failure;
+            if (!device.Guid.HasValue && !Policy.IsAutoBindAllowed(device))
+            {
+                console.ReportError($"Device is not shared; run 'usbipd bind --busid {busId}' as administrator first.");
+                return ExitCode.Failure;
+            }
+            // We allow auto-attach on devices that are already attached.
+            if (!autoAttach && (device.IPAddress is not null))
+            {
+                console.ReportError($"Device with busid '{busId}' is already attached to a client.");
+                return ExitCode.Failure;
+            }
         }
 
         return console.CheckAndReportServerRunning(true)
-            ? await Wsl.Attach(busId, autoAttach, distribution, console, cancellationToken)
+            ? await Wsl.Attach(busId, autoAttach, distribution, hostAddress, console, cancellationToken)
             : ExitCode.Failure;
     }
 
-    async Task<ExitCode> ICommandHandlers.AttachWsl(VidPid vidPid, bool autoAttach, string? distribution, IConsole console, CancellationToken cancellationToken)
+    async Task<ExitCode> ICommandHandlers.AttachWsl(VidPid vidPid, bool autoAttach, string? distribution, IPAddress? hostAddress,
+        IConsole console, CancellationToken cancellationToken)
     {
         return GetBusIdByHardwareId(vidPid, console) is BusId busId
-            ? await ((ICommandHandlers)this).AttachWsl(busId, autoAttach, distribution, console, cancellationToken)
+            ? await ((ICommandHandlers)this).AttachWsl(busId, autoAttach, false, distribution, hostAddress, console, cancellationToken)
             : ExitCode.Failure;
     }
 
