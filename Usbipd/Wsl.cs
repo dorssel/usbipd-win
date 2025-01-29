@@ -407,97 +407,64 @@ static partial class Wsl
             }
         }
 
-        // Now find out the IP address of the host.
+        // Now find out the IP address of the host (if not explicitly provided by the user).
         if (hostAddress is null)
         {
             var wslResult = await RunWslAsync((distribution, "/"), null, false, cancellationToken, "/bin/wslinfo", "--networking-mode");
-            if (wslResult.ExitCode == 0 && wslResult.StandardOutput.Trim() == "mirrored")
+            string networkingMode;
+            if (wslResult.ExitCode == 0)
             {
-                // mirrored networking mode ... we're done
-                hostAddress = IPAddress.Loopback;
+                networkingMode = wslResult.StandardOutput.Trim();
+                console.ReportInfo($"Detected networking mode '{networkingMode}'.");
             }
             else
             {
-                // Get all non-loopback unicast IPv4 addresses for WSL.
-                var clientAddresses = new List<IPAddress>();
-                {
-                    // We use 'cat /proc/net/fib_trie', where we assume 'cat' is available on all distributions
-                    // and /proc/net/fib_trie is supported by the WSL kernel.
-                    var ipResult = await RunWslAsync((distribution, "/"), null, false, cancellationToken, "cat", "/proc/net/fib_trie");
+                networkingMode = "nat";
+                console.ReportWarning($"Unable to determine networking mode, assuming 'nat'.");
+            }
+            switch (networkingMode)
+            {
+                case "none":
+                case "virtioproxy":
+                default:
+                    console.ReportError($"Networking mode '{networkingMode}' is not supported.");
+                    return ExitCode.Failure;
+                case "mirrored":
+                    hostAddress = IPAddress.Loopback;
+                    break;
+                case "nat":
+                    // See https://learn.microsoft.com/en-us/windows/wsl/networking
+                    // We need to get the default gateway address.
+                    // We use 'cat /proc/net/route', where we assume 'cat' is available on all distributions
+                    //      and /proc/net/route is supported by the WSL kernel.
+                    var ipResult = await RunWslAsync((distribution, "/"), null, false, cancellationToken, "cat", "/proc/net/route");
                     if (ipResult.ExitCode == 0)
                     {
                         // Example output:
                         //
-                        // Main:
-                        //   +-- 0.0.0.0/0 3 0 5
-                        //      |-- 0.0.0.0
-                        //         /0 universe UNICAST
-                        //      +-- 127.0.0.0/8 2 0 2
-                        //         +-- 127.0.0.0/31 1 0 0
-                        //            |-- 127.0.0.0
-                        //               /32 link BROADCAST
-                        //               /8 host LOCAL
-                        //            |-- 127.0.0.1
-                        //               /32 host LOCAL
-                        //         |-- 127.255.255.255
-                        //            /32 link BROADCAST
-                        // ...
+                        // Iface   Destination     Gateway         Flags   RefCnt  Use     Metric  Mask            MTU     Window  IRTT
                         //
-                        // We are interested in all entries like:
+                        // eth0    00000000        01E01AAC        0003    0       0       0       00000000        0       0       0
                         //
-                        //            |-- 127.0.0.1
-                        //               /32 host LOCAL
-                        //
-                        // These are the interface addresses.
+                        // eth0    00E01AAC        00000000        0001    0       0       0       00F0FFFF        0       0       0
 
-                        for (var match = LocalAddressRegex().Match(ipResult.StandardOutput); match.Success; match = match.NextMatch())
+                        for (var match = RouteRegex().Match(ipResult.StandardOutput); match.Success; match = match.NextMatch())
                         {
-                            if (!IPAddress.TryParse(match.Groups[1].Value, out var clientAddress))
+                            if (uint.TryParse(match.Groups[2].Value, NumberStyles.HexNumber, null, out var destination) && destination == 0
+                                && uint.TryParse(match.Groups[3].Value, NumberStyles.HexNumber, null, out var gateway))
                             {
-                                continue;
-                            }
-                            if (clientAddress.AddressFamily != AddressFamily.InterNetwork)
-                            {
-                                // For simplicity, we only use IPv4.
-                                continue;
-                            }
-                            if (IsOnSameIPv4Network(IPAddress.Loopback, IPAddress.Parse("255.0.0.0"), clientAddress))
-                            {
-                                // We are *not* in mirrored network mode, so ignore loopback addresses.
-                                continue;
-                            }
-                            // Only add unique entries. List is not going to be long, so a linear search is fine.
-                            if (!clientAddresses.Contains(clientAddress))
-                            {
-                                clientAddresses.Add(clientAddress);
+                                hostAddress = new IPAddress(gateway);
+                                break;
                             }
                         }
                     }
-                }
-                if (clientAddresses.Count == 0)
-                {
-                    console.ReportError($"WSL does not appear to have network connectivity; try `wsl --shutdown` and then restart WSL.");
-                    return ExitCode.Failure;
-                }
-
-                // Get all non-loopback unicast IPv4 addresses (with their mask) for the host.
-                var hostAddresses = NetworkInterface.GetAllNetworkInterfaces()
-                    .Where(ni => ni.OperationalStatus == OperationalStatus.Up)
-                    .Select(ni => ni.GetIPProperties().UnicastAddresses)
-                    .SelectMany(uac => uac)
-                    .Where(ua => ua.Address.AddressFamily == AddressFamily.InterNetwork)
-                    .Where(ua => !IsOnSameIPv4Network(IPAddress.Loopback, IPAddress.Parse("255.0.0.0"), ua.Address));
-
-                // Find any match; we'll just take the first.
-                if (hostAddresses.FirstOrDefault(ha
-                    => clientAddresses.Any(ca => IsOnSameIPv4Network(ha.Address, ha.IPv4Mask, ca))) is not UnicastIPAddressInformation matchHost)
-                {
-                    console.ReportError("The host IP address for the WSL virtual switch could not be found.");
-                    return ExitCode.Failure;
-                }
-
-                hostAddress = matchHost.Address;
+                    break;
             }
+        }
+        if (hostAddress is null)
+        {
+            console.ReportError("Unable to determine host address.");
+            return ExitCode.Failure;
         }
 
         console.ReportInfo($"Using IP address {hostAddress} to reach the host.");
@@ -635,8 +602,8 @@ static partial class Wsl
     [GeneratedRegex(@"^( |\*) (.+) +([a-zA-Z]+) +([0-9])+ *$")]
     private static partial Regex WslListDistributionRegex();
 
-    [GeneratedRegex(@"\|--\s+(\S+)\s+/32 host LOCAL")]
-    private static partial Regex LocalAddressRegex();
+    [GeneratedRegex(@"\s*(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s*")]
+    private static partial Regex RouteRegex();
 
     [GeneratedRegex(@"^[a-zA-Z]:\\")]
     private static partial Regex LocalDriveRegex();
