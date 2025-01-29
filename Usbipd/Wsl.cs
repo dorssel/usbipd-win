@@ -35,16 +35,31 @@ static partial class Wsl
 
     static string? GetPossibleBlockReason()
     {
-        using var policy = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Policies\Microsoft\WindowsFirewall\PublicProfile");
-        if (policy is not null)
+        using var publicProfile = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Policies\Microsoft\WindowsFirewall\PublicProfile");
+        if (publicProfile is not null)
         {
-            if (policy.GetValue("DoNotAllowExceptions") is int doNotAllowExceptions && doNotAllowExceptions != 0)
+            if (publicProfile.GetValue("DoNotAllowExceptions") is int doNotAllowExceptions && doNotAllowExceptions != 0)
             {
                 return "A group policy blocks all incoming connections for the public network profile, which includes WSL.";
             }
-            if (policy.GetValue("AllowLocalPolicyMerge") is int allowLocalPolicyMerge && allowLocalPolicyMerge == 0)
+            if (publicProfile.GetValue("AllowLocalPolicyMerge") is int allowLocalPolicyMerge && allowLocalPolicyMerge == 0)
             {
                 return "A group policy blocks the 'usbipd' firewall rule for the public network profile, which includes WSL.";
+            }
+        }
+        else
+        {
+            // Only if PublicProfile does not exist, the StandardProfile settings are used.
+            // See: https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-gpfas/abe4eb0f-e3a0-48cc-bde3-5dc89b81b40b
+            using var standardProfile = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Policies\Microsoft\WindowsFirewall\StandardProfile");
+            if (standardProfile is not null)
+            {
+                if (standardProfile.GetValue("DoNotAllowExceptions") is int doNotAllowExceptions && doNotAllowExceptions != 0)
+                {
+                    return "A group policy blocks all incoming connections for the standard network profile, which includes WSL.";
+                }
+                // AllowLocalPolicyMerge is not valid for the StandardProfile
+                // See: https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-gpfas/2c979624-900a-4b6e-b4ef-09b387cd62ab
             }
         }
 
