@@ -9,7 +9,6 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO.Compression;
 using System.Net;
-using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -314,7 +313,7 @@ static partial class Wsl
 
         // Check: WSL kernel must be USBIP capable.
         {
-            var wslResult = await RunWslAsync((distribution, "/"), null, true, cancellationToken, "cat", "/proc/config.gz");
+            var wslResult = await RunWslAsync((distribution, "/"), null, true, cancellationToken, "/bin/cat", "/proc/config.gz");
             if (wslResult.ExitCode != 0)
             {
                 console.ReportError($"Unable to get WSL kernel configuration.");
@@ -336,7 +335,7 @@ static partial class Wsl
                 //    ...
                 //    vhci_hcd 61440 0 - Live 0x0000000000000000
                 //    ...
-                wslResult = await RunWslAsync((distribution, "/"), null, false, cancellationToken, "cat", "/proc/modules");
+                wslResult = await RunWslAsync((distribution, "/"), null, false, cancellationToken, "/bin/cat", "/proc/modules");
                 if (wslResult.ExitCode != 0)
                 {
                     console.ReportError($"Unable to get WSL kernel modules.");
@@ -345,7 +344,7 @@ static partial class Wsl
                 if (!wslResult.StandardOutput.Contains("vhci_hcd"))
                 {
                     console.ReportInfo($"Loading vhci_hcd module.");
-                    wslResult = await RunWslAsync((distribution, "/"), null, false, cancellationToken, "modprobe", "vhci_hcd");
+                    wslResult = await RunWslAsync((distribution, "/"), null, false, cancellationToken, "/sbin/modprobe", "vhci_hcd");
                     if (wslResult.ExitCode != 0)
                     {
                         console.ReportError($"Loading vhci_hcd failed.");
@@ -356,7 +355,7 @@ static partial class Wsl
                     //    ...
                     //    vhci_hcd 61440 0 - Live 0x0000000000000000
                     //    ...
-                    wslResult = await RunWslAsync((distribution, "/"), null, false, cancellationToken, "cat", "/proc/modules");
+                    wslResult = await RunWslAsync((distribution, "/"), null, false, cancellationToken, "/bin/cat", "/proc/modules");
                     if (wslResult.ExitCode != 0)
                     {
                         console.ReportError($"Unable to get WSL kernel modules.");
@@ -437,7 +436,7 @@ static partial class Wsl
                     // We need to get the default gateway address.
                     // We use 'cat /proc/net/route', where we assume 'cat' is available on all distributions
                     //      and /proc/net/route is supported by the WSL kernel.
-                    var ipResult = await RunWslAsync((distribution, "/"), null, false, cancellationToken, "cat", "/proc/net/route");
+                    var ipResult = await RunWslAsync((distribution, "/"), null, false, cancellationToken, "/bin/cat", "/proc/net/route");
                     if (ipResult.ExitCode == 0)
                     {
                         // Example output:
@@ -479,7 +478,7 @@ static partial class Wsl
             try
             {
                 // With minimal requirements (bash only) try to connect from WSL to our server.
-                var pingResult = await RunWslAsync((distribution, "/"), null, false, linkedTokenSource.Token, "bash", "-c",
+                var pingResult = await RunWslAsync((distribution, "/"), null, false, linkedTokenSource.Token, "/bin/bash", "-c",
                     $"echo < /dev/tcp/{hostAddress}/{Interop.UsbIp.USBIP_PORT}");
                 if (pingResult.StandardError.Contains("refused"))
                 {
