@@ -103,6 +103,9 @@ static class RegistryUtilities
         var registrySecurity = attached.GetAccessControl(AccessControlSections.All);
         registrySecurity.AddAccessRule(new RegistryAccessRule(new SecurityIdentifier(WellKnownSidType.WinConsoleLogonSid, null),
             RegistryRights.Delete, AccessControlType.Allow));
+        // Required for Windows 11 (WinConsoleLogonSid is not enough)
+        registrySecurity.AddAccessRule(new RegistryAccessRule(new SecurityIdentifier(WellKnownSidType.InteractiveSid, null),
+            RegistryRights.Delete, AccessControlType.Allow));
         attached.SetAccessControl(registrySecurity);
         try
         {
