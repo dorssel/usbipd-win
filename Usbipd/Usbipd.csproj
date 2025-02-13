@@ -8,14 +8,14 @@ SPDX-License-Identifier: GPL-3.0-only
 
   <PropertyGroup>
     <TargetFramework>$(MainTargetFramework)</TargetFramework>
-    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <RuntimeIdentifiers>win-x64;win-arm64</RuntimeIdentifiers>
     <OutputType>Exe</OutputType>
     <ApplicationManifest>app.manifest</ApplicationManifest>
 
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 
     <IsPublishable>true</IsPublishable>
-    <PublishProfile>Properties\PublishProfiles\InputForInstaller.pubxml</PublishProfile>
+    <PublishProfile>Properties\PublishProfiles\InputForInstaller_$(RuntimeIdentifier).pubxml</PublishProfile>
     <PublishAot>true</PublishAot>
     <CopyOutputSymbolsToPublishDirectory>false</CopyOutputSymbolsToPublishDirectory>
     <OptimizationPreference>Speed</OptimizationPreference>
@@ -43,9 +43,13 @@ SPDX-License-Identifier: GPL-3.0-only
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="WSL\**">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+    <!-- Copy everything at the top level only, except the REUSE .license files (if any). -->
+    <None Update="WSL\*" CopyToOutputDirectory="PreserveNewest"/>
+    <None Remove="WSL\*\*"/>
+    <None Remove="WSL\*.license"/>
+    <!-- Also copy everything in the platform directory moving it to the top level, except the REUSE .license files (if any). -->
+    <None Include="WSL\$(Platform)\*" Link="WSL\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest"/>
+    <None Remove="WSL\$(Platform)\*.license"/>
   </ItemGroup>
 
 </Project>

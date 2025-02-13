@@ -8,7 +8,6 @@ SPDX-License-Identifier: GPL-3.0-only
 
   <PropertyGroup>
     <TargetFramework>$(MainTargetFramework)</TargetFramework>
-    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
     <IsAotCompatible>false</IsAotCompatible>
   </PropertyGroup>

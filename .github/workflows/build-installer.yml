@@ -44,24 +44,27 @@ jobs:
 
       - name: Build
         run: |
-          dotnet build --configuration Release --no-restore
+          dotnet build --configuration Release --no-restore --property:Platform=x64
+          dotnet build --configuration Release --no-restore --property:Platform=arm64
 
       - name: Test
         run: |
-          dotnet test --configuration Release --no-build `
+          dotnet test --configuration Release --no-build --property:Platform=x64 `
             -p:TestingPlatformCommandLineArguments="--report-trx --coverage --coverage-output-format cobertura --coverage-output coverage.cobertura.xml"
 
       - name: Build (Installer)
         run: |
-          dotnet publish --configuration Release --no-build Usbipd
+          dotnet publish --configuration Release --no-build --runtime win-x64 Usbipd
+          dotnet publish --configuration Release --no-build --runtime win-arm64 Usbipd
           dotnet publish --configuration Release --no-build Usbipd.PowerShell
-          dotnet build --configuration Release --no-restore Installer
+          dotnet build --configuration Release --no-restore --property:Platform=x64 Installer
+          dotnet build --configuration Release --no-restore --property:Platform=arm64 Installer
 
       - name: Upload Installer Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: msi-installer
-          path: 'Installer/bin/x64/release/*.msi'
+          name: msi-installers
+          path: 'Installer/bin/*/release/*.msi'
 
       - name: Convert test results
         if: ${{ !cancelled() }}

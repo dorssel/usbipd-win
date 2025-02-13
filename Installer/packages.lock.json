@@ -27,6 +27,7 @@
         "contentHash": "sr3GNWr9bTcuALh58lvzLQrwWTuwcQTHkHXhPwFHNrg3GlUrY9arm3fRLWGo3RN739NhUrFEB8dguVsO/gVb9Q=="
       }
     },
+    "native,Version=v0.0/win-arm64": {},
     "native,Version=v0.0/win-x64": {}
   }
 }

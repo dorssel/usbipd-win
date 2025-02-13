@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <!--
 SPDX-FileCopyrightText: 2020 Frans van Dorsselaer
 
@@ -96,15 +96,15 @@ SPDX-License-Identifier: GPL-3.0-only
 
         <!-- This will restore the original Windows drivers for devices that were forced bound. -->
         <SetProperty Id="UnbindAll" Value="&quot;[#usbipd.exe]&quot; unbind --all" Sequence="execute" Before="UnbindAll" Condition="(?usbipd.exe=3) AND ($usbipd.exe=2)" />
-        <CustomAction Id="UnbindAll" BinaryRef="Wix4UtilCA_X64" DllEntry="WixQuietExec" Return="ignore" Impersonate="no" Execute="deferred" />
+        <CustomAction Id="UnbindAll" BinaryRef="Wix4UtilCA_$(sys.BUILDARCHSHORT)" DllEntry="WixQuietExec" Return="ignore" Impersonate="no" Execute="deferred" />
 
         <!-- This will uninstall the drivers. -->
         <SetProperty Id="UninstallDrivers" Value="&quot;[#usbipd.exe]&quot; uninstall" Sequence="execute" Before="UninstallDrivers" Condition="(?usbipd.exe=3) AND ($usbipd.exe=2)" />
-        <CustomAction Id="UninstallDrivers" BinaryRef="Wix4UtilCA_X64" DllEntry="WixQuietExec" Return="ignore" Impersonate="no" Execute="deferred" />
+        <CustomAction Id="UninstallDrivers" BinaryRef="Wix4UtilCA_$(sys.BUILDARCHSHORT)" DllEntry="WixQuietExec" Return="ignore" Impersonate="no" Execute="deferred" />
 
         <!-- This will install the drivers. -->
         <SetProperty Id="InstallDrivers" Value="&quot;[#usbipd.exe]&quot; install" Sequence="execute" Before="InstallDrivers" Condition="$usbipd.exe=3" />
-        <CustomAction Id="InstallDrivers" BinaryRef="Wix4UtilCA_X64" DllEntry="WixQuietExec" Return="check" Impersonate="no" Execute="deferred" />
+        <CustomAction Id="InstallDrivers" BinaryRef="Wix4UtilCA_$(sys.BUILDARCHSHORT)" DllEntry="WixQuietExec" Return="check" Impersonate="no" Execute="deferred" />
 
         <!--
         This will *try to* start the service. However, unlike ServiceControl, it will not fail if it can't.
@@ -112,7 +112,7 @@ SPDX-License-Identifier: GPL-3.0-only
         The CLI tool will inform the user if the service is not running and that a reboot should fix that.
         -->
         <SetProperty Id="TryStartService" Value="&quot;[System64Folder]\sc.exe&quot; start usbipd" Sequence="execute" Before="TryStartService" Condition="$usbipd.exe=3" />
-        <CustomAction Id="TryStartService" BinaryRef="Wix4UtilCA_X64" DllEntry="WixQuietExec" Return="ignore" Impersonate="no" Execute="deferred" />
+        <CustomAction Id="TryStartService" BinaryRef="Wix4UtilCA_$(sys.BUILDARCHSHORT)" DllEntry="WixQuietExec" Return="ignore" Impersonate="no" Execute="deferred" />
 
         <InstallExecuteSequence>
             <!-- Condition: usbipd.exe is installed and will be uninstalled -->
