@@ -13,7 +13,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <OutputName>usbipd-win</OutputName>
     <PublishDir>..\Usbipd\bin\publish</PublishDir>
     <PowerShellDir>..\Usbipd.PowerShell\bin\publish</PowerShellDir>
-    <DefineConstants>PublishDir=$(PublishDir);PowerShellDir=$(PowerShellDir);DriversDir=..\Drivers;Copyright=$(Copyright)</DefineConstants>
+    <DefineConstants>PublishDir=$(PublishDir);PowerShellDir=$(PowerShellDir);DriversDir=..\Drivers\x64;Copyright=$(Copyright)</DefineConstants>
     <Pedantic>true</Pedantic>
   </PropertyGroup>
   <ItemGroup>
