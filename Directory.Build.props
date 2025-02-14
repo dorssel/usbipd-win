@@ -13,8 +13,9 @@ SPDX-License-Identifier: GPL-3.0-only
     <!-- Use the latest .NET SDK -->
     <!-- This product requires Windows 10 (Windows Server 2019) or higher -->
     <MainTargetFramework>net9.0-windows10.0.17763</MainTargetFramework>
-    <!-- This product only supports x64 (the only architecture supported by VBoxUsb) -->
-    <Platforms>x64</Platforms>
+    <!-- This product only supports x64 and arm64 (the only architectures supported by VBoxUsb) -->
+    <Platforms>x64;ARM64</Platforms>
+    <EnableDynamicPlatformResolution>true</EnableDynamicPlatformResolution>
     <!-- This allows building on Linux; however, building the installer requires Windows -->
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
 

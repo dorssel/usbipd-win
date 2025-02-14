@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <!--
 SPDX-FileCopyrightText: 2024 Frans van Dorsselaer
 
@@ -25,7 +25,7 @@ SPDX-License-Identifier: GPL-3.0-only
             Value="&quot;[System64Folder]\icacls.exe&quot; &quot;[#file.id]&quot; /deny &quot;*S-1-1-0:(X)&quot;"
             Sequence="execute" Before="FixExecutionRights_file.id" Condition="$file.id=3"
             />
-        <CustomAction Id="FixExecutionRights_file.id" BinaryRef="Wix4UtilCA_X64" DllEntry="WixQuietExec" Return="ignore" Impersonate="no" Execute="deferred" />
+        <CustomAction Id="FixExecutionRights_file.id" BinaryRef="Wix4UtilCA_$(sys.BUILDARCHSHORT)" DllEntry="WixQuietExec" Return="ignore" Impersonate="no" Execute="deferred" />
 
         <InstallExecuteSequence>
             <Custom Action="FixExecutionRights_file.id" Before="InstallFinalize" Condition="$file.id=3" />
@@ -37,7 +37,7 @@ SPDX-License-Identifier: GPL-3.0-only
             Value="&quot;[System64Folder]\icacls.exe&quot; &quot;[#WSL_README.md]&quot; /deny &quot;*S-1-1-0:(X)&quot;"
             Sequence="execute" Before="FixExecutionRights_WSL_README.md" Condition="$WSL_README.md=3"
             />
-        <CustomAction Id="FixExecutionRights_WSL_README.md" BinaryRef="Wix4UtilCA_X64" DllEntry="WixQuietExec" Return="ignore" Impersonate="no" Execute="deferred" />
+        <CustomAction Id="FixExecutionRights_WSL_README.md" BinaryRef="Wix4UtilCA_$(sys.BUILDARCHSHORT)" DllEntry="WixQuietExec" Return="ignore" Impersonate="no" Execute="deferred" />
 
         <InstallExecuteSequence>
             <Custom Action="FixExecutionRights_WSL_README.md" After="InstallFiles" Condition="$WSL_README.md=3" />

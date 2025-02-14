@@ -6,14 +6,14 @@ SPDX-License-Identifier: GPL-3.0-only
 -->
 <Project Sdk="WixToolset.Sdk">
   <PropertyGroup>
-    <Platform>x64</Platform>
-    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <Platforms>x64;ARM64</Platforms>
+    <RuntimeIdentifiers>win-x64;win-arm64</RuntimeIdentifiers>
     <GenerateGitVersionInformation>false</GenerateGitVersionInformation>
     <UpdateAssemblyInfo>false</UpdateAssemblyInfo>
     <OutputName>usbipd-win</OutputName>
-    <PublishDir>..\Usbipd\bin\publish</PublishDir>
+    <PublishDir>..\Usbipd\bin\publish\$(Platform)</PublishDir>
     <PowerShellDir>..\Usbipd.PowerShell\bin\publish</PowerShellDir>
-    <DefineConstants>PublishDir=$(PublishDir);PowerShellDir=$(PowerShellDir);DriversDir=..\Drivers\x64;Copyright=$(Copyright)</DefineConstants>
+    <DefineConstants>PublishDir=$(PublishDir);PowerShellDir=$(PowerShellDir);DriversDir=..\Drivers\$(Platform);Copyright=$(Copyright)</DefineConstants>
     <Pedantic>true</Pedantic>
   </PropertyGroup>
   <ItemGroup>
@@ -26,7 +26,7 @@ SPDX-License-Identifier: GPL-3.0-only
     Now that we have determined the version, augment the OutputName to include the version number.
     -->
     <Message Importance="high" Text="Version detected as $(GitVersion_FullSemVer)" />
-    <CreateProperty Value="$(OutputName)_$(GitVersion_MajorMinorPatch)">
+    <CreateProperty Value="$(OutputName)_$(GitVersion_MajorMinorPatch)_$(Platform.ToLowerInvariant())">
       <Output TaskParameter="Value" PropertyName="TargetName" />
     </CreateProperty>
     <CreateProperty Value="$(TargetName)$(TargetExt)">
