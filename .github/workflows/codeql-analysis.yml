@@ -46,6 +46,9 @@ jobs:
         # Learn more...
         # https://docs.github.com/en/github/finding-security-vulnerabilities-and-errors-in-your-code/configuring-code-scanning#overriding-automatic-language-detection
 
+    env:
+      NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -78,6 +81,13 @@ jobs:
       #   make bootstrap
       #   make release
 
+      - name: NuGet Cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ github.workspace }}/.nuget/packages
+          key: nuget-cache-codeql-${{ hashFiles('global.json', '.config/dotnet-tools.json', '**/lockfiles') }}
+
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
 
@@ -87,7 +97,7 @@ jobs:
           dotnet restore
 
       - name: Build
-        run: dotnet build --configuration Release --no-restore
+        run: dotnet build --configuration Release --no-restore --property:Platform=x64
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3

@@ -4,6 +4,7 @@
 
 bin/
 obj/
+.nuget/
 packages/
 TestResults/
 .vs/
