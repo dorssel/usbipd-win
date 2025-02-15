@@ -17,6 +17,13 @@ SPDX-License-Identifier: GPL-3.0-only
     <AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)\strongname.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
 
+  <ItemGroup>
+    <!-- This product requires Windows 10 (Windows Server 2019) or higher. -->
+    <AssemblyAttribute Include="System.Runtime.Versioning.SupportedOSPlatformAttribute" Condition="!$(TargetFramework.Contains('netstandard'))">
+      <_Parameter1>windows10.0.17763</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+
   <Target Name="RemoveDebug" AfterTargets="Publish">
     <ItemGroup>
       <DebugFiles Include="$(PublishDir)\**\*.pdb" />
