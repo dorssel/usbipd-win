@@ -33,9 +33,9 @@
       },
       "Microsoft.Windows.CsWin32": {
         "type": "Direct",
-        "requested": "[0.3.162, )",
-        "resolved": "0.3.162",
-        "contentHash": "GSqLXhCU2k3O9Bj2sDUzRjNaaoxxnKdMlFND0BcaX95st6i9FrVL9d6FvPQgQMWuW44goHaD9ga32YIs/imQ0w==",
+        "requested": "[0.3.183, )",
+        "resolved": "0.3.183",
+        "contentHash": "Ze3aE2y7xgzKxEWtNb4SH0CExXpCHr3sbmwnvMiWMzJhWDX/G4Rs5wgg2UNs3VN+qVHh/DkDWLCPaVQv/b//Nw==",
         "dependencies": {
           "Microsoft.Windows.SDK.Win32Docs": "0.1.42-alpha",
           "Microsoft.Windows.SDK.Win32Metadata": "61.0.15-preview",
