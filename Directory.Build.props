@@ -11,8 +11,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' != 'true'">false</ContinuousIntegrationBuild>
 
     <!-- Use the latest .NET SDK -->
-    <!-- This product requires Windows 10 (Windows Server 2019) or higher -->
-    <MainTargetFramework>net9.0-windows10.0.17763</MainTargetFramework>
+    <MainTargetFramework>net9.0</MainTargetFramework>
     <!-- This product only supports x64 and arm64 (the only architectures supported by VBoxUsb) -->
     <Platforms>x64;ARM64</Platforms>
     <EnableDynamicPlatformResolution>true</EnableDynamicPlatformResolution>

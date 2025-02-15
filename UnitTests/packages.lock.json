@@ -1,7 +1,7 @@
 {
   "version": 2,
   "dependencies": {
-    "net9.0-windows10.0.17763": {
+    "net9.0": {
       "Dorssel.GitVersion.MsBuild": {
         "type": "Direct",
         "requested": "[1.1.1, )",

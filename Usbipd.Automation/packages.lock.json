@@ -23,7 +23,7 @@
         "contentHash": "kz0PEW2lhqygehI/d6XsPCQzD7ff7gUJaVGPVETX611eadGsA3A877GdSlU0LRVMCTH/+P3o2iDTak+S08V2+A=="
       }
     },
-    "net9.0-windows10.0.17763": {
+    "net9.0": {
       "Dorssel.GitVersion.MsBuild": {
         "type": "Direct",
         "requested": "[1.1.1, )",
