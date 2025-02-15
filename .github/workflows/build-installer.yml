@@ -23,18 +23,24 @@ jobs:
   build:
     runs-on: windows-latest
 
+    env:
+      NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
+      - name: NuGet Cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ github.workspace }}/.nuget/packages
+          key: nuget-cache-build-${{ hashFiles('global.json', '.config/dotnet-tools.json', '**/lockfiles') }}
+
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
-        with:
-          # NOTE: caching seems to actually slow down the build, both on hit and on miss
-          cache: false
-          cache-dependency-path: '**/packages.lock.json'
 
       - name: Install dependencies
         run: |
