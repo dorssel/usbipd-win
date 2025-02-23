@@ -31,4 +31,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <Delete Files="@(DebugFiles)" />
   </Target>
 
+  <!-- https://github.com/firegiant/HeatWaveSupport/issues/73 -->
+  <Target Condition="'$(MSBuildProjectExtension)'=='.wixproj'" Name="CollectSuggestedVisualStudioComponentIds" />
+
 </Project>

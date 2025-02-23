@@ -20,10 +20,12 @@ updates:
     directory: '/'
     schedule:
       interval: 'daily'
+    ignore:
+      # These are bundeled (transitive) by MSTest.Sdk
+      - dependency-name: Microsoft.NET.Test.Sdk
+      - dependency-name: Microsoft.Testing.Extensions.CodeCoverage
+      - dependency-name: Microsoft.Testing.Extensions.TrxReport
     groups:
       wix:
         patterns:
           - 'WixToolset.*'
-      mstest:
-        patterns:
-          - 'MSTest.*'
