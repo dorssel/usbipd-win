@@ -7,7 +7,7 @@ SPDX-License-Identifier: GPL-3.0-only
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>$(MainTargetFramework);netstandard2.0</TargetFrameworks>
+    <TargetFrameworks>$(MainTargetFramework)-windows$(MinimumWindowsVersion);netstandard2.0</TargetFrameworks>
     <Platforms>AnyCPU</Platforms>
   </PropertyGroup>
 
