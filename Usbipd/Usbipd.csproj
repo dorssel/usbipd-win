@@ -7,7 +7,7 @@ SPDX-License-Identifier: GPL-3.0-only
 <Project Sdk="Microsoft.NET.Sdk.Worker">
 
   <PropertyGroup>
-    <TargetFramework>$(MainTargetFramework)</TargetFramework>
+    <TargetFramework>$(MainTargetFramework)-windows$(MinimumWindowsVersion)</TargetFramework>
     <RuntimeIdentifiers>win-x64;win-arm64</RuntimeIdentifiers>
     <OutputType>Exe</OutputType>
     <ApplicationManifest>app.manifest</ApplicationManifest>
