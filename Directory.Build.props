@@ -48,7 +48,7 @@ SPDX-License-Identifier: GPL-3.0-only
 
     <!-- Deterministic builds -->
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
-    <RestoreLockedMode Condition="'$(GITHUB_ACTIONS)' == 'true'">true</RestoreLockedMode>
+    <RestoreLockedMode Condition="$(ContinuousIntegrationBuild)">true</RestoreLockedMode>
 
     <!-- Assembly metadata -->
     <Product>usbipd-win</Product>
