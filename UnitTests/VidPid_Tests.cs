@@ -114,7 +114,7 @@ sealed class VidPid_Tests
     [DynamicData(nameof(VidPidData.Invalid), typeof(VidPidData))]
     public void ParseInvalid(string text)
     {
-        _ = Assert.ThrowsException<FormatException>(() =>
+        Assert.ThrowsExactly<FormatException>(() =>
         {
             var vidPid = VidPid.Parse(text);
         });
@@ -273,7 +273,7 @@ sealed class VidPid_Tests
     [DynamicData(nameof(HardwareIdData.Invalid), typeof(HardwareIdData))]
     public void FromHardwareOrInstanceIdInvalid(string text)
     {
-        _ = Assert.ThrowsException<FormatException>(() =>
+        Assert.ThrowsExactly<FormatException>(() =>
         {
             var vidPid = VidPid.FromHardwareOrInstanceId(text);
         });

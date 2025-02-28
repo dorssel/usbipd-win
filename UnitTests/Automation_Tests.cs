@@ -220,7 +220,7 @@ sealed class Automation_Tests
     public void JsonConverterBusId_Read_Valid()
     {
         var reader = new Utf8JsonReader("\"1-42\""u8);
-        _ = reader.Read();
+        reader.Read();
 
         var converter = new JsonConverterBusId();
         var busId = converter.Read(ref reader, typeof(string), JsonSerializerOptions.Default);
@@ -231,12 +231,12 @@ sealed class Automation_Tests
     public void JsonConverterBusId_Read_Invalid()
     {
         var converter = new JsonConverterBusId();
-        _ = Assert.ThrowsException<FormatException>(() =>
+        Assert.ThrowsExactly<FormatException>(() =>
         {
             var reader = new Utf8JsonReader("\"xxx\""u8);
-            _ = reader.Read();
+            reader.Read();
 
-            _ = converter.Read(ref reader, typeof(string), JsonSerializerOptions.Default);
+            converter.Read(ref reader, typeof(string), JsonSerializerOptions.Default);
         });
     }
 
@@ -244,10 +244,10 @@ sealed class Automation_Tests
     public void JsonConverterBusId_Read_Null()
     {
         var converter = new JsonConverterBusId();
-        _ = Assert.ThrowsException<InvalidDataException>(() =>
+        Assert.ThrowsExactly<InvalidDataException>(() =>
         {
             var reader = new Utf8JsonReader("null"u8);
-            _ = reader.Read();
+            reader.Read();
             var busId = converter.Read(ref reader, typeof(string), JsonSerializerOptions.Default);
         });
     }
@@ -269,7 +269,7 @@ sealed class Automation_Tests
     public void JsonConverterBusId_Write_NullWriter()
     {
         var converter = new JsonConverterBusId();
-        _ = Assert.ThrowsException<ArgumentNullException>(() =>
+        Assert.ThrowsExactly<ArgumentNullException>(() =>
         {
             converter.Write(null!, new(1, 42), JsonSerializerOptions.Default);
         });
@@ -279,7 +279,7 @@ sealed class Automation_Tests
     public void JsonConverterIPAddress_Read_Valid()
     {
         var reader = new Utf8JsonReader("\"1.2.3.4\""u8);
-        _ = reader.Read();
+        reader.Read();
 
         var converter = new JsonConverterIPAddress();
         var address = converter.Read(ref reader, typeof(string), JsonSerializerOptions.Default);
@@ -290,12 +290,12 @@ sealed class Automation_Tests
     public void JsonConverterIPAddress_Read_Invalid()
     {
         var converter = new JsonConverterIPAddress();
-        _ = Assert.ThrowsException<FormatException>(() =>
+        Assert.ThrowsExactly<FormatException>(() =>
         {
             var reader = new Utf8JsonReader("\"xxx\""u8);
-            _ = reader.Read();
+            reader.Read();
 
-            _ = converter.Read(ref reader, typeof(string), JsonSerializerOptions.Default);
+            converter.Read(ref reader, typeof(string), JsonSerializerOptions.Default);
         });
     }
 
@@ -303,10 +303,10 @@ sealed class Automation_Tests
     public void JsonConverterIPAddress_Read_Null()
     {
         var converter = new JsonConverterIPAddress();
-        _ = Assert.ThrowsException<InvalidDataException>(() =>
+        Assert.ThrowsExactly<InvalidDataException>(() =>
         {
             var reader = new Utf8JsonReader("null"u8);
-            _ = reader.Read();
+            reader.Read();
             var address = converter.Read(ref reader, typeof(string), JsonSerializerOptions.Default);
         });
     }
@@ -328,7 +328,7 @@ sealed class Automation_Tests
     public void JsonConverterIPAddress_Write_NullWriter()
     {
         var converter = new JsonConverterIPAddress();
-        _ = Assert.ThrowsException<ArgumentNullException>(() =>
+        Assert.ThrowsExactly<ArgumentNullException>(() =>
         {
             converter.Write(null!, IPAddress.Parse("1.2.3.4"), JsonSerializerOptions.Default);
         });
@@ -340,7 +340,7 @@ sealed class Automation_Tests
         using var memoryStream = new MemoryStream();
         using var writer = new Utf8JsonWriter(memoryStream, new() { SkipValidation = true });
         var converter = new JsonConverterIPAddress();
-        _ = Assert.ThrowsException<ArgumentNullException>(() =>
+        Assert.ThrowsExactly<ArgumentNullException>(() =>
         {
             converter.Write(writer, null!, JsonSerializerOptions.Default);
         });

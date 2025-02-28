@@ -28,10 +28,10 @@ sealed class Program_Tests
     public void RunInvalidExitCode()
     {
         var mock = CreateMock();
-        _ = mock.Setup(m => m.License(
+        mock.Setup(m => m.License(
             It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult((ExitCode)0x0badf00d));
 
-        _ = Assert.ThrowsException<UnexpectedResultException>(() =>
+        Assert.ThrowsExactly<UnexpectedResultException>(() =>
         {
             Test(ExitCode.Success, mock, "license");
         });
@@ -41,10 +41,10 @@ sealed class Program_Tests
     public void RunException()
     {
         var mock = CreateMock();
-        _ = mock.Setup(m => m.License(
+        mock.Setup(m => m.License(
             It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Throws<NotImplementedException>();
 
-        var exception = Assert.ThrowsException<AggregateException>(() =>
+        var exception = Assert.ThrowsExactly<AggregateException>(() =>
         {
             Test(ExitCode.Success, mock, "license");
         });

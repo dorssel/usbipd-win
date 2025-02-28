@@ -14,7 +14,7 @@ sealed class Parse_list_Tests
     public void Success()
     {
         var mock = CreateMock();
-        _ = mock.Setup(m => m.List(false,
+        mock.Setup(m => m.List(false,
             It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Success));
 
         Test(ExitCode.Success, mock, "list");
@@ -24,7 +24,7 @@ sealed class Parse_list_Tests
     public void SuccessWithUsbids()
     {
         var mock = CreateMock();
-        _ = mock.Setup(m => m.List(true,
+        mock.Setup(m => m.List(true,
             It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Success));
 
         Test(ExitCode.Success, mock, "list", "--usbids");
@@ -34,7 +34,7 @@ sealed class Parse_list_Tests
     public void Failure()
     {
         var mock = CreateMock();
-        _ = mock.Setup(m => m.List(false,
+        mock.Setup(m => m.List(false,
             It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Failure));
 
         Test(ExitCode.Failure, mock, "list");
@@ -44,7 +44,7 @@ sealed class Parse_list_Tests
     public void Canceled()
     {
         var mock = CreateMock();
-        _ = mock.Setup(m => m.List(false,
+        mock.Setup(m => m.List(false,
             It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Throws<OperationCanceledException>();
 
         Test(ExitCode.Canceled, mock, "list");

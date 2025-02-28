@@ -19,7 +19,7 @@ sealed class Parse_unbind_Tests
     public void AllSuccess()
     {
         var mock = CreateMock();
-        _ = mock.Setup(m => m.UnbindAll(
+        mock.Setup(m => m.UnbindAll(
             It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Success));
 
         Test(ExitCode.Success, mock, "unbind", "--all");
@@ -29,7 +29,7 @@ sealed class Parse_unbind_Tests
     public void AllFailure()
     {
         var mock = CreateMock();
-        _ = mock.Setup(m => m.UnbindAll(
+        mock.Setup(m => m.UnbindAll(
             It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Failure));
 
         Test(ExitCode.Failure, mock, "unbind", "--all");
@@ -39,7 +39,7 @@ sealed class Parse_unbind_Tests
     public void AllCanceled()
     {
         var mock = CreateMock();
-        _ = mock.Setup(m => m.UnbindAll(
+        mock.Setup(m => m.UnbindAll(
             It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Throws<OperationCanceledException>();
 
         Test(ExitCode.Canceled, mock, "unbind", "--all");
@@ -49,7 +49,7 @@ sealed class Parse_unbind_Tests
     public void BusIdSuccess()
     {
         var mock = CreateMock();
-        _ = mock.Setup(m => m.Unbind(It.Is<BusId>(busId => busId == TestBusId),
+        mock.Setup(m => m.Unbind(It.Is<BusId>(busId => busId == TestBusId),
             It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Success));
 
         Test(ExitCode.Success, mock, "unbind", "--busid", TestBusId.ToString());
@@ -59,7 +59,7 @@ sealed class Parse_unbind_Tests
     public void BusIdFailure()
     {
         var mock = CreateMock();
-        _ = mock.Setup(m => m.Unbind(It.Is<BusId>(busId => busId == TestBusId),
+        mock.Setup(m => m.Unbind(It.Is<BusId>(busId => busId == TestBusId),
             It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Failure));
 
         Test(ExitCode.Failure, mock, "unbind", "--busid", TestBusId.ToString());
@@ -69,7 +69,7 @@ sealed class Parse_unbind_Tests
     public void BusIdCanceled()
     {
         var mock = CreateMock();
-        _ = mock.Setup(m => m.Unbind(It.Is<BusId>(busId => busId == TestBusId),
+        mock.Setup(m => m.Unbind(It.Is<BusId>(busId => busId == TestBusId),
             It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Throws<OperationCanceledException>();
 
         Test(ExitCode.Canceled, mock, "unbind", "--busid", TestBusId.ToString());
@@ -79,7 +79,7 @@ sealed class Parse_unbind_Tests
     public void GuidSuccess()
     {
         var mock = CreateMock();
-        _ = mock.Setup(m => m.Unbind(It.Is<Guid>(guid => guid == Guid.Parse("{E863A2AF-AE47-440B-A32B-FAB1C03017AB}")),
+        mock.Setup(m => m.Unbind(It.Is<Guid>(guid => guid == Guid.Parse("{E863A2AF-AE47-440B-A32B-FAB1C03017AB}")),
             It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Success));
 
         Test(ExitCode.Success, mock, "unbind", "--guid", "{E863A2AF-AE47-440B-A32B-FAB1C03017AB}");
@@ -89,7 +89,7 @@ sealed class Parse_unbind_Tests
     public void GuidFailure()
     {
         var mock = CreateMock();
-        _ = mock.Setup(m => m.Unbind(It.Is<Guid>(guid => guid == Guid.Parse("{E863A2AF-AE47-440B-A32B-FAB1C03017AB}")),
+        mock.Setup(m => m.Unbind(It.Is<Guid>(guid => guid == Guid.Parse("{E863A2AF-AE47-440B-A32B-FAB1C03017AB}")),
             It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Failure));
 
         Test(ExitCode.Failure, mock, "unbind", "--guid", "{E863A2AF-AE47-440B-A32B-FAB1C03017AB}");
@@ -99,7 +99,7 @@ sealed class Parse_unbind_Tests
     public void GuidCanceled()
     {
         var mock = CreateMock();
-        _ = mock.Setup(m => m.Unbind(It.Is<Guid>(guid => guid == TestGuid),
+        mock.Setup(m => m.Unbind(It.Is<Guid>(guid => guid == TestGuid),
             It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Throws<OperationCanceledException>();
 
         Test(ExitCode.Canceled, mock, "unbind", "--guid", TestGuid.ToString());
@@ -109,7 +109,7 @@ sealed class Parse_unbind_Tests
     public void HardwareIdSuccess()
     {
         var mock = CreateMock();
-        _ = mock.Setup(m => m.Unbind(It.Is<VidPid>(vidPid => vidPid == TestHardwareId),
+        mock.Setup(m => m.Unbind(It.Is<VidPid>(vidPid => vidPid == TestHardwareId),
             It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Success));
 
         Test(ExitCode.Success, mock, "unbind", "--hardware-id", TestHardwareId.ToString());
@@ -119,7 +119,7 @@ sealed class Parse_unbind_Tests
     public void HardwareIdFailure()
     {
         var mock = CreateMock();
-        _ = mock.Setup(m => m.Unbind(It.Is<VidPid>(vidPid => vidPid == TestHardwareId),
+        mock.Setup(m => m.Unbind(It.Is<VidPid>(vidPid => vidPid == TestHardwareId),
             It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Failure));
 
         Test(ExitCode.Failure, mock, "unbind", "--hardware-id", TestHardwareId.ToString());
@@ -129,7 +129,7 @@ sealed class Parse_unbind_Tests
     public void HardwareIdCanceled()
     {
         var mock = CreateMock();
-        _ = mock.Setup(m => m.Unbind(It.Is<VidPid>(vidPid => vidPid == TestHardwareId),
+        mock.Setup(m => m.Unbind(It.Is<VidPid>(vidPid => vidPid == TestHardwareId),
             It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Throws<OperationCanceledException>();
 
         Test(ExitCode.Canceled, mock, "unbind", "--hardware-id", TestHardwareId.ToString());

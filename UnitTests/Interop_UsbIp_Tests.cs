@@ -88,7 +88,7 @@ sealed class Interop_UsbIp_Tests
     public void ReadUsbIpHeaderAsync_Empty()
     {
         using var memoryStream = new MemoryStream();
-        var exception = Assert.ThrowsException<AggregateException>(() =>
+        var exception = Assert.ThrowsExactly<AggregateException>(() =>
         {
             memoryStream.ReadUsbIpHeaderAsync(CancellationToken.None).Wait();
         });
@@ -99,7 +99,7 @@ sealed class Interop_UsbIp_Tests
     public void ReadUsbIpHeaderAsync_Short()
     {
         using var memoryStream = new MemoryStream(TestUsbIpHeaderBytes[0..^1]);
-        var exception = Assert.ThrowsException<AggregateException>(() =>
+        var exception = Assert.ThrowsExactly<AggregateException>(() =>
         {
             memoryStream.ReadUsbIpHeaderAsync(CancellationToken.None).Wait();
         });
@@ -148,7 +148,7 @@ sealed class Interop_UsbIp_Tests
     public void ReadUsbIpIsoPacketDescriptorsAsync_Empty()
     {
         using var memoryStream = new MemoryStream();
-        var exception = Assert.ThrowsException<AggregateException>(() =>
+        var exception = Assert.ThrowsExactly<AggregateException>(() =>
         {
             memoryStream.ReadUsbIpIsoPacketDescriptorsAsync(1, CancellationToken.None).Wait();
         });
@@ -159,7 +159,7 @@ sealed class Interop_UsbIp_Tests
     public void ReadUsbIpIsoPacketDescriptorsAsync_Short()
     {
         using var memoryStream = new MemoryStream(TestUsbIpIsoPacketDescriptorBytes[0..^1]);
-        var exception = Assert.ThrowsException<AggregateException>(() =>
+        var exception = Assert.ThrowsExactly<AggregateException>(() =>
         {
             memoryStream.ReadUsbIpIsoPacketDescriptorsAsync(1, CancellationToken.None).Wait();
         });
@@ -190,7 +190,7 @@ sealed class Interop_UsbIp_Tests
     {
         using var memoryStream = new MemoryStream(
             new byte[TestUsbIpIsoPacketDescriptorBytes.Length].Concat(TestUsbIpIsoPacketDescriptorBytes[0..^1]).ToArray());
-        var exception = Assert.ThrowsException<AggregateException>(() =>
+        var exception = Assert.ThrowsExactly<AggregateException>(() =>
         {
             memoryStream.ReadUsbIpIsoPacketDescriptorsAsync(2, CancellationToken.None).Wait();
         });

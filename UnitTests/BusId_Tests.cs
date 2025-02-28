@@ -22,7 +22,7 @@ sealed class BusId_Tests
     [TestMethod]
     public void ConstructorWithInvalidBusThrows()
     {
-        _ = Assert.ThrowsException<ArgumentOutOfRangeException>(() =>
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() =>
         {
             var busId = new BusId(0, 1);
         });
@@ -31,7 +31,7 @@ sealed class BusId_Tests
     [TestMethod]
     public void ConstructorWithInvalidPortThrows()
     {
-        _ = Assert.ThrowsException<ArgumentOutOfRangeException>(() =>
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() =>
         {
             var busId = new BusId(1, 0);
         });
@@ -152,7 +152,7 @@ sealed class BusId_Tests
     [DynamicData(nameof(BusIdData.Invalid), typeof(BusIdData))]
     public void ParseInvalid(string text)
     {
-        _ = Assert.ThrowsException<FormatException>(() =>
+        Assert.ThrowsExactly<FormatException>(() =>
         {
             var busId = BusId.Parse(text);
         });

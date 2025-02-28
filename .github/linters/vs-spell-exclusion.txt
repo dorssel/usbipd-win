@@ -1,10 +1,14 @@
 Balisson
 busid
+cafe
+cidr
+cdef
 Codecov
 csharp
 devid
 Dushan
 errno
+ffff
 ioctl
 ioctls
 linux
