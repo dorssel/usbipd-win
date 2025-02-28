@@ -16,10 +16,10 @@ sealed partial class PcapNg_Tests
     {
         public MockConfiguration(string? path, uint? snapLength = null)
         {
-            _ = Mock.Setup(m => m["usbipd:PcapNg:Path"]).Returns(path!);
+            Mock.Setup(m => m["usbipd:PcapNg:Path"]).Returns(path!);
             if (path is not null)
             {
-                _ = Mock.Setup(m => m["usbipd:PcapNg:SnapLength"]).Returns(snapLength?.ToString()!);
+                Mock.Setup(m => m["usbipd:PcapNg:SnapLength"]).Returns(snapLength?.ToString()!);
             }
         }
 
@@ -137,7 +137,7 @@ sealed partial class PcapNg_Tests
     [DynamicData(nameof(TypeData.Invalid), typeof(TypeData))]
     public void ConvertType_Invalid(UsbSupTransferType from)
     {
-        _ = Assert.ThrowsException<ArgumentOutOfRangeException>(() => PcapNg.ConvertType(from));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => PcapNg.ConvertType(from));
     }
 
     [TestMethod]

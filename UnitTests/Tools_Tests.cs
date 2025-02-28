@@ -45,7 +45,7 @@ sealed class Tools_Tests
     {
         using var memoryStream = new MemoryStream();
         var buf = new byte[TestStreamBytes.Length];
-        var exception = Assert.ThrowsException<AggregateException>(() =>
+        var exception = Assert.ThrowsExactly<AggregateException>(() =>
         {
             memoryStream.ReadMessageAsync(buf, CancellationToken.None).Wait();
         });
@@ -57,7 +57,7 @@ sealed class Tools_Tests
     {
         using var memoryStream = new MemoryStream(TestStreamBytes);
         var buf = new byte[TestStreamBytes.Length + 1];
-        var exception = Assert.ThrowsException<AggregateException>(() =>
+        var exception = Assert.ThrowsExactly<AggregateException>(() =>
         {
             memoryStream.ReadMessageAsync(buf, CancellationToken.None).Wait();
         });
@@ -74,7 +74,7 @@ sealed class Tools_Tests
         var buf = new byte[TestStreamBytes.Length - 1];
         writeStream.Write(TestStreamBytes.AsSpan(0, 1));
         var task = readStream.ReadMessageAsync(buf, CancellationToken.None);
-        _ = task.Wait(100);
+        task.Wait(100);
         Assert.AreEqual(TaskStatus.WaitingForActivation, task.Status);
         writeStream.Write(TestStreamBytes.AsSpan(1));
         task.Wait();
@@ -115,7 +115,7 @@ sealed class Tools_Tests
     public void StructToBytes_Span_Short()
     {
         var buf = new byte[TestStructBytes.Length - 1];
-        _ = Assert.ThrowsException<ArgumentException>(() =>
+        Assert.ThrowsExactly<ArgumentException>(() =>
         {
             StructToBytes(TestStruct, buf);
         });
@@ -138,7 +138,7 @@ sealed class Tools_Tests
     [TestMethod]
     public void BytesToStruct_out_Short()
     {
-        _ = Assert.ThrowsException<ArgumentException>(() =>
+        Assert.ThrowsExactly<ArgumentException>(() =>
         {
             BytesToStruct(TestStructBytes.AsSpan()[0..^1], out TestStructType s);
         });
@@ -154,9 +154,9 @@ sealed class Tools_Tests
     [TestMethod]
     public void BytesToStruct_Short()
     {
-        _ = Assert.ThrowsException<ArgumentException>(() =>
+        Assert.ThrowsExactly<ArgumentException>(() =>
         {
-            _ = BytesToStruct<TestStructType>(TestStructBytes.AsSpan()[0..^1]);
+            BytesToStruct<TestStructType>(TestStructBytes.AsSpan()[0..^1]);
         });
     }
 
@@ -217,7 +217,7 @@ sealed class Tools_Tests
     {
         const string testMessage = "TestMessage";
         BOOL failure = false;
-        var exception = Assert.ThrowsException<Win32Exception>(() =>
+        var exception = Assert.ThrowsExactly<Win32Exception>(() =>
         {
             failure.ThrowOnError(testMessage);
         });

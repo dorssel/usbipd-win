@@ -110,9 +110,9 @@ sealed class Policy_Tests
     {
         var rule = new PolicyRuleAutoBind(effect, busId, hardwareId);
 
-        _ = Assert.ThrowsException<InvalidOperationException>(() =>
+        Assert.ThrowsExactly<InvalidOperationException>(() =>
         {
-            _ = rule.Matches(CreateTestUsbDevice(TestBusId, TestHardwareId));
+            rule.Matches(CreateTestUsbDevice(TestBusId, TestHardwareId));
         });
     }
 

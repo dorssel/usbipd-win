@@ -14,7 +14,7 @@ sealed class Parse_state_Tests
     public void Success()
     {
         var mock = CreateMock();
-        _ = mock.Setup(m => m.State(
+        mock.Setup(m => m.State(
             It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Success));
 
         Test(ExitCode.Success, mock, "state");
@@ -24,7 +24,7 @@ sealed class Parse_state_Tests
     public void Failure()
     {
         var mock = CreateMock();
-        _ = mock.Setup(m => m.State(
+        mock.Setup(m => m.State(
             It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Failure));
 
         Test(ExitCode.Failure, mock, "state");
@@ -34,7 +34,7 @@ sealed class Parse_state_Tests
     public void Canceled()
     {
         var mock = CreateMock();
-        _ = mock.Setup(m => m.State(
+        mock.Setup(m => m.State(
             It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Throws<OperationCanceledException>();
 
         Test(ExitCode.Canceled, mock, "state");

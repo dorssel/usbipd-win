@@ -13,7 +13,7 @@ static class GlobalFixture
     public static void AssemblyInitialize(TestContext context)
     {
         _ = context;
-        _ = Directory.CreateDirectory(TemporaryDirectory);
+        Directory.CreateDirectory(TemporaryDirectory);
     }
 
     [AssemblyCleanup]

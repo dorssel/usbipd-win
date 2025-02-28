@@ -15,7 +15,7 @@ sealed class UsbDevice_Tests
     static readonly BusId TestBusId = BusId.Parse("3-42");
     static readonly Guid TestGuid = Guid.NewGuid();
     static readonly IPAddress TestIPAddress = IPAddress.Parse("1.2.3.4");
-    const string TestStubInstanceId = @"SOME\Device\Path\abcd";
+    const string TestStubInstanceId = @"SOME\Device\Path\Bogus";
 
     [TestMethod]
     public void Constructor()

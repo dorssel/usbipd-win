@@ -11,7 +11,7 @@ sealed class Parse_wsl_Tests
     [TestMethod]
     public void ParseError()
     {
-        // 'wsl' has been removed, so this is an error.
+        // "wsl" has been removed, so this is an error.
         Test(ExitCode.ParseError, "wsl");
     }
 

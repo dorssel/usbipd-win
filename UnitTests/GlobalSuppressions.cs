@@ -15,4 +15,5 @@ using System.Diagnostics.CodeAnalysis;
 [assembly: SuppressMessage("Trimming",
     "IL2026:Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code",
     Justification = "Some unit tests require reflection")]
-[assembly: SuppressMessage("Style", "IDE0053:Use expression body for lambda expression", Justification = "Better readability for Assert.ThrowsException")]
+[assembly: SuppressMessage("Style", "IDE0053:Use expression body for lambda expression", Justification = "Better readability for Assert.ThrowsExactly")]
+[assembly: SuppressMessage("Style", "IDE0058:Expression value is never used", Justification = "Not useful for tests")]
