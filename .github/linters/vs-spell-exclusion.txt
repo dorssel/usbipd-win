@@ -6,6 +6,7 @@ cdef
 Codecov
 csharp
 devid
+Desc
 Dushan
 errno
 ffff
@@ -15,6 +16,7 @@ linux
 netstandard
 nosemgrep
 pcap
+Pkts
 replug
 replugged
 seqnum
