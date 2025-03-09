@@ -155,7 +155,7 @@ static class NewDev
                     reboot = true;
                 }
             }
-            catch (Win32Exception ex) when ((uint)ex.NativeErrorCode == Interop.WinSDK.ERROR_NO_DRIVER_SELECTED)
+            catch (Win32Exception ex) when ((WIN32_ERROR)ex.NativeErrorCode == WIN32_ERROR.ERROR_NO_DRIVER_SELECTED)
             {
                 // Not really an error; this just means Windows does not have a default PnP driver for it.
                 // The device will be listed under "Other devices" with a question mark.
