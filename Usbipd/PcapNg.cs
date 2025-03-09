@@ -83,7 +83,7 @@ sealed partial class PcapNg
         usbMon.Write((byte)'S');
         usbMon.Write(ConvertType(basic.EndpointType(cmdSubmit)));
         usbMon.Write(basic.RawEndpoint());
-        usbMon.Write((byte)basic.devid);
+        usbMon.Write(unchecked((byte)basic.devid));
         usbMon.Write((ushort)(basic.devid >> 16));
         usbMon.Write((byte)(basic.ep == 0 ? '\0' : '-'));
         usbMon.Write((byte)(data.IsEmpty ? basic.direction == UsbIpDir.USBIP_DIR_IN ? '<' : '>' : '\0'));
@@ -127,7 +127,7 @@ sealed partial class PcapNg
         usbMon.Write((byte)'C');
         usbMon.Write(ConvertType(basic.EndpointType(cmdSubmit)));
         usbMon.Write(basic.RawEndpoint());
-        usbMon.Write((byte)basic.devid);
+        usbMon.Write(unchecked((byte)basic.devid));
         usbMon.Write((ushort)(basic.devid >> 16));
         usbMon.Write((byte)'-');
         usbMon.Write((byte)(data.IsEmpty ? basic.direction == UsbIpDir.USBIP_DIR_IN ? '<' : '>' : '\0'));
@@ -161,7 +161,7 @@ sealed partial class PcapNg
         usbMon.Write((byte)'S');
         usbMon.Write((byte)0); // ISO
         usbMon.Write(basic.RawEndpoint());
-        usbMon.Write((byte)basic.devid);
+        usbMon.Write(unchecked((byte)basic.devid));
         usbMon.Write((ushort)(basic.devid >> 16));
         usbMon.Write((byte)'-');
         usbMon.Write((byte)(data.IsEmpty ? basic.direction == UsbIpDir.USBIP_DIR_IN ? '<' : '>' : '\0'));
@@ -203,7 +203,7 @@ sealed partial class PcapNg
         usbMon.Write((byte)'C');
         usbMon.Write((byte)0); // ISO
         usbMon.Write(basic.RawEndpoint());
-        usbMon.Write((byte)basic.devid);
+        usbMon.Write(unchecked((byte)basic.devid));
         usbMon.Write((ushort)(basic.devid >> 16));
         usbMon.Write((byte)'-');
         usbMon.Write((byte)(data.IsEmpty ? basic.direction == UsbIpDir.USBIP_DIR_IN ? '<' : '>' : '\0'));
@@ -258,7 +258,7 @@ sealed partial class PcapNg
             return;
         }
 
-        var deviceFakeIpv4 = new IPEndPoint(IPAddress.Parse($"10.0.{(byte)busId.Bus}.{(byte)busId.Port}"), deviceFakePort);
+        var deviceFakeIpv4 = new IPEndPoint(IPAddress.Parse($"10.0.{unchecked((byte)busId.Bus)}.{unchecked((byte)busId.Port)}"), deviceFakePort);
         ++deviceFakePort;
         if (deviceFakePort < 0x8000)
         {
