@@ -9,15 +9,7 @@ SPDX-License-Identifier: GPL-3.0-only
   <PropertyGroup>
     <TargetFrameworks>$(MainTargetFramework)-windows$(MinimumWindowsVersion);netstandard2.0</TargetFrameworks>
     <Platforms>AnyCPU</Platforms>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
-
-  <ItemGroup>
-    <None Remove="usb.ids" />
-    <AdditionalFiles Include="usb.ids" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\UsbIds\UsbIds.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
-  </ItemGroup>
 
 </Project>

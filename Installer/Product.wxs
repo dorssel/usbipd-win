@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <!--
 SPDX-FileCopyrightText: 2020 Frans van Dorsselaer
 
@@ -100,6 +100,7 @@ SPDX-License-Identifier: GPL-3.0-only
             Description="The user mode server application, installed as a service."
             >
             <ComponentGroupRef Id="usbipd" />
+            <ComponentGroupRef Id="UsbIds" />
             <Feature
                 Id="Drivers"
                 Level="1"
@@ -130,6 +131,7 @@ SPDX-License-Identifier: GPL-3.0-only
                 Description="A loadable module for PowerShell."
                 >
                 <ComponentGroupRef Id="PowerShell" />
+                <ComponentGroupRef Id="UsbIds" />
             </Feature>
         </Feature>
 

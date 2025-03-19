@@ -102,9 +102,9 @@ sealed partial class CommandHandlers : ICommandHandlers
     {
         if (usbIds)
         {
-            var vendor = device.HardwareId.Vendor;
+            var (vendor, product) = device.HardwareId.Descriptions;
             return vendor is not null
-                ? $"{vendor}, {device.HardwareId.Product ?? ConfigurationManager.UnknownDevice}"
+                ? $"{vendor}, {product ?? ConfigurationManager.UnknownDevice}"
                 : ConfigurationManager.UnknownDevice;
         }
         else

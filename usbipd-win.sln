@@ -29,8 +29,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Usbipd.PowerShell", "Usbipd
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Usbipd.Automation", "Usbipd.Automation\Usbipd.Automation.csproj", "{934A2FBC-4EEB-4CE7-88A4-E3336E89DAEB}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UsbIds", "UsbIds\UsbIds.csproj", "{FC600539-9D82-4822-B2A0-7157D166A444}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|ARM64 = Debug|ARM64
@@ -75,14 +73,6 @@ Global
 		{934A2FBC-4EEB-4CE7-88A4-E3336E89DAEB}.Release|ARM64.Build.0 = Release|Any CPU
 		{934A2FBC-4EEB-4CE7-88A4-E3336E89DAEB}.Release|x64.ActiveCfg = Release|Any CPU
 		{934A2FBC-4EEB-4CE7-88A4-E3336E89DAEB}.Release|x64.Build.0 = Release|Any CPU
-		{FC600539-9D82-4822-B2A0-7157D166A444}.Debug|ARM64.ActiveCfg = Debug|Any CPU
-		{FC600539-9D82-4822-B2A0-7157D166A444}.Debug|ARM64.Build.0 = Debug|Any CPU
-		{FC600539-9D82-4822-B2A0-7157D166A444}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{FC600539-9D82-4822-B2A0-7157D166A444}.Debug|x64.Build.0 = Debug|Any CPU
-		{FC600539-9D82-4822-B2A0-7157D166A444}.Release|ARM64.ActiveCfg = Release|Any CPU
-		{FC600539-9D82-4822-B2A0-7157D166A444}.Release|ARM64.Build.0 = Release|Any CPU
-		{FC600539-9D82-4822-B2A0-7157D166A444}.Release|x64.ActiveCfg = Release|Any CPU
-		{FC600539-9D82-4822-B2A0-7157D166A444}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

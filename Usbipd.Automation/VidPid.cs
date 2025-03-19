@@ -73,9 +73,7 @@ public readonly record struct VidPid
             : throw new FormatException();
     }
 
-    public string? Vendor => this.GetVendor();
-
-    public string? Product => this.GetProduct();
+    public (string? Vendor, string? Product) Descriptions => this.GetVendorProduct(true);
 
     #region IComparable<VidPid>
 
