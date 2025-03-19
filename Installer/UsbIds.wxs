@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+SPDX-FileCopyrightText: 2025 Frans van Dorsselaer
+
+SPDX-License-Identifier: GPL-3.0-only
+-->
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+    <Fragment>
+        <ComponentGroup Id="UsbIds" Directory="APPLICATIONFOLDER" Subdirectory="PowerShell" Source="$(PowerShellDir)">
+            <File Id="usb.ids" Name="usb.ids" />
+        </ComponentGroup>
+    </Fragment>
+</Wix>

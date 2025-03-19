@@ -188,7 +188,7 @@ sealed class VidPid_Tests
     public void VendorKnown(string text)
     {
         var vidPid = VidPid.Parse(text);
-        Assert.IsNotNull(vidPid.Vendor);
+        Assert.IsNotNull(vidPid.Descriptions.Vendor);
     }
 
     [TestMethod]
@@ -201,7 +201,7 @@ sealed class VidPid_Tests
     public void VendorUnknown(string text)
     {
         var vidPid = VidPid.Parse(text);
-        Assert.IsNull(vidPid.Vendor);
+        Assert.IsNull(vidPid.Descriptions.Vendor);
     }
 
     [TestMethod]
@@ -209,7 +209,7 @@ sealed class VidPid_Tests
     public void ProductKnown(string text)
     {
         var vidPid = VidPid.Parse(text);
-        Assert.IsNotNull(vidPid.Product);
+        Assert.IsNotNull(vidPid.Descriptions.Product);
     }
 
     [TestMethod]
@@ -224,7 +224,7 @@ sealed class VidPid_Tests
     public void ProductUnknown(string text)
     {
         var vidPid = VidPid.Parse(text);
-        Assert.IsNull(vidPid.Product);
+        Assert.IsNull(vidPid.Descriptions.Product);
     }
 
     sealed class HardwareIdData

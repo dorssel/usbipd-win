@@ -15,6 +15,10 @@ SPDX-License-Identifier: GPL-3.0-only
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Include="..\Usbipd.Automation\usb.ids" Link="usb.ids" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="PowerShellStandard.Library" PrivateAssets="all" />
   </ItemGroup>
 
