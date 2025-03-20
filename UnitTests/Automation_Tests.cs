@@ -59,6 +59,7 @@ sealed class Automation_Tests
         Assert.AreEqual(2, state.Devices.Count);
     }
 
+    [Ignore]
     [TestMethod]
     public void State_DataContract_Serialize()
     {

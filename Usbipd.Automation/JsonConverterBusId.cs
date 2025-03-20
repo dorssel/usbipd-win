@@ -9,7 +9,7 @@ using System.Text.Json.Serialization;
 
 namespace Usbipd.Automation;
 
-public class JsonConverterBusId : JsonConverter<BusId>
+class JsonConverterBusId : JsonConverter<BusId>
 {
     public override BusId Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {

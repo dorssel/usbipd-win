@@ -216,6 +216,7 @@ sealed class VidPid_Tests
     [DataRow("0000:0000")] // vendor unknown, product irrelevant
     [DataRow("0000:8001")] // vendor unknown, product irrelevant
     [DataRow("0000:ffff")] // vendor unknown, product irrelevant
+    [DataRow("05c6:8001")] // vendor known (Qualcomm), product unknown (but valid for Intel)
     [DataRow("8087:0000")] // vendor Intel, product unknown
     [DataRow("8087:ffff")] // vendor Intel, product unknown
     [DataRow("ffff:0000")] // vendor unknown, product irrelevant

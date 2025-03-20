@@ -9,10 +9,12 @@ using System.Text.RegularExpressions;
 
 namespace Usbipd.Automation;
 
-#if !NETSTANDARD
+#if NETSTANDARD
+public
+#else
 [JsonConverter(typeof(JsonConverterBusId))]
 #endif
-public readonly record struct BusId
+readonly record struct BusId
     : IComparable<BusId>
 {
 #if !NETSTANDARD

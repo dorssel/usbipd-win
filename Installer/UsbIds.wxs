@@ -6,7 +6,7 @@ SPDX-License-Identifier: GPL-3.0-only
 -->
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
     <Fragment>
-        <ComponentGroup Id="UsbIds" Directory="APPLICATIONFOLDER" Subdirectory="PowerShell" Source="$(PowerShellDir)">
+        <ComponentGroup Id="UsbIds" Directory="APPLICATIONFOLDER" Source="$(var.PublishDir)">
             <File Id="usb.ids" Name="usb.ids" />
         </ComponentGroup>
     </Fragment>
