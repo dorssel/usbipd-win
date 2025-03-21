@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: 2025 Frans van Dorsselaer
+#
+# SPDX-License-Identifier: GPL-3.0-only
+
+# Not really invalid; we will trim the vendor name.
+0001    Some vendor with leading and trailing spaces  
+
+# "Invalid"; but we use a forgiving parser which replaces them with ? symbols.
+0002  Some vendor with invalid 'аб' UTF-8
+
+# Invalid; it does have 2 spaces after the PID, but the vendor name itself is empty.
+0003  
+
+# Ignored; line does not end with \n, but EOF instead.
+0004  Some vendor with EOF

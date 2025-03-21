@@ -201,6 +201,12 @@ end_of_line = lf
 [*.css]
 indent_size = 2
 
+[*.ids]
+charset =
+trim_trailing_whitespace = false
+indent_style =
+insert_final_newline = false
+
 # Maintained by Visual Studio and Dependabot
 [{global.json,dotnet-tools.json,Directory.Packages.props}]
 charset = utf-8

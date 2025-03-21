@@ -59,18 +59,8 @@ sealed class Automation_Tests
         Assert.AreEqual(2, state.Devices.Count);
     }
 
-    [Ignore]
     [TestMethod]
-    public void State_DataContract_Serialize()
-    {
-        var state = new State(TestDevices);
-        var json = JsonHelpers.DataContractSerialize(state);
-        json = JsonHelpers.NormalizePretty(json);
-        Assert.AreEqual(TestJson, json);
-    }
-
-    [TestMethod]
-    public void State_JsonSerializer_Serialize()
+    public void State_Serialize()
     {
         var state = new State(TestDevices);
         var json = JsonHelpers.TextJsonSerialize(state, StateSerializerContext.Default.State);

@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: 2025 Frans van Dorsselaer
+#
+# SPDX-License-Identifier: GPL-3.0-only
+
+0001  Some vendor
+
+	# Not really invalid; we will trim the product name.
+	0001    Some product with leading and trailing spaces  
+
+	# "Invalid"; but we use a forgiving parser which replaces them with ? symbols.
+	0002  Some product with invalid 'аб' UTF-8
+
+	# Invalid; it does have 2 spaces after the PID, but the product name itself is empty.
+	0003  
+
+	# Ignored; line does not end with \n, but EOF instead.
+	0004  Some product with EOF
