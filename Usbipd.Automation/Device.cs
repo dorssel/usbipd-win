@@ -20,7 +20,8 @@ sealed class Device
 #if !NETSTANDARD
     public
 #endif
-    Device() { }
+    Device()
+    { }
 
 #if !NETSTANDARD
     [JsonConstructor]

@@ -74,7 +74,7 @@ sealed class Driver_Tests
     {
         using var inf = GetInf(platform);
 
-        var driverDescription= GetDriverDescription(inf);
+        var driverDescription = GetDriverDescription(inf);
 
         Assert.AreEqual(Usbipd.Interop.VBoxUsb.DriverDescription, driverDescription);
     }
