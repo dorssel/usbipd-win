@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <!--
 SPDX-FileCopyrightText: 2024 Frans van Dorsselaer
 
@@ -6,9 +6,8 @@ SPDX-License-Identifier: GPL-3.0-only
 -->
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
     <Fragment>
-        <ComponentGroup Id="PowerShell" Directory="APPLICATIONFOLDER" Subdirectory="PowerShell" Source="$(PowerShellDir)">
-                <File Id="Usbipd.Automation.dll" Name="Usbipd.Automation.dll" />
-                <File Id="Usbipd.PowerShell.dll" Name="Usbipd.PowerShell.dll" />
+        <ComponentGroup Id="PowerShell" Directory="APPLICATIONFOLDER" Source="$(PowerShellDir)">
+            <File Id="Usbipd.PowerShell.dll" Name="Usbipd.PowerShell.dll" />
         </ComponentGroup>
     </Fragment>
 </Wix>

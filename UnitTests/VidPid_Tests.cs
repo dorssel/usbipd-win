@@ -8,8 +8,20 @@ using Usbipd.Automation;
 namespace UnitTests;
 
 [TestClass]
+[DoNotParallelize]
+[DeploymentItem("VidPid_vendors.ids")]
+[DeploymentItem("VidPid_products.ids")]
 sealed class VidPid_Tests
 {
+    public TestContext TestContext { get; set; }
+
+    [TestCleanup()]
+    public void Cleanup()
+    {
+        UsbIds.TestDataPath = null;
+        UsbIds.TestEmptyBytePointers = false;
+    }
+
     [TestMethod]
     public void DefaultConstructor()
     {
@@ -188,7 +200,7 @@ sealed class VidPid_Tests
     public void VendorKnown(string text)
     {
         var vidPid = VidPid.Parse(text);
-        Assert.IsNotNull(vidPid.Descriptions.Vendor);
+        Assert.IsNotNull(vidPid.Vendor);
     }
 
     [TestMethod]
@@ -201,7 +213,7 @@ sealed class VidPid_Tests
     public void VendorUnknown(string text)
     {
         var vidPid = VidPid.Parse(text);
-        Assert.IsNull(vidPid.Descriptions.Vendor);
+        Assert.IsNull(vidPid.Vendor);
     }
 
     [TestMethod]
@@ -209,13 +221,14 @@ sealed class VidPid_Tests
     public void ProductKnown(string text)
     {
         var vidPid = VidPid.Parse(text);
-        Assert.IsNotNull(vidPid.Descriptions.Product);
+        Assert.IsNotNull(vidPid.Product);
     }
 
     [TestMethod]
     [DataRow("0000:0000")] // vendor unknown, product irrelevant
     [DataRow("0000:8001")] // vendor unknown, product irrelevant
     [DataRow("0000:ffff")] // vendor unknown, product irrelevant
+    [DataRow("05c6:8001")] // vendor known (Qualcomm), product unknown (but valid for Intel)
     [DataRow("8087:0000")] // vendor Intel, product unknown
     [DataRow("8087:ffff")] // vendor Intel, product unknown
     [DataRow("ffff:0000")] // vendor unknown, product irrelevant
@@ -224,7 +237,7 @@ sealed class VidPid_Tests
     public void ProductUnknown(string text)
     {
         var vidPid = VidPid.Parse(text);
-        Assert.IsNull(vidPid.Descriptions.Product);
+        Assert.IsNull(vidPid.Product);
     }
 
     sealed class HardwareIdData
@@ -288,5 +301,129 @@ sealed class VidPid_Tests
         var expectedPid = ushort.Parse(text.Split("PID_")[1][..4], NumberStyles.AllowHexSpecifier);
         Assert.AreEqual(expectedVid, vidPid.Vid);
         Assert.AreEqual(expectedPid, vidPid.Pid);
+    }
+
+    [TestMethod]
+    public void Vendor_NotTrimmed()
+    {
+        UsbIds.TestDataPath = Path.Combine(TestContext.DeploymentDirectory!, "VidPid_vendors.ids");
+
+        var vendor = VidPid.Parse("0001:0000").GetVendorProduct(false).Vendor;
+
+        Assert.IsNotNull(vendor);
+        Assert.AreEqual(vendor.Trim(), vendor);
+    }
+
+    [TestMethod]
+    public void Vendor_InvalidUtf8()
+    {
+        UsbIds.TestDataPath = Path.Combine(TestContext.DeploymentDirectory!, "VidPid_vendors.ids");
+
+        var vendor = VidPid.Parse("0002:0000").GetVendorProduct(false).Vendor;
+
+        Assert.IsNotNull(vendor);
+        Assert.AreEqual(vendor.Trim(), vendor);
+    }
+
+    [TestMethod]
+    public void Vendor_Empty()
+    {
+        UsbIds.TestDataPath = Path.Combine(TestContext.DeploymentDirectory!, "VidPid_vendors.ids");
+
+        var vendor = VidPid.Parse("0003:0000").GetVendorProduct(false).Vendor;
+
+        Assert.IsNull(vendor);
+    }
+
+    [TestMethod]
+    public void Vendor_EOF()
+    {
+        UsbIds.TestDataPath = Path.Combine(TestContext.DeploymentDirectory!, "VidPid_vendors.ids");
+
+        var vendor = VidPid.Parse("0004:0000").GetVendorProduct(false).Vendor;
+
+        Assert.IsNull(vendor);
+    }
+
+    [TestMethod]
+    public void Vendor_NotFound_EOF()
+    {
+        UsbIds.TestDataPath = Path.Combine(TestContext.DeploymentDirectory!, "VidPid_vendors.ids");
+
+        var vendor = VidPid.Parse("0005:0000").GetVendorProduct(false).Vendor;
+
+        Assert.IsNull(vendor);
+    }
+
+    [TestMethod]
+    public void Product_NotTrimmed()
+    {
+        UsbIds.TestDataPath = Path.Combine(TestContext.DeploymentDirectory!, "VidPid_products.ids");
+
+        var product = VidPid.Parse("0001:0001").GetVendorProduct(true).Product;
+
+        Assert.IsNotNull(product);
+        Assert.AreEqual(product.Trim(), product);
+    }
+
+    [TestMethod]
+    public void Product_InvalidUtf8()
+    {
+        UsbIds.TestDataPath = Path.Combine(TestContext.DeploymentDirectory!, "VidPid_products.ids");
+
+        var product = VidPid.Parse("0001:0002").GetVendorProduct(true).Product;
+
+        Assert.IsNotNull(product);
+        Assert.AreEqual(product.Trim(), product);
+    }
+
+    [TestMethod]
+    public void Product_Empty()
+    {
+        UsbIds.TestDataPath = Path.Combine(TestContext.DeploymentDirectory!, "VidPid_products.ids");
+
+        var product = VidPid.Parse("0001:0003").GetVendorProduct(true).Product;
+
+        Assert.IsNull(product);
+    }
+
+    [TestMethod]
+    public void Product_EOF()
+    {
+        UsbIds.TestDataPath = Path.Combine(TestContext.DeploymentDirectory!, "VidPid_products.ids");
+
+        var product = VidPid.Parse("0001:0004").GetVendorProduct(true).Product;
+
+        Assert.IsNull(product);
+    }
+
+    [TestMethod]
+    public void Product_NotFound_EOF()
+    {
+        UsbIds.TestDataPath = Path.Combine(TestContext.DeploymentDirectory!, "VidPid_products.ids");
+
+        var product = VidPid.Parse("0001:0005").GetVendorProduct(true).Product;
+
+        Assert.IsNull(product);
+    }
+
+    [TestMethod]
+    public void EmptyBytePointers()
+    {
+        UsbIds.TestEmptyBytePointers = true;
+
+        var vendor = VidPid.Parse("0001:0000").GetVendorProduct(false).Vendor;
+
+        Assert.IsNull(vendor);
+    }
+
+    [TestMethod]
+    public void Data_NotFound()
+    {
+        UsbIds.TestDataPath = Path.Combine(TestContext.DeploymentDirectory!, "non-existing.ids");
+
+        var vendor = VidPid.Parse("0001:0000").GetVendorProduct(false).Vendor;
+
+        Assert.IsNull(vendor);
     }
 }

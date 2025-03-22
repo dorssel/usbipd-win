@@ -3,17 +3,24 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 using System.Net;
+#if NETSTANDARD
 using System.Runtime.Serialization;
-#if !NETSTANDARD
+#else
 using System.Text.Json.Serialization;
 #endif
 
 namespace Usbipd.Automation;
 
+#if NETSTANDARD
 [DataContract]
-public sealed partial class Device
+public
+#endif
+sealed class Device
 {
-    public Device() { }
+#if !NETSTANDARD
+    public
+#endif
+    Device() { }
 
 #if !NETSTANDARD
     [JsonConstructor]
@@ -24,8 +31,9 @@ public sealed partial class Device
     }
 #endif
 
+#if NETSTANDARD
     [DataMember]
-#if !NETSTANDARD
+#else
     [JsonPropertyOrder(4)]
 #endif
     public string InstanceId { get; init; } = string.Empty;
@@ -48,14 +56,16 @@ public sealed partial class Device
         }
     }
 
+#if NETSTANDARD
     [DataMember]
-#if !NETSTANDARD
+#else
     [JsonPropertyOrder(3)]
 #endif
     public string Description { get; init; } = string.Empty;
 
+#if NETSTANDARD
     [DataMember]
-#if !NETSTANDARD
+#else
     [JsonPropertyOrder(5)]
 #endif
     public bool IsForced { get; init; }
@@ -63,7 +73,9 @@ public sealed partial class Device
     /// <summary>
     /// Serialization for <see cref="BusId"/>.
     /// </summary>
+#if NETSTANDARD
     [DataMember(Name = nameof(BusId))]
+#endif
     string? _BusId;
 
 #if !NETSTANDARD
@@ -75,14 +87,16 @@ public sealed partial class Device
         init => _BusId = value?.ToString();
     }
 
+#if NETSTANDARD
     [DataMember]
-#if !NETSTANDARD
+#else
     [JsonPropertyOrder(6)]
 #endif
     public Guid? PersistedGuid { get; init; }
 
+#if NETSTANDARD
     [DataMember]
-#if !NETSTANDARD
+#else
     [JsonPropertyOrder(7)]
 #endif
     public string? StubInstanceId { get; init; }
@@ -90,7 +104,9 @@ public sealed partial class Device
     /// <summary>
     /// Serialization for <see cref="ClientIPAddress"/>.
     /// </summary>
+#if NETSTANDARD
     [DataMember(Name = nameof(ClientIPAddress))]
+#endif
     string? _ClientIPAddress;
 
 #if !NETSTANDARD

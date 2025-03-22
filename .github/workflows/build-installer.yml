@@ -25,6 +25,7 @@ jobs:
 
     env:
       NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
+      DOTNET_CLI_WORKLOAD_UPDATE_NOTIFY_DISABLE: true
 
     steps:
       - name: Checkout
@@ -51,7 +52,7 @@ jobs:
       - name: Build
         run: |
           dotnet build --configuration Release --no-restore --property:Platform=x64
-          dotnet build --configuration Release --no-restore --property:Platform=arm64 --no-dependencies Usbipd
+          dotnet build --configuration Release --no-restore --property:Platform=arm64 Usbipd
 
       - name: Test
         run: |

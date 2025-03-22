@@ -15,13 +15,17 @@ SPDX-License-Identifier: GPL-3.0-only
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 
     <IsPublishable>true</IsPublishable>
-    <PublishProfile>Properties\PublishProfiles\InputForInstaller_$(RuntimeIdentifier).pubxml</PublishProfile>
+    <PublishProfile Condition=" 'BuildingInsideVisualStudio' != 'true' ">Properties\PublishProfiles\InputForInstaller_$(RuntimeIdentifier).pubxml</PublishProfile>
     <PublishAot>true</PublishAot>
     <CopyOutputSymbolsToPublishDirectory>false</CopyOutputSymbolsToPublishDirectory>
     <OptimizationPreference>Speed</OptimizationPreference>
 
     <AssemblyName>usbipd</AssemblyName>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\Usbipd.Automation\*.cs" LinkBase="Usbipd.Automation" />
+  </ItemGroup>
 
   <ItemGroup>
     <Content Remove="packages.lock.json" />
@@ -33,17 +37,13 @@ SPDX-License-Identifier: GPL-3.0-only
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="..\Usbipd.Automation\usb.ids" Link="PowerShell\usb.ids" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\Usbipd.Automation\usb.ids" Link="usb.ids" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" />
     <PackageReference Include="Microsoft.Windows.CsWin32" PrivateAssets="all" />
     <PackageReference Include="System.CommandLine" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\Usbipd.Automation\Usbipd.Automation.csproj" />
   </ItemGroup>
 
   <ItemGroup>

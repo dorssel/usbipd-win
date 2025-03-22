@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 
 namespace Usbipd.Automation;
 
-public class JsonConverterIPAddress : JsonConverter<IPAddress>
+class JsonConverterIPAddress : JsonConverter<IPAddress>
 {
     public override IPAddress Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {

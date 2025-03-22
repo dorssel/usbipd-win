@@ -10,9 +10,15 @@ SPDX-License-Identifier: GPL-3.0-only
     <TargetFramework>netstandard2.0</TargetFramework>
     <Platforms>AnyCPU</Platforms>
 
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+
     <IsPublishable>true</IsPublishable>
     <PublishProfile>Properties\PublishProfiles\InputForInstaller.pubxml</PublishProfile>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\Usbipd.Automation\*.cs" LinkBase="Usbipd.Automation" />
+  </ItemGroup>
 
   <ItemGroup>
     <Content Include="..\Usbipd.Automation\usb.ids" Link="usb.ids" CopyToOutputDirectory="PreserveNewest" />
@@ -20,10 +26,6 @@ SPDX-License-Identifier: GPL-3.0-only
 
   <ItemGroup>
     <PackageReference Include="PowerShellStandard.Library" PrivateAssets="all" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\Usbipd.Automation\Usbipd.Automation.csproj" />
   </ItemGroup>
 
 </Project>

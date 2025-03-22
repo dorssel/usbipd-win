@@ -48,6 +48,7 @@ jobs:
 
     env:
       NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
+      DOTNET_CLI_WORKLOAD_UPDATE_NOTIFY_DISABLE: true
 
     steps:
       - name: Checkout repository

@@ -555,12 +555,8 @@
         "type": "Project",
         "dependencies": {
           "Microsoft.Extensions.Hosting.WindowsServices": "[9.0.3, )",
-          "System.CommandLine": "[2.0.0-beta4.22272.1, )",
-          "Usbipd.Automation": "[1.0.0, )"
+          "System.CommandLine": "[2.0.0-beta4.22272.1, )"
         }
-      },
-      "usbipd.automation": {
-        "type": "Project"
       },
       "Microsoft.Extensions.Hosting.WindowsServices": {
         "type": "CentralTransitive",

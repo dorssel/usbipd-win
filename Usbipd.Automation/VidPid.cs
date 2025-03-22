@@ -10,16 +10,19 @@ using System.Text.RegularExpressions;
 
 namespace Usbipd.Automation;
 
-public readonly record struct VidPid
+#if NETSTANDARD
+public
+#endif
+readonly record struct VidPid
     : IComparable<VidPid>
 {
 #if !NETSTANDARD
     [JsonConstructor]
+#endif
     public VidPid(ushort vid, ushort pid)
     {
         (Vid, Pid) = (vid, pid);
     }
-#endif
 
     public ushort Vid { get; init; }
     public ushort Pid { get; init; }
@@ -56,7 +59,7 @@ public readonly record struct VidPid
         return TryParse(input, out var pidVid) ? pidVid : throw new FormatException();
     }
 
-    public static VidPid FromHardwareOrInstanceId(string input)
+    internal static VidPid FromHardwareOrInstanceId(string input)
     {
         // Examples:
         //   VID_80EE&PID_CAFE
@@ -73,7 +76,14 @@ public readonly record struct VidPid
             : throw new FormatException();
     }
 
-    public (string? Vendor, string? Product) Descriptions => this.GetVendorProduct(true);
+    public string? Vendor => Descriptions.Vendor;
+
+    public string? Product => Descriptions.Product;
+
+#if !NETSTANDARD
+    public
+#endif
+    (string? Vendor, string? Product) Descriptions => this.GetVendorProduct(true);
 
     #region IComparable<VidPid>
 

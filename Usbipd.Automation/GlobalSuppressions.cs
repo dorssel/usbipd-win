@@ -9,5 +9,9 @@
 
 using System.Diagnostics.CodeAnalysis;
 
-[assembly: SuppressMessage("Performance", "SYSLIB1045:Convert to 'GeneratedRegexAttribute'.", Justification = "Not available in netstandard2.0.")]
-[assembly: SuppressMessage("Style", "IDE0057:Use range operator", Justification = "Not available in netstandard2.0.")]
+#if !NETSTANDARD
+[assembly: SuppressMessage("Performance", "SYSLIB1045:Convert to 'GeneratedRegexAttribute'.", Justification = "Not available in netstandard2.0.",
+    Scope = "NamespaceAndDescendants", Target = "~N:Usbipd.Automation")]
+[assembly: SuppressMessage("Style", "IDE0057:Use range operator", Justification = "Not available in netstandard2.0.",
+    Scope = "NamespaceAndDescendants", Target = "~N:Usbipd.Automation")]
+#endif
