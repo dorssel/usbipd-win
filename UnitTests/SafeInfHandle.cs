@@ -9,7 +9,7 @@ namespace UnitTests;
 
 sealed unsafe class SafeInfHandle : SafeHandleZeroOrMinusOneIsInvalid // DevSkim: ignore DS172412
 {
-    public SafeInfHandle(void *inf)
+    public SafeInfHandle(void* inf)
         : base(true)
     {
         handle = unchecked((nint)inf);

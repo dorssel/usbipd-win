@@ -33,7 +33,7 @@ static class UsbIds
     {
 #if NETSTANDARD
         // For PowerShell automation, the usb.ids file is in the assembly directory itself.
-        var dataDirectory  = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+        var dataDirectory = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
 #else
         // For usbipd, the usb.ids file is in the application base directory.
         var dataDirectory = AppContext.BaseDirectory;
