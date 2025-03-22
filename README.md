@@ -17,7 +17,8 @@ Windows software for sharing locally connected USB devices to other machines, in
 
 ## How to install
 
-This software requires Microsoft Windows 10 (x64 only) / Microsoft Windows Server 2019, version 1809 or newer;
+This software requires
+Microsoft Windows 10 (x64 or ARM64) / Microsoft Windows Server 2019, version 1809 or newer;
 it does not depend on any other software.
 
 Run the installer (.msi) from the [latest release](https://github.com/dorssel/usbipd-win/releases/latest)
@@ -79,14 +80,6 @@ sudo usbip attach --remote=<HOST> --busid=<BUSID>
 
 #### WSL 2
 
-> [!TIP]
-> In case you have used `usbipd` with WSL 2 before, the following has changed since version 4.0.0:
->
-> - You have to share the device using `usbipd bind` first.
-> - You no longer have to install any client-side tooling.
-> - You no longer have to specify a specific distribution.
-> - The syntax for the command to attach has changed slightly.
-
 You can attach the device from within Windows with the following command, which does not require administrator privileges:
 
 ```powershell
@@ -99,10 +92,8 @@ usbipd attach --wsl --busid=<BUSID>
 
 ### GUI
 
-For those who prefer a GUI over a CLI, the following is available:
-
-- [Andrew Leech](https://github.com/andrewleech) has created a [Windows Desktop Application](https://gitlab.com/alelec/wsl-usb-gui).
-- [Dushan Balisson](https://github.com/dushanabe) has created a [Visual Studio Code Extension](https://marketplace.visualstudio.com/items?itemName=thecreativedodo.usbip-connect).
+See the [wiki](https://github.com/dorssel/usbipd-win/wiki/Graphical-User-Interfaces)
+for a list of GUI and IDE integration tools in case you prefer that over a CLI.
 
 ## How to remove
 
