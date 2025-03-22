@@ -503,7 +503,7 @@ static class Program
                 )
                 {
                     ArgumentHelpName = "BUSID",
-                    Description = "Share device having <BUSID>",
+                    Description = "Add a policy for device having <BUSID>",
                 }.AddCompletions(CompatibleBusIdCompletions);
                 //
                 //  policy add [--hardware-id <VID>:<PID>]
@@ -515,7 +515,7 @@ static class Program
                 )
                 {
                     ArgumentHelpName = "VID:PID",
-                    Description = "Attach device having <VID>:<PID>",
+                    Description = "Add a policy for device having <VID>:<PID>",
                 }.AddCompletions(completionContext => CompletionGuard(completionContext, () =>
                     UsbDevice.GetAll().GroupBy(d => d.HardwareId).Select(g => g.Key.ToString())));
                 //
