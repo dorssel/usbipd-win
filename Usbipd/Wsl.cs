@@ -584,11 +584,14 @@ static partial class Wsl
         {
             console.ReportInfo("Starting endless attach loop; press Ctrl+C to quit.");
 
-            _ = await RunWslAsync((distribution, WslMountPoint), FilterUsbip, false, cancellationToken, "./auto-attach.sh", hostAddress.ToString(),
+            var wslResult = await RunWslAsync((distribution, WslMountPoint), FilterUsbip, false, cancellationToken, "/bin/sh", "./auto-attach.sh", hostAddress.ToString(),
                 busId.ToString());
-            // This process always ends in failure, as it is supposed to run an endless loop.
-            // This may be intended by the user (Ctrl+C, WSL shutdown), others may be real errors.
-            // There is no way to tell the difference...
+            
+            if (wslResult.ExitCode != 0)
+            {
+                console.ReportError(wslResult.stdout);
+                return ExitCode.Failure;
+            }
         }
 
         return ExitCode.Success;
