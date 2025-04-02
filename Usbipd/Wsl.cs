@@ -584,11 +584,16 @@ static partial class Wsl
         {
             console.ReportInfo("Starting endless attach loop; press Ctrl+C to quit.");
 
-            _ = await RunWslAsync((distribution, WslMountPoint), FilterUsbip, false, cancellationToken, "./auto-attach.sh", hostAddress.ToString(),
+            var wslResult = await RunWslAsync((distribution, WslMountPoint), FilterUsbip, false, cancellationToken, "./auto-attach.sh", hostAddress.ToString(),
                 busId.ToString());
             // This process always ends in failure, as it is supposed to run an endless loop.
             // This may be intended by the user (Ctrl+C, WSL shutdown), others may be real errors.
-            // There is no way to tell the difference...
+            if (wslResult.ExitCode is 125 or 126 or 127)
+            {
+                // These errors are from "/usr/bin/env" when it is unable to find/execute bash; see "man env".
+                console.ReportError("Auto-attach requires a distribution with a working 'bash' shell; use '--wsl <DISTRIBUTION>'.");
+                return ExitCode.Failure;
+            }
         }
 
         return ExitCode.Success;
