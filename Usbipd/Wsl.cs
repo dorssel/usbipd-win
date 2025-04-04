@@ -7,7 +7,6 @@
 using System.CommandLine;
 using System.Diagnostics;
 using System.Globalization;
-using System.IO.Compression;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -328,65 +327,26 @@ static partial class Wsl
 
         // Check: WSL kernel must be USBIP capable.
         {
-            var wslResult = await RunWslAsync((distribution, "/"), null, true, cancellationToken, "/bin/cat", "/proc/config.gz");
+            var wslResult = await RunWslAsync((distribution, "/"), null, true, cancellationToken, "/bin/ls", "--directory", "/sys/bus/platform/drivers/vhci_hcd");
             if (wslResult.ExitCode != 0)
             {
-                console.ReportError($"Unable to get WSL kernel configuration.");
-                return ExitCode.Failure;
-            }
-            using var gunzipStream = new GZipStream(wslResult.BinaryOutput, CompressionMode.Decompress);
-            using var reader = new StreamReader(gunzipStream, Encoding.UTF8);
-            var config = await reader.ReadToEndAsync(cancellationToken);
-            if (config.Contains("CONFIG_USBIP_VHCI_HCD=y"))
-            {
-                // USBIP client built-in, we're done
-            }
-            else if (config.Contains("CONFIG_USBIP_VHCI_HCD=m"))
-            {
-                // USBIP client built as a module
-
-                // Expected output:
-                //
-                //    ...
-                //    vhci_hcd 61440 0 - Live 0x0000000000000000
-                //    ...
-                wslResult = await RunWslAsync((distribution, "/"), null, false, cancellationToken, "/bin/cat", "/proc/modules");
+                // No USBIP driver (yet), check for loadable module support.
+                wslResult = await RunWslAsync((distribution, "/"), null, true, cancellationToken, "/bin/ls", "/proc/modules");
                 if (wslResult.ExitCode != 0)
                 {
-                    console.ReportError($"Unable to get WSL kernel modules.");
+                    // No USBIP driver, and no loadable module support.
+                    // Must be an old WSL version, or a misconfigured custom kernel.
+                    console.ReportError($"WSL kernel is not USBIP capable; update with 'wsl --update'.");
                     return ExitCode.Failure;
                 }
-                if (!wslResult.StandardOutput.Contains("vhci_hcd"))
+                console.ReportInfo($"Loading vhci_hcd module.");
+                wslResult = await RunWslAsync((distribution, "/"), null, false, cancellationToken, "/sbin/modprobe", "vhci_hcd");
+                if (wslResult.ExitCode != 0)
                 {
-                    console.ReportInfo($"Loading vhci_hcd module.");
-                    wslResult = await RunWslAsync((distribution, "/"), null, false, cancellationToken, "/sbin/modprobe", "vhci_hcd");
-                    if (wslResult.ExitCode != 0)
-                    {
-                        console.ReportError($"Loading vhci_hcd failed.");
-                        return ExitCode.Failure;
-                    }
-                    // Expected output:
-                    //
-                    //    ...
-                    //    vhci_hcd 61440 0 - Live 0x0000000000000000
-                    //    ...
-                    wslResult = await RunWslAsync((distribution, "/"), null, false, cancellationToken, "/bin/cat", "/proc/modules");
-                    if (wslResult.ExitCode != 0)
-                    {
-                        console.ReportError($"Unable to get WSL kernel modules.");
-                        return ExitCode.Failure;
-                    }
-                    if (!wslResult.StandardOutput.Contains("vhci_hcd"))
-                    {
-                        console.ReportError($"Module vhci_hcd not loaded.");
-                        return ExitCode.Failure;
-                    }
+                    // Must be an old WSL version, or a misconfigured custom kernel.
+                    console.ReportError($"Loading vhci_hcd failed; update with 'wsl --update'.");
+                    return ExitCode.Failure;
                 }
-            }
-            else
-            {
-                console.ReportError($"WSL kernel is not USBIP capable; update with 'wsl --update'.");
-                return ExitCode.Failure;
             }
         }
 
