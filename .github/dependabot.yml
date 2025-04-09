@@ -16,6 +16,11 @@ updates:
     directory: '/'
     schedule:
       interval: 'daily'
+  - package-ecosystem: 'dotnet-sdk'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+      day: 'wednesday'
   - package-ecosystem: 'nuget'
     directory: '/'
     schedule:
