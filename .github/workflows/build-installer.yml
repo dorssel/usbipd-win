@@ -38,7 +38,7 @@ jobs:
         with:
           path: |
             ${{ github.workspace }}/.nuget/packages
-          key: nuget-cache-build-${{ hashFiles('global.json', '.config/dotnet-tools.json', '**/lockfiles') }}
+          key: nuget-cache-build-${{ hashFiles('global.json', '.config/dotnet-tools.json', '**/packages.lock.json') }}
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
