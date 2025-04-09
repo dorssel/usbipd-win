@@ -6,6 +6,6 @@
   },
   "msbuild-sdks": {
     "MSTest.Sdk": "3.8.3",
-    "WixToolset.Sdk": "5.0.2"
+    "WixToolset.Sdk": "6.0.0"
   }
 }
