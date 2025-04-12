@@ -13,7 +13,7 @@ sealed class Driver_Tests
 {
     public TestContext TestContext { get; set; }
 
-    static public string[] SupportedPlatforms => ["x64", "arm64"];
+    public static string[] SupportedPlatforms => ["x64", "arm64"];
 
     static SafeInfHandle GetInf(string platform)
     {
