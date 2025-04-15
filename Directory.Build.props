@@ -31,6 +31,9 @@ SPDX-License-Identifier: GPL-3.0-only
     <AnalysisLevel>latest-all</AnalysisLevel>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <CheckForOverflowUnderflow Condition="'$(Configuration)' == 'Debug'">true</CheckForOverflowUnderflow>
+    <NuGetAudit>true</NuGetAudit>
+    <NuGetAuditLevel>low</NuGetAuditLevel>
+    <NuGetAuditMode>all</NuGetAuditMode>
 
     <!-- Common defaults -->
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
