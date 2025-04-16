@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/sh
 
 # SPDX-FileCopyrightText: 2022 Frans van Dorsselaer
 #
@@ -8,6 +8,15 @@
 #    auto-attach.sh <HOST-IP-ADDRESS> <BUSID>
 
 set -e
+
+if [ -z "$BASH" ]; then
+  # Bash is required later in this script, check and report if it's not available
+  which bash > /dev/null || { echo "--auto-attach is not available without bash shell"; exit 1; }
+
+  # Relaunch this script with bash as a separate background process.
+  bash ${0} ${@} & disown
+  exit 0
+fi
 
 HOST=$1
 BUSID=$2
