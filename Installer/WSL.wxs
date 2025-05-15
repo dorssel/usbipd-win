@@ -9,7 +9,7 @@ SPDX-License-Identifier: GPL-3.0-only
         <ComponentGroup Id="WSL" Directory="APPLICATIONFOLDER" Subdirectory="WSL" Source="$(var.PublishDir)\WSL">
             <File Id="WSL_README.md" Name="README.md" />
             <File Id="usbip" Name="usbip" />
-            <File Id="auto_attach.sh" Name="auto-attach.sh" />
+            <File Id="usbip_auto_attach" Name="usbip-auto-attach" />
         </ComponentGroup>
 
         <!--
