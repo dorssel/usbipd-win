@@ -529,7 +529,7 @@ static partial class Wsl
             }
         }
 
-        // Finally, call 'usbip attach', or run the auto-attach.sh script.
+        // Finally, either call 'usbip attach' or 'usbip-auto-attach'.
         if (!autoAttach)
         {
             var wslResult = await RunWslAsync((distribution, WslMountPoint), FilterUsbip, false, cancellationToken, "./usbip", "attach",
@@ -544,8 +544,8 @@ static partial class Wsl
         {
             console.ReportInfo("Starting endless attach loop; press Ctrl+C to quit.");
 
-            _ = await RunWslAsync((distribution, WslMountPoint), FilterUsbip, false, cancellationToken, "./auto-attach.sh", hostAddress.ToString(),
-                busId.ToString());
+            _ = await RunWslAsync((distribution, WslMountPoint), FilterUsbip, false, cancellationToken, "./usbip-auto-attach", hostAddress.ToString(),
+                "--busid", busId.ToString(), "--usbip-path", WslMountPoint + "/usbip");
             // This process always ends in failure, as it is supposed to run an endless loop.
             // This may be intended by the user (Ctrl+C, WSL shutdown), others may be real errors.
             // There is no way to tell the difference...
