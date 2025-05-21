@@ -7,7 +7,10 @@ SPDX-License-Identifier: GPL-3.0-only
 <Project Sdk="MSTest.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>$(MainTargetFramework)-windows$(MinimumWindowsVersion)</TargetFramework>
+    <TargetFramework>$(MainTargetFramework)</TargetFramework>
+    <TargetPlatformIdentifier>windows</TargetPlatformIdentifier>
+    <TargetPlatformVersion>$(MinimumWindowsVersion)</TargetPlatformVersion>
+    <TargetPlatformMinVersion>$(MinimumWindowsVersion)</TargetPlatformMinVersion>
     <CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
     <IsAotCompatible>false</IsAotCompatible>
   </PropertyGroup>
