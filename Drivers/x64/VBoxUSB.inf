@@ -39,7 +39,7 @@ Signature="$Windows NT$"
 Class=USB
 ClassGUID={36FC9E60-C465-11CF-8056-444553540000}
 provider=%ORACLE%
-DriverVer = 01/21/2025,7.1.6.17084 ; r167084
+DriverVer = 04/11/2025,7.1.8.18469 ; r168469
 CatalogFile=VBoxUSB.cat
 ;PnpLockdown=1
 
