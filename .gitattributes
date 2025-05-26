@@ -16,7 +16,7 @@
 
 *.yml   text
 
-*.sln   text
+*.slnx  text
 *.snk   binary
 
 *.csproj   text
