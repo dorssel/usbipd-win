@@ -87,6 +87,7 @@ usbipd attach --wsl --busid=<BUSID>
 ```
 
 > [!TIP]
+> Update WSL 2 with `wsl --update` to get the latest kernel, which supports most USB devices.
 > See the [wiki](https://github.com/dorssel/usbipd-win/wiki/WSL-support) on how to add drivers
 > for USB devices that are not supported by the default WSL 2 kernel.
 
