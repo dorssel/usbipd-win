@@ -1,4 +1,4 @@
-; $Id: VBoxUSB.inf 166130 2024-11-26 12:34:25Z andy $
+; $Id: VBoxUSB.inf 168910 2025-05-16 15:58:06Z klaus $
 ;; @file
 ; VBox host drivers - USB drivers - Win32 USB device
 ;
@@ -39,9 +39,9 @@ Signature="$Windows NT$"
 Class=USB
 ClassGUID={36FC9E60-C465-11CF-8056-444553540000}
 provider=%ORACLE%
-DriverVer = 04/11/2025,7.1.8.18469 ; r168469
+DriverVer = 06/03/2025,7.1.10.19112 ; r169112
 CatalogFile=VBoxUSB.cat
-;PnpLockdown=1
+PnpLockdown=1
 
 [SourceDisksNames]
 1=%VBoxUSB_DiskDesc%,,,
@@ -50,7 +50,7 @@ CatalogFile=VBoxUSB.cat
 VBoxUSB.sys = 1
 
 [DestinationDirs]
-DefaultDestDir = 10,System32\Drivers
+DefaultDestDir = 12
 
 [Manufacturer]
 %ORACLE%=VBoxUSB,NTAMD64
