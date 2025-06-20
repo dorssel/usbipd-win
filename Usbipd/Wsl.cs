@@ -1,6 +1,7 @@
 ﻿// SPDX-FileCopyrightText: Microsoft Corporation
 // SPDX-FileCopyrightText: 2021 Frans van Dorsselaer
 // SPDX-FileCopyrightText: 2022 Ye Jun Huang
+// SPDX-FileContributor: Fred Frey
 //
 // SPDX-License-Identifier: GPL-3.0-only
 
