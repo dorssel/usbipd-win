@@ -101,12 +101,18 @@ static partial class Wsl
             startInfo.ArgumentList.Add("root");
             startInfo.ArgumentList.Add("--cd");
             startInfo.ArgumentList.Add(linux.Value.directory);
-            startInfo.ArgumentList.Add("--shell-type");
-            startInfo.ArgumentList.Add("login");
+            startInfo.ArgumentList.Add("--exec");
+            startInfo.ArgumentList.Add("/usr/bin/env");
+            startInfo.ArgumentList.Add("sh");
+            startInfo.ArgumentList.Add("-c");
+            startInfo.ArgumentList.Add($"{string.Join(" ", arguments)}");
         }
-        foreach (var argument in arguments)
+        else
         {
-            startInfo.ArgumentList.Add(argument);
+            foreach (var argument in arguments)
+            {
+                startInfo.ArgumentList.Add(argument);
+            }
         }
 
         using var process = Process.Start(startInfo)
@@ -359,7 +365,7 @@ static partial class Wsl
         // NOTE: We don't know the shell type (for example, docker-desktop does not even have bash),
         //       so be as portable as possible: single line, use 'test', quote all paths, etc.
         {
-            var wslResult = await RunWslAsync((distribution, "/"), null, false, cancellationToken, "/bin/sh", "-c", $$"""
+            var wslResult = await RunWslAsync((distribution, "/"), null, false, cancellationToken, $$"""
                 if ! test -d "{{WslMountPoint}}"; then
                     mkdir -m 0000 "{{WslMountPoint}}";
                 fi;
