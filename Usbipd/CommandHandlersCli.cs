@@ -3,7 +3,6 @@
 //
 // SPDX-License-Identifier: GPL-3.0-only
 
-using System.CommandLine;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Net;
@@ -72,8 +71,9 @@ sealed partial class CommandHandlers : ICommandHandlers
 
     Task<ExitCode> ICommandHandlers.License(IConsole console, CancellationToken cancellationToken)
     {
+#pragma warning disable CA1849 // Call async methods when in an async method
         // 70 leads (approximately) to the GPL default.
-        var width = console.IsOutputRedirected ? 70 : Console.WindowWidth;
+        var width = console.IsOutputRedirected ? 70 : console.WindowWidth;
         foreach (var line in Wrap($"""
             {Program.Product} {GitVersionInformation.MajorMinorPatch}
             {Program.Copyright}
@@ -90,12 +90,13 @@ sealed partial class CommandHandlers : ICommandHandlers
             You should have received a copy of the GNU General Public License \
             along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-            """.Replace("\r\n", "\n").Replace("\\\n", "")
+            """.Unwrap()
             , width))
         {
-            console.WriteLine(line);
+            console.Out.WriteLine(line);
         }
         return Task.FromResult(ExitCode.Success);
+#pragma warning restore CA1849 // Call async methods when in an async method
     }
 
     static string GetDescription(UsbDevice device, bool usbIds)
@@ -115,9 +116,10 @@ sealed partial class CommandHandlers : ICommandHandlers
 
     Task<ExitCode> ICommandHandlers.List(bool usbIds, IConsole console, CancellationToken cancellationToken)
     {
+#pragma warning disable CA1849 // Call async methods when in an async method
         var allDevices = UsbDevice.GetAll().ToList();
-        console.WriteLine("Connected:");
-        console.WriteLine($"{"BUSID",-5}  {"VID:PID",-9}  {"DEVICE",-60}  STATE");
+        console.Out.WriteLine("Connected:");
+        console.Out.WriteLine($"{"BUSID",-5}  {"VID:PID",-9}  {"DEVICE",-60}  STATE");
         foreach (var device in allDevices.Where(d => d.BusId.HasValue).OrderBy(d => d.BusId.GetValueOrDefault()))
         {
             Debug.Assert(device.BusId.HasValue);
@@ -125,27 +127,28 @@ sealed partial class CommandHandlers : ICommandHandlers
                 : device.Guid is not null ? device.IsForced ? "Shared (forced)" : "Shared"
                 : device.BusId.Value.IsIncompatibleHub ? "Incompatible hub"
                 : Policy.IsAutoBindAllowed(device) ? "Allowed" : "Not shared";
-            console.Write($"{(device.BusId.Value.IsIncompatibleHub ? string.Empty : device.BusId.Value),-5}  ");
-            console.Write($"{device.HardwareId,-9}  ");
+            console.Out.Write($"{(device.BusId.Value.IsIncompatibleHub ? string.Empty : device.BusId.Value),-5}  ");
+            console.Out.Write($"{device.HardwareId,-9}  ");
             console.WriteTruncated(GetDescription(device, usbIds), 60, true);
-            console.WriteLine($"  {state}");
+            console.Out.WriteLine($"  {state}");
         }
-        console.WriteLine(string.Empty);
+        console.Out.WriteLine();
 
-        console.WriteLine("Persisted:");
-        console.WriteLine($"{"GUID",-36}  DEVICE");
+        console.Out.WriteLine("Persisted:");
+        console.Out.WriteLine($"{"GUID",-36}  DEVICE");
         foreach (var device in allDevices.Where(d => !d.BusId.HasValue && d.Guid.HasValue).OrderBy(d => d.Guid.GetValueOrDefault()))
         {
             Debug.Assert(device.Guid.HasValue);
-            console.Write($"{device.Guid.Value,-36:D}  ");
+            console.Out.Write($"{device.Guid.Value,-36:D}  ");
             console.WriteTruncated(GetDescription(device, usbIds), 60, false);
-            console.WriteLine(string.Empty);
+            console.Out.WriteLine();
         }
-        console.WriteLine(string.Empty);
+        console.Out.WriteLine();
 
         _ = console.CheckAndReportServerRunning(false);
         console.ReportIfForceNeeded();
         return Task.FromResult(ExitCode.Success);
+#pragma warning restore CA1849 // Call async methods when in an async method
     }
 
     static ExitCode Bind(BusId busId, bool force, IConsole console)
@@ -426,7 +429,8 @@ sealed partial class CommandHandlers : ICommandHandlers
 
     Task<ExitCode> ICommandHandlers.State(IConsole console, CancellationToken cancellationToken)
     {
-        Console.SetError(TextWriter.Null);
+#pragma warning disable CA1849 // Call async methods when in an async method
+        console.SetError(TextWriter.Null);
 
         var devices = new List<Device>();
         foreach (var device in UsbDevice.GetAll().OrderBy(d => d.InstanceId))
@@ -455,8 +459,9 @@ sealed partial class CommandHandlers : ICommandHandlers
         });
         var json = JsonSerializer.Serialize(state, context.State);
 
-        Console.Write(json);
+        console.Out.Write(json);
         return Task.FromResult(ExitCode.Success);
+#pragma warning restore CA1849 // Call async methods when in an async method
     }
 
     Task<ExitCode> ICommandHandlers.PolicyAdd(PolicyRule rule, IConsole console, CancellationToken cancellationToken)
@@ -479,28 +484,30 @@ sealed partial class CommandHandlers : ICommandHandlers
 
     Task<ExitCode> ICommandHandlers.PolicyList(IConsole console, CancellationToken cancellationToken)
     {
+#pragma warning disable CA1849 // Call async methods when in an async method
         var policyRules = RegistryUtilities.GetPolicyRules();
-        console.WriteLine("Policy rules:");
-        console.WriteLine($"{"GUID",-36}  {"EFFECT",-6}  {"OPERATION",-9}  {"BUSID",-5}  {"VID:PID",-9}");
+        console.Out.WriteLine("Policy rules:");
+        console.Out.WriteLine($"{"GUID",-36}  {"EFFECT",-6}  {"OPERATION",-9}  {"BUSID",-5}  {"VID:PID",-9}");
         foreach (var rule in policyRules)
         {
-            console.Write($"{rule.Key,-36}  ");
-            console.Write($"{rule.Value.Effect,-6}  ");
-            console.Write($"{rule.Value.Operation,-9}  ");
+            console.Out.Write($"{rule.Key,-36}  ");
+            console.Out.Write($"{rule.Value.Effect,-6}  ");
+            console.Out.Write($"{rule.Value.Operation,-9}  ");
             switch (rule.Value.Operation)
             {
                 case PolicyRuleOperation.AutoBind:
                     var autoBind = (PolicyRuleAutoBind)rule.Value;
-                    console.Write($"{(autoBind.BusId.HasValue ? autoBind.BusId.Value : string.Empty),-5}  ");
-                    console.Write($"{(autoBind.HardwareId.HasValue ? autoBind.HardwareId.Value : string.Empty),-9}");
+                    console.Out.Write($"{(autoBind.BusId.HasValue ? autoBind.BusId.Value : string.Empty),-5}  ");
+                    console.Out.Write($"{(autoBind.HardwareId.HasValue ? autoBind.HardwareId.Value : string.Empty),-9}");
                     break;
                 default:
                     throw new UnexpectedResultException();
             }
-            console.WriteLine(string.Empty);
+            console.Out.WriteLine();
         }
-        console.WriteLine(string.Empty);
+        console.Out.WriteLine();
         return Task.FromResult(ExitCode.Success);
+#pragma warning restore CA1849 // Call async methods when in an async method
     }
 
     Task<ExitCode> ICommandHandlers.PolicyRemove(Guid guid, IConsole console, CancellationToken cancellationToken)

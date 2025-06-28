@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: GPL-3.0-only
 
-using System.CommandLine;
 using System.Net;
 using Usbipd.Automation;
 

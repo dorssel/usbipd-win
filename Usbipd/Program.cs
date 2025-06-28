@@ -4,9 +4,9 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 using System.CommandLine;
-using System.CommandLine.Builder;
 using System.CommandLine.Completions;
 using System.CommandLine.Help;
+using System.CommandLine.Invocation;
 using System.CommandLine.Parsing;
 using System.Diagnostics;
 using System.Net;
@@ -14,7 +14,6 @@ using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Reflection;
 using Usbipd.Automation;
-using static Usbipd.ConsoleTools;
 
 namespace Usbipd;
 
@@ -24,12 +23,19 @@ static class Program
     public static readonly string Copyright = Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyCopyrightAttribute>()!.Copyright;
     public static readonly string ApplicationName = Path.GetFileName(Process.GetCurrentProcess().ProcessName);
 
+    static void AddParseError<T>(ArgumentResult argumentResult)
+    {
+        var value = argumentResult.Tokens[0].Value;
+        var option = (argumentResult.Parent as OptionResult)?.Option.Name ?? string.Empty;
+        var type = nameof(T);
+        argumentResult.AddError($"Cannot parse argument '{value}' for option '{option}' as expected type '{type}'.");
+    }
+
     static BusId ParseCompatibleBusId(ArgumentResult argumentResult)
     {
         if (!BusId.TryParse(argumentResult.Tokens[0].Value, out var busId) || busId.IsIncompatibleHub)
         {
-            argumentResult.ErrorMessage = LocalizationResources.Instance.ArgumentConversionCannotParseForOption(argumentResult.Tokens[0].Value,
-                (argumentResult.Parent as OptionResult)?.Token?.Value ?? string.Empty, typeof(BusId));
+            AddParseError<BusId>(argumentResult);
         }
         return busId;
     }
@@ -38,8 +44,7 @@ static class Program
     {
         if (!Guid.TryParse(argumentResult.Tokens[0].Value, out var guid))
         {
-            argumentResult.ErrorMessage = LocalizationResources.Instance.ArgumentConversionCannotParseForOption(argumentResult.Tokens[0].Value,
-                (argumentResult.Parent as OptionResult)?.Token?.Value ?? string.Empty, typeof(Guid));
+            AddParseError<Guid>(argumentResult);
         }
         return guid;
     }
@@ -48,8 +53,7 @@ static class Program
     {
         if (!VidPid.TryParse(argumentResult.Tokens[0].Value, out var vidPid))
         {
-            argumentResult.ErrorMessage = LocalizationResources.Instance.ArgumentConversionCannotParseForOption(argumentResult.Tokens[0].Value,
-                (argumentResult.Parent as OptionResult)?.Token?.Value ?? string.Empty, typeof(VidPid));
+            AddParseError<VidPid>(argumentResult);
         }
         return vidPid;
     }
@@ -58,8 +62,7 @@ static class Program
     {
         if (!IPAddress.TryParse(argumentResult.Tokens[0].Value, out var ipAddress))
         {
-            argumentResult.ErrorMessage = LocalizationResources.Instance.ArgumentConversionCannotParseForOption(argumentResult.Tokens[0].Value,
-                (argumentResult.Parent as OptionResult)?.Token?.Value ?? string.Empty, typeof(IPAddress));
+            AddParseError<IPAddress>(argumentResult);
         }
         return ipAddress ?? IPAddress.None;
     }
@@ -68,7 +71,7 @@ static class Program
     {
         Debug.Assert(options.Length >= 2);
 
-        var names = options.Select(o => $"'--{o.Name}'").ToArray();
+        var names = options.Select(o => $"'{o.Name}'").ToArray();
         var list = names.Length == 2
             ? $"{names[0]} or {names[1]}"
             : string.Join(", ", names[0..(names.Length - 1)]) + ", or " + names[^1];
@@ -79,7 +82,7 @@ static class Program
     {
         Debug.Assert(options.Length >= 2);
 
-        var names = options.Select(o => $"'--{o.Name}'").ToArray();
+        var names = options.Select(o => $"'{o.Name}'").ToArray();
         var list = names.Length == 2
             ? $"{names[0]} or {names[1]}"
             : string.Join(", ", names[0..(names.Length - 1)]) + ", or " + names[^1];
@@ -90,22 +93,22 @@ static class Program
     {
         Debug.Assert(options.Length >= 1);
 
-        var names = options.Select(o => $"'--{o.Name}'").ToArray();
+        var names = options.Select(o => $"'{o.Name}'").ToArray();
         var list = names.Length == 1
             ? names[0]
             : names.Length == 2
                 ? $"{names[0]} and {names[1]}"
                 : string.Join(", ", names[0..(names.Length - 1)]) + ", and " + names[^1];
-        return $"Option '--{option.Name}' requires {list}.";
+        return $"Option '{option.Name}' requires {list}.";
     }
 
     static void ValidateOneOf(CommandResult commandResult, params Option[] options)
     {
         Debug.Assert(options.Length >= 2);
 
-        if (options.Count(option => commandResult.FindResultFor(option) is not null) != 1)
+        if (options.Count(option => commandResult.GetResult(option) is not null) != 1)
         {
-            commandResult.ErrorMessage = OneOfRequiredText(options);
+            commandResult.AddError(OneOfRequiredText(options));
         }
     }
 
@@ -113,9 +116,9 @@ static class Program
     {
         Debug.Assert(options.Length >= 2);
 
-        if (!options.Any(option => commandResult.FindResultFor(option) is not null))
+        if (!options.Any(option => commandResult.GetResult(option) is not null))
         {
-            commandResult.ErrorMessage = AtLeastOneOfRequiredText(options);
+            commandResult.AddError(AtLeastOneOfRequiredText(options));
         }
     }
 
@@ -123,9 +126,9 @@ static class Program
     {
         Debug.Assert(options.Length >= 1);
 
-        if (commandResult.FindResultFor(option) is not null && options.Any(option => commandResult.FindResultFor(option) is null))
+        if (commandResult.GetResult(option) is not null && options.Any(option => commandResult.GetResult(option) is null))
         {
-            commandResult.ErrorMessage = OptionRequiresText(option, options);
+            commandResult.AddError(OptionRequiresText(option, options));
         }
     }
 
@@ -149,7 +152,7 @@ static class Program
             UsbDevice.GetAll().Where(d => d.BusId.HasValue && !d.BusId.Value.IsIncompatibleHub).Select(d => d.BusId.GetValueOrDefault().ToString()));
     }
 
-    internal static int Main(params string[] args)
+    internal static async Task<int> Main(params string[] args)
     {
         if (!Console.IsInputRedirected)
         {
@@ -165,19 +168,55 @@ static class Program
         }
         catch (IOException) { }
 
-        return (int)Run(null, new CommandHandlers(), args);
+        return (int)await Run(new DefaultConsole(), new CommandHandlers(), args);
     }
 
-    internal static ExitCode Run(IConsole? optionalTestConsole, ICommandHandlers commandHandlers, params string[] args)
+    class CustomHelpAction(HelpAction defaultAction) : SynchronousCommandLineAction
+    {
+        readonly HelpAction DefaultAction = defaultAction;
+
+        public override int Invoke(ParseResult parseResult)
+        {
+            // Always prepend the product and version.
+            parseResult.Configuration.Output.WriteLine($"{Product} {GitVersionInformation.MajorMinorPatch}");
+            parseResult.Configuration.Output.WriteLine();
+
+            var command = parseResult.CommandResult.Command;
+            foreach (var subCommand in command.Children.OfType<Command>())
+            {
+                var subDescriptions = subCommand.Description?.Split('\0', 2) ?? [];
+                if (subDescriptions.Length > 1)
+                {
+                    // Only use the short description for subcommands.
+                    subCommand.Description = subDescriptions[0];
+                }
+
+                // Do not display subcommand argument help.
+                subCommand.Arguments.Clear();
+            }
+            var descriptions = command.Description?.Split('\0', 2) ?? [];
+            if (descriptions.Length > 1)
+            {
+                // Use the long description for the command itself.
+                command.Description = descriptions[1];
+            }
+
+            return DefaultAction.Invoke(parseResult);
+        }
+    }
+
+    internal static async Task<ExitCode> Run(IConsole console, ICommandHandlers commandHandlers, params string[] args)
     {
         var rootCommand = new RootCommand("Shares locally connected USB devices to other machines, including Hyper-V guests and WSL 2.");
+        {
+            var helpOption = rootCommand.Options.Single(option => option is HelpOption);
+            helpOption.Action = new CustomHelpAction((HelpAction)helpOption.Action!);
+        }
         {
             //
             //  attach [--auto-attach]
             //
-            var autoAttachOption = new Option<bool>(
-                aliases: ["--auto-attach", "-a"]
-            )
+            var autoAttachOption = new Option<bool>("--auto-attach", "-a")
             {
                 Description = "Automatically re-attach when the device is detached or unplugged",
                 Arity = ArgumentArity.Zero,
@@ -185,52 +224,48 @@ static class Program
             //
             //  attach --busid <BUSID>
             //
-            var busIdOption = new Option<BusId>(
-                aliases: ["--busid", "-b"],
-                parseArgument: ParseCompatibleBusId
-            )
+            var busIdOption = new Option<BusId>("--busid", "-b")
             {
-                ArgumentHelpName = "BUSID",
                 Description = "Attach device having <BUSID>",
-            }.AddCompletions(CompatibleBusIdCompletions);
+                HelpName = "BUSID",
+                CustomParser = ParseCompatibleBusId,
+            };
+            busIdOption.CompletionSources.Add(CompatibleBusIdCompletions);
             //
             //  attach --wsl [<DISTRIBUTION>]
             //
-            var wslOption = new Option<string>(
-                aliases: ["--wsl", "-w"]
-            )
+            var wslOption = new Option<string>("--wsl", "-w")
             {
-                ArgumentHelpName = "[DISTRIBUTION]",
                 Description = "Attach to WSL, optionally specifying the distribution to use",
-                IsRequired = true,
+                HelpName = "[DISTRIBUTION]",
+                Required = true,
                 Arity = ArgumentArity.ZeroOrOne,
-            }.AddCompletions(completionContext => CompletionGuard(completionContext, () =>
+            };
+            wslOption.CompletionSources.Add(completionContext => CompletionGuard(completionContext, () =>
                 Wsl.CreateAsync(CancellationToken.None).Result?.Select(d => d.Name)));
             //
             //  attach [--hardware-id <VID>:<PID>]
             //
-            var hardwareIdOption = new Option<VidPid>(
-                // NOTE: the alias '-h' is already for '--help'
-                aliases: ["--hardware-id", "-i"],
-                parseArgument: ParseVidPid
-            )
+            // NOTE: the alias '-h' is already for '--help'
+            var hardwareIdOption = new Option<VidPid>("--hardware-id", "-i")
             {
-                ArgumentHelpName = "VID:PID",
                 Description = "Attach device having <VID>:<PID>",
-            }.AddCompletions(completionContext => CompletionGuard(completionContext, () =>
+                HelpName = "VID:PID",
+                CustomParser = ParseVidPid,
+            };
+            hardwareIdOption.CompletionSources.Add(completionContext => CompletionGuard(completionContext, () =>
                 UsbDevice.GetAll().Where(d => d.BusId.HasValue).GroupBy(d => d.HardwareId).Select(g => g.Key.ToString())));
             //
             //  attach [--host-ip <IPADDRESS>]
             //
-            var hostIpOption = new Option<IPAddress>(
-                // NOTE: the alias '-h' is already for '--help' and '-i' is already for '--hardware-id'.
-                aliases: ["--host-ip", "-o"],
-                parseArgument: ParseIPAddress
-            )
+            // NOTE: the alias '-h' is already for '--help' and '-i' is already for '--hardware-id'.
+            var hostIpOption = new Option<IPAddress>("--host-ip", "-o")
             {
-                ArgumentHelpName = "IPADDRESS",
                 Description = "Use <IPADDRESS> for WSL to connect back to the host",
-            }.AddCompletions(completionContext => CompletionGuard(completionContext, () =>
+                HelpName = "IPADDRESS",
+                CustomParser = ParseIPAddress,
+            };
+            hostIpOption.CompletionSources.Add(completionContext => CompletionGuard(completionContext, () =>
                 // Get all non-loopback unicast IPv4 addresses.
                 NetworkInterface.GetAllNetworkInterfaces()
                     .Where(ni => ni.OperationalStatus == OperationalStatus.Up)
@@ -244,9 +279,7 @@ static class Program
             //
             //  attach [--unplugged]
             //
-            var unpluggedOption = new Option<bool>(
-                aliases: ["--unplugged", "-u"]
-            )
+            var unpluggedOption = new Option<bool>("--unplugged", "-u")
             {
                 Description = "Allows auto-attaching a currently unplugged device",
                 Arity = ArgumentArity.Zero,
@@ -254,13 +287,14 @@ static class Program
             //
             //  attach
             //
-            var attachCommand = new Command("attach", "Attach a USB device to a client\0"
-                + "Attaches a USB device to a client.\n"
-                + "\n"
-                + "Currently, only WSL is supported. Other clients need to perform an attach using client-side tooling.\n"
-                + "\n"
-                + OneOfRequiredText(busIdOption, hardwareIdOption) + '\n'
-                + OptionRequiresText(unpluggedOption, autoAttachOption, busIdOption))
+            var attachCommand = new Command("attach", "Attach a USB device to a client\0" + $"""
+                Attaches a USB device to a client.
+
+                Currently, only WSL is supported. Other clients need to perform an attach using client-side tooling.
+
+                {OneOfRequiredText(busIdOption, hardwareIdOption)}
+                {OptionRequiresText(unpluggedOption, autoAttachOption, busIdOption)}
+                """)
                 {
                     autoAttachOption,
                     busIdOption,
@@ -269,49 +303,39 @@ static class Program
                     hostIpOption,
                     unpluggedOption,
                 };
-            attachCommand.AddValidator(commandResult =>
-            {
-                ValidateOneOf(commandResult, busIdOption, hardwareIdOption);
-            });
-            attachCommand.AddValidator(commandResult =>
-            {
-                ValidateOptionRequires(commandResult, unpluggedOption, autoAttachOption, busIdOption);
-            });
-            attachCommand.SetHandler(async invocationContext =>
-            {
-                invocationContext.ExitCode = invocationContext.ParseResult.HasOption(busIdOption)
-                    ? (int)await commandHandlers.AttachWsl(invocationContext.ParseResult.GetValueForOption(busIdOption),
-                            invocationContext.ParseResult.HasOption(autoAttachOption),
-                            invocationContext.ParseResult.HasOption(unpluggedOption),
-                            invocationContext.ParseResult.GetValueForOption(wslOption),
-                            invocationContext.ParseResult.GetValueForOption(hostIpOption),
-                            invocationContext.Console, invocationContext.GetCancellationToken())
-                    : (int)await commandHandlers.AttachWsl(invocationContext.ParseResult.GetValueForOption(hardwareIdOption),
-                            invocationContext.ParseResult.HasOption(autoAttachOption),
-                            invocationContext.ParseResult.GetValueForOption(wslOption),
-                            invocationContext.ParseResult.GetValueForOption(hostIpOption),
-                            invocationContext.Console, invocationContext.GetCancellationToken());
-            });
-            rootCommand.AddCommand(attachCommand);
+            attachCommand.Validators.Add(commandResult => ValidateOneOf(commandResult, busIdOption, hardwareIdOption));
+            attachCommand.Validators.Add(commandResult => ValidateOptionRequires(commandResult, unpluggedOption, autoAttachOption, busIdOption));
+            attachCommand.SetAction(async (parseResult, cancellationToken) => (int)(
+                parseResult.GetResult(busIdOption) is not null
+                    ? await commandHandlers.AttachWsl(parseResult.GetValue(busIdOption),
+                            parseResult.GetResult(autoAttachOption) is not null,
+                            parseResult.GetResult(unpluggedOption) is not null,
+                            parseResult.GetValue(wslOption),
+                            parseResult.GetValue(hostIpOption),
+                            console, cancellationToken)
+                    : await commandHandlers.AttachWsl(parseResult.GetValue(hardwareIdOption),
+                            parseResult.GetResult(autoAttachOption) is not null,
+                            parseResult.GetValue(wslOption),
+                            parseResult.GetValue(hostIpOption),
+                            console, cancellationToken)
+            ));
+            rootCommand.Subcommands.Add(attachCommand);
         }
         {
             //
             //  bind [--busid <BUSID>]
             //
-            var busIdOption = new Option<BusId>(
-                aliases: ["--busid", "-b"],
-                parseArgument: ParseCompatibleBusId
-            )
+            var busIdOption = new Option<BusId>("--busid", "-b")
             {
-                ArgumentHelpName = "BUSID",
                 Description = "Share device having <BUSID>",
-            }.AddCompletions(CompatibleBusIdCompletions);
+                HelpName = "BUSID",
+                CustomParser = ParseCompatibleBusId,
+            };
+            busIdOption.CompletionSources.Add(CompatibleBusIdCompletions);
             //
             //  bind [--force]
             //
-            var forceOption = new Option<bool>(
-                aliases: ["--force", "-f"]
-            )
+            var forceOption = new Option<bool>("--force", "-f")
             {
                 Description = "Force binding; the host cannot use the device",
                 Arity = ArgumentArity.Zero,
@@ -319,54 +343,47 @@ static class Program
             //
             //  bind [--hardware-id <VID>:<PID>]
             //
-            var hardwareIdOption = new Option<VidPid>(
-                // NOTE: the alias '-h' is already for '--help'
-                aliases: ["--hardware-id", "-i"],
-                parseArgument: ParseVidPid
-            )
+            // NOTE: the alias '-h' is already for '--help'
+            var hardwareIdOption = new Option<VidPid>("--hardware-id", "-i")
             {
-                ArgumentHelpName = "VID:PID",
                 Description = "Share device having <VID>:<PID>",
-            }.AddCompletions(completionContext => CompletionGuard(completionContext, () =>
+                HelpName = "VID:PID",
+                CustomParser = ParseVidPid,
+            };
+            hardwareIdOption.CompletionSources.Add(completionContext => CompletionGuard(completionContext, () =>
                 UsbDevice.GetAll().Where(d => d.BusId.HasValue).GroupBy(d => d.HardwareId).Select(g => g.Key.ToString())));
             //
             //  bind
             //
-            var bindCommand = new Command("bind", "Bind device\0"
-                + "Registers a single USB device for sharing, so it can be "
-                + "attached to other machines. Unless the --force option is used, "
-                + "shared devices remain available to the host "
-                + "until they are attached to another machine.\n"
-                + "\n"
-                + OneOfRequiredText(busIdOption, hardwareIdOption))
+            var bindCommand = new Command("bind", "Bind device\0" + $"""
+                Registers a single USB device for sharing, so it can be attached to other machines. \
+                Unless the '--force' option is used, shared devices remain available to the host \
+                until they are attached to another machine.
+
+                {OneOfRequiredText(busIdOption, hardwareIdOption)}
+                """.Unwrap())
             {
                 busIdOption,
                 forceOption,
                 hardwareIdOption,
             };
-            bindCommand.AddValidator(commandResult =>
-            {
-                ValidateOneOf(commandResult, busIdOption, hardwareIdOption);
-            });
-            bindCommand.SetHandler(async invocationContext =>
-            {
-                invocationContext.ExitCode = invocationContext.ParseResult.HasOption(busIdOption)
-                    ? (int)await commandHandlers.Bind(invocationContext.ParseResult.GetValueForOption(busIdOption),
-                            invocationContext.ParseResult.HasOption(forceOption),
-                            invocationContext.Console, invocationContext.GetCancellationToken())
-                    : (int)await commandHandlers.Bind(invocationContext.ParseResult.GetValueForOption(hardwareIdOption),
-                            invocationContext.ParseResult.HasOption(forceOption),
-                            invocationContext.Console, invocationContext.GetCancellationToken());
-            });
-            rootCommand.AddCommand(bindCommand);
+            bindCommand.Validators.Add(commandResult => ValidateOneOf(commandResult, busIdOption, hardwareIdOption));
+            bindCommand.SetAction(async (parseResult, cancellationToken) => (int)(
+                parseResult.GetResult(busIdOption) is not null
+                    ? await commandHandlers.Bind(parseResult.GetValue(busIdOption),
+                            parseResult.GetResult(forceOption) is not null,
+                            console, cancellationToken)
+                    : await commandHandlers.Bind(parseResult.GetValue(hardwareIdOption),
+                            parseResult.GetResult(forceOption) is not null,
+                            console, cancellationToken)
+            ));
+            rootCommand.Subcommands.Add(bindCommand);
         }
         {
             //
             //  detach [--all]
             //
-            var allOption = new Option<bool>(
-                aliases: ["--all", "-a"]
-            )
+            var allOption = new Option<bool>("--all", "-a")
             {
                 Description = "Detach all devices",
                 Arity = ArgumentArity.Zero,
@@ -374,77 +391,65 @@ static class Program
             //
             //  detach [--busid <BUSID>]
             //
-            var busIdOption = new Option<BusId>(
-                aliases: ["--busid", "-b"],
-                parseArgument: ParseCompatibleBusId
-            )
+            var busIdOption = new Option<BusId>("--busid", "-b")
             {
-                ArgumentHelpName = "BUSID",
                 Description = "Detach device having <BUSID>",
-            }.AddCompletions(CompatibleBusIdCompletions);
+                HelpName = "BUSID",
+                CustomParser = ParseCompatibleBusId,
+            };
+            busIdOption.CompletionSources.Add(CompatibleBusIdCompletions);
             //
             //  detach [--hardware-id <VID>:<PID>]
             //
-            var hardwareIdOption = new Option<VidPid>(
-                // NOTE: the alias '-h' is already for '--help'
-                aliases: ["--hardware-id", "-i"],
-                parseArgument: ParseVidPid
-            )
+            // NOTE: the alias '-h' is already for '--help'
+            var hardwareIdOption = new Option<VidPid>("--hardware-id", "-i")
             {
-                ArgumentHelpName = "VID:PID",
                 Description = "Detach all devices having <VID>:<PID>",
-            }.AddCompletions(completionContext => CompletionGuard(completionContext, () =>
+                HelpName = "VID:PID",
+                CustomParser = ParseVidPid,
+            };
+            hardwareIdOption.CompletionSources.Add(completionContext => CompletionGuard(completionContext, () =>
                 UsbDevice.GetAll().Where(d => d.BusId.HasValue).GroupBy(d => d.HardwareId).Select(g => g.Key.ToString())));
             //
             //  detach
             //
-            var detachCommand = new Command("detach", "Detach a USB device from a client\0"
-                + "Detaches one or more USB devices. The client sees this as a surprise "
-                + "removal event. A detached device becomes available again in Windows, "
-                + "unless it was bound using the --force option.\n"
-                + "\n"
-                + OneOfRequiredText(allOption, busIdOption, hardwareIdOption))
+            var detachCommand = new Command("detach", "Detach a USB device from a client\0" + $"""
+                Detaches one or more USB devices. The client sees this as a surprise removal event. \
+                A detached device becomes available again in Windows, unless it was bound using the '--force' option.
+
+                {OneOfRequiredText(allOption, busIdOption, hardwareIdOption)}
+                """.Unwrap())
                 {
                     allOption,
                     busIdOption,
                     hardwareIdOption,
                 };
-            detachCommand.AddValidator(commandResult =>
-            {
-                ValidateOneOf(commandResult, allOption, busIdOption, hardwareIdOption);
-            });
-            detachCommand.SetHandler(async invocationContext =>
-            {
-                invocationContext.ExitCode = invocationContext.ParseResult.HasOption(allOption)
-                    ? (int)await commandHandlers.DetachAll(invocationContext.Console, invocationContext.GetCancellationToken())
-                    : invocationContext.ParseResult.HasOption(busIdOption)
-                        ? (int)await commandHandlers.Detach(invocationContext.ParseResult.GetValueForOption(busIdOption),
-                                invocationContext.Console, invocationContext.GetCancellationToken())
-                        : (int)await commandHandlers.Detach(invocationContext.ParseResult.GetValueForOption(hardwareIdOption),
-                                invocationContext.Console, invocationContext.GetCancellationToken());
-            });
-            rootCommand.AddCommand(detachCommand);
+            detachCommand.Validators.Add(commandResult => ValidateOneOf(commandResult, allOption, busIdOption, hardwareIdOption));
+            detachCommand.SetAction(async (parseResult, cancellationToken) => (int)(
+                parseResult.GetResult(allOption) is not null
+                    ? await commandHandlers.DetachAll(console, cancellationToken)
+                    : parseResult.GetResult(busIdOption) is not null
+                        ? await commandHandlers.Detach(parseResult.GetValue(busIdOption), console, cancellationToken)
+                        : await commandHandlers.Detach(parseResult.GetValue(hardwareIdOption), console, cancellationToken)
+            ));
+            rootCommand.Subcommands.Add(detachCommand);
         }
         {
             //
             //  license
             //
-            var licenseCommand = new Command("license", "Display license information\0"
-                + "Displays license information.");
-            licenseCommand.SetHandler(async invocationContext =>
-            {
-                invocationContext.ExitCode = (int)
-                    await commandHandlers.License(invocationContext.Console, invocationContext.GetCancellationToken());
-            });
-            rootCommand.AddCommand(licenseCommand);
+            var licenseCommand = new Command("license", "Display license information\0" +
+                "Displays license information.");
+            licenseCommand.SetAction(async (parseResult, cancellationToken) => (int)
+                await commandHandlers.License(console, cancellationToken)
+            );
+            rootCommand.Subcommands.Add(licenseCommand);
         }
         {
             //
             //  list [--usbids]
             //
-            var usbidsOption = new Option<bool>(
-                aliases: ["--usbids", "-u"]
-            )
+            var usbidsOption = new Option<bool>("--usbids", "-u")
             {
                 Description = "Show device description from Linux database",
                 Arity = ArgumentArity.Zero,
@@ -452,124 +457,109 @@ static class Program
             //
             //  list
             //
-            var listCommand = new Command("list", "List USB devices\0"
-                + "Lists currently connected USB devices as well as USB devices that are shared but are not currently connected.")
+            var listCommand = new Command("list", "List USB devices\0" +
+                "Lists currently connected USB devices as well as USB devices that are shared but are not currently connected.")
             {
                 usbidsOption,
             };
-            listCommand.SetHandler(async invocationContext =>
-            {
-                invocationContext.ExitCode = (int)
-                    await commandHandlers.List(invocationContext.ParseResult.HasOption(usbidsOption),
-                        invocationContext.Console, invocationContext.GetCancellationToken());
-            });
-            rootCommand.AddCommand(listCommand);
+            listCommand.SetAction(async (parseResult, cancellationToken) => (int)
+                await commandHandlers.List(parseResult.GetResult(usbidsOption) is not null, console, cancellationToken)
+            );
+            rootCommand.Subcommands.Add(listCommand);
         }
         {
             //
             //  policy
             //
-            var policyCommand = new Command("policy", "Manage policy rules\0"
-                + "Policy rules allow or deny specific operations.");
+            var policyCommand = new Command("policy", "Manage policy rules\0" +
+                "Policy rules allow or deny specific operations.");
             {
                 //
                 //  policy add --effect <EFFECT>
                 //
-                var effectOption = new Option<PolicyRuleEffect>(
-                    aliases: ["--effect", "-e"]
-                )
+                var effectOption = new Option<PolicyRuleEffect>("--effect", "-e")
                 {
-                    ArgumentHelpName = "EFFECT",
                     Description = "Allow or Deny",
-                    IsRequired = true,
+                    HelpName = "EFFECT",
+                    Required = true,
                 };
                 //
                 //  policy add --operation <OPERATION>
                 //
-                var operationOption = new Option<PolicyRuleOperation>(
-                    aliases: ["--operation", "-o"]
-                )
+                var operationOption = new Option<PolicyRuleOperation>("--operation", "-o")
                 {
-                    ArgumentHelpName = "OPERATION",
                     Description = "Currently only supports 'AutoBind'",
-                    IsRequired = true,
+                    HelpName = "OPERATION",
+                    Required = true,
                 };
                 //
                 //  policy add [--busid <BUSID>]
                 //
-                var busIdOption = new Option<BusId>(
-                    aliases: ["--busid", "-b"],
-                    parseArgument: ParseCompatibleBusId
-                )
+                var busIdOption = new Option<BusId>("--busid", "-b")
                 {
-                    ArgumentHelpName = "BUSID",
                     Description = "Add a policy for device having <BUSID>",
-                }.AddCompletions(CompatibleBusIdCompletions);
+                    HelpName = "BUSID",
+                    CustomParser = ParseCompatibleBusId,
+                };
+                busIdOption.CompletionSources.Add(CompatibleBusIdCompletions);
                 //
                 //  policy add [--hardware-id <VID>:<PID>]
                 //
-                var hardwareIdOption = new Option<VidPid>(
-                    // NOTE: the alias '-h' is already for '--help'
-                    aliases: ["--hardware-id", "-i"],
-                    parseArgument: ParseVidPid
-                )
+                // NOTE: the alias '-h' is already for '--help'
+                var hardwareIdOption = new Option<VidPid>("--hardware-id", "-i")
                 {
-                    ArgumentHelpName = "VID:PID",
                     Description = "Add a policy for device having <VID>:<PID>",
-                }.AddCompletions(completionContext => CompletionGuard(completionContext, () =>
+                    HelpName = "VID:PID",
+                    CustomParser = ParseVidPid,
+                };
+                hardwareIdOption.CompletionSources.Add(completionContext => CompletionGuard(completionContext, () =>
                     UsbDevice.GetAll().GroupBy(d => d.HardwareId).Select(g => g.Key.ToString())));
                 //
                 //  policy add
                 //
-                var addCommand = new Command("add", "Add a policy rule\0"
-                    + "Add a new policy rule. The resulting policy will be effective immediately.\n"
-                    + "\n"
-                    + AtLeastOneOfRequiredText(busIdOption, hardwareIdOption))
+                var addCommand = new Command("add", "Add a policy rule\0" + $"""
+                    Add a new policy rule. The resulting policy will be effective immediately.
+
+                    {AtLeastOneOfRequiredText(busIdOption, hardwareIdOption)}
+                    """)
                 {
                     effectOption,
                     operationOption,
                     busIdOption,
                     hardwareIdOption,
                 };
-                addCommand.AddValidator(commandResult =>
+                addCommand.Validators.Add(commandResult => ValidateAtLeastOneOf(commandResult, busIdOption, hardwareIdOption));
+                addCommand.SetAction(async (parseResult, cancellationToken) =>
                 {
-                    ValidateAtLeastOneOf(commandResult, busIdOption, hardwareIdOption);
-                });
-                addCommand.SetHandler(async invocationContext =>
-                {
-                    var operation = invocationContext.ParseResult.GetValueForOption(operationOption);
-                    invocationContext.ExitCode = (int)await (operation switch
+                    var operation = parseResult.GetValue(operationOption);
+                    return (int)await (operation switch
                     {
                         PolicyRuleOperation.AutoBind =>
-                            commandHandlers.PolicyAdd(new PolicyRuleAutoBind(invocationContext.ParseResult.GetValueForOption(effectOption),
-                                    invocationContext.ParseResult.GetValueForOptionOrNull(busIdOption),
-                                    invocationContext.ParseResult.GetValueForOptionOrNull(hardwareIdOption)),
-                                invocationContext.Console, invocationContext.GetCancellationToken()),
+                            commandHandlers.PolicyAdd(new PolicyRuleAutoBind(parseResult.GetValue(effectOption),
+                                    parseResult.GetValue(busIdOption),
+                                    parseResult.GetValue(hardwareIdOption)),
+                                console, cancellationToken),
                         _ => throw new UnexpectedResultException($"Unexpected policy rule operation '{operation}'."),
                     });
                 });
-                policyCommand.AddCommand(addCommand);
+                policyCommand.Subcommands.Add(addCommand);
             }
             {
                 //
                 //  policy list
                 //
-                var listCommand = new Command("list", "List policy rules\0"
-                    + "List all policy rules.");
-                listCommand.SetHandler(async invocationContext =>
-                {
-                    invocationContext.ExitCode = (int)
-                        await commandHandlers.PolicyList(invocationContext.Console, invocationContext.GetCancellationToken());
-                });
-                policyCommand.AddCommand(listCommand);
+                var listCommand = new Command("list", "List policy rules\0" +
+                    "List all policy rules.");
+                listCommand.SetAction(async (parseResult, cancellationToken) => (int)
+                    await commandHandlers.PolicyList(console, cancellationToken)
+                );
+                policyCommand.Subcommands.Add(listCommand);
             }
             {
                 //
                 //  policy remove [--all]
                 //
-                var allOption = new Option<bool>(
-                    aliases: ["--all", "-a"]
-                )
+                var allOption = new Option<bool>("--all", "-a")
                 {
                     Description = "Remove all policy rules",
                     Arity = ArgumentArity.Zero,
@@ -577,91 +567,78 @@ static class Program
                 //
                 //  policy remove [--guid <GUID>]
                 //
-                var guidOption = new Option<Guid>(
-                    aliases: ["--guid", "-g"],
-                    parseArgument: ParseGuid
-                )
+                var guidOption = new Option<Guid>("--guid", "-g")
                 {
-                    ArgumentHelpName = "GUID",
                     Description = "Remove the policy rule having <GUID>",
-                }.AddCompletions(completionContext => CompletionGuard(completionContext, () =>
+                    HelpName = "GUID",
+                    CustomParser = ParseGuid,
+                };
+                guidOption.CompletionSources.Add(completionContext => CompletionGuard(completionContext, () =>
                     RegistryUtilities.GetPolicyRules().Select(r => r.Key.ToString("D"))));
                 //
                 //  policy remove
                 //
-                var removeCommand = new Command("remove", "Remove a policy rule\0"
-                    + "Remove existing policy rules. The resulting policy will be effective immediately.\n"
-                    + "\n"
-                    + OneOfRequiredText(allOption, guidOption))
+                var removeCommand = new Command("remove", "Remove a policy rule\0" + $"""
+                    Remove existing policy rules. The resulting policy will be effective immediately.
+
+                    {OneOfRequiredText(allOption, guidOption)}
+                    """)
                 {
                     allOption,
                     guidOption,
                 };
-                removeCommand.AddValidator(commandResult =>
-                {
-                    ValidateOneOf(commandResult, allOption, guidOption);
-                });
-                removeCommand.SetHandler(async invocationContext =>
-                {
-                    invocationContext.ExitCode = invocationContext.ParseResult.HasOption(allOption)
-                        ? (int)await commandHandlers.PolicyRemoveAll(invocationContext.Console, invocationContext.GetCancellationToken())
-                        : (int)await commandHandlers.PolicyRemove(invocationContext.ParseResult.GetValueForOption(guidOption),
-                                invocationContext.Console, invocationContext.GetCancellationToken());
-                });
-                policyCommand.AddCommand(removeCommand);
+                removeCommand.Validators.Add(commandResult => ValidateOneOf(commandResult, allOption, guidOption));
+                removeCommand.SetAction(async (parseResult, cancellationToken) => (int)(
+                    parseResult.GetResult(allOption) is not null
+                        ? await commandHandlers.PolicyRemoveAll(console, cancellationToken)
+                        : await commandHandlers.PolicyRemove(parseResult.GetValue(guidOption), console, cancellationToken)
+                ));
+                policyCommand.Subcommands.Add(removeCommand);
             }
-            rootCommand.AddCommand(policyCommand);
+            rootCommand.Subcommands.Add(policyCommand);
         }
         {
             //
             //  server [<KEY=VALUE>...]
             //
-            Argument<string[]> keyValueArgument = new()
+            Argument<string[]> keyValueArgument = new("KEY=VALUE")
             {
                 Arity = ArgumentArity.ZeroOrMore,
-                Name = "KEY=VALUE",
                 Description = ".NET configuration override\n  Example: \"Logging:LogLevel:Default=Trace\"",
             };
             //
             //  server
             //
-            var serverCommand = new Command("server", "Run the server on the console\0"
-                + "Runs the server stand-alone on the console.\n"
-                + " \n"
-                + "This command is intended for debugging purposes. "
-                + "Only one instance of the server can be active; "
-                + "you may have to stop the background service first.")
+            var serverCommand = new Command("server", "Run the server on the console\0" + $"""
+                Runs the server stand-alone on the console.
+
+                This command is intended for debugging purposes. \
+                Only one instance of the server can be active; you may have to stop the background service first.
+                """.Unwrap())
             {
                 keyValueArgument,
             };
-            serverCommand.SetHandler(async invocationContext =>
-            {
-                invocationContext.ExitCode = (int)
-                    await commandHandlers.Server(invocationContext.ParseResult.GetValueForArgument(keyValueArgument) ?? [],
-                        invocationContext.Console, invocationContext.GetCancellationToken());
-            });
-            rootCommand.AddCommand(serverCommand);
+            serverCommand.SetAction(async (parseResult, cancellationToken) => (int)
+                await commandHandlers.Server(parseResult.GetValue(keyValueArgument) ?? [], console, cancellationToken)
+            );
+            rootCommand.Subcommands.Add(serverCommand);
         }
         {
             //
             //  state
             //
-            var stateCommand = new Command("state", "Output state in JSON\0"
-                + "Outputs the current state of all USB devices in machine-readable JSON suitable for scripted automation.");
-            stateCommand.SetHandler(async invocationContext =>
-            {
-                invocationContext.ExitCode = (int)
-                    await commandHandlers.State(invocationContext.Console, invocationContext.GetCancellationToken());
-            });
-            rootCommand.AddCommand(stateCommand);
+            var stateCommand = new Command("state", "Output state in JSON\0" +
+                "Outputs the current state of all USB devices in machine-readable JSON suitable for scripted automation.");
+            stateCommand.SetAction(async (parseResult, cancellationToken) => (int)
+                await commandHandlers.State(console, cancellationToken)
+            );
+            rootCommand.Subcommands.Add(stateCommand);
         }
         {
             //
             //  unbind [--all]
             //
-            var allOption = new Option<bool>(
-                aliases: ["--all", "-a"]
-            )
+            var allOption = new Option<bool>("--all", "-a")
             {
                 Description = "Stop sharing all devices",
                 Arity = ArgumentArity.Zero,
@@ -669,72 +646,63 @@ static class Program
             //
             //  unbind [--busid <BUSID>]
             //
-            var busIdOption = new Option<BusId>(
-                aliases: ["--busid", "-b"],
-                parseArgument: ParseCompatibleBusId
-            )
+            var busIdOption = new Option<BusId>("--busid", "-b")
             {
-                ArgumentHelpName = "BUSID",
                 Description = "Stop sharing device having <BUSID>",
-            }.AddCompletions(CompatibleBusIdCompletions);
+                HelpName = "BUSID",
+                CustomParser = ParseCompatibleBusId,
+            };
+            busIdOption.CompletionSources.Add(CompatibleBusIdCompletions);
             //
             //  unbind [--guid <GUID>]
             //
-            var guidOption = new Option<Guid>(
-                aliases: ["--guid", "-g"],
-                parseArgument: ParseGuid
-            )
+            var guidOption = new Option<Guid>("--guid", "-g")
             {
-                ArgumentHelpName = "GUID",
                 Description = "Stop sharing persisted device having <GUID>",
-            }.AddCompletions(completionContext => CompletionGuard(completionContext, () =>
+                HelpName = "GUID",
+                CustomParser = ParseGuid,
+            };
+            guidOption.CompletionSources.Add(completionContext => CompletionGuard(completionContext, () =>
                 RegistryUtilities.GetBoundDevices().Where(d => !d.BusId.HasValue).Select(d => d.Guid.GetValueOrDefault().ToString("D"))));
             //
             //  unbind [--hardware-id <VID>:<PID>]
             //
-            var hardwareIdOption = new Option<VidPid>(
-                // NOTE: the alias '-h' is already for '--help'
-                aliases: ["--hardware-id", "-i"],
-                parseArgument: ParseVidPid
-            )
+            // NOTE: the alias '-h' is already for '--help'
+            var hardwareIdOption = new Option<VidPid>("--hardware-id", "-i")
             {
-                ArgumentHelpName = "VID:PID",
                 Description = "Stop sharing all devices having <VID>:<PID>",
-            }.AddCompletions(completionContext => CompletionGuard(completionContext, () =>
+                HelpName = "VID:PID",
+                CustomParser = ParseVidPid,
+            };
+            hardwareIdOption.CompletionSources.Add(completionContext => CompletionGuard(completionContext, () =>
                 UsbDevice.GetAll().GroupBy(d => d.HardwareId).Select(g => g.Key.ToString())));
             //
             //  unbind
             //
-            var unbindCommand = new Command("unbind", "Unbind device\0"
-                + "Unregisters one or more USB devices for sharing. If the device is currently "
-                + "attached to another machine, it will immediately be detached and it becomes available to the "
-                + "host again; the remote machine will see this as a surprise removal event.\n"
-                + "\n"
-                + OneOfRequiredText(allOption, busIdOption, guidOption, hardwareIdOption))
+            var unbindCommand = new Command("unbind", "Unbind device\0" + $"""
+                Unregisters one or more USB devices for sharing. If the device is currently attached to another \
+                machine, it will immediately be detached and it becomes available to the host again; the remote \
+                machine will see this as a surprise removal event.
+
+                {OneOfRequiredText(allOption, busIdOption, guidOption, hardwareIdOption)}
+                """.Unwrap())
             {
                 allOption,
                 busIdOption,
                 guidOption,
                 hardwareIdOption,
             };
-            unbindCommand.AddValidator(commandResult =>
-            {
-                ValidateOneOf(commandResult, allOption, busIdOption, guidOption, hardwareIdOption);
-            });
-            unbindCommand.SetHandler(async invocationContext =>
-            {
-                invocationContext.ExitCode = invocationContext.ParseResult.HasOption(allOption)
-                    ? (int)await commandHandlers.UnbindAll(invocationContext.Console, invocationContext.GetCancellationToken())
-                    : invocationContext.ParseResult.HasOption(busIdOption)
-                        ? (int)await commandHandlers.Unbind(invocationContext.ParseResult.GetValueForOption(busIdOption),
-                                invocationContext.Console, invocationContext.GetCancellationToken())
-                        : invocationContext.ParseResult.HasOption(guidOption)
-                            ? (int)await commandHandlers.Unbind(invocationContext.ParseResult.GetValueForOption(guidOption),
-                                    invocationContext.Console, invocationContext.GetCancellationToken())
-                            : (int)await commandHandlers.Unbind(invocationContext.ParseResult.GetValueForOption(hardwareIdOption),
-                                    invocationContext.Console, invocationContext.GetCancellationToken());
-            });
-            rootCommand.AddCommand(unbindCommand);
+            unbindCommand.Validators.Add(commandResult => ValidateOneOf(commandResult, allOption, busIdOption, guidOption, hardwareIdOption));
+            unbindCommand.SetAction(async (parseResult, cancellationToken) => (int)(
+                parseResult.GetResult(allOption) is not null
+                    ? await commandHandlers.UnbindAll(console, cancellationToken)
+                    : parseResult.GetResult(busIdOption) is not null
+                        ? await commandHandlers.Unbind(parseResult.GetValue(busIdOption), console, cancellationToken)
+                        : parseResult.GetResult(guidOption) is not null
+                            ? await commandHandlers.Unbind(parseResult.GetValue(guidOption), console, cancellationToken)
+                            : await commandHandlers.Unbind(parseResult.GetValue(hardwareIdOption), console, cancellationToken)
+            ));
+            rootCommand.Subcommands.Add(unbindCommand);
         }
         {
             //
@@ -744,25 +712,24 @@ static class Program
             //
             var wslCommand = new Command("wsl")
             {
-                IsHidden = true,
+                Hidden = true,
             };
-            wslCommand.AddOption(new Option<bool>(
-                aliases: ["--help", "-h", "-?"]
-            )
+            wslCommand.Options.Add(new Option<bool>("--help", "-h", "-?")
             {
                 Arity = ArgumentArity.Zero,
             });
-            wslCommand.AddArgument(new Argument<string[]>()
+            wslCommand.Arguments.Add(new Argument<string[]>("ANY")
             {
                 Arity = ArgumentArity.ZeroOrMore,
             });
-            wslCommand.SetHandler(invocationContext =>
+            wslCommand.SetAction(async (parseResult, cancellationToken) =>
             {
-                ConsoleTools.ReportError(invocationContext.Console,
-                    $"The 'wsl' subcommand has been removed. Learn about the new syntax at {Wsl.AttachWslUrl}.");
-                invocationContext.ExitCode = (int)ExitCode.ParseError;
+                // System.CommandLine requires *all* actions to be either asynchronous or synchronous.
+                await Task.CompletedTask;
+                console.ReportError($"The 'wsl' subcommand has been removed. Learn about the new syntax at {Wsl.AttachWslUrl}.");
+                return (int)ExitCode.ParseError;
             });
-            rootCommand.AddCommand(wslCommand);
+            rootCommand.Subcommands.Add(wslCommand);
         }
         {
             //
@@ -770,14 +737,12 @@ static class Program
             //
             var installCommand = new Command("install")
             {
-                IsHidden = true,
+                Hidden = true,
             };
-            installCommand.SetHandler(async invocationContext =>
-            {
-                invocationContext.ExitCode = (int)
-                    await commandHandlers.Install(invocationContext.Console, invocationContext.GetCancellationToken());
-            });
-            rootCommand.AddCommand(installCommand);
+            installCommand.SetAction(async (parseResult, cancellationToken) => (int)
+                await commandHandlers.Install(console, cancellationToken)
+            );
+            rootCommand.Subcommands.Add(installCommand);
         }
         {
             //
@@ -785,69 +750,47 @@ static class Program
             //
             var uninstallCommand = new Command("uninstall")
             {
-                IsHidden = true,
+                Hidden = true,
             };
-            uninstallCommand.SetHandler(async invocationContext =>
-            {
-                invocationContext.ExitCode = (int)
-                    await commandHandlers.Uninstall(invocationContext.Console, invocationContext.GetCancellationToken());
-            });
-            rootCommand.AddCommand(uninstallCommand);
+            uninstallCommand.SetAction(async (parseResult, cancellationToken) => (int)
+                await commandHandlers.Uninstall(console, cancellationToken)
+            );
+            rootCommand.Subcommands.Add(uninstallCommand);
         }
 
-        // Same as UseDefaults() minus exception handling.
-        var commandLine = new CommandLineBuilder(rootCommand)
-            .UseVersionOption()
-            .UseEnvironmentVariableDirective()
-            .UseParseDirective((int)ExitCode.ParseError)
-            .UseSuggestDirective()
-            .RegisterWithDotnetSuggest()
-            .UseTypoCorrections()
-            .UseParseErrorReporting((int)ExitCode.ParseError)
-            .CancelOnProcessTermination()
-            .UseHelp(helpContext =>
-            {
-                foreach (var subCommand in helpContext.Command.Children.OfType<Command>())
-                {
-                    var subDescriptions = subCommand.Description?.Split('\0', 2) ?? [];
-                    if (subDescriptions.Length > 1)
-                    {
-                        // Only use the short description for subcommands.
-                        helpContext.HelpBuilder.CustomizeSymbol(subCommand, subCommand.Name, subDescriptions[0]);
-                    }
-                }
-                var descriptions = helpContext.Command.Description?.Split('\0', 2) ?? [];
-                helpContext.HelpBuilder.CustomizeLayout(_ =>
-                {
-                    var layout = HelpBuilder.Default.GetLayout();
-                    if (descriptions.Length > 1)
-                    {
-                        // Use the long description for the command itself.
-                        layout = layout.Skip(1).Prepend(_ =>
-                        {
-                            helpContext.Output.WriteLine(helpContext.HelpBuilder.LocalizationResources.HelpDescriptionTitle());
-                            var indent = new string(' ', 2);
-                            var wrappedLines = Wrap(descriptions[1].Trim(), helpContext.HelpBuilder.MaxWidth - indent.Length);
-                            foreach (var wrappedLine in wrappedLines)
-                            {
-                                helpContext.Output.WriteLine(indent + wrappedLine);
-                            }
-                        });
-                    }
-                    // Always prepend the product and version.
-                    layout = layout.Prepend(_ => helpContext.Output.WriteLine($"{Product} {GitVersionInformation.MajorMinorPatch}"));
-                    return layout;
-                });
-            })
-            .Build();
+        var configuration = new CommandLineConfiguration(rootCommand)
+        {
+            Output = console.Out,
+            Error = console.Error,
+            EnableDefaultExceptionHandler = false,
+        };
 
         try
         {
-            var exitCode = (ExitCode)commandLine.InvokeAsync(args, optionalTestConsole).Result;
+            var parseResult = configuration.Parse(args);
+            // System.CommandLine requires InvokeAsync if the actions are asynchronous.
+            var exitCode = (ExitCode)await parseResult.InvokeAsync();
+            if (parseResult.Action is ParseErrorAction)
+            {
+                // ParseErrorAction returns 1. We want to return ExitCode.ParseError (2) instead.
+                exitCode = ExitCode.ParseError;
+            }
+            if ((int)exitCode is 130 or 143) // 128 + SIGINT or SIGTERM
+            {
+                // Happens when graceful cancelation times out, or at sign off / shutdown.
+                console.ReportInfo("Canceled");
+                return ExitCode.Canceled;
+            }
             return Enum.IsDefined(exitCode) ? exitCode : throw new UnexpectedResultException($"Unknown exit code {exitCode}");
         }
-        catch (AggregateException ex) when (ex.Flatten().InnerExceptions.Any(e => e is OperationCanceledException))
+        catch (AggregateException ex) when (ex.Flatten().InnerExceptions.Any(e => e is OperationCanceledException or TaskCanceledException))
         {
+            console.ReportInfo("Canceled");
+            return ExitCode.Canceled;
+        }
+        catch (Exception ex) when (ex is OperationCanceledException or TaskCanceledException)
+        {
+            console.ReportInfo("Canceled");
             return ExitCode.Canceled;
         }
     }

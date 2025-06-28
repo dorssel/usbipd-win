@@ -2,8 +2,6 @@
 //
 // SPDX-License-Identifier: GPL-3.0-only
 
-using System.CommandLine.IO;
-
 namespace UnitTests;
 
 abstract class ParseTestBase
@@ -21,7 +19,7 @@ abstract class ParseTestBase
     internal static void Test(ExitCode expect, Mock<ICommandHandlers> mock, params string[] args)
     {
         Assert.AreEqual(MockBehavior.Strict, mock.Behavior);
-        var exitCode = Program.Run(new TestConsole(), mock.Object, args);
+        var exitCode = Program.Run(new TestConsole(), mock.Object, args).Result;
         Assert.AreEqual(expect, exitCode);
         mock.VerifyAll();
     }
