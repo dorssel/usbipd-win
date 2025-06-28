@@ -2,11 +2,9 @@
 //
 // SPDX-License-Identifier: GPL-3.0-only
 
-using System.CommandLine;
 using System.Text;
 using Microsoft.Win32;
 using Usbipd.Automation;
-using static System.CommandLine.IO.StandardStreamWriter;
 using static Usbipd.Interop.VBoxUsbMon;
 
 namespace Usbipd;
@@ -59,6 +57,11 @@ static partial class ConsoleTools
         }
     }
 
+    public static string Unwrap(this string text)
+    {
+        return text.Replace("\r\n", "\n").Replace("\\\n", "");
+    }
+
     public static void WriteTruncated(this IConsole console, string text, int width, bool fill)
     {
         // Console: depending on terminal / font / etc. international characters can take more than 1 cell.
@@ -68,7 +71,7 @@ static partial class ConsoleTools
         {
             // We need at least 2 extra characters to be able to measure the console output:
             // international characters may take up 2 cells, and the cursor should not wrap around yet.
-            if (Console.CursorLeft + width + 2 >= Console.WindowWidth)
+            if (console.CursorLeft + width + 2 >= console.WindowWidth)
             {
                 // The console is not wide enough; we cannot measure across line wrapping.
                 measureConsole = false;
@@ -76,35 +79,35 @@ static partial class ConsoleTools
         }
         if (measureConsole)
         {
-            var start = Console.CursorLeft;
+            var start = console.CursorLeft;
             foreach (var c in text)
             {
                 console.Out.Write($"{c}");
-                if (Console.CursorLeft - start > width)
+                if (console.CursorLeft - start > width)
                 {
-                    Console.CursorLeft = start + width - 3;
-                    console.Write("...");
+                    console.CursorLeft = start + width - 3;
+                    console.Out.Write("...");
                     break;
                 }
             }
             if (fill)
             {
-                console.Write(new string(' ', width - (Console.CursorLeft - start)));
+                console.Out.Write(new string(' ', width - (console.CursorLeft - start)));
             }
         }
         else
         {
             if (text.Length > width)
             {
-                console.Write(text[..(width - 3)]);
-                console.Write("...");
+                console.Out.Write(text[..(width - 3)]);
+                console.Out.Write("...");
             }
             else
             {
-                console.Write(text);
+                console.Out.Write(text);
                 if (fill)
                 {
-                    console.Write(new string(' ', width - text.Length));
+                    console.Out.Write(new string(' ', width - text.Length));
                 }
             }
         }

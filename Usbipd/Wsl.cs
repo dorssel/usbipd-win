@@ -4,7 +4,6 @@
 //
 // SPDX-License-Identifier: GPL-3.0-only
 
-using System.CommandLine;
 using System.Diagnostics;
 using System.Globalization;
 using System.Net;
@@ -520,7 +519,7 @@ static partial class Wsl
             }
             // Prepend "WSL", so the user does not confused over "usbip: ... " vs our own "usbipd: ...".
             // We output as "normal text" (although we could filter on "error:").
-            console.WriteLine("WSL " + line);
+            console.Out.WriteLine("WSL " + line);
             if (line.Contains("Device busy"))
             {
                 // We have already checked that the device is not attached to some other client.

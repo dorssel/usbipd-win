@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: GPL-3.0-only
 
-using System.CommandLine.IO;
 using Usbipd.Automation;
 
 namespace UnitTests;
@@ -32,8 +31,8 @@ sealed class ConsoleTools_Tests
     {
         var console = new TestConsole();
         ConsoleTools.ReportError(console, "test");
-        Assert.IsTrue(string.IsNullOrEmpty(console.Out.ToString()));
-        Assert.IsFalse(string.IsNullOrEmpty(console.Error.ToString()));
+        Assert.IsTrue(string.IsNullOrEmpty(console.OutText));
+        Assert.IsFalse(string.IsNullOrEmpty(console.ErrorText));
     }
 
     [TestMethod]
@@ -41,8 +40,8 @@ sealed class ConsoleTools_Tests
     {
         var console = new TestConsole();
         ConsoleTools.ReportWarning(console, "test");
-        Assert.IsTrue(string.IsNullOrEmpty(console.Out.ToString()));
-        Assert.IsFalse(string.IsNullOrEmpty(console.Error.ToString()));
+        Assert.IsTrue(string.IsNullOrEmpty(console.OutText));
+        Assert.IsFalse(string.IsNullOrEmpty(console.ErrorText));
     }
 
     [TestMethod]
@@ -50,8 +49,8 @@ sealed class ConsoleTools_Tests
     {
         var console = new TestConsole();
         ConsoleTools.ReportInfo(console, "test");
-        Assert.IsTrue(string.IsNullOrEmpty(console.Out.ToString()));
-        Assert.IsFalse(string.IsNullOrEmpty(console.Error.ToString()));
+        Assert.IsTrue(string.IsNullOrEmpty(console.OutText));
+        Assert.IsFalse(string.IsNullOrEmpty(console.ErrorText));
     }
 
     [TestMethod]
@@ -59,8 +58,8 @@ sealed class ConsoleTools_Tests
     {
         var console = new TestConsole();
         ConsoleTools.ReportRebootRequired(console);
-        Assert.IsTrue(string.IsNullOrEmpty(console.Out.ToString()));
-        Assert.IsFalse(string.IsNullOrEmpty(console.Error.ToString()));
+        Assert.IsTrue(string.IsNullOrEmpty(console.OutText));
+        Assert.IsFalse(string.IsNullOrEmpty(console.ErrorText));
     }
 
     [TestMethod]
@@ -74,14 +73,14 @@ sealed class ConsoleTools_Tests
         if (noStub)
         {
             Assert.IsTrue(ConsoleTools.CheckNoStub(vidPid, console));
-            Assert.IsTrue(string.IsNullOrEmpty(console.Out.ToString()));
-            Assert.IsTrue(string.IsNullOrEmpty(console.Error.ToString()));
+            Assert.IsTrue(string.IsNullOrEmpty(console.OutText));
+            Assert.IsTrue(string.IsNullOrEmpty(console.ErrorText));
         }
         else
         {
             Assert.IsFalse(ConsoleTools.CheckNoStub(vidPid, console));
-            Assert.IsTrue(string.IsNullOrEmpty(console.Out.ToString()));
-            Assert.IsFalse(string.IsNullOrEmpty(console.Error.ToString()));
+            Assert.IsTrue(string.IsNullOrEmpty(console.OutText));
+            Assert.IsFalse(string.IsNullOrEmpty(console.ErrorText));
         }
     }
 }

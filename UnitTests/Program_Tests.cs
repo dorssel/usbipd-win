@@ -2,8 +2,6 @@
 //
 // SPDX-License-Identifier: GPL-3.0-only
 
-using System.CommandLine;
-
 namespace UnitTests;
 
 [TestClass]
@@ -13,14 +11,14 @@ sealed class Program_Tests
     [TestMethod]
     public void MainSuccess()
     {
-        var exitCode = (ExitCode)Program.Main("--version");
+        var exitCode = (ExitCode)Program.Main("--version").Result;
         Assert.AreEqual(ExitCode.Success, exitCode);
     }
 
     [TestMethod]
     public void MainParseError()
     {
-        var exitCode = (ExitCode)Program.Main("unknown-command");
+        var exitCode = (ExitCode)Program.Main("unknown-command").Result;
         Assert.AreEqual(ExitCode.ParseError, exitCode);
     }
 
@@ -31,10 +29,11 @@ sealed class Program_Tests
         mock.Setup(m => m.License(
             It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult((ExitCode)0x0badf00d));
 
-        Assert.ThrowsExactly<UnexpectedResultException>(() =>
+        var exception = Assert.ThrowsExactly<AggregateException>(() =>
         {
             Test(ExitCode.Success, mock, "license");
         });
+        Assert.IsInstanceOfType<UnexpectedResultException>(exception.InnerException);
     }
 
     [TestMethod]
