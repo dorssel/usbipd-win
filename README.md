@@ -45,6 +45,10 @@ This will install:
 
 ## How to use
 
+> [!TIP]
+> See the [wiki](https://github.com/dorssel/usbipd-win/wiki/Enable-Tab-Completion) on how to enable tab completion
+for PowerShell.
+
 ### Share Devices
 
 By default devices are not shared with USBIP clients.
