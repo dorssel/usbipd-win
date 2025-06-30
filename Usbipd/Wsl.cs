@@ -91,6 +91,8 @@ static partial class Wsl
             RedirectStandardError = true,
             RedirectStandardInput = true,
         };
+        // WSL 0.64 introduced this opt-in. This ensures that all WSL versions act the same.
+        _ = startInfo.Environment.Remove("WSL_UTF8");
         if (linux is not null)
         {
             startInfo.ArgumentList.Add("--distribution");
