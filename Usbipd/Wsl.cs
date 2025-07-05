@@ -3,6 +3,8 @@
 // SPDX-FileCopyrightText: 2022 Ye Jun Huang
 //
 // SPDX-License-Identifier: GPL-3.0-only
+//
+// SPDX-FileContributor: Fred Frey
 
 using System.Diagnostics;
 using System.Globalization;
@@ -101,7 +103,17 @@ static partial class Wsl
             startInfo.ArgumentList.Add("root");
             startInfo.ArgumentList.Add("--cd");
             startInfo.ArgumentList.Add(linux.Value.directory);
-            startInfo.ArgumentList.Add("--exec");
+            // The first argument is the actual command to run within the WSL distribution.
+            if (arguments.First().Contains('/'))
+            {
+                // If we specified a path, then we don't need a shell.
+                startInfo.ArgumentList.Add("--exec");
+            }
+            else
+            {
+                startInfo.ArgumentList.Add("--shell-type");
+                startInfo.ArgumentList.Add("standard");
+            }
         }
         foreach (var argument in arguments)
         {
@@ -328,11 +340,11 @@ static partial class Wsl
 
         // Check: WSL kernel must be USBIP capable.
         {
-            var wslResult = await RunWslAsync((distribution, "/"), null, true, cancellationToken, "/bin/ls", "--directory", "/sys/bus/platform/drivers/vhci_hcd");
+            var wslResult = await RunWslAsync((distribution, "/"), null, true, cancellationToken, "ls", "--directory", "/sys/bus/platform/drivers/vhci_hcd");
             if (wslResult.ExitCode != 0)
             {
                 // No USBIP driver (yet), check for loadable module support.
-                wslResult = await RunWslAsync((distribution, "/"), null, true, cancellationToken, "/bin/ls", "/proc/modules");
+                wslResult = await RunWslAsync((distribution, "/"), null, true, cancellationToken, "ls", "/proc/modules");
                 if (wslResult.ExitCode != 0)
                 {
                     // No USBIP driver, and no loadable module support.
@@ -341,11 +353,19 @@ static partial class Wsl
                     return ExitCode.Failure;
                 }
                 console.ReportInfo($"Loading vhci_hcd module.");
-                wslResult = await RunWslAsync((distribution, "/"), null, false, cancellationToken, "/sbin/modprobe", "vhci_hcd");
+                wslResult = await RunWslAsync((distribution, "/"), null, false, cancellationToken, "modprobe", "vhci_hcd");
                 if (wslResult.ExitCode != 0)
                 {
-                    // Must be an old WSL version, or a misconfigured custom kernel.
-                    console.ReportError($"Loading vhci_hcd failed; update with 'wsl --update'.");
+                    if (wslResult.ExitCode == 127)
+                    {
+                        // Must be a distribution that requires some package installed for the modprobe command.
+                        console.ReportError($"The 'modprobe' command is unavailable; ensure that the package providing it is installed for this distribution.");
+                    }
+                    else
+                    {
+                        // Must be an old WSL version, or a misconfigured custom kernel.
+                        console.ReportError($"Loading vhci_hcd failed; update with 'wsl --update'.");
+                    }
                     return ExitCode.Failure;
                 }
             }
@@ -385,7 +405,7 @@ static partial class Wsl
         // Now find out the IP address of the host (if not explicitly provided by the user).
         if (hostAddress is null)
         {
-            var wslResult = await RunWslAsync((distribution, "/"), null, false, cancellationToken, "/bin/wslinfo", "--networking-mode");
+            var wslResult = await RunWslAsync((distribution, "/"), null, false, cancellationToken, "wslinfo", "--networking-mode");
             string networkingMode;
             if (wslResult.ExitCode == 0)
             {
@@ -412,7 +432,7 @@ static partial class Wsl
                     // We need to get the default gateway address.
                     // We use 'cat /proc/net/route', where we assume 'cat' is available on all distributions
                     //      and /proc/net/route is supported by the WSL kernel.
-                    var ipResult = await RunWslAsync((distribution, "/"), null, false, cancellationToken, "/bin/cat", "/proc/net/route");
+                    var ipResult = await RunWslAsync((distribution, "/"), null, false, cancellationToken, "cat", "/proc/net/route");
                     if (ipResult.ExitCode == 0)
                     {
                         // Example output:
@@ -454,7 +474,7 @@ static partial class Wsl
             try
             {
                 // With minimal requirements (bash only) try to connect from WSL to our server.
-                var pingResult = await RunWslAsync((distribution, "/"), null, false, linkedTokenSource.Token, "/bin/bash", "-c",
+                var pingResult = await RunWslAsync((distribution, "/"), null, false, linkedTokenSource.Token, "bash", "-c",
                     $"echo < /dev/tcp/{hostAddress}/{Interop.UsbIp.USBIP_PORT}");
                 if (pingResult.StandardError.Contains("refused"))
                 {
