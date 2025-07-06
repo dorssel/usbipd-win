@@ -49,6 +49,9 @@ SPDX-License-Identifier: GPL-3.0-only
     <PublishDocumentationFiles>false</PublishDocumentationFiles>
     <NoWarn>CS1591</NoWarn>
 
+    <!-- Bump MSTest.Sdk "transitive" dependencies (they are actually direct dependencies) -->
+    <MicrosoftNETTestSdkVersion>17.14.1</MicrosoftNETTestSdkVersion>
+
     <!-- Deterministic builds -->
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
     <RestoreLockedMode Condition="$(ContinuousIntegrationBuild)">true</RestoreLockedMode>
