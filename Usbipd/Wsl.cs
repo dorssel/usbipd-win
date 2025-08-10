@@ -420,11 +420,11 @@ static partial class Wsl
             switch (networkingMode)
             {
                 case "none":
-                case "virtioproxy":
                 default:
                     console.ReportError($"Networking mode '{networkingMode}' is not supported.");
                     return ExitCode.Failure;
                 case "mirrored":
+                case "virtioproxy":
                     hostAddress = IPAddress.Loopback;
                     break;
                 case "nat":
