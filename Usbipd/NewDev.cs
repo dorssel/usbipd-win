@@ -106,7 +106,7 @@ static class NewDev
         }
 
         BOOL reboot = false;
-        unsafe
+        unsafe // DevSkim: ignore DS172412
         {
             // First, we must set a NULL driver, just in case no default driver exists.
             using var deviceInfoSet = PInvoke.SetupDiCreateDeviceInfoList(null, default);
@@ -132,7 +132,7 @@ static class NewDev
         // 200 ms seems to work, so delay for 500 ms for good measure...
         Thread.Sleep(TimeSpan.FromMilliseconds(500));
 
-        unsafe
+        unsafe // DevSkim: ignore DS172412
         {
             // Now we let Windows install the default PnP driver.
             // We don't fail if no such driver can be found.
