@@ -160,8 +160,9 @@ sealed record ExportedDevice(string InstanceId, BusId BusId, Linux.UsbDeviceSpee
             {
                 if (data2.Flags.Anonymous.DeviceIsOperatingAtSuperSpeedPlusOrHigher)
                 {
-                    // HACK: Linux vhci_hcd does not (yet) support USB_SPEED_SUPER_PLUS.
-                    // See: https://elixir.bootlin.com/linux/v5.16.9/source/drivers/usb/usbip/vhci_sysfs.c#L288
+                    // NOTE: Linux vhci_hcd supports USB_SPEED_SUPER_PLUS since kernel version 6.12.
+                    // See: https://elixir.bootlin.com/linux/v6.12/source/drivers/usb/usbip/vhci_sysfs.c#L286
+                    // There is no way to figure out the remote kernel version.
                     // Looks like this only influences the reported rate; the USB protocol is supposed to be the same.
                     // So, we simply lie about the speed...
 
