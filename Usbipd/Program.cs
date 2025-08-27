@@ -536,8 +536,8 @@ static class Program
                     {
                         PolicyRuleOperation.AutoBind =>
                             commandHandlers.PolicyAdd(new PolicyRuleAutoBind(parseResult.GetValue(effectOption),
-                                    parseResult.GetValue(busIdOption),
-                                    parseResult.GetValue(hardwareIdOption)),
+                                    parseResult.GetValueOrNull(busIdOption),
+                                    parseResult.GetValueOrNull(hardwareIdOption)),
                                 console, cancellationToken),
                         _ => throw new UnexpectedResultException($"Unexpected policy rule operation '{operation}'."),
                     });
