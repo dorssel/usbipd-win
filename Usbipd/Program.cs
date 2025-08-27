@@ -178,8 +178,8 @@ static class Program
         public override int Invoke(ParseResult parseResult)
         {
             // Always prepend the product and version.
-            parseResult.Configuration.Output.WriteLine($"{Product} {GitVersionInformation.MajorMinorPatch}");
-            parseResult.Configuration.Output.WriteLine();
+            parseResult.InvocationConfiguration.Output.WriteLine($"{Product} {GitVersionInformation.MajorMinorPatch}");
+            parseResult.InvocationConfiguration.Output.WriteLine();
 
             var command = parseResult.CommandResult.Command;
             foreach (var subCommand in command.Children.OfType<Command>())
@@ -308,13 +308,13 @@ static class Program
             attachCommand.SetAction(async (parseResult, cancellationToken) => (int)(
                 parseResult.GetResult(busIdOption) is not null
                     ? await commandHandlers.AttachWsl(parseResult.GetValue(busIdOption),
-                            parseResult.GetResult(autoAttachOption) is not null,
-                            parseResult.GetResult(unpluggedOption) is not null,
+                            parseResult.GetValue(autoAttachOption),
+                            parseResult.GetValue(unpluggedOption),
                             parseResult.GetValue(wslOption),
                             parseResult.GetValue(hostIpOption),
                             console, cancellationToken)
                     : await commandHandlers.AttachWsl(parseResult.GetValue(hardwareIdOption),
-                            parseResult.GetResult(autoAttachOption) is not null,
+                            parseResult.GetValue(autoAttachOption),
                             parseResult.GetValue(wslOption),
                             parseResult.GetValue(hostIpOption),
                             console, cancellationToken)
@@ -371,10 +371,10 @@ static class Program
             bindCommand.SetAction(async (parseResult, cancellationToken) => (int)(
                 parseResult.GetResult(busIdOption) is not null
                     ? await commandHandlers.Bind(parseResult.GetValue(busIdOption),
-                            parseResult.GetResult(forceOption) is not null,
+                            parseResult.GetValue(forceOption),
                             console, cancellationToken)
                     : await commandHandlers.Bind(parseResult.GetValue(hardwareIdOption),
-                            parseResult.GetResult(forceOption) is not null,
+                            parseResult.GetValue(forceOption),
                             console, cancellationToken)
             ));
             rootCommand.Subcommands.Add(bindCommand);
@@ -426,7 +426,7 @@ static class Program
                 };
             detachCommand.Validators.Add(commandResult => ValidateOneOf(commandResult, allOption, busIdOption, hardwareIdOption));
             detachCommand.SetAction(async (parseResult, cancellationToken) => (int)(
-                parseResult.GetResult(allOption) is not null
+                parseResult.GetValue(allOption)
                     ? await commandHandlers.DetachAll(console, cancellationToken)
                     : parseResult.GetResult(busIdOption) is not null
                         ? await commandHandlers.Detach(parseResult.GetValue(busIdOption), console, cancellationToken)
@@ -463,7 +463,7 @@ static class Program
                 usbidsOption,
             };
             listCommand.SetAction(async (parseResult, cancellationToken) => (int)
-                await commandHandlers.List(parseResult.GetResult(usbidsOption) is not null, console, cancellationToken)
+                await commandHandlers.List(parseResult.GetValue(usbidsOption), console, cancellationToken)
             );
             rootCommand.Subcommands.Add(listCommand);
         }
@@ -589,7 +589,7 @@ static class Program
                 };
                 removeCommand.Validators.Add(commandResult => ValidateOneOf(commandResult, allOption, guidOption));
                 removeCommand.SetAction(async (parseResult, cancellationToken) => (int)(
-                    parseResult.GetResult(allOption) is not null
+                    parseResult.GetValue(allOption)
                         ? await commandHandlers.PolicyRemoveAll(console, cancellationToken)
                         : await commandHandlers.PolicyRemove(parseResult.GetValue(guidOption), console, cancellationToken)
                 ));
@@ -694,7 +694,7 @@ static class Program
             };
             unbindCommand.Validators.Add(commandResult => ValidateOneOf(commandResult, allOption, busIdOption, guidOption, hardwareIdOption));
             unbindCommand.SetAction(async (parseResult, cancellationToken) => (int)(
-                parseResult.GetResult(allOption) is not null
+                parseResult.GetValue(allOption)
                     ? await commandHandlers.UnbindAll(console, cancellationToken)
                     : parseResult.GetResult(busIdOption) is not null
                         ? await commandHandlers.Unbind(parseResult.GetValue(busIdOption), console, cancellationToken)
@@ -758,18 +758,16 @@ static class Program
             rootCommand.Subcommands.Add(uninstallCommand);
         }
 
-        var configuration = new CommandLineConfiguration(rootCommand)
-        {
-            Output = console.Out,
-            Error = console.Error,
-            EnableDefaultExceptionHandler = false,
-        };
-
         try
         {
-            var parseResult = configuration.Parse(args);
+            var parseResult = rootCommand.Parse(args);
             // System.CommandLine requires InvokeAsync if the actions are asynchronous.
-            var exitCode = (ExitCode)await parseResult.InvokeAsync();
+            var exitCode = (ExitCode)await parseResult.InvokeAsync(new()
+            {
+                Output = console.Out,
+                Error = console.Error,
+                EnableDefaultExceptionHandler = false,
+            });
             if (parseResult.Action is ParseErrorAction)
             {
                 // ParseErrorAction returns 1. We want to return ExitCode.ParseError (2) instead.
