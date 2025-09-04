@@ -90,7 +90,7 @@ jobs:
           key: nuget-cache-codeql-${{ hashFiles('global.json', '.config/dotnet-tools.json', '**/packages.lock.json') }}
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
 
       - name: Install dependencies
         run: |
