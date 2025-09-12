@@ -307,13 +307,13 @@ static class Program
             attachCommand.Validators.Add(commandResult => ValidateOptionRequires(commandResult, unpluggedOption, autoAttachOption, busIdOption));
             attachCommand.SetAction(async (parseResult, cancellationToken) => (int)(
                 parseResult.GetResult(busIdOption) is not null
-                    ? await commandHandlers.AttachWsl(parseResult.GetValue(busIdOption),
+                    ? await commandHandlers.AttachWsl(parseResult.GetRequiredValue(busIdOption),
                             parseResult.GetValue(autoAttachOption),
                             parseResult.GetValue(unpluggedOption),
                             parseResult.GetValue(wslOption),
                             parseResult.GetValue(hostIpOption),
                             console, cancellationToken)
-                    : await commandHandlers.AttachWsl(parseResult.GetValue(hardwareIdOption),
+                    : await commandHandlers.AttachWsl(parseResult.GetRequiredValue(hardwareIdOption),
                             parseResult.GetValue(autoAttachOption),
                             parseResult.GetValue(wslOption),
                             parseResult.GetValue(hostIpOption),
@@ -370,10 +370,10 @@ static class Program
             bindCommand.Validators.Add(commandResult => ValidateOneOf(commandResult, busIdOption, hardwareIdOption));
             bindCommand.SetAction(async (parseResult, cancellationToken) => (int)(
                 parseResult.GetResult(busIdOption) is not null
-                    ? await commandHandlers.Bind(parseResult.GetValue(busIdOption),
+                    ? await commandHandlers.Bind(parseResult.GetRequiredValue(busIdOption),
                             parseResult.GetValue(forceOption),
                             console, cancellationToken)
-                    : await commandHandlers.Bind(parseResult.GetValue(hardwareIdOption),
+                    : await commandHandlers.Bind(parseResult.GetRequiredValue(hardwareIdOption),
                             parseResult.GetValue(forceOption),
                             console, cancellationToken)
             ));
@@ -429,8 +429,8 @@ static class Program
                 parseResult.GetValue(allOption)
                     ? await commandHandlers.DetachAll(console, cancellationToken)
                     : parseResult.GetResult(busIdOption) is not null
-                        ? await commandHandlers.Detach(parseResult.GetValue(busIdOption), console, cancellationToken)
-                        : await commandHandlers.Detach(parseResult.GetValue(hardwareIdOption), console, cancellationToken)
+                        ? await commandHandlers.Detach(parseResult.GetRequiredValue(busIdOption), console, cancellationToken)
+                        : await commandHandlers.Detach(parseResult.GetRequiredValue(hardwareIdOption), console, cancellationToken)
             ));
             rootCommand.Subcommands.Add(detachCommand);
         }
@@ -531,13 +531,13 @@ static class Program
                 addCommand.Validators.Add(commandResult => ValidateAtLeastOneOf(commandResult, busIdOption, hardwareIdOption));
                 addCommand.SetAction(async (parseResult, cancellationToken) =>
                 {
-                    var operation = parseResult.GetValue(operationOption);
+                    var operation = parseResult.GetRequiredValue(operationOption);
                     return (int)await (operation switch
                     {
                         PolicyRuleOperation.AutoBind =>
-                            commandHandlers.PolicyAdd(new PolicyRuleAutoBind(parseResult.GetValue(effectOption),
-                                    parseResult.GetValueOrNull(busIdOption),
-                                    parseResult.GetValueOrNull(hardwareIdOption)),
+                            commandHandlers.PolicyAdd(new PolicyRuleAutoBind(parseResult.GetRequiredValue(effectOption),
+                                    parseResult.GetResult(busIdOption)?.GetRequiredValue(busIdOption),
+                                    parseResult.GetResult(hardwareIdOption)?.GetRequiredValue(hardwareIdOption)),
                                 console, cancellationToken),
                         _ => throw new UnexpectedResultException($"Unexpected policy rule operation '{operation}'."),
                     });
@@ -591,7 +591,7 @@ static class Program
                 removeCommand.SetAction(async (parseResult, cancellationToken) => (int)(
                     parseResult.GetValue(allOption)
                         ? await commandHandlers.PolicyRemoveAll(console, cancellationToken)
-                        : await commandHandlers.PolicyRemove(parseResult.GetValue(guidOption), console, cancellationToken)
+                        : await commandHandlers.PolicyRemove(parseResult.GetRequiredValue(guidOption), console, cancellationToken)
                 ));
                 policyCommand.Subcommands.Add(removeCommand);
             }
@@ -697,10 +697,10 @@ static class Program
                 parseResult.GetValue(allOption)
                     ? await commandHandlers.UnbindAll(console, cancellationToken)
                     : parseResult.GetResult(busIdOption) is not null
-                        ? await commandHandlers.Unbind(parseResult.GetValue(busIdOption), console, cancellationToken)
+                        ? await commandHandlers.Unbind(parseResult.GetRequiredValue(busIdOption), console, cancellationToken)
                         : parseResult.GetResult(guidOption) is not null
-                            ? await commandHandlers.Unbind(parseResult.GetValue(guidOption), console, cancellationToken)
-                            : await commandHandlers.Unbind(parseResult.GetValue(hardwareIdOption), console, cancellationToken)
+                            ? await commandHandlers.Unbind(parseResult.GetRequiredValue(guidOption), console, cancellationToken)
+                            : await commandHandlers.Unbind(parseResult.GetRequiredValue(hardwareIdOption), console, cancellationToken)
             ));
             rootCommand.Subcommands.Add(unbindCommand);
         }
