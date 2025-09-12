@@ -17,20 +17,7 @@ namespace Usbipd;
 sealed record UsbDevice(string InstanceId, string Description, bool IsForced,
     BusId? BusId = null, Guid? Guid = null, IPAddress? IPAddress = null, string? StubInstanceId = null)
 {
-    public VidPid HardwareId
-    {
-        get
-        {
-            try
-            {
-                return VidPid.FromHardwareOrInstanceId(InstanceId);
-            }
-            catch (FormatException)
-            {
-                return new();
-            }
-        }
-    }
+    public VidPid HardwareId => VidPid.TryParseId(InstanceId, out var vidPid) ? vidPid : default;
 
     /// <summary>
     /// Gets all devices, either bound or connected.

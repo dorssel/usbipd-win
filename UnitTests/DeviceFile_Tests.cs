@@ -12,6 +12,8 @@ namespace UnitTests;
 [TestClass]
 sealed class DeviceFile_Tests
 {
+    public TestContext TestContext { get; set; }
+
     [TestMethod]
     public void Constructor_Success()
     {
@@ -102,7 +104,8 @@ sealed class DeviceFile_Tests
         using var deviceFile = new DeviceFile(temporaryFile.AbsolutePath);
         var exception = Assert.ThrowsExactly<AggregateException>(() =>
         {
-            deviceFile.IoControlAsync(TEST_IOCTL.FSCTL_QUERY_ALLOCATED_RANGES, null, null).Wait();
+            deviceFile.IoControlAsync(TEST_IOCTL.FSCTL_QUERY_ALLOCATED_RANGES, null, null)
+                .Wait(TestContext.CancellationTokenSource.Token);
         });
         Assert.IsInstanceOfType<Win32Exception>(exception.InnerException);
     }
@@ -116,7 +119,8 @@ sealed class DeviceFile_Tests
         var outputBuffer = new byte[1];
         var exception = Assert.ThrowsExactly<AggregateException>(() =>
         {
-            deviceFile.IoControlAsync(TEST_IOCTL.FSCTL_QUERY_ALLOCATED_RANGES, Tools.StructToBytes(rangeBuffer), outputBuffer).Wait();
+            deviceFile.IoControlAsync(TEST_IOCTL.FSCTL_QUERY_ALLOCATED_RANGES, Tools.StructToBytes(rangeBuffer), outputBuffer)
+                .Wait(TestContext.CancellationTokenSource.Token);
         });
         Assert.IsInstanceOfType<ProtocolViolationException>(exception.InnerException);
     }

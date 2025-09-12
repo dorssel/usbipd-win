@@ -29,6 +29,7 @@ CreateFile
 CreateService
 DeviceIoControl
 DiInstallDevice
+DiUninstallDevice
 DiUninstallDriver
 GetCurrentProcess
 LookupPrivilegeValue
@@ -40,7 +41,9 @@ SetEvent
 SetupCopyOEMInf
 SetupDiBuildDriverInfoList
 SetupDiCreateDeviceInfoList
+SetupDiEnumDeviceInfo
 SetupDiEnumDriverInfo
+SetupDiGetClassDevs
 SetupDiOpenDeviceInfo
 SetupDiSetDeviceInstallParams
 
@@ -48,11 +51,11 @@ SETUP_DI_DEVICE_INSTALL_FLAGS
 SETUP_DI_DEVICE_INSTALL_FLAGS_EX
 
 DEVPKEY_Device_CompatibleIds
-DEVPKEY_Device_DriverDesc
 DEVPKEY_Device_FriendlyName
 DEVPKEY_Device_HardwareIds
 DEVPKEY_Device_InstanceId
 DEVPKEY_Device_LocationInfo
+DEVPKEY_Device_MatchingDeviceId
 DEVPKEY_NAME
 
 GUID_DEVINTERFACE_USB_HUB

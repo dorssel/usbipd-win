@@ -56,7 +56,7 @@ sealed class Automation_Tests
     public void State_Devices()
     {
         var state = new State(TestDevices);
-        Assert.AreEqual(2, state.Devices.Count);
+        Assert.HasCount(2, state.Devices);
     }
 
     [TestMethod]

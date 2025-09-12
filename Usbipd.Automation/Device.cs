@@ -42,20 +42,7 @@ sealed class Device
 #if !NETSTANDARD
     [JsonIgnore]
 #endif
-    public VidPid HardwareId
-    {
-        get
-        {
-            try
-            {
-                return VidPid.FromHardwareOrInstanceId(InstanceId);
-            }
-            catch (FormatException)
-            {
-                return new VidPid();
-            }
-        }
-    }
+    public VidPid HardwareId => VidPid.TryParseId(InstanceId, out var vidPid) ? vidPid : default;
 
 #if NETSTANDARD
     [DataMember]
