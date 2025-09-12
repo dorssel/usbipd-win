@@ -3,14 +3,16 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using Usbipd.Automation;
 using Windows.Win32;
 using Windows.Win32.Devices.DeviceAndDriverInstallation;
 using Windows.Win32.Foundation;
 
 namespace Usbipd;
 
-static class NewDev
+static class DriverTools
 {
     public static bool ForceVBoxDriver(string originalInstanceId)
     {
@@ -161,6 +163,65 @@ static class NewDev
                 // The device will be listed under "Other devices" with a question mark.
             }
         }
+        return reboot;
+    }
+
+    /// <summary>
+    /// Uninstalls all stub devices. This assumes everything is detached at this point.
+    /// This is used by the uninstaller.
+    /// This is also used by the installer, to ensure that any future attaches use the newly installed driver.
+    /// </summary>
+    /// <returns>True if a reboot is required.</returns>
+    public static bool DeleteStubDevices(TextWriter log)
+    {
+        var reboot = false;
+
+        // Get all devices that exist, including mock devices, present or not, in any hardware profile (i.e., *really* all of them).
+        var devInfo = new SP_DEVINFO_DATA()
+        {
+            cbSize = (uint)Unsafe.SizeOf<SP_DEVINFO_DATA>(),
+        };
+        using var usbDevices = PInvoke.SetupDiGetClassDevs(null, null!, HWND.Null, SETUP_DI_GET_CLASS_DEVS_FLAGS.DIGCF_ALLCLASSES);
+        for (uint memberIndex = 0; PInvoke.SetupDiEnumDeviceInfo(usbDevices, memberIndex, ref devInfo); memberIndex++)
+        {
+            if (!ConfigurationManager.HasVBoxDriver(devInfo.DevInst))
+            {
+                continue;
+            }
+            string instanceId;
+            try
+            {
+                instanceId = (string)ConfigurationManager.Get_DevNode_Property(devInfo.DevInst, PInvoke.DEVPKEY_Device_InstanceId);
+            }
+            catch (ConfigurationManagerException)
+            {
+                // Device disappeared in the meantime; ignore it.
+                continue;
+            }
+            if (!VidPid.TryParseId(instanceId, out var vidPid) || vidPid != Interop.VBoxUsb.Stub)
+            {
+                // Not a stub device.
+                continue;
+            }
+
+            log.WriteLine($"Uninstalling stub device: {instanceId}");
+
+            BOOL tmpReboot;
+            unsafe // DevSkim: ignore DS172412
+            {
+                // This is a best-effort attempt; we ignore errors.
+                if (!PInvoke.DiUninstallDevice(default, usbDevices, devInfo, 0, &tmpReboot))
+                {
+                    log.WriteLine($"Uninstall failed: {Marshal.GetLastPInvokeError()}: {Marshal.GetLastPInvokeErrorMessage()}");
+                }
+                else if (tmpReboot)
+                {
+                    log.WriteLine($"Uninstall requires reboot");
+                    reboot = true;
+                }
+            }
+        }
+
         return reboot;
     }
 }

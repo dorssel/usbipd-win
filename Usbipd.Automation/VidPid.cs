@@ -40,11 +40,7 @@ readonly record struct VidPid
             && ushort.TryParse(match.Groups[1].Value, NumberStyles.AllowHexSpecifier, null, out var vid)
             && ushort.TryParse(match.Groups[2].Value, NumberStyles.AllowHexSpecifier, null, out var pid))
         {
-            vidPid = new()
-            {
-                Vid = vid,
-                Pid = pid,
-            };
+            vidPid = new(vid, pid);
             return true;
         }
         else
@@ -59,21 +55,33 @@ readonly record struct VidPid
         return TryParse(input, out var pidVid) ? pidVid : throw new FormatException();
     }
 
-    internal static VidPid FromHardwareOrInstanceId(string input)
+    /// <summary>
+    /// Parses a HardwareId or InstanceId string to extract the VID and PID.
+    /// </summary>
+    /// <param name="input">A HardwareId or InstanceId.</param>
+    /// <param name="vidPid">If parsing was successful, the parsed VidPid. Otherwise default.</param>
+    /// <returns>true if parsing succeeded.</returns>
+    internal static bool TryParseId(string input, out VidPid vidPid)
     {
         // Examples:
         //   VID_80EE&PID_CAFE
+        //   Vid_80EE&Pid_CAFE
         //   USB\\VID_1BCF&PID_28A6\\6&17A81E1D&0&8
-        var match = Regex.Match(input, "VID_([0-9a-fA-F]{4})&PID_([0-9a-fA-F]{4})([^0-9a-fA-F]|$)");
-        return match.Success
-            && ushort.TryParse(match.Groups[1].Value, NumberStyles.AllowHexSpecifier, null, out var vid)
-            && ushort.TryParse(match.Groups[2].Value, NumberStyles.AllowHexSpecifier, null, out var pid)
-            ? new()
-            {
-                Vid = vid,
-                Pid = pid,
-            }
-            : throw new FormatException();
+        //
+        // NOTE: everyone seems to use capitals for VID and PID *except* VBoxUSB.
+        var match = Regex.Match(input, "VID_([0-9a-fA-F]{4})&PID_([0-9a-fA-F]{4})([^0-9a-fA-F]|$)", RegexOptions.IgnoreCase);
+        if (match.Success)
+        {
+            vidPid = new(
+                ushort.Parse(match.Groups[1].Value, NumberStyles.AllowHexSpecifier, null),
+                ushort.Parse(match.Groups[2].Value, NumberStyles.AllowHexSpecifier, null));
+            return true;
+        }
+        else
+        {
+            vidPid = default;
+            return false;
+        }
     }
 
     public string? Vendor => Descriptions.Vendor;

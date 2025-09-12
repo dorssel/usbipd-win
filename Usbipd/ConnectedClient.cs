@@ -113,7 +113,7 @@ sealed class ConnectedClient(ILogger<ConnectedClient> logger, ClientContext clie
         {
             var buf = new byte[SYSFS_BUS_ID_SIZE];
             await Stream.ReadMessageAsync(buf, cancellationToken);
-            if (!BusId.TryParse(Encoding.UTF8.GetString(buf.TakeWhile(b => b != 0).ToArray()), out busId))
+            if (!BusId.TryParse(Encoding.UTF8.GetString([.. buf.TakeWhile(b => b != 0)]), out busId))
             {
                 await SendOpCodeAsync(OpCode.OP_REP_IMPORT, Status.ST_NODEV);
                 return;

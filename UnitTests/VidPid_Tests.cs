@@ -245,18 +245,18 @@ sealed class VidPid_Tests
         static readonly string[] _Invalid = [
             "",
             "VID_&PID_",
-            "VID_000&PID_0000",
-            "VID_0000&PID_000",
-            "VID_00000&PID_0000",
-            "VID_0000&PID_00000",
-            "VID_0000 &PID_0000",
-            "VID_0000& PID_0000",
-            "VID_000g&PID_0000",
-            "VID_0000&PID_000g",
-            "ID_0000&PID_0000",
-            "0000&0000",
-            "VID_0000:PID_0000",
-            "0000:0000",
+            "VID_111&PID_1111",
+            "VID_1111&PID_111",
+            "VID_11111&PID_1111",
+            "VID_1111&PID_11111",
+            "VID_1111 &PID_1111",
+            "VID_1111& PID_1111",
+            "VID_111g&PID_1111",
+            "VID_1111&PID_111g",
+            "ID_1111&PID_1111",
+            "1111&1111",
+            "VID_1111:PID_1111",
+            "1111:1111",
         ];
 
         public static IEnumerable<string[]> Invalid => from value in _Invalid select new string[] { value };
@@ -276,7 +276,7 @@ sealed class VidPid_Tests
             "VID_0000&PID_cdef",
             "VID_0000&PID_CDEF",
             "VID_fFfF&PID_FfFf",
-            "xxxVID_0000&PID_0000xxx",
+            "xxxVID_1111&PID_1111xxx",
         ];
 
         public static IEnumerable<string[]> Valid => from value in _Valid select new string[] { value };
@@ -284,19 +284,16 @@ sealed class VidPid_Tests
 
     [TestMethod]
     [DynamicData(nameof(HardwareIdData.Invalid), typeof(HardwareIdData))]
-    public void FromHardwareOrInstanceIdInvalid(string text)
+    public void FromHardwareOrInstanceId_ParseError(string text)
     {
-        Assert.ThrowsExactly<FormatException>(() =>
-        {
-            var vidPid = VidPid.FromHardwareOrInstanceId(text);
-        });
+        Assert.IsFalse(VidPid.TryParseId(text, out _));
     }
 
     [TestMethod]
     [DynamicData(nameof(HardwareIdData.Valid), typeof(HardwareIdData))]
     public void FromHardwareOrInstanceIdValid(string text)
     {
-        var vidPid = VidPid.FromHardwareOrInstanceId(text);
+        Assert.IsTrue(VidPid.TryParseId(text, out var vidPid));
         var expectedVid = ushort.Parse(text.Split("VID_")[1][..4], NumberStyles.AllowHexSpecifier);
         var expectedPid = ushort.Parse(text.Split("PID_")[1][..4], NumberStyles.AllowHexSpecifier);
         Assert.AreEqual(expectedVid, vidPid.Vid);

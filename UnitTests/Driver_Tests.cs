@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: GPL-3.0-only
 
+using Usbipd.Automation;
 using Windows.Win32;
 using Windows.Win32.Devices.DeviceAndDriverInstallation;
 
@@ -38,44 +39,28 @@ sealed class Driver_Tests
         return $"VBoxUSB.NT{section}";
     }
 
-    static string GetString(SafeInfHandle inf, string section, string key)
-    {
-        unsafe // DevSkim: ignore DS172412
-        {
-            var requiredSize = 64;
-            var buffer = stackalloc char[requiredSize];
-            var success = TestPInvoke.SetupGetLineText(null, inf, section, key, new(buffer, requiredSize), (uint*)&requiredSize);
-
-            Assert.IsTrue(success);
-
-            return new(buffer);
-        }
-    }
-
-    static string GetDriverDescription(SafeInfHandle inf)
-    {
-        return GetString(inf, "Strings", "VBoxUSB_DrvDesc");
-    }
-
     [TestMethod]
     [DynamicData(nameof(SupportedPlatforms))]
     public void HardwareId(string platform)
     {
-        using var inf = GetInf(platform);
+        // Expected format in INF:
+        //
+        // [VBoxUSB.NTAMD64]
+        // %VBoxUSB_DrvDesc%=VBoxUSB,USB\VID_80EE&PID_CAFE
 
-        var hardwareId = GetString(inf, GetPlatformSection(platform), GetDriverDescription(inf)).Split(',')[1];
+        string hardwareId;
+        unsafe // DevSkim: ignore DS172412
+        {
+            using var inf = GetInf(platform);
+            var success = TestPInvoke.SetupFindFirstLine(inf, GetPlatformSection(platform), null, out var context);
+            Assert.IsTrue(success);
+            Span<char> buffer = stackalloc char[64];
+            success = TestPInvoke.SetupGetStringField(context, 2, buffer, null);
+            Assert.IsTrue(success);
+            hardwareId = new(buffer.TrimEnd('\0'));
+        }
 
-        Assert.AreEqual($@"USB\{Usbipd.Interop.VBoxUsb.StubHardwareId}", hardwareId);
-    }
-
-    [TestMethod]
-    [DynamicData(nameof(SupportedPlatforms))]
-    public void DriverDescription(string platform)
-    {
-        using var inf = GetInf(platform);
-
-        var driverDescription = GetDriverDescription(inf);
-
-        Assert.AreEqual(Usbipd.Interop.VBoxUsb.DriverDescription, driverDescription);
+        Assert.IsTrue(VidPid.TryParseId(hardwareId, out var vidPid));
+        Assert.AreEqual(Usbipd.Interop.VBoxUsb.Stub, vidPid);
     }
 }

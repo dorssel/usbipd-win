@@ -85,7 +85,7 @@ static partial class ConfigurationManager
         }
     }
 
-    static object Get_DevNode_Property(uint deviceNode, in DEVPROPKEY devPropKey)
+    internal static object Get_DevNode_Property(uint deviceNode, in DEVPROPKEY devPropKey)
     {
         unsafe // DevSkim: ignore DS172412
         {
@@ -260,7 +260,7 @@ static partial class ConfigurationManager
                         continue;
                     }
                     var hardwareIds = (string[])Get_DevNode_Property(deviceNode, PInvoke.DEVPKEY_Device_HardwareIds);
-                    if (hardwareIds.Any(hardwareId => hardwareId.Contains(Interop.VBoxUsb.StubHardwareId, StringComparison.InvariantCultureIgnoreCase)))
+                    if (hardwareIds.Any(hardwareId => VidPid.TryParseId(hardwareId, out var vidPid) && vidPid == Interop.VBoxUsb.Stub))
                     {
                         // Do not include stubs.
                         continue;
@@ -311,18 +311,30 @@ static partial class ConfigurationManager
         throw new FileNotFoundException();
     }
 
+    public static bool HasVBoxDriver(uint deviceNode)
+    {
+        try
+        {
+            var matchingDeviceId = (string)Get_DevNode_Property(deviceNode, PInvoke.DEVPKEY_Device_MatchingDeviceId);
+            return VidPid.TryParseId(matchingDeviceId, out var vidPid) && vidPid == Interop.VBoxUsb.Stub;
+        }
+        catch (ConfigurationManagerException)
+        {
+            // Device does not have a MatchingDeviceId, so definitely not the VBoxUSB driver.
+            return false;
+        }
+    }
+
     public static bool HasVBoxDriver(string instanceId)
     {
         try
         {
             var deviceNode = Locate_DevNode(instanceId, false);
-            var driverDescription = (string)Get_DevNode_Property(deviceNode, PInvoke.DEVPKEY_Device_DriverDesc);
-            return driverDescription == Interop.VBoxUsb.DriverDescription;
+            return HasVBoxDriver(deviceNode);
         }
         catch (ConfigurationManagerException)
         {
-            // Device is gone (uninstalled) or does not have a driver description.
-            // In any case, the device does not have the VBoxDriver.
+            // Device is gone (uninstalled), so definitely not the VBoxUSB driver.
             return false;
         }
     }
@@ -345,12 +357,12 @@ static partial class ConfigurationManager
                 var deviceNode = Locate_DevNode(deviceId, false);
                 // Filter out the devices that are mocked by VboxUsbMon, since those are supposed to have the VBox driver.
                 var hardwareIds = (string[])Get_DevNode_Property(deviceNode, PInvoke.DEVPKEY_Device_HardwareIds);
-                if (hardwareIds.Any(hardwareId => hardwareId.Contains(Interop.VBoxUsb.StubHardwareId, StringComparison.InvariantCultureIgnoreCase)))
+                if (hardwareIds.Any(hardwareId => VidPid.TryParseId(hardwareId, out var vidPid) && vidPid == Interop.VBoxUsb.Stub))
                 {
                     continue;
                 }
                 // Don't return the device if the *current* driver isn't the VBox driver.
-                if (!HasVBoxDriver(deviceId))
+                if (!HasVBoxDriver(deviceNode))
                 {
                     continue;
                 }

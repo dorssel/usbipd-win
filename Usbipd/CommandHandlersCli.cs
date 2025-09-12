@@ -185,7 +185,7 @@ sealed partial class CommandHandlers : ICommandHandlers
         if (force != device.IsForced)
         {
             // Switch driver.
-            var reboot = force ? NewDev.ForceVBoxDriver(device.InstanceId) : NewDev.UnforceVBoxDriver(device.InstanceId);
+            var reboot = force ? DriverTools.ForceVBoxDriver(device.InstanceId) : DriverTools.UnforceVBoxDriver(device.InstanceId);
             if (reboot)
             {
                 console.ReportRebootRequired();
@@ -226,7 +226,7 @@ sealed partial class CommandHandlers : ICommandHandlers
             return Task.FromResult(ExitCode.AccessDenied);
         }
         RegistryUtilities.StopSharingDevice(device.Guid.Value);
-        if (NewDev.UnforceVBoxDriver(device.InstanceId))
+        if (DriverTools.UnforceVBoxDriver(device.InstanceId))
         {
             console.ReportRebootRequired();
         }
@@ -259,7 +259,7 @@ sealed partial class CommandHandlers : ICommandHandlers
             }
             try
             {
-                if (NewDev.UnforceVBoxDriver(device.InstanceId))
+                if (DriverTools.UnforceVBoxDriver(device.InstanceId))
                 {
                     reboot = true;
                 }
@@ -313,7 +313,7 @@ sealed partial class CommandHandlers : ICommandHandlers
         {
             try
             {
-                if (NewDev.UnforceVBoxDriver(originalDeviceId))
+                if (DriverTools.UnforceVBoxDriver(originalDeviceId))
                 {
                     reboot = true;
                 }

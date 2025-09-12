@@ -6,5 +6,6 @@ FILE_ALLOCATED_RANGE_BUFFER
 FSCTL_QUERY_ALLOCATED_RANGES
 
 SetupCloseInfFile
-SetupGetLineText
+SetupFindFirstLine
+SetupGetStringField
 SetupOpenInfFile

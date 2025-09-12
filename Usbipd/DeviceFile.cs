@@ -46,29 +46,35 @@ sealed partial class DeviceFile : IDisposable
 
     public Task<uint> IoControlAsync(uint ioControlCode, byte[]? input, byte[]? output, bool exactOutput = true)
     {
-        var taskCompletionSource = new TaskCompletionSource<uint>();
+        var taskCompletionSource = new TaskCompletionSource<uint>(TaskCreationOptions.RunContinuationsAsynchronously);
 
         unsafe // DevSkim: ignore DS172412
         {
             void OnCompletion(uint errorCode, uint numBytes, NativeOverlapped* nativeOverlapped)
             {
-                if ((WIN32_ERROR)errorCode == WIN32_ERROR.ERROR_SUCCESS)
+                try
                 {
-                    if (exactOutput && ((output?.Length ?? 0) != numBytes))
+                    if ((WIN32_ERROR)errorCode == WIN32_ERROR.ERROR_SUCCESS)
                     {
-                        taskCompletionSource.SetException(
-                            new ProtocolViolationException($"DeviceIoControl returned {numBytes} bytes, expected {output?.Length ?? 0}"));
+                        if (exactOutput && ((output?.Length ?? 0) != numBytes))
+                        {
+                            taskCompletionSource.SetException(
+                                new ProtocolViolationException($"DeviceIoControl returned {numBytes} bytes, expected {output?.Length ?? 0}"));
+                        }
+                        else
+                        {
+                            taskCompletionSource.SetResult(numBytes);
+                        }
                     }
                     else
                     {
-                        taskCompletionSource.SetResult(numBytes);
+                        taskCompletionSource.SetException(new Win32Exception((int)errorCode, $"DeviceIoControl returned error {(WIN32_ERROR)errorCode}"));
                     }
                 }
-                else
+                finally
                 {
-                    taskCompletionSource.SetException(new Win32Exception((int)errorCode, $"DeviceIoControl returned error {(WIN32_ERROR)errorCode}"));
+                    BoundHandle.FreeNativeOverlapped(nativeOverlapped);
                 }
-                BoundHandle.FreeNativeOverlapped(nativeOverlapped);
             }
 
             var nativeOverlapped = BoundHandle.AllocateNativeOverlapped(OnCompletion, null, new object?[] { input, output });

@@ -282,7 +282,7 @@ static partial class ConsoleTools
 
     public static bool CheckNoStub(VidPid vidPid, IConsole console)
     {
-        if (vidPid == VidPid.FromHardwareOrInstanceId(Interop.VBoxUsb.StubHardwareId))
+        if (vidPid == Interop.VBoxUsb.Stub)
         {
             console.ReportError($"Manipulating the USBIP stub devices is not supported; use the original device VID:PID.");
             return false;

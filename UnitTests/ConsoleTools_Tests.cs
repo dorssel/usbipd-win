@@ -64,11 +64,12 @@ sealed class ConsoleTools_Tests
 
     [TestMethod]
     [DataRow("VID_80EE&PID_CAFE", false)]
+    [DataRow("Vid_80EE&Pid_Cafe", false)]
     [DataRow("VID_12AB&PID_34CD", true)]
 
     public void CheckNoStub(string hardwareId, bool noStub)
     {
-        var vidPid = VidPid.FromHardwareOrInstanceId(hardwareId);
+        Assert.IsTrue(VidPid.TryParseId(hardwareId, out var vidPid), "Test data is invalid");
         var console = new TestConsole();
         if (noStub)
         {
