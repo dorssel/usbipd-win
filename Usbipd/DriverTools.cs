@@ -212,7 +212,7 @@ static class DriverTools
                 // This is a best-effort attempt; we ignore errors.
                 if (!PInvoke.DiUninstallDevice(default, usbDevices, devInfo, 0, &tmpReboot))
                 {
-                    log.WriteLine($"Uninstall failed: {Marshal.GetLastPInvokeError()}: {Marshal.GetLastPInvokeErrorMessage()}");
+                    log.WriteLine($"DiUninstallDevice -> {new Win32Exception()}");
                 }
                 else if (tmpReboot)
                 {

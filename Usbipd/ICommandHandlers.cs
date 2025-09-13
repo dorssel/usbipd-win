@@ -9,6 +9,7 @@ namespace Usbipd;
 
 interface ICommandHandlers
 {
+    // CLI
     Task<ExitCode> AttachWsl(BusId busId, bool autoAttach, bool unplugged, string? distribution, IPAddress? hostAddress,
         IConsole console, CancellationToken cancellationToken);
     Task<ExitCode> AttachWsl(VidPid vidPid, bool autoAttach, string? distribution, IPAddress? hostAddress,
@@ -20,16 +21,21 @@ interface ICommandHandlers
     Task<ExitCode> DetachAll(IConsole console, CancellationToken cancellationToken);
     Task<ExitCode> License(IConsole console, CancellationToken cancellationToken);
     Task<ExitCode> List(bool usbIds, IConsole console, CancellationToken cancellationToken);
-    Task<ExitCode> Server(string[] args, IConsole console, CancellationToken cancellationToken);
-    Task<ExitCode> Unbind(BusId busId, IConsole console, CancellationToken cancellationToken);
-    Task<ExitCode> Unbind(Guid guid, IConsole console, CancellationToken cancellationToken);
-    Task<ExitCode> Unbind(VidPid vidPid, IConsole console, CancellationToken cancellationToken);
-    Task<ExitCode> UnbindAll(IConsole console, CancellationToken cancellationToken);
-    Task<ExitCode> State(IConsole console, CancellationToken cancellationToken);
-    Task<ExitCode> Install(IConsole console, CancellationToken cancellationToken);
-    Task<ExitCode> Uninstall(IConsole console, CancellationToken cancellationToken);
     Task<ExitCode> PolicyAdd(PolicyRule rule, IConsole console, CancellationToken cancellationToken);
     Task<ExitCode> PolicyList(IConsole console, CancellationToken cancellationToken);
     Task<ExitCode> PolicyRemove(Guid guid, IConsole console, CancellationToken cancellationToken);
     Task<ExitCode> PolicyRemoveAll(IConsole console, CancellationToken cancellationToken);
+    Task<ExitCode> State(IConsole console, CancellationToken cancellationToken);
+    Task<ExitCode> Unbind(BusId busId, IConsole console, CancellationToken cancellationToken);
+    Task<ExitCode> Unbind(Guid guid, IConsole console, CancellationToken cancellationToken);
+    Task<ExitCode> Unbind(VidPid vidPid, IConsole console, CancellationToken cancellationToken);
+    Task<ExitCode> UnbindAll(IConsole console, CancellationToken cancellationToken);
+
+    // Server
+    Task<ExitCode> Server(string[] args, IConsole console, CancellationToken cancellationToken);
+
+    // Installer
+    Task<ExitCode> InstallerInstallDriver(IConsole console, CancellationToken cancellationToken);
+    Task<ExitCode> InstallerInstallMonitor(IConsole console, CancellationToken cancellationToken);
+    Task<ExitCode> InstallerUninstallDriver(IConsole console, CancellationToken cancellationToken);
 }

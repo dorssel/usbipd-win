@@ -68,7 +68,7 @@ sealed partial class DeviceFile : IDisposable
                     }
                     else
                     {
-                        taskCompletionSource.SetException(new Win32Exception((int)errorCode, $"DeviceIoControl returned error {(WIN32_ERROR)errorCode}"));
+                        taskCompletionSource.SetException(new Win32Exception((int)errorCode));
                     }
                 }
                 finally
@@ -83,7 +83,7 @@ sealed partial class DeviceFile : IDisposable
                 if (!PInvoke.DeviceIoControl(FileHandle, ioControlCode, pInput, (uint)(input?.Length ?? 0),
                     pOutput, (uint)(output?.Length ?? 0), null, nativeOverlapped))
                 {
-                    var errorCode = (WIN32_ERROR)Marshal.GetLastWin32Error();
+                    var errorCode = (WIN32_ERROR)Marshal.GetLastPInvokeError();
                     if (errorCode != WIN32_ERROR.ERROR_IO_PENDING)
                     {
                         OnCompletion((uint)errorCode, 0, nativeOverlapped);

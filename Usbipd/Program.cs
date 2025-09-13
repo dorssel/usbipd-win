@@ -733,29 +733,27 @@ static class Program
         }
         {
             //
-            //  install
+            //  installer
             //
-            var installCommand = new Command("install")
+            var installCommand = new Command("installer")
             {
                 Hidden = true,
             };
-            installCommand.SetAction(async (parseResult, cancellationToken) => (int)
-                await commandHandlers.Install(console, cancellationToken)
-            );
+
+            void AddInstallerSubcommand(string name, Func<IConsole, CancellationToken, Task<ExitCode>> action)
+            {
+                var subcommand = new Command(name);
+                subcommand.SetAction(async (parseResult, cancellationToken) => (int)
+                    await action(console, cancellationToken)
+                );
+                installCommand.Subcommands.Add(subcommand);
+            }
+
+            AddInstallerSubcommand("install_driver", commandHandlers.InstallerInstallDriver);
+            AddInstallerSubcommand("uninstall_driver", commandHandlers.InstallerUninstallDriver);
+            AddInstallerSubcommand("install_monitor", commandHandlers.InstallerInstallMonitor);
+
             rootCommand.Subcommands.Add(installCommand);
-        }
-        {
-            //
-            //  uninstall
-            //
-            var uninstallCommand = new Command("uninstall")
-            {
-                Hidden = true,
-            };
-            uninstallCommand.SetAction(async (parseResult, cancellationToken) => (int)
-                await commandHandlers.Uninstall(console, cancellationToken)
-            );
-            rootCommand.Subcommands.Add(uninstallCommand);
         }
 
         try
