@@ -94,17 +94,21 @@ SPDX-License-Identifier: GPL-3.0-only
             </Component>
         </DirectoryRef>
 
-        <!-- This will restore the original Windows drivers for devices that were forced bound. -->
+        <!-- This will restore the original Windows drivers for devices that were forced bound (best effort). -->
         <SetProperty Id="UnbindAll" Value="&quot;[#usbipd.exe]&quot; unbind --all" Sequence="execute" Before="UnbindAll" Condition="(?usbipd.exe=3) AND ($usbipd.exe=2)" />
         <CustomAction Id="UnbindAll" BinaryRef="Wix4UtilCA_$(sys.BUILDARCHSHORT)" DllEntry="WixQuietExec" Return="ignore" Impersonate="no" Execute="deferred" />
 
-        <!-- This will uninstall the drivers. -->
-        <SetProperty Id="UninstallDrivers" Value="&quot;[#usbipd.exe]&quot; uninstall" Sequence="execute" Before="UninstallDrivers" Condition="(?usbipd.exe=3) AND ($usbipd.exe=2)" />
-        <CustomAction Id="UninstallDrivers" BinaryRef="Wix4UtilCA_$(sys.BUILDARCHSHORT)" DllEntry="WixQuietExec" Return="ignore" Impersonate="no" Execute="deferred" />
+        <!-- This will uninstall the current VBoxUSB driver (best effort). -->
+        <SetProperty Id="UninstallDriver" Value="&quot;[#usbipd.exe]&quot; installer uninstall_driver" Sequence="execute" Before="UninstallDriver" Condition="(?usbipd.exe=3) AND ($usbipd.exe=2)" />
+        <CustomAction Id="UninstallDriver" BinaryRef="Wix4UtilCA_$(sys.BUILDARCHSHORT)" DllEntry="WixQuietExec" Return="ignore" Impersonate="no" Execute="deferred" />
 
-        <!-- This will install the drivers. -->
-        <SetProperty Id="InstallDrivers" Value="&quot;[#usbipd.exe]&quot; install" Sequence="execute" Before="InstallDrivers" Condition="$usbipd.exe=3" />
-        <CustomAction Id="InstallDrivers" BinaryRef="Wix4UtilCA_$(sys.BUILDARCHSHORT)" DllEntry="WixQuietExec" Return="check" Impersonate="no" Execute="deferred" />
+        <!-- This will install the VBoxUSB PnP driver (required). -->
+        <SetProperty Id="InstallDriver" Value="&quot;[#usbipd.exe]&quot; installer install_driver" Sequence="execute" Before="InstallDriver" Condition="$usbipd.exe=3" />
+        <CustomAction Id="InstallDriver" BinaryRef="Wix4UtilCA_$(sys.BUILDARCHSHORT)" DllEntry="WixQuietExec" Return="check" Impersonate="no" Execute="deferred" />
+
+        <!-- This will install VBoxUSBMon as a service (required). -->
+        <SetProperty Id="InstallMonitor" Value="&quot;[#usbipd.exe]&quot; installer install_monitor" Sequence="execute" Before="InstallMonitor" Condition="$usbipd.exe=3" />
+        <CustomAction Id="InstallMonitor" BinaryRef="Wix4UtilCA_$(sys.BUILDARCHSHORT)" DllEntry="WixQuietExec" Return="check" Impersonate="no" Execute="deferred" />
 
         <!--
         This will *try to* start the service. However, unlike ServiceControl, it will not fail if it can't.
@@ -119,9 +123,11 @@ SPDX-License-Identifier: GPL-3.0-only
             <!-- NOTE: first make sure that no devices are using VBoxUSB, or else VBoxUSBMon does not stop -->
             <Custom Action="UnbindAll" Before="StopServices" Condition="(?usbipd.exe=3) AND ($usbipd.exe=2)" />
             <!-- Condition: usbipd.exe is installed and will be uninstalled -->
-            <Custom Action="UninstallDrivers" After="StopServices" Condition="(?usbipd.exe=3) AND ($usbipd.exe=2)" />
+            <Custom Action="UninstallDriver" After="StopServices" Condition="(?usbipd.exe=3) AND ($usbipd.exe=2)" />
             <!-- Condition: usbipd.exe will be (or remains) installed -->
-            <Custom Action="InstallDrivers" Before="InstallServices" Condition="$usbipd.exe=3" />
+            <Custom Action="InstallDriver" Before="InstallServices" Condition="$usbipd.exe=3" />
+            <!-- Condition: usbipd.exe will be (or remains) installed -->
+            <Custom Action="InstallMonitor" Before="InstallServices" Condition="$usbipd.exe=3" />
             <!-- Condition: usbipd.exe will be (or remains) installed -->
             <Custom Action="TryStartService" After="StartServices" Condition="$usbipd.exe=3" />
         </InstallExecuteSequence>
