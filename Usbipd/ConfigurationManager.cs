@@ -260,7 +260,7 @@ static partial class ConfigurationManager
                         continue;
                     }
                     var hardwareIds = (string[])Get_DevNode_Property(deviceNode, PInvoke.DEVPKEY_Device_HardwareIds);
-                    if (hardwareIds.Any(hardwareId => VidPid.TryParseId(hardwareId, out var vidPid) && vidPid == Interop.VBoxUsb.Stub))
+                    if (hardwareIds.Any(hardwareId => VidPid.TryParseId(hardwareId, out var vidPid) && vidPid == DriverDetails.Instance.VidPid))
                     {
                         // Do not include stubs.
                         continue;
@@ -316,7 +316,7 @@ static partial class ConfigurationManager
         try
         {
             var matchingDeviceId = (string)Get_DevNode_Property(deviceNode, PInvoke.DEVPKEY_Device_MatchingDeviceId);
-            return VidPid.TryParseId(matchingDeviceId, out var vidPid) && vidPid == Interop.VBoxUsb.Stub;
+            return VidPid.TryParseId(matchingDeviceId, out var vidPid) && vidPid == DriverDetails.Instance.VidPid;
         }
         catch (ConfigurationManagerException)
         {
@@ -357,7 +357,7 @@ static partial class ConfigurationManager
                 var deviceNode = Locate_DevNode(deviceId, false);
                 // Filter out the devices that are mocked by VboxUsbMon, since those are supposed to have the VBox driver.
                 var hardwareIds = (string[])Get_DevNode_Property(deviceNode, PInvoke.DEVPKEY_Device_HardwareIds);
-                if (hardwareIds.Any(hardwareId => VidPid.TryParseId(hardwareId, out var vidPid) && vidPid == Interop.VBoxUsb.Stub))
+                if (hardwareIds.Any(hardwareId => VidPid.TryParseId(hardwareId, out var vidPid) && vidPid == DriverDetails.Instance.VidPid))
                 {
                     continue;
                 }
