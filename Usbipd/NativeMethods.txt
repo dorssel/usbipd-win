@@ -44,7 +44,10 @@ SetupDiCreateDeviceInfoList
 SetupDiEnumDeviceInfo
 SetupDiEnumDriverInfo
 SetupDiGetClassDevs
+SetupDiGetDriverInfoDetail
+SetupDiGetINFClass
 SetupDiOpenDeviceInfo
+SetupDiSetClassInstallParams
 SetupDiSetDeviceInstallParams
 
 SETUP_DI_DEVICE_INSTALL_FLAGS

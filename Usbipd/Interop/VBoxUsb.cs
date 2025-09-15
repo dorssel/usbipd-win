@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 using System.Runtime.InteropServices;
-using Usbipd.Automation;
 using Windows.Win32;
 
 namespace Usbipd.Interop;
@@ -18,9 +17,6 @@ static class VBoxUsb
         [MarshalAs(UnmanagedType.U1)]
         public bool fClaimed;
     }
-
-    /// <summary>VBoxUsb: VBoxUSB.inf</summary>
-    public static readonly VidPid Stub = new(0x80EE, 0xCAFE);
 
     /// <summary>VBoxUsb: usblib-win.h</summary>
     public static readonly Guid GUID_CLASS_VBOXUSB = new(0x873fdf, 0xCAFE, 0x80EE, 0xaa, 0x5e, 0x0, 0xc0, 0x4f, 0xb1, 0x72, 0xb);

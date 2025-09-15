@@ -17,6 +17,8 @@ namespace UnitTests;
 [TestClass]
 sealed class Tools_Tests
 {
+    public TestContext TestContext { get; set; }
+
     static readonly byte[] TestStreamBytes = [
 #pragma warning disable format
         0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
@@ -24,48 +26,46 @@ sealed class Tools_Tests
     ];
 
     [TestMethod]
-    public void ReadMessageAsync_Success()
+    public async Task ReadMessageAsync_Success()
     {
         using var memoryStream = new MemoryStream(TestStreamBytes);
         var buf = new byte[TestStreamBytes.Length - 1];
-        memoryStream.ReadMessageAsync(buf, CancellationToken.None).Wait();
+        await memoryStream.ReadMessageAsync(buf, TestContext.CancellationTokenSource.Token);
         Assert.AreEqual(TestStreamBytes.Length - 1, memoryStream.Position);
         Assert.IsTrue(buf.SequenceEqual(TestStreamBytes[0..^1]));
     }
 
     [TestMethod]
-    public void ReadMessageAsync_Nothing()
+    public async Task ReadMessageAsync_Nothing()
     {
         using var memoryStream = new MemoryStream(TestStreamBytes);
-        memoryStream.ReadMessageAsync(Array.Empty<byte>(), CancellationToken.None).Wait();
+        await memoryStream.ReadMessageAsync(Array.Empty<byte>(), TestContext.CancellationTokenSource.Token);
     }
 
     [TestMethod]
-    public void ReadMessageAsync_EndOfStream()
+    public async Task ReadMessageAsync_EndOfStream()
     {
         using var memoryStream = new MemoryStream();
         var buf = new byte[TestStreamBytes.Length];
-        var exception = Assert.ThrowsExactly<AggregateException>(() =>
+        var exception = await Assert.ThrowsExactlyAsync<EndOfStreamException>(async () =>
         {
-            memoryStream.ReadMessageAsync(buf, CancellationToken.None).Wait();
+            await memoryStream.ReadMessageAsync(buf, TestContext.CancellationTokenSource.Token);
         });
-        Assert.IsInstanceOfType<EndOfStreamException>(exception.InnerException);
     }
 
     [TestMethod]
-    public void ReadMessageAsync_ProtocolViolation()
+    public async Task ReadMessageAsync_ProtocolViolation()
     {
         using var memoryStream = new MemoryStream(TestStreamBytes);
         var buf = new byte[TestStreamBytes.Length + 1];
-        var exception = Assert.ThrowsExactly<AggregateException>(() =>
+        var exception = await Assert.ThrowsExactlyAsync<ProtocolViolationException>(async () =>
         {
-            memoryStream.ReadMessageAsync(buf, CancellationToken.None).Wait();
+            await memoryStream.ReadMessageAsync(buf, TestContext.CancellationTokenSource.Token);
         });
-        Assert.IsInstanceOfType<ProtocolViolationException>(exception.InnerException);
     }
 
     [TestMethod]
-    public void ReadMessageAsync_Parts()
+    public async Task ReadMessageAsync_Parts()
     {
         var pipe = new Pipe();
         using var readStream = pipe.Reader.AsStream();
@@ -74,10 +74,10 @@ sealed class Tools_Tests
         var buf = new byte[TestStreamBytes.Length - 1];
         writeStream.Write(TestStreamBytes.AsSpan(0, 1));
         var task = readStream.ReadMessageAsync(buf, CancellationToken.None);
-        task.Wait(100);
+        await Task.Delay(100, TestContext.CancellationTokenSource.Token);
         Assert.AreEqual(TaskStatus.WaitingForActivation, task.Status);
         writeStream.Write(TestStreamBytes.AsSpan(1));
-        task.Wait();
+        await task.WaitAsync(TestContext.CancellationTokenSource.Token);
         Assert.IsTrue(buf.SequenceEqual(TestStreamBytes[0..^1]));
     }
 
@@ -221,7 +221,7 @@ sealed class Tools_Tests
         {
             failure.ThrowOnError(testMessage);
         });
-        Assert.IsTrue(exception.Message.Contains(testMessage));
+        Assert.Contains(testMessage, exception.Message);
     }
 
     [TestMethod]

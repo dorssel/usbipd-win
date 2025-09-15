@@ -198,7 +198,7 @@ static class DriverTools
                 // Device disappeared in the meantime; ignore it.
                 continue;
             }
-            if (!VidPid.TryParseId(instanceId, out var vidPid) || vidPid != Interop.VBoxUsb.Stub)
+            if (!VidPid.TryParseId(instanceId, out var vidPid) || vidPid != DriverDetails.Instance.VidPid)
             {
                 // Not a stub device.
                 continue;
