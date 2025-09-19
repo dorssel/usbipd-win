@@ -36,7 +36,11 @@ interface ICommandHandlers
 
     // Installer
     Task<ExitCode> InstallerInstallDriver(IConsole console, CancellationToken cancellationToken);
+    Task<ExitCode> InstallerUpdateDrivers(IConsole console, CancellationToken cancellationToken);
     Task<ExitCode> InstallerInstallMonitor(IConsole console, CancellationToken cancellationToken);
     Task<ExitCode> InstallerUninstallDriver(IConsole console, CancellationToken cancellationToken);
     Task<ExitCode> InstallerUninstallOldDrivers(IConsole console, CancellationToken cancellationToken);
+    Task<ExitCode> InstallerUninstallStubs(IConsole console, CancellationToken cancellationToken);
+    Task<ExitCode> InstallerDisableForced(IConsole console, CancellationToken cancellationToken);
+    Task<ExitCode> InstallerEnableForced(IConsole console, CancellationToken cancellationToken);
 }

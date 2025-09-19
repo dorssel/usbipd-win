@@ -2,9 +2,13 @@
 //
 // SPDX-License-Identifier: GPL-3.0-only
 
+using System.Runtime.InteropServices;
 using System.Text;
 using Microsoft.Win32;
 using Usbipd.Automation;
+using Windows.Win32;
+using Windows.Win32.Devices.DeviceAndDriverInstallation;
+using Windows.Win32.Foundation;
 using static Usbipd.Interop.VBoxUsbMon;
 
 namespace Usbipd;
@@ -177,6 +181,22 @@ static partial class ConsoleTools
     {
         using var color = new TemporaryColor(console, ConsoleColor.DarkGray);
         console.ReportText("info", text);
+    }
+
+    public static void ReportWin32Error(this IConsole console, string function, WIN32_ERROR error)
+    {
+        console.ReportError($"{function}: {error} ({(int)error}): {Marshal.GetPInvokeErrorMessage((int)error)}");
+    }
+
+    public static void ReportConfigRet(this IConsole console, string function, CONFIGRET configRet)
+    {
+        var error = PInvoke.CM_MapCrToWin32Err(configRet, (uint)WIN32_ERROR.ERROR_CAN_NOT_COMPLETE);
+        console.ReportError($"{function}: {configRet} ({(int)configRet}): {error} ({(int)error}): {Marshal.GetPInvokeErrorMessage((int)error)}");
+    }
+
+    public static void ReportLastWin32Error(this IConsole console, string function)
+    {
+        ReportWin32Error(console, function, (WIN32_ERROR)Marshal.GetLastPInvokeError());
     }
 
     /// <summary>

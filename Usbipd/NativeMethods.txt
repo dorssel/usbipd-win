@@ -2,11 +2,16 @@
 //
 // SPDX-License-Identifier: GPL-3.0-only
 
+CM_Disable_DevNode
+CM_Enable_DevNode
 CM_Get_Child
+CM_Get_Device_ID_List
+CM_Get_Device_ID_List_Size
 CM_Get_Device_Interface_List
 CM_Get_Device_Interface_List_Size
 CM_Get_Device_Interface_Property
 CM_Get_DevNode_Property
+CM_Get_DevNode_Status
 CM_Get_Parent
 CM_Get_Sibling
 CM_Locate_DevNode
@@ -17,6 +22,8 @@ CM_Set_DevNode_Property
 CM_Setup_DevNode
 CM_Unregister_Notification
 
+CM_DISABLE_UI_NOT_OK
+CM_GETIDLIST_FILTER_CLASS
 CM_REMOVE_NO_RESTART
 CM_REMOVE_UI_NOT_OK
 CM_SETUP_DEVNODE_READY

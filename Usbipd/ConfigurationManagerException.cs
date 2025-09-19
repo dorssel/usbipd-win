@@ -27,6 +27,12 @@ sealed class ConfigurationManagerException : Win32Exception
     {
     }
 
+    internal ConfigurationManagerException(CONFIGRET configRet)
+        : base((int)PInvoke.CM_MapCrToWin32Err(configRet, (uint)WIN32_ERROR.ERROR_CAN_NOT_COMPLETE))
+    {
+        ConfigRet = configRet;
+    }
+
     internal ConfigurationManagerException(CONFIGRET configRet, string message)
         : base((int)PInvoke.CM_MapCrToWin32Err(configRet, (uint)WIN32_ERROR.ERROR_CAN_NOT_COMPLETE), message)
     {

@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: GPL-3.0-only
 
-using System.ComponentModel;
 using System.Runtime.InteropServices;
 using Usbipd.Automation;
 using Windows.Win32;
@@ -30,7 +29,7 @@ sealed class DriverDetails
             using var deviceInfoSet = PInvoke.SetupDiCreateDeviceInfoList(null, default);
             if (deviceInfoSet.IsInvalid)
             {
-                throw new Win32Exception();
+                Tools.ThrowWin32Error(nameof(PInvoke.SetupDiCreateDeviceInfoList));
             }
             var deviceInstallParams = new SP_DEVINSTALL_PARAMS_W()
             {
@@ -40,15 +39,15 @@ sealed class DriverDetails
                 DriverPath = DriverPath,
             };
             PInvoke.SetupDiSetDeviceInstallParams(deviceInfoSet, null, deviceInstallParams)
-                .ThrowOnError(nameof(PInvoke.SetupDiSetDeviceInstallParams));
+                .ThrowOnWin32Error(nameof(PInvoke.SetupDiSetDeviceInstallParams));
             PInvoke.SetupDiBuildDriverInfoList(deviceInfoSet, null, SETUP_DI_DRIVER_TYPE.SPDIT_CLASSDRIVER)
-                .ThrowOnError(nameof(PInvoke.SetupDiBuildDriverInfoList));
+                .ThrowOnWin32Error(nameof(PInvoke.SetupDiBuildDriverInfoList));
             var driverInfoData = new SP_DRVINFO_DATA_V2_W()
             {
                 cbSize = (uint)Marshal.SizeOf<SP_DRVINFO_DATA_V2_W>(),
             };
             PInvoke.SetupDiEnumDriverInfo(deviceInfoSet, null, SETUP_DI_DRIVER_TYPE.SPDIT_CLASSDRIVER, 0, ref driverInfoData)
-                .ThrowOnError(nameof(PInvoke.SetupDiEnumDriverInfo));
+                .ThrowOnWin32Error(nameof(PInvoke.SetupDiEnumDriverInfo));
 
             Version = new Version(
                 (int)((driverInfoData.DriverVersion >> 48) & 0xffff),
@@ -62,7 +61,7 @@ sealed class DriverDetails
                 {
                     if ((WIN32_ERROR)Marshal.GetLastPInvokeError() != WIN32_ERROR.ERROR_INSUFFICIENT_BUFFER)
                     {
-                        throw new Win32Exception();
+                        Tools.ThrowWin32Error(nameof(PInvoke.SetupDiGetDriverInfoDetail));
                     }
                 }
                 var buffer = new byte[requiredSize];
@@ -71,7 +70,7 @@ sealed class DriverDetails
                     var details = (SP_DRVINFO_DETAIL_DATA_W*)bufferPointer;
                     details->cbSize = (uint)Marshal.SizeOf<SP_DRVINFO_DETAIL_DATA_W>();
                     PInvoke.SetupDiGetDriverInfoDetail(deviceInfoSet, null, driverInfoData, details, requiredSize, null)
-                        .ThrowOnError(nameof(PInvoke.SetupDiGetDriverInfoDetail));
+                        .ThrowOnWin32Error(nameof(PInvoke.SetupDiGetDriverInfoDetail));
                     var hardwareId = new string((char*)&details->HardwareID);
                     if (!VidPid.TryParseId(hardwareId, out var vidPid))
                     {
@@ -87,12 +86,12 @@ sealed class DriverDetails
                 {
                     if ((WIN32_ERROR)Marshal.GetLastPInvokeError() != WIN32_ERROR.ERROR_INSUFFICIENT_BUFFER)
                     {
-                        throw new Win32Exception();
+                        Tools.ThrowWin32Error(nameof(PInvoke.SetupDiGetINFClass));
                     }
                 }
                 var buffer = new char[requiredSize];
                 PInvoke.SetupDiGetINFClass(DriverPath, out classGuid, buffer, null)
-                    .ThrowOnError(nameof(PInvoke.SetupDiGetINFClass));
+                    .ThrowOnWin32Error(nameof(PInvoke.SetupDiGetINFClass));
                 ClassGuid = classGuid;
             }
         }

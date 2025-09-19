@@ -63,16 +63,16 @@ sealed partial class Server : BackgroundService
         {
             PrivilegeCount = 1,
         };
-        PInvoke.LookupPrivilegeValue(null, name, out tokenPrivileges.Privileges[0].Luid).ThrowOnError(nameof(PInvoke.LookupPrivilegeValue));
+        PInvoke.LookupPrivilegeValue(null, name, out tokenPrivileges.Privileges[0].Luid).ThrowOnWin32Error(nameof(PInvoke.LookupPrivilegeValue));
         tokenPrivileges.Privileges[0].Attributes = TOKEN_PRIVILEGES_ATTRIBUTES.SE_PRIVILEGE_ENABLED;
 
         using var currentProcess = PInvoke.GetCurrentProcess_SafeHandle();
-        PInvoke.OpenProcessToken(currentProcess, TOKEN_ACCESS_MASK.TOKEN_ADJUST_PRIVILEGES, out var token).ThrowOnError(nameof(PInvoke.OpenProcessToken));
+        PInvoke.OpenProcessToken(currentProcess, TOKEN_ACCESS_MASK.TOKEN_ADJUST_PRIVILEGES, out var token).ThrowOnWin32Error(nameof(PInvoke.OpenProcessToken));
         using (token)
         {
             unsafe // DevSkim: ignore DS172412
             {
-                PInvoke.AdjustTokenPrivileges(token, false, &tokenPrivileges, 0, null, null).ThrowOnError(nameof(PInvoke.AdjustTokenPrivileges));
+                PInvoke.AdjustTokenPrivileges(token, false, &tokenPrivileges, 0, null, null).ThrowOnWin32Error(nameof(PInvoke.AdjustTokenPrivileges));
             }
         }
     }
