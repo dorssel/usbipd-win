@@ -751,8 +751,12 @@ static class Program
 
             AddInstallerSubcommand("install_driver", commandHandlers.InstallerInstallDriver);
             AddInstallerSubcommand("uninstall_driver", commandHandlers.InstallerUninstallDriver);
+            AddInstallerSubcommand("update_drivers", commandHandlers.InstallerUpdateDrivers);
             AddInstallerSubcommand("install_monitor", commandHandlers.InstallerInstallMonitor);
             AddInstallerSubcommand("uninstall_old_drivers", commandHandlers.InstallerUninstallOldDrivers);
+            AddInstallerSubcommand("uninstall_stubs", commandHandlers.InstallerUninstallStubs);
+            AddInstallerSubcommand("disable_forced", commandHandlers.InstallerDisableForced);
+            AddInstallerSubcommand("enable_forced", commandHandlers.InstallerEnableForced);
 
             rootCommand.Subcommands.Add(installCommand);
         }

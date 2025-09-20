@@ -123,11 +123,18 @@ static class Tools
         };
     }
 
-    public static void ThrowOnError(this BOOL success, string message)
+    [DoesNotReturn]
+    public static void ThrowWin32Error(string function)
+    {
+        var error = Marshal.GetLastPInvokeError();
+        throw new Win32Exception(error, $"{function}: {(WIN32_ERROR)error} ({error}): {Marshal.GetPInvokeErrorMessage(error)}");
+    }
+
+    public static void ThrowOnWin32Error([DoesNotReturnIf(false)] this BOOL success, string function)
     {
         if (!success)
         {
-            throw new Win32Exception(message);
+            ThrowWin32Error(function);
         }
     }
 

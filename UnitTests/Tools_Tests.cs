@@ -209,7 +209,7 @@ sealed class Tools_Tests
     public void ThrowOnError_Success()
     {
         BOOL success = true;
-        success.ThrowOnError("dummy");
+        success.ThrowOnWin32Error("dummy");
     }
 
     [TestMethod]
@@ -219,7 +219,7 @@ sealed class Tools_Tests
         BOOL failure = false;
         var exception = Assert.ThrowsExactly<Win32Exception>(() =>
         {
-            failure.ThrowOnError(testMessage);
+            failure.ThrowOnWin32Error(testMessage);
         });
         Assert.Contains(testMessage, exception.Message);
     }
