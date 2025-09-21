@@ -5,6 +5,7 @@
 using System.Net;
 using System.Text.Json;
 using Usbipd.Automation;
+using Device = Usbipd.Automation.Device;
 
 namespace UnitTests;
 

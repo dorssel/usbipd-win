@@ -197,43 +197,6 @@ sealed partial class CommandHandlers : ICommandHandlers
         return Task.FromResult(success ? ExitCode.Success : ExitCode.Failure);
     }
 
-    static string[] GetInstanceIds()
-    {
-        string[] instanceIds;
-
-        unsafe // DevSkim: ignore DS172412
-        {
-            PInvoke.CM_Get_Device_ID_List_Size(out var size, DriverDetails.Instance.ClassGuid.ToString("B"), PInvoke.CM_GETIDLIST_FILTER_CLASS)
-                .ThrowOnError(nameof(PInvoke.CM_Get_Device_ID_List_Size));
-            fixed (char* buf = stackalloc char[(int)size])
-            {
-                PInvoke.CM_Get_Device_ID_List(DriverDetails.Instance.ClassGuid.ToString("B"), buf, size, PInvoke.CM_GETIDLIST_FILTER_CLASS)
-                    .ThrowOnError(nameof(PInvoke.CM_Get_Device_ID_List_Size));
-                // The list is double-NUL terminated.
-                instanceIds = new string(buf, 0, (int)size - 2).Split('\0');
-            }
-        }
-
-        return instanceIds;
-    }
-
-    static bool TryGetDeviceNode(string instanceId, out uint devNode)
-    {
-        unsafe // DevSkim: ignore DS172412
-        {
-            fixed (char* pInstanceId = instanceId)
-            {
-                var configRet = PInvoke.CM_Locate_DevNode(out devNode, pInstanceId, CM_LOCATE_DEVNODE_FLAGS.CM_LOCATE_DEVNODE_NORMAL);
-                if (configRet != CONFIGRET.CR_SUCCESS)
-                {
-                    devNode = 0;
-                    return false;
-                }
-            }
-        }
-        return true;
-    }
-
     Task<ExitCode> ICommandHandlers.InstallerUpdateDrivers(IConsole console, CancellationToken cancellationToken)
     {
         ConsoleTools.ReportInfo(console, "update_drivers");
@@ -241,31 +204,19 @@ sealed partial class CommandHandlers : ICommandHandlers
         var success = true;
         var needReboot = false;
 
-        foreach (var instanceId in GetInstanceIds())
+        // NOTE: It is not actually possible to update devices that are not present.
+        // Instead, this will unforce the device the next time it is plugged in (and the device will get the default PnP driver).
+        foreach (var device in Device.GetAll(DriverDetails.Instance.ClassGuid, false)
+            .Where(d => d.HasVBoxDriver && d.DriverVersion != DriverDetails.Instance.Version))
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var deviceNode = ConfigurationManager.Locate_DevNode(instanceId, false);
-
-            if (!ConfigurationManager.HasVBoxDriver(deviceNode))
-            {
-                continue;
-            }
-
-            if (ConfigurationManager.TryGetProperty(deviceNode, PInvoke.DEVPKEY_Device_DriverVersion, out string versionText)
-                && Version.TryParse(versionText, out var version)
-                && (version == DriverDetails.Instance.Version))
-            {
-                console.ReportInfo($"Device already using VBoxUSB version {version}: {instanceId}");
-                continue;
-            }
-
-            console.ReportInfo($"Updating device VBoxUSB driver to version {DriverDetails.Instance.Version}: {instanceId}");
+            console.ReportInfo($"Updating device VBoxUSB driver to version {DriverDetails.Instance.Version}: {device.InstanceId}");
             try
             {
                 // NOTE: Setting any driver will enable the device.
                 // NOTE: Force will set a NULL driver first.
-                if (DriverTools.ForceVBoxDriver(instanceId))
+                if (DriverTools.ForceVBoxDriver(device.InstanceId))
                 {
                     needReboot = true;
                 }
@@ -295,21 +246,15 @@ sealed partial class CommandHandlers : ICommandHandlers
         var success = true;
         var needReboot = false;
 
-        foreach (var instanceId in GetInstanceIds())
+        foreach (var device in Device.GetAll(DriverDetails.Instance.ClassGuid, false).Where(d => d.IsStub))
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            if (!VidPid.TryParseId(instanceId, out var vidPid) || vidPid != DriverDetails.Instance.VidPid)
-            {
-                // Not a stub device.
-                continue;
-            }
-
-            console.ReportInfo($"Uninstalling stub device: {instanceId}");
+            console.ReportInfo($"Uninstalling stub device: {device.InstanceId}");
 
             try
             {
-                if (DriverTools.UninstallStubDevice(instanceId))
+                if (DriverTools.UninstallStubDevice(device.InstanceId))
                 {
                     needReboot = true;
                 }
@@ -337,21 +282,13 @@ sealed partial class CommandHandlers : ICommandHandlers
 
         var success = true;
 
-        foreach (var instanceId in GetInstanceIds())
+        // NOTE: It is not possible (nor needed) to disable devices that are not present.
+        foreach (var device in Device.GetAll(DriverDetails.Instance.ClassGuid, true).Where(d => d.HasVBoxDriver && !d.IsDisabled))
         {
             cancellationToken.ThrowIfCancellationRequested();
-            if (!ConfigurationManager.HasVBoxDriver(instanceId))
-            {
-                continue;
-            }
-            // NOTE: It is not possible (nor needed) to disable devices that are not present.
-            if (!TryGetDeviceNode(instanceId, out var devNode))
-            {
-                continue;
-            }
 
-            console.ReportInfo($"Disabling device: {instanceId}");
-            var configRet = PInvoke.CM_Disable_DevNode(devNode, PInvoke.CM_DISABLE_UI_NOT_OK);
+            console.ReportInfo($"Disabling device: {device.InstanceId}");
+            var configRet = PInvoke.CM_Disable_DevNode(device.DeviceNode, PInvoke.CM_DISABLE_UI_NOT_OK);
             if (configRet != CONFIGRET.CR_SUCCESS)
             {
                 console.ReportConfigRet(nameof(PInvoke.CM_Disable_DevNode), configRet);
@@ -372,36 +309,12 @@ sealed partial class CommandHandlers : ICommandHandlers
 
         var success = true;
 
-        foreach (var instanceId in GetInstanceIds())
+        foreach (var device in Device.GetAll(DriverDetails.Instance.ClassGuid, true).Where(d => d.HasVBoxDriver && d.IsDisabled))
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            // We will enable all devices that are present, disabled, and use the VBoxUSB driver.
-            // At this point, that should only be the forced devices that are actually present.
-            if (!TryGetDeviceNode(instanceId, out var devNode))
-            {
-                // If the device is not present, it is not even possible to enable/disable/status.
-                continue;
-            }
-            if (!ConfigurationManager.HasVBoxDriver(devNode))
-            {
-                continue;
-            }
-            var configRet = PInvoke.CM_Get_DevNode_Status(out var status, out var problemCode, devNode, 0);
-            if (configRet != CONFIGRET.CR_SUCCESS)
-            {
-                console.ReportConfigRet(nameof(PInvoke.CM_Get_DevNode_Status), configRet);
-                success = false;
-                continue;
-            }
-            if (!status.HasFlag(CM_DEVNODE_STATUS_FLAGS.DN_HAS_PROBLEM) || !problemCode.HasFlag(CM_PROB.CM_PROB_DISABLED))
-            {
-                // Device is not disabled.
-                continue;
-            }
-
-            console.ReportInfo($"Enabling device: {instanceId}");
-            configRet = PInvoke.CM_Enable_DevNode(devNode, 0);
+            console.ReportInfo($"Enabling device: {device.InstanceId}");
+            var configRet = PInvoke.CM_Enable_DevNode(device.DeviceNode, 0);
             if (configRet != CONFIGRET.CR_SUCCESS)
             {
                 console.ReportConfigRet(nameof(PInvoke.CM_Enable_DevNode), configRet);
