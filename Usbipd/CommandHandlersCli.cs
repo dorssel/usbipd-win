@@ -309,11 +309,11 @@ sealed partial class CommandHandlers : ICommandHandlers
         RegistryUtilities.StopSharingAllDevices();
         var reboot = false;
         var driverError = false;
-        foreach (var originalDeviceId in ConfigurationManager.GetOriginalDeviceIdsWithVBoxDriver())
+        foreach (var originalInstanceId in ConfigurationManager.GetOriginalInstanceIdsWithVBoxDriver())
         {
             try
             {
-                if (DriverTools.UnforceVBoxDriver(originalDeviceId))
+                if (DriverTools.UnforceVBoxDriver(originalInstanceId))
                 {
                     reboot = true;
                 }

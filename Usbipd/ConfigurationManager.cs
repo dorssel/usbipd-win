@@ -4,6 +4,7 @@
 
 using System.ComponentModel;
 using System.Globalization;
+using System.Text;
 using System.Text.RegularExpressions;
 using Usbipd.Automation;
 using Windows.Win32;
@@ -85,22 +86,79 @@ static partial class ConfigurationManager
         }
     }
 
-    internal static object Get_DevNode_Property(uint deviceNode, in DEVPROPKEY devPropKey)
+    static bool TryGetProperty(uint deviceNode, in DEVPROPKEY devPropKey, out byte[] value, out DEVPROPTYPE propertyType)
     {
         unsafe // DevSkim: ignore DS172412
         {
             var propertyBufferSize = 0u;
-            var cr = PInvoke.CM_Get_DevNode_Property(deviceNode, devPropKey, out var propertyType, null, ref propertyBufferSize, 0);
+            var cr = PInvoke.CM_Get_DevNode_Property(deviceNode, devPropKey, out propertyType, null, ref propertyBufferSize, 0);
             if (cr != CONFIGRET.CR_BUFFER_SMALL)
             {
-                ThrowOnError(cr, nameof(PInvoke.CM_Get_DevNode_Property));
+                value = default!;
+                propertyType = DEVPROPTYPE.DEVPROP_TYPE_EMPTY;
+                return false;
             }
             var buffer = new byte[propertyBufferSize];
             fixed (byte* pBuffer = buffer)
             {
-                PInvoke.CM_Get_DevNode_Property(deviceNode, devPropKey, out propertyType, pBuffer, ref propertyBufferSize, 0)
-                    .ThrowOnError(nameof(PInvoke.CM_Get_DevNode_Property));
-                return ConvertProperty(propertyType, pBuffer, (int)propertyBufferSize);
+                if (PInvoke.CM_Get_DevNode_Property(deviceNode, devPropKey, out propertyType, pBuffer, ref propertyBufferSize, 0) != CONFIGRET.CR_SUCCESS)
+                {
+                    value = default!;
+                    propertyType = DEVPROPTYPE.DEVPROP_TYPE_EMPTY;
+                    return false;
+                }
+            }
+            value = buffer;
+            return true;
+        }
+    }
+
+    internal static bool TryGetProperty(uint deviceNode, in DEVPROPKEY devPropKey, out string value)
+    {
+        if (!TryGetProperty(deviceNode, devPropKey, out var buffer, out var propertyType))
+        {
+            value = default!;
+            return false;
+        }
+
+        if (propertyType != DEVPROPTYPE.DEVPROP_TYPE_STRING)
+        {
+            value = default!;
+            return false;
+        }
+
+        unsafe // DevSkim: ignore DS172412
+        {
+            fixed (byte* pBuffer = buffer)
+            {
+                // The buffer includes the terminating NUL character.
+                value = new string((char*)pBuffer, 0, (buffer.Length / sizeof(char)) - 1);
+                return true;
+            }
+        }
+    }
+
+    internal static bool TryGetProperty(uint deviceNode, in DEVPROPKEY devPropKey, out string[] value)
+    {
+        if (!TryGetProperty(deviceNode, devPropKey, out var buffer, out var propertyType))
+        {
+            value = default!;
+            return false;
+        }
+
+        if (propertyType != DEVPROPTYPE.DEVPROP_TYPE_STRING_LIST)
+        {
+            value = default!;
+            return false;
+        }
+
+        unsafe // DevSkim: ignore DS172412
+        {
+            fixed (byte* pBuffer = buffer)
+            {
+                // The buffer is double-NUL terminated.
+                value = new string((char*)pBuffer, 0, (buffer.Length / sizeof(char)) - 2).Split('\0');
+                return true;
             }
         }
     }
@@ -152,7 +210,10 @@ static partial class ConfigurationManager
 
     public static BusId GetBusId(uint deviceNode)
     {
-        var locationInfo = (string)Get_DevNode_Property(deviceNode, PInvoke.DEVPKEY_Device_LocationInfo);
+        if (!TryGetProperty(deviceNode, PInvoke.DEVPKEY_Device_LocationInfo, out string locationInfo))
+        {
+            return BusId.IncompatibleHub;
+        }
         var match = LocationInfoRegex().Match(locationInfo);
         if (!match.Success)
         {
@@ -179,22 +240,20 @@ static partial class ConfigurationManager
 
     static string? GetDeviceName(uint deviceNode)
     {
-        try
-        {
-            return (Get_DevNode_Property(deviceNode, PInvoke.DEVPKEY_NAME) as string)?.Trim();
-        }
-        catch (ConfigurationManagerException)
+        if (!TryGetProperty(deviceNode, PInvoke.DEVPKEY_NAME, out string name))
         {
             // This can happen for devices without a driver *and* without a USB string table.
             return null;
         }
+        name = name.Trim();
+        return string.IsNullOrEmpty(name) ? null : name;
     }
 
     public const string UnknownDevice = "Unknown device";
 
     public static string GetDescription(uint deviceNode)
     {
-        var isCompositeDevice = Get_DevNode_Property(deviceNode, PInvoke.DEVPKEY_Device_CompatibleIds) is string[] compatibleIds
+        var isCompositeDevice = TryGetProperty(deviceNode, PInvoke.DEVPKEY_Device_CompatibleIds, out string[] compatibleIds)
             && compatibleIds.Contains(@"USB\COMPOSITE");
         if (!isCompositeDevice)
         {
@@ -207,26 +266,28 @@ static partial class ConfigurationManager
         var descriptionSet = new SortedSet<string>();
         var descriptionList = new List<string>();
 
-        try
+        void AddDescription(string? desc)
         {
-            // The FriendlyName (if it exists) is useful for USB\COMPOSITE, but the Description is not.
-            // So, if FriendlyName exists, we start the list with that.
-            var friendlyName = ((string)Get_DevNode_Property(deviceNode, PInvoke.DEVPKEY_Device_FriendlyName)).Trim();
-            if (!string.IsNullOrEmpty(friendlyName))
+            if (desc != null)
             {
-                descriptionList.Add(friendlyName);
-                _ = descriptionSet.Add(friendlyName);
+                desc = desc.Trim();
+                if (!string.IsNullOrEmpty(desc) && descriptionSet.Add(desc))
+                {
+                    descriptionList.Add(desc);
+                }
             }
         }
-        catch (ConfigurationManagerException) { }
+
+        // The FriendlyName (if it exists) is useful for USB\COMPOSITE.
+        // Description definitely is not (for composite devices).
+        if (TryGetProperty(deviceNode, PInvoke.DEVPKEY_Device_FriendlyName, out string friendlyName))
+        {
+            AddDescription(friendlyName);
+        }
 
         foreach (var childNode in EnumChildren(deviceNode))
         {
-            var name = GetDeviceName(childNode);
-            if (!string.IsNullOrEmpty(name) && descriptionSet.Add(name))
-            {
-                descriptionList.Add(name);
-            }
+            AddDescription(GetDeviceName(childNode));
         }
 
         if (descriptionList.Count == 0)
@@ -250,25 +311,27 @@ static partial class ConfigurationManager
         {
             foreach (var deviceNode in EnumChildren(hub.Key))
             {
-                // This may fail due to a race condition between a device being removed and querying its details.
-                // In such cases, just skip the device as if it was never there in the first place.
-                try
+                if (hubs.ContainsKey(deviceNode))
                 {
-                    if (hubs.ContainsKey(deviceNode))
-                    {
-                        // Do not include hubs.
-                        continue;
-                    }
-                    var hardwareIds = (string[])Get_DevNode_Property(deviceNode, PInvoke.DEVPKEY_Device_HardwareIds);
-                    if (hardwareIds.Any(hardwareId => VidPid.TryParseId(hardwareId, out var vidPid) && vidPid == DriverDetails.Instance.VidPid))
-                    {
-                        // Do not include stubs.
-                        continue;
-                    }
-                    var instanceId = (string)Get_DevNode_Property(deviceNode, PInvoke.DEVPKEY_Device_InstanceId);
-                    usbDevices[instanceId] = new(deviceNode, instanceId);
+                    // Do not include hubs.
+                    continue;
                 }
-                catch (ConfigurationManagerException) { }
+                // Getting properties may fail due to a race condition between a device being removed and querying its details.
+                // In such cases, just skip the device as if it was never there in the first place.
+                if (!TryGetProperty(deviceNode, PInvoke.DEVPKEY_Device_HardwareIds, out string[] hardwareIds))
+                {
+                    continue;
+                }
+                if (hardwareIds.Any(hardwareId => VidPid.TryParseId(hardwareId, out var vidPid) && vidPid == DriverDetails.Instance.VidPid))
+                {
+                    // Do not include stubs.
+                    continue;
+                }
+                if (!TryGetProperty(deviceNode, PInvoke.DEVPKEY_Device_InstanceId, out string instanceId))
+                {
+                    continue;
+                }
+                usbDevices[instanceId] = new(deviceNode, instanceId);
             }
         }
         return usbDevices.Values;
@@ -282,9 +345,10 @@ static partial class ConfigurationManager
     static string GetHubInterfacePath(uint deviceNode)
     {
         PInvoke.CM_Get_Parent(out var hubDeviceNode, deviceNode, 0).ThrowOnError(nameof(PInvoke.CM_Get_Parent));
-        var hubInstanceId = (string)Get_DevNode_Property(hubDeviceNode, PInvoke.DEVPKEY_Device_InstanceId);
-        return Get_Device_Interface_List(PInvoke.GUID_DEVINTERFACE_USB_HUB, hubInstanceId,
-            CM_GET_DEVICE_INTERFACE_LIST_FLAGS.CM_GET_DEVICE_INTERFACE_LIST_PRESENT).Single();
+        return !TryGetProperty(hubDeviceNode, PInvoke.DEVPKEY_Device_InstanceId, out string hubInstanceId)
+            ? throw new UnexpectedResultException("Device node without instance ID")
+            : Get_Device_Interface_List(PInvoke.GUID_DEVINTERFACE_USB_HUB, hubInstanceId,
+                CM_GET_DEVICE_INTERFACE_LIST_FLAGS.CM_GET_DEVICE_INTERFACE_LIST_PRESENT).Single();
     }
 
     internal sealed record VBoxDevice(uint DeviceNode, string InstanceId, string InterfacePath);
@@ -313,16 +377,12 @@ static partial class ConfigurationManager
 
     public static bool HasVBoxDriver(uint deviceNode)
     {
-        try
-        {
-            var matchingDeviceId = (string)Get_DevNode_Property(deviceNode, PInvoke.DEVPKEY_Device_MatchingDeviceId);
-            return VidPid.TryParseId(matchingDeviceId, out var vidPid) && vidPid == DriverDetails.Instance.VidPid;
-        }
-        catch (ConfigurationManagerException)
+        if (!TryGetProperty(deviceNode, PInvoke.DEVPKEY_Device_MatchingDeviceId, out string matchingDeviceId))
         {
             // Device does not have a MatchingDeviceId, so definitely not the VBoxUSB driver.
             return false;
         }
+        return VidPid.TryParseId(matchingDeviceId, out var vidPid) && vidPid == DriverDetails.Instance.VidPid;
     }
 
     public static bool HasVBoxDriver(string instanceId)
@@ -339,56 +399,44 @@ static partial class ConfigurationManager
         }
     }
 
-    public static IEnumerable<string> GetOriginalDeviceIdsWithVBoxDriver()
+    public static IEnumerable<string> GetOriginalInstanceIdsWithVBoxDriver()
     {
-        // This gets all the VBox driver installations ever installed, even those
-        // that are not currently installed for a device and for devices that are not
-        // plugged in now.
-        var deviceInterfaces = Get_Device_Interface_List(Interop.VBoxUsb.GUID_CLASS_VBOXUSB, null,
-            CM_GET_DEVICE_INTERFACE_LIST_FLAGS.CM_GET_DEVICE_INTERFACE_LIST_ALL_DEVICES);
-        foreach (var deviceInterface in deviceInterfaces)
+        string[] instanceIds;
+
+        unsafe // DevSkim: ignore DS172412
         {
-            string deviceId;
-            // This may fail due to one of the properties not existing.
-            // In such cases, just skip the device as it does not have the VBox driver currently anyway.
-            try
+            PInvoke.CM_Get_Device_ID_List_Size(out var size, DriverDetails.Instance.ClassGuid.ToString("B"), PInvoke.CM_GETIDLIST_FILTER_CLASS)
+                .ThrowOnError(nameof(PInvoke.CM_Get_Device_ID_List_Size));
+            fixed (char* buf = stackalloc char[(int)size])
             {
-                deviceId = (string)Get_Device_Interface_Property(deviceInterface, PInvoke.DEVPKEY_Device_InstanceId);
-                var deviceNode = Locate_DevNode(deviceId, false);
-                // Filter out the devices that are mocked by VboxUsbMon, since those are supposed to have the VBox driver.
-                var hardwareIds = (string[])Get_DevNode_Property(deviceNode, PInvoke.DEVPKEY_Device_HardwareIds);
-                if (hardwareIds.Any(hardwareId => VidPid.TryParseId(hardwareId, out var vidPid) && vidPid == DriverDetails.Instance.VidPid))
-                {
-                    continue;
-                }
-                // Don't return the device if the *current* driver isn't the VBox driver.
-                if (!HasVBoxDriver(deviceNode))
-                {
-                    continue;
-                }
+                PInvoke.CM_Get_Device_ID_List(DriverDetails.Instance.ClassGuid.ToString("B"), buf, size, PInvoke.CM_GETIDLIST_FILTER_CLASS)
+                    .ThrowOnError(nameof(PInvoke.CM_Get_Device_ID_List_Size));
+                // The list is double-NUL terminated.
+                instanceIds = new string(buf, 0, (int)size - 2).Split('\0');
             }
-            catch (ConfigurationManagerException)
+        }
+
+        foreach (var instanceId in instanceIds)
+        {
+            if (!HasVBoxDriver(instanceId))
             {
                 continue;
             }
-            yield return deviceId;
+            if (VidPid.TryParse(instanceId, out var vidPid) && vidPid == DriverDetails.Instance.VidPid)
+            {
+                continue;
+            }
+            yield return instanceId;
         }
     }
 
+    const string FriendlyName = "USBIP Shared Device";
+
     public static void SetDeviceFriendlyName(uint deviceNode)
     {
-        unsafe // DevSkim: ignore DS172412
-        {
-            var friendlyName = "USBIP Shared Device";
-            fixed (char* pValue = friendlyName)
-            {
-                fixed (DEVPROPKEY* pDevPropKey = &PInvoke.DEVPKEY_Device_FriendlyName)
-                {
-                    PInvoke.CM_Set_DevNode_Property(deviceNode, pDevPropKey, DEVPROPTYPE.DEVPROP_TYPE_STRING, (byte*)pValue,
-                        (uint)(friendlyName.Length + 1) * sizeof(char), 0).ThrowOnError(nameof(PInvoke.CM_Set_DevNode_Property));
-                }
-            }
-        }
+        // NOTE: Must include terminating NUL character.
+        PInvoke.CM_Set_DevNode_Property(deviceNode, PInvoke.DEVPKEY_Device_FriendlyName, DEVPROPTYPE.DEVPROP_TYPE_STRING,
+            Encoding.Unicode.GetBytes($"{FriendlyName}\0"), 0).ThrowOnError(nameof(PInvoke.CM_Set_DevNode_Property));
     }
 
     /// <summary>

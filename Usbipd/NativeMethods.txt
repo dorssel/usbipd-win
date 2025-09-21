@@ -61,6 +61,7 @@ SETUP_DI_DEVICE_INSTALL_FLAGS
 SETUP_DI_DEVICE_INSTALL_FLAGS_EX
 
 DEVPKEY_Device_CompatibleIds
+DEVPKEY_Device_DriverVersion
 DEVPKEY_Device_FriendlyName
 DEVPKEY_Device_HardwareIds
 DEVPKEY_Device_InstanceId

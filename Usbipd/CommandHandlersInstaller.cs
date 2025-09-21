@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 using System.ComponentModel;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Usbipd.Automation;
 using Windows.Win32;
@@ -15,22 +14,19 @@ namespace Usbipd;
 
 sealed partial class CommandHandlers : ICommandHandlers
 {
-    Task < ExitCode> ICommandHandlers.InstallerInstallDriver(IConsole console, CancellationToken cancellationToken)
+    Task<ExitCode> ICommandHandlers.InstallerInstallDriver(IConsole console, CancellationToken cancellationToken)
     {
         ConsoleTools.ReportInfo(console, "install_driver");
 
         {
-            ConsoleTools.ReportInfo(console, $"Installing VBoxUSB");
+            ConsoleTools.ReportInfo(console, $"Installing VBoxUSB version {DriverDetails.Instance.Version}");
             // See: https://learn.microsoft.com/en-us/windows-hardware/drivers/install/preinstalling-driver-packages
             unsafe // DevSkim: ignore DS172412
             {
-                fixed (char* inf = DriverDetails.Instance.DriverPath)
+                if (!PInvoke.SetupCopyOEMInf(DriverDetails.Instance.DriverPath, null, OEM_SOURCE_MEDIA_TYPE.SPOST_PATH, 0, null, null, null))
                 {
-                    if (!PInvoke.SetupCopyOEMInf(inf, null, OEM_SOURCE_MEDIA_TYPE.SPOST_PATH, 0, null, 0))
-                    {
-                        console.ReportLastWin32Error(nameof(PInvoke.SetupCopyOEMInf));
-                        return Task.FromResult(ExitCode.Failure);
-                    }
+                    console.ReportLastWin32Error(nameof(PInvoke.SetupCopyOEMInf));
+                    return Task.FromResult(ExitCode.Failure);
                 }
             }
         }
@@ -42,28 +38,22 @@ sealed partial class CommandHandlers : ICommandHandlers
     {
         ConsoleTools.ReportInfo(console, $"uninstall_driver");
 
-        var success = true;
-        var needReboot = false;
+        BOOL needReboot;
 
+        ConsoleTools.ReportInfo(console, $"Uninstalling VBoxUSB version {DriverDetails.Instance.Version}");
         unsafe // DevSkim: ignore DS172412
         {
-            BOOL tmpNeedReboot;
-            if (!PInvoke.DiUninstallDriver(HWND.Null, DriverDetails.Instance.DriverPath, 0, &tmpNeedReboot))
+            if (!PInvoke.DiUninstallDriver(HWND.Null, DriverDetails.Instance.DriverPath, 0, &needReboot))
             {
                 console.ReportLastWin32Error(nameof(PInvoke.DiUninstallDriver));
-                success = false;
-                // continue
-            }
-            if (tmpNeedReboot)
-            {
-                needReboot = true;
+                return Task.FromResult(ExitCode.Failure);
             }
         }
 
         // This is a best effort, we ignore reboot.
         console.ReportInfo($"Need reboot: {needReboot}");
 
-        return Task.FromResult(success ? ExitCode.Success : ExitCode.Failure);
+        return Task.FromResult(ExitCode.Success);
     }
 
     Task<ExitCode> ICommandHandlers.InstallerInstallMonitor(IConsole console, CancellationToken cancellationToken)
@@ -112,7 +102,8 @@ sealed partial class CommandHandlers : ICommandHandlers
             cbSize = (uint)Marshal.SizeOf<SP_DEVINSTALL_PARAMS_W>(),
             FlagsEx = SETUP_DI_DEVICE_INSTALL_FLAGS_EX.DI_FLAGSEX_ALLOWEXCLUDEDDRVS,
         };
-        if (!PInvoke.SetupDiSetDeviceInstallParams(deviceInfoSet, null, deviceInstallParams)) {
+        if (!PInvoke.SetupDiSetDeviceInstallParams(deviceInfoSet, null, deviceInstallParams))
+        {
             console.ReportLastWin32Error(nameof(PInvoke.SetupDiSetDeviceInstallParams));
             return Task.FromResult(ExitCode.Failure);
         }
@@ -184,7 +175,7 @@ sealed partial class CommandHandlers : ICommandHandlers
                         // This is the current VBoxUSB driver -> don't remove it.
                         continue;
                     }
-                    ConsoleTools.ReportInfo(console, $"Removing old version: {version}, {details->InfFileName}");
+                    ConsoleTools.ReportInfo(console, $"Uninstalling old VBoxUSB version {version}, {details->InfFileName}");
                     BOOL tmpNeedReboot;
                     if (!PInvoke.DiUninstallDriver(HWND.Null, details->InfFileName.ToString(), 0, &tmpNeedReboot))
                     {
@@ -206,6 +197,43 @@ sealed partial class CommandHandlers : ICommandHandlers
         return Task.FromResult(success ? ExitCode.Success : ExitCode.Failure);
     }
 
+    static string[] GetInstanceIds()
+    {
+        string[] instanceIds;
+
+        unsafe // DevSkim: ignore DS172412
+        {
+            PInvoke.CM_Get_Device_ID_List_Size(out var size, DriverDetails.Instance.ClassGuid.ToString("B"), PInvoke.CM_GETIDLIST_FILTER_CLASS)
+                .ThrowOnError(nameof(PInvoke.CM_Get_Device_ID_List_Size));
+            fixed (char* buf = stackalloc char[(int)size])
+            {
+                PInvoke.CM_Get_Device_ID_List(DriverDetails.Instance.ClassGuid.ToString("B"), buf, size, PInvoke.CM_GETIDLIST_FILTER_CLASS)
+                    .ThrowOnError(nameof(PInvoke.CM_Get_Device_ID_List_Size));
+                // The list is double-NUL terminated.
+                instanceIds = new string(buf, 0, (int)size - 2).Split('\0');
+            }
+        }
+
+        return instanceIds;
+    }
+
+    static bool TryGetDeviceNode(string instanceId, out uint devNode)
+    {
+        unsafe // DevSkim: ignore DS172412
+        {
+            fixed (char* pInstanceId = instanceId)
+            {
+                var configRet = PInvoke.CM_Locate_DevNode(out devNode, pInstanceId, CM_LOCATE_DEVNODE_FLAGS.CM_LOCATE_DEVNODE_NORMAL);
+                if (configRet != CONFIGRET.CR_SUCCESS)
+                {
+                    devNode = 0;
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
     Task<ExitCode> ICommandHandlers.InstallerUpdateDrivers(IConsole console, CancellationToken cancellationToken)
     {
         ConsoleTools.ReportInfo(console, "update_drivers");
@@ -213,41 +241,30 @@ sealed partial class CommandHandlers : ICommandHandlers
         var success = true;
         var needReboot = false;
 
-        var instances = new List<string>();
-        {
-            // Get all devices that exist, including stub devices, present or not, in any hardware profile (i.e., *really* all of them).
-            var devInfo = new SP_DEVINFO_DATA()
-            {
-                cbSize = (uint)Unsafe.SizeOf<SP_DEVINFO_DATA>(),
-            };
-            using var deviceInfoList = PInvoke.SetupDiGetClassDevs(null, null!, HWND.Null, SETUP_DI_GET_CLASS_DEVS_FLAGS.DIGCF_ALLCLASSES);
-            for (uint memberIndex = 0; ; memberIndex++)
-            {
-                if (!PInvoke.SetupDiEnumDeviceInfo(deviceInfoList, memberIndex, ref devInfo))
-                {
-                    if ((WIN32_ERROR)Marshal.GetLastPInvokeError() == WIN32_ERROR.ERROR_NO_MORE_ITEMS)
-                    {
-                        break;
-                    }
-                    console.ReportLastWin32Error(nameof(PInvoke.SetupDiEnumDeviceInfo));
-                    success = false;
-                    break;
-                }
-                if (!ConfigurationManager.HasVBoxDriver(devInfo.DevInst))
-                {
-                    continue;
-                }
-                var instanceId = (string)ConfigurationManager.Get_DevNode_Property(devInfo.DevInst, PInvoke.DEVPKEY_Device_InstanceId);
-                instances.Add(instanceId);
-            }
-        }
-
-        foreach (var instanceId in instances)
+        foreach (var instanceId in GetInstanceIds())
         {
             cancellationToken.ThrowIfCancellationRequested();
-            console.ReportInfo($"Updating device: {instanceId}");
+
+            var deviceNode = ConfigurationManager.Locate_DevNode(instanceId, false);
+
+            if (!ConfigurationManager.HasVBoxDriver(deviceNode))
+            {
+                continue;
+            }
+
+            if (ConfigurationManager.TryGetProperty(deviceNode, PInvoke.DEVPKEY_Device_DriverVersion, out string versionText)
+                && Version.TryParse(versionText, out var version)
+                && (version == DriverDetails.Instance.Version))
+            {
+                console.ReportInfo($"Device already using VBoxUSB version {version}: {instanceId}");
+                continue;
+            }
+
+            console.ReportInfo($"Updating device VBoxUSB driver to version {DriverDetails.Instance.Version}: {instanceId}");
             try
             {
+                // NOTE: Setting any driver will enable the device.
+                // NOTE: Force will set a NULL driver first.
                 if (DriverTools.ForceVBoxDriver(instanceId))
                 {
                     needReboot = true;
@@ -255,9 +272,8 @@ sealed partial class CommandHandlers : ICommandHandlers
             }
             catch (Win32Exception e)
             {
-                console.ReportError($"Failed to update device {instanceId}: {e.Message}");
+                console.ReportError(e.Message);
                 success = false;
-                continue;
             }
         }
 
@@ -279,45 +295,29 @@ sealed partial class CommandHandlers : ICommandHandlers
         var success = true;
         var needReboot = false;
 
-        unsafe // DevSkim: ignore DS172412
+        foreach (var instanceId in GetInstanceIds())
         {
-            string[] instanceIds;
+            cancellationToken.ThrowIfCancellationRequested();
 
-            PInvoke.CM_Get_Device_ID_List_Size(out var size, DriverDetails.Instance.ClassGuid.ToString("B"), PInvoke.CM_GETIDLIST_FILTER_CLASS)
-                .ThrowOnError(nameof(PInvoke.CM_Get_Device_ID_List_Size));
-
-            fixed (char* buf = stackalloc char[(int)size])
+            if (!VidPid.TryParseId(instanceId, out var vidPid) || vidPid != DriverDetails.Instance.VidPid)
             {
-                PInvoke.CM_Get_Device_ID_List(DriverDetails.Instance.ClassGuid.ToString("B"), buf, size, PInvoke.CM_GETIDLIST_FILTER_CLASS)
-                    .ThrowOnError(nameof(PInvoke.CM_Get_Device_ID_List_Size));
-                // The list is double-NUL terminated.
-                instanceIds = new string(buf, 0, (int)size - 2).Split('\0');
+                // Not a stub device.
+                continue;
             }
 
-            foreach (var instanceId in instanceIds)
+            console.ReportInfo($"Uninstalling stub device: {instanceId}");
+
+            try
             {
-                cancellationToken.ThrowIfCancellationRequested();
-
-                if (!VidPid.TryParseId(instanceId, out var vidPid) || vidPid != DriverDetails.Instance.VidPid)
+                if (DriverTools.UninstallStubDevice(instanceId))
                 {
-                    // Not a stub device.
-                    continue;
+                    needReboot = true;
                 }
-
-                console.ReportInfo($"Uninstalling stub device: {instanceId}");
-
-                try
-                {
-                    if (DriverTools.UninstallStubDevice(instanceId))
-                    {
-                        needReboot = true;
-                    }
-                }
-                catch (Win32Exception e)
-                {
-                    console.ReportError(e.Message);
-                    success = false;
-                }
+            }
+            catch (Win32Exception e)
+            {
+                console.ReportError(e.Message);
+                success = false;
             }
         }
 
@@ -337,48 +337,25 @@ sealed partial class CommandHandlers : ICommandHandlers
 
         var success = true;
 
-        unsafe // DevSkim: ignore DS172412
+        foreach (var instanceId in GetInstanceIds())
         {
-            string[] instanceIds;
-
-            PInvoke.CM_Get_Device_ID_List_Size(out var size, DriverDetails.Instance.ClassGuid.ToString("B"), PInvoke.CM_GETIDLIST_FILTER_CLASS)
-                .ThrowOnError(nameof(PInvoke.CM_Get_Device_ID_List_Size));
-
-            fixed (char* buf = stackalloc char[(int)size])
+            cancellationToken.ThrowIfCancellationRequested();
+            if (!ConfigurationManager.HasVBoxDriver(instanceId))
             {
-                PInvoke.CM_Get_Device_ID_List(DriverDetails.Instance.ClassGuid.ToString("B"), buf, size, PInvoke.CM_GETIDLIST_FILTER_CLASS)
-                    .ThrowOnError(nameof(PInvoke.CM_Get_Device_ID_List_Size));
-                // The list is double-NUL terminated.
-                instanceIds = new string(buf, 0, (int)size - 2).Split('\0');
+                continue;
+            }
+            // NOTE: It is not possible (nor needed) to disable devices that are not present.
+            if (!TryGetDeviceNode(instanceId, out var devNode))
+            {
+                continue;
             }
 
-            foreach (var instanceId in instanceIds)
+            console.ReportInfo($"Disabling device: {instanceId}");
+            var configRet = PInvoke.CM_Disable_DevNode(devNode, PInvoke.CM_DISABLE_UI_NOT_OK);
+            if (configRet != CONFIGRET.CR_SUCCESS)
             {
-                cancellationToken.ThrowIfCancellationRequested();
-                if (!ConfigurationManager.HasVBoxDriver(instanceId))
-                {
-                    continue;
-                }
-                // NOTE: We don't need to disable devices that are not present.
-                // NOTE: This will also skip left-over stub devices that a) should have been uninstalled already, and b) should not be running at this point.
-                uint devNode;
-                CONFIGRET configRet;
-                fixed (char* pInstanceId = instanceId)
-                {
-                    configRet = PInvoke.CM_Locate_DevNode(out devNode, pInstanceId, CM_LOCATE_DEVNODE_FLAGS.CM_LOCATE_DEVNODE_NORMAL);
-                    if (configRet != CONFIGRET.CR_SUCCESS)
-                    {
-                        // Device is not present, so it isn't using the driver. We can ignore it.
-                        continue;
-                    }
-                }
-                console.ReportInfo($"Disabling device: {instanceId}");
-                configRet = PInvoke.CM_Disable_DevNode(devNode, PInvoke.CM_DISABLE_UI_NOT_OK);
-                if (configRet != CONFIGRET.CR_SUCCESS)
-                {
-                    console.ReportConfigRet(nameof(PInvoke.CM_Disable_DevNode), configRet);
-                    success = false;
-                }
+                console.ReportConfigRet(nameof(PInvoke.CM_Disable_DevNode), configRet);
+                success = false;
             }
         }
 
@@ -395,66 +372,40 @@ sealed partial class CommandHandlers : ICommandHandlers
 
         var success = true;
 
-        unsafe // DevSkim: ignore DS172412
+        foreach (var instanceId in GetInstanceIds())
         {
-            string[] instanceIds;
+            cancellationToken.ThrowIfCancellationRequested();
 
-            PInvoke.CM_Get_Device_ID_List_Size(out var size, DriverDetails.Instance.ClassGuid.ToString("B"), PInvoke.CM_GETIDLIST_FILTER_CLASS)
-                .ThrowOnError(nameof(PInvoke.CM_Get_Device_ID_List_Size));
-
-            fixed (char* buf = stackalloc char[(int)size])
+            // We will enable all devices that are present, disabled, and use the VBoxUSB driver.
+            // At this point, that should only be the forced devices that are actually present.
+            if (!TryGetDeviceNode(instanceId, out var devNode))
             {
-                PInvoke.CM_Get_Device_ID_List(DriverDetails.Instance.ClassGuid.ToString("B"), buf, size, PInvoke.CM_GETIDLIST_FILTER_CLASS)
-                    .ThrowOnError(nameof(PInvoke.CM_Get_Device_ID_List_Size));
-                // The list is double-NUL terminated.
-                instanceIds = new string(buf, 0, (int)size - 2).Split('\0');
+                // If the device is not present, it is not even possible to enable/disable/status.
+                continue;
+            }
+            if (!ConfigurationManager.HasVBoxDriver(devNode))
+            {
+                continue;
+            }
+            var configRet = PInvoke.CM_Get_DevNode_Status(out var status, out var problemCode, devNode, 0);
+            if (configRet != CONFIGRET.CR_SUCCESS)
+            {
+                console.ReportConfigRet(nameof(PInvoke.CM_Get_DevNode_Status), configRet);
+                success = false;
+                continue;
+            }
+            if (!status.HasFlag(CM_DEVNODE_STATUS_FLAGS.DN_HAS_PROBLEM) || !problemCode.HasFlag(CM_PROB.CM_PROB_DISABLED))
+            {
+                // Device is not disabled.
+                continue;
             }
 
-            foreach (var instanceId in instanceIds)
+            console.ReportInfo($"Enabling device: {instanceId}");
+            configRet = PInvoke.CM_Enable_DevNode(devNode, 0);
+            if (configRet != CONFIGRET.CR_SUCCESS)
             {
-                cancellationToken.ThrowIfCancellationRequested();
-
-                // We will enable all devices that are present, disabled, and use the VBoxUSB driver.
-                // At this point, that should only be the forced devices that are actually present.
-                if (!ConfigurationManager.HasVBoxDriver(instanceId))
-                {
-                    continue;
-                }
-                uint devNode;
-                CONFIGRET configRet;
-                fixed (char* pInstanceId = instanceId)
-                {
-                    configRet = PInvoke.CM_Locate_DevNode(out devNode, pInstanceId, CM_LOCATE_DEVNODE_FLAGS.CM_LOCATE_DEVNODE_NORMAL);
-                }
-                if (configRet != CONFIGRET.CR_SUCCESS)
-                {
-                    // If the device is not present, it is not even possible to enable/disable/status.
-                    if (configRet != CONFIGRET.CR_NO_SUCH_DEVINST)
-                    {
-                        console.ReportConfigRet(nameof(PInvoke.CM_Locate_DevNode), configRet);
-                        success = false;
-                    }
-                    continue;
-                }
-                configRet = PInvoke.CM_Get_DevNode_Status(out var status, out var problemCode, devNode, 0);
-                if (configRet != CONFIGRET.CR_SUCCESS)
-                {
-                    console.ReportConfigRet(nameof(PInvoke.CM_Get_DevNode_Status), configRet);
-                    success = false;
-                    continue;
-                }
-                if (!status.HasFlag(CM_DEVNODE_STATUS_FLAGS.DN_HAS_PROBLEM) || !problemCode.HasFlag(CM_PROB.CM_PROB_DISABLED))
-                {
-                    // Device is not disabled.
-                    continue;
-                }
-                console.ReportInfo($"Enabling device: {instanceId}");
-                configRet = PInvoke.CM_Enable_DevNode(devNode, 0);
-                if (configRet != CONFIGRET.CR_SUCCESS)
-                {
-                    console.ReportConfigRet(nameof(PInvoke.CM_Enable_DevNode), configRet);
-                    success = false;
-                }
+                console.ReportConfigRet(nameof(PInvoke.CM_Enable_DevNode), configRet);
+                success = false;
             }
         }
 
