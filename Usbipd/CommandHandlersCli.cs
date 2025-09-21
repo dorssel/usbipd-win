@@ -309,11 +309,12 @@ sealed partial class CommandHandlers : ICommandHandlers
         RegistryUtilities.StopSharingAllDevices();
         var reboot = false;
         var driverError = false;
-        foreach (var originalInstanceId in ConfigurationManager.GetOriginalInstanceIdsWithVBoxDriver())
+        foreach (var device in Device.GetAll(DriverDetails.Instance.ClassGuid, false)
+            .Where(d => d.HasVBoxDriver && !d.IsStub))
         {
             try
             {
-                if (DriverTools.UnforceVBoxDriver(originalInstanceId))
+                if (DriverTools.UnforceVBoxDriver(device.InstanceId))
                 {
                     reboot = true;
                 }
@@ -432,7 +433,7 @@ sealed partial class CommandHandlers : ICommandHandlers
 #pragma warning disable CA1849 // Call async methods when in an async method
         console.SetError(TextWriter.Null);
 
-        var devices = new List<Device>();
+        var devices = new List<Automation.Device>();
         foreach (var device in UsbDevice.GetAll().OrderBy(d => d.InstanceId))
         {
             devices.Add(new()

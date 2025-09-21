@@ -399,37 +399,6 @@ static partial class ConfigurationManager
         }
     }
 
-    public static IEnumerable<string> GetOriginalInstanceIdsWithVBoxDriver()
-    {
-        string[] instanceIds;
-
-        unsafe // DevSkim: ignore DS172412
-        {
-            PInvoke.CM_Get_Device_ID_List_Size(out var size, DriverDetails.Instance.ClassGuid.ToString("B"), PInvoke.CM_GETIDLIST_FILTER_CLASS)
-                .ThrowOnError(nameof(PInvoke.CM_Get_Device_ID_List_Size));
-            fixed (char* buf = stackalloc char[(int)size])
-            {
-                PInvoke.CM_Get_Device_ID_List(DriverDetails.Instance.ClassGuid.ToString("B"), buf, size, PInvoke.CM_GETIDLIST_FILTER_CLASS)
-                    .ThrowOnError(nameof(PInvoke.CM_Get_Device_ID_List_Size));
-                // The list is double-NUL terminated.
-                instanceIds = new string(buf, 0, (int)size - 2).Split('\0');
-            }
-        }
-
-        foreach (var instanceId in instanceIds)
-        {
-            if (!HasVBoxDriver(instanceId))
-            {
-                continue;
-            }
-            if (VidPid.TryParse(instanceId, out var vidPid) && vidPid == DriverDetails.Instance.VidPid)
-            {
-                continue;
-            }
-            yield return instanceId;
-        }
-    }
-
     const string FriendlyName = "USBIP Shared Device";
 
     public static void SetDeviceFriendlyName(uint deviceNode)
