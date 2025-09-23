@@ -163,48 +163,6 @@ static partial class ConfigurationManager
         }
     }
 
-    static IEnumerable<uint> EnumChildren(uint parentNode)
-    {
-        // Failure here means: the hub has no (more) children, or a race between
-        // removing the hub and enumerating its children. In any case, we are done enumerating.
-        var cr = PInvoke.CM_Get_Child(out var childNode, parentNode, 0);
-        if (cr != CONFIGRET.CR_SUCCESS)
-        {
-            yield break;
-        }
-        yield return childNode;
-
-        while (true)
-        {
-            cr = PInvoke.CM_Get_Sibling(out childNode, childNode, 0);
-            if (cr != CONFIGRET.CR_SUCCESS)
-            {
-                yield break;
-            }
-            yield return childNode;
-        }
-    }
-
-    static Dictionary<uint, string> GetHubs()
-    {
-        var hubs = new Dictionary<uint, string>();
-        var hubInterfaces = Get_Device_Interface_List(PInvoke.GUID_DEVINTERFACE_USB_HUB, null,
-            CM_GET_DEVICE_INTERFACE_LIST_FLAGS.CM_GET_DEVICE_INTERFACE_LIST_PRESENT);
-        foreach (var hubInterface in hubInterfaces)
-        {
-            try
-            {
-                // This may fail due to a race condition between a hub being removed and querying its details.
-                // In such cases, just skip the hub as if it was never there in the first place.
-                var hubId = (string)Get_Device_Interface_Property(hubInterface, PInvoke.DEVPKEY_Device_InstanceId);
-                var hubNode = Locate_DevNode(hubId, true);
-                hubs.Add(hubNode, hubInterface);
-            }
-            catch (ConfigurationManagerException) { }
-        }
-        return hubs;
-    }
-
     [GeneratedRegex(@"^Port_#([0-9]{4}).Hub_#([0-9]{4})$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
     private static partial Regex LocationInfoRegex();
 
@@ -253,6 +211,11 @@ static partial class ConfigurationManager
 
     public static string GetDescription(uint deviceNode)
     {
+        if (!WindowsDevice.TryCreate(deviceNode, out var device))
+        {
+            return UnknownDevice;
+        }
+
         var isCompositeDevice = TryGetProperty(deviceNode, PInvoke.DEVPKEY_Device_CompatibleIds, out string[] compatibleIds)
             && compatibleIds.Contains(@"USB\COMPOSITE");
         if (!isCompositeDevice)
@@ -280,14 +243,11 @@ static partial class ConfigurationManager
 
         // The FriendlyName (if it exists) is useful for USB\COMPOSITE.
         // Description definitely is not (for composite devices).
-        if (TryGetProperty(deviceNode, PInvoke.DEVPKEY_Device_FriendlyName, out string friendlyName))
-        {
-            AddDescription(friendlyName);
-        }
+        AddDescription(device.FriendlyName);
 
-        foreach (var childNode in EnumChildren(deviceNode))
+        foreach (var childDevice in device.Children)
         {
-            AddDescription(GetDeviceName(childNode));
+            AddDescription(GetDeviceName(childDevice.Node));
         }
 
         if (descriptionList.Count == 0)
@@ -299,42 +259,6 @@ static partial class ConfigurationManager
         }
 
         return string.Join(", ", descriptionList);
-    }
-
-    internal sealed record ConnectedUsbDevice(uint DeviceNode, string InstanceId);
-
-    public static IEnumerable<ConnectedUsbDevice> GetConnectedUsbDevices()
-    {
-        var hubs = GetHubs();
-        var usbDevices = new Dictionary<string, ConnectedUsbDevice>();
-        foreach (var hub in hubs)
-        {
-            foreach (var deviceNode in EnumChildren(hub.Key))
-            {
-                if (hubs.ContainsKey(deviceNode))
-                {
-                    // Do not include hubs.
-                    continue;
-                }
-                // Getting properties may fail due to a race condition between a device being removed and querying its details.
-                // In such cases, just skip the device as if it was never there in the first place.
-                if (!TryGetProperty(deviceNode, PInvoke.DEVPKEY_Device_HardwareIds, out string[] hardwareIds))
-                {
-                    continue;
-                }
-                if (hardwareIds.Any(hardwareId => VidPid.TryParseId(hardwareId, out var vidPid) && vidPid == DriverDetails.Instance.VidPid))
-                {
-                    // Do not include stubs.
-                    continue;
-                }
-                if (!TryGetProperty(deviceNode, PInvoke.DEVPKEY_Device_InstanceId, out string instanceId))
-                {
-                    continue;
-                }
-                usbDevices[instanceId] = new(deviceNode, instanceId);
-            }
-        }
-        return usbDevices.Values;
     }
 
     public static string GetHubInterfacePath(string instanceId)
@@ -351,28 +275,10 @@ static partial class ConfigurationManager
                 CM_GET_DEVICE_INTERFACE_LIST_FLAGS.CM_GET_DEVICE_INTERFACE_LIST_PRESENT).Single();
     }
 
-    internal sealed record VBoxDevice(uint DeviceNode, string InstanceId, string InterfacePath);
-
-    public static VBoxDevice GetVBoxDevice(BusId busId)
+    public static WindowsDeviceInterface GetVBoxDeviceInterface(BusId busId)
     {
-        var deviceInterfaces = Get_Device_Interface_List(Interop.VBoxUsb.GUID_CLASS_VBOXUSB, null,
-            CM_GET_DEVICE_INTERFACE_LIST_FLAGS.CM_GET_DEVICE_INTERFACE_LIST_PRESENT);
-        foreach (var deviceInterface in deviceInterfaces)
-        {
-            // This may fail due to a race condition between a device being removed and querying its details.
-            // In such cases, just skip the device as if it was never there in the first place.
-            try
-            {
-                var deviceId = (string)Get_Device_Interface_Property(deviceInterface, PInvoke.DEVPKEY_Device_InstanceId);
-                var deviceNode = Locate_DevNode(deviceId, true);
-                if (GetBusId(deviceNode) == busId)
-                {
-                    return new(deviceNode, deviceId, deviceInterface);
-                }
-            }
-            catch (ConfigurationManagerException) { }
-        }
-        throw new FileNotFoundException();
+        return WindowsDeviceInterface.GetAll(Interop.VBoxUsb.GUID_CLASS_VBOXUSB)
+            .FirstOrDefault(di => di.Device.BusId == busId) ?? throw new FileNotFoundException();
     }
 
     public static bool HasVBoxDriver(uint deviceNode)
@@ -414,21 +320,16 @@ static partial class ConfigurationManager
     internal sealed partial class RestartingDevice
         : IDisposable
     {
-        public RestartingDevice(string instanceId)
-            : this(Locate_DevNode(instanceId, true))
+        public RestartingDevice(WindowsDevice device)
         {
-        }
-
-        public RestartingDevice(uint deviceNode)
-        {
-            DeviceNode = deviceNode;
+            Device = device;
             unsafe // DevSkim: ignore DS172412
             {
                 PNP_VETO_TYPE vetoType;
                 var vetoName = new string('\0', (int)PInvoke.MAX_PATH);
                 fixed (char* pVetoName = vetoName)
                 {
-                    var cr = PInvoke.CM_Query_And_Remove_SubTree(DeviceNode, &vetoType, pVetoName, PInvoke.MAX_PATH,
+                    var cr = PInvoke.CM_Query_And_Remove_SubTree(Device.Node, &vetoType, pVetoName, PInvoke.MAX_PATH,
                         PInvoke.CM_REMOVE_NO_RESTART | PInvoke.CM_REMOVE_UI_NOT_OK);
                     if (cr == CONFIGRET.CR_REMOVE_VETOED)
                     {
@@ -440,7 +341,7 @@ static partial class ConfigurationManager
             }
         }
 
-        readonly uint DeviceNode;
+        readonly WindowsDevice Device;
 
         public void Dispose()
         {
@@ -463,11 +364,10 @@ static partial class ConfigurationManager
 
                 Thread.Sleep(TimeSpan.FromMilliseconds(100));
 
-                var busId = GetBusId(DeviceNode);
-                var hubInterfacePath = GetHubInterfacePath(DeviceNode);
+                var hubInterfacePath = GetHubInterfacePath(Device.Node);
                 using var hubFile = new DeviceFile(hubInterfacePath);
 
-                var data = new USB_CYCLE_PORT_PARAMS() { ConnectionIndex = busId.Port };
+                var data = new USB_CYCLE_PORT_PARAMS() { ConnectionIndex = Device.BusId.Port };
                 var buf = Tools.StructToBytes(data);
                 hubFile.IoControlAsync(PInvoke.IOCTL_USB_HUB_CYCLE_PORT, buf, buf).Wait();
             }
@@ -476,7 +376,7 @@ static partial class ConfigurationManager
             catch (AggregateException ex) when (ex.InnerException is Win32Exception) { }
 
             // This is the reverse of what the constructor accomplished.
-            _ = PInvoke.CM_Setup_DevNode(DeviceNode, PInvoke.CM_SETUP_DEVNODE_READY);
+            _ = PInvoke.CM_Setup_DevNode(Device.Node, PInvoke.CM_SETUP_DEVNODE_READY);
         }
     }
 }

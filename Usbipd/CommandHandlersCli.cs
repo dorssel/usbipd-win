@@ -309,7 +309,7 @@ sealed partial class CommandHandlers : ICommandHandlers
         RegistryUtilities.StopSharingAllDevices();
         var reboot = false;
         var driverError = false;
-        foreach (var device in Device.GetAll(DriverDetails.Instance.ClassGuid, false)
+        foreach (var device in WindowsDevice.GetAll(DriverDetails.Instance.ClassGuid, false)
             .Where(d => d.HasVBoxDriver && !d.IsStub))
         {
             try
@@ -428,12 +428,11 @@ sealed partial class CommandHandlers : ICommandHandlers
         return Task.FromResult(ExitCode.Success);
     }
 
-    Task<ExitCode> ICommandHandlers.State(IConsole console, CancellationToken cancellationToken)
+    async Task<ExitCode> ICommandHandlers.State(IConsole console, CancellationToken cancellationToken)
     {
-#pragma warning disable CA1849 // Call async methods when in an async method
         console.SetError(TextWriter.Null);
 
-        var devices = new List<Automation.Device>();
+        var devices = new List<Device>();
         foreach (var device in UsbDevice.GetAll().OrderBy(d => d.InstanceId))
         {
             devices.Add(new()
@@ -460,9 +459,8 @@ sealed partial class CommandHandlers : ICommandHandlers
         });
         var json = JsonSerializer.Serialize(state, context.State);
 
-        console.Out.Write(json);
-        return Task.FromResult(ExitCode.Success);
-#pragma warning restore CA1849 // Call async methods when in an async method
+        await console.Out.WriteAsync(json);
+        return ExitCode.Success;
     }
 
     Task<ExitCode> ICommandHandlers.PolicyAdd(PolicyRule rule, IConsole console, CancellationToken cancellationToken)

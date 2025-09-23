@@ -206,7 +206,7 @@ sealed partial class CommandHandlers : ICommandHandlers
 
         // NOTE: It is not actually possible to update devices that are not present.
         // Instead, this will unforce the device the next time it is plugged in (and the device will get the default PnP driver).
-        foreach (var device in Device.GetAll(DriverDetails.Instance.ClassGuid, false)
+        foreach (var device in WindowsDevice.GetAll(DriverDetails.Instance.ClassGuid, false)
             .Where(d => d.HasVBoxDriver && d.DriverVersion != DriverDetails.Instance.Version))
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -246,7 +246,7 @@ sealed partial class CommandHandlers : ICommandHandlers
         var success = true;
         var needReboot = false;
 
-        foreach (var device in Device.GetAll(DriverDetails.Instance.ClassGuid, false).Where(d => d.IsStub))
+        foreach (var device in WindowsDevice.GetAll(DriverDetails.Instance.ClassGuid, false).Where(d => d.IsStub))
         {
             cancellationToken.ThrowIfCancellationRequested();
 
@@ -283,12 +283,12 @@ sealed partial class CommandHandlers : ICommandHandlers
         var success = true;
 
         // NOTE: It is not possible (nor needed) to disable devices that are not present.
-        foreach (var device in Device.GetAll(DriverDetails.Instance.ClassGuid, true).Where(d => d.HasVBoxDriver && !d.IsDisabled))
+        foreach (var device in WindowsDevice.GetAll(DriverDetails.Instance.ClassGuid, true).Where(d => d.HasVBoxDriver && !d.IsDisabled))
         {
             cancellationToken.ThrowIfCancellationRequested();
 
             console.ReportInfo($"Disabling device: {device.InstanceId}");
-            var configRet = PInvoke.CM_Disable_DevNode(device.DeviceNode, PInvoke.CM_DISABLE_UI_NOT_OK);
+            var configRet = PInvoke.CM_Disable_DevNode(device.Node, PInvoke.CM_DISABLE_UI_NOT_OK);
             if (configRet != CONFIGRET.CR_SUCCESS)
             {
                 console.ReportConfigRet(nameof(PInvoke.CM_Disable_DevNode), configRet);
@@ -309,12 +309,12 @@ sealed partial class CommandHandlers : ICommandHandlers
 
         var success = true;
 
-        foreach (var device in Device.GetAll(DriverDetails.Instance.ClassGuid, true).Where(d => d.HasVBoxDriver && d.IsDisabled))
+        foreach (var device in WindowsDevice.GetAll(DriverDetails.Instance.ClassGuid, true).Where(d => d.HasVBoxDriver && d.IsDisabled))
         {
             cancellationToken.ThrowIfCancellationRequested();
 
             console.ReportInfo($"Enabling device: {device.InstanceId}");
-            var configRet = PInvoke.CM_Enable_DevNode(device.DeviceNode, 0);
+            var configRet = PInvoke.CM_Enable_DevNode(device.Node, 0);
             if (configRet != CONFIGRET.CR_SUCCESS)
             {
                 console.ReportConfigRet(nameof(PInvoke.CM_Enable_DevNode), configRet);

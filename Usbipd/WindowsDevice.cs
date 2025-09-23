@@ -11,12 +11,19 @@ using Windows.Win32.Devices.Properties;
 
 namespace Usbipd;
 
-sealed partial class Device(uint deviceNode, string instanceId)
+/// <summary>
+/// Represents a device as seen by Windows.
+/// <para>
+/// Each device has a numeric ID (device node) and an instance ID (string), which have a one-to-one correspondence.
+/// </para>
+/// </summary>
+sealed partial class WindowsDevice(uint deviceNode, string instanceId)
 {
-    public uint DeviceNode { get; } = deviceNode;
+    public uint Node { get; } = deviceNode;
     public string InstanceId { get; } = instanceId;
 
-    public static bool TryCreate(uint deviceNode, out Device device)
+    /// <returns>false if the corresponding instance ID does not exist.</returns>
+    public static bool TryCreate(uint deviceNode, out WindowsDevice device)
     {
         if (!TryGetProperty(deviceNode, PInvoke.DEVPKEY_Device_InstanceId, out string instanceId))
         {
@@ -27,7 +34,8 @@ sealed partial class Device(uint deviceNode, string instanceId)
         return true;
     }
 
-    public static bool TryCreate(string instanceId, out Device device)
+    /// <returns>false if the corresponding device node does not exist.</returns>
+    public static bool TryCreate(string instanceId, out WindowsDevice device)
     {
         unsafe // DevSkim: ignore DS172412
         {
@@ -44,20 +52,55 @@ sealed partial class Device(uint deviceNode, string instanceId)
         }
     }
 
+    /// <summary>
+    /// true if the device is a VBoxUSBMon stub device.
+    /// </summary>
     public bool IsStub => VidPid.TryParseId(InstanceId, out var vidPid) && (vidPid == DriverDetails.Instance.VidPid);
 
-    public bool IsPresent => TryGetProperty(DeviceNode, PInvoke.DEVPKEY_Device_DevNodeStatus, out CM_DEVNODE_STATUS_FLAGS _);
+    /// <summary>
+    /// true if the device is a USB hub.
+    /// </summary>
+    public bool IsHub
+    {
+        get
+        {
+            unsafe // DevSkim: ignore DS172412
+            {
+                fixed (char* pInstanceId = InstanceId)
+                {
+                    if (PInvoke.CM_Get_Device_Interface_List_Size(out var length, PInvoke.GUID_DEVINTERFACE_USB_HUB, pInstanceId,
+                        CM_GET_DEVICE_INTERFACE_LIST_FLAGS.CM_GET_DEVICE_INTERFACE_LIST_ALL_DEVICES) != CONFIGRET.CR_SUCCESS)
+                    {
+                        return false;
+                    }
+                    // A non-empty list (i.e., for a hub) would be double-NUL terminated.
+                    return length >= 2;
+                }
+            }
+        }
+    }
 
-    public bool IsDisabled => TryGetProperty(DeviceNode, PInvoke.DEVPKEY_Device_DevNodeStatus, out CM_DEVNODE_STATUS_FLAGS status)
+    /// <summary>
+    /// true if the device is currently present (plugged in).
+    /// </summary>
+    public bool IsPresent => TryGetProperty(Node, PInvoke.DEVPKEY_Device_DevNodeStatus, out CM_DEVNODE_STATUS_FLAGS _);
+
+    /// <summary>
+    /// true if the device is currently present (plugged in), but disabled in Device Manager.
+    /// </summary>
+    public bool IsDisabled => TryGetProperty(Node, PInvoke.DEVPKEY_Device_DevNodeStatus, out CM_DEVNODE_STATUS_FLAGS status)
         && status.HasFlag(CM_DEVNODE_STATUS_FLAGS.DN_HAS_PROBLEM)
-        && TryGetProperty(DeviceNode, PInvoke.DEVPKEY_Device_ProblemCode, out CM_PROB problem)
+        && TryGetProperty(Node, PInvoke.DEVPKEY_Device_ProblemCode, out CM_PROB problem)
         && problem == CM_PROB.CM_PROB_DISABLED;
 
+    /// <summary>
+    /// The FriendlyName of the device (if any).
+    /// </summary>
     public string? FriendlyName
     {
         get
         {
-            if (!TryGetProperty(DeviceNode, PInvoke.DEVPKEY_Device_FriendlyName, out string friendlyName))
+            if (!TryGetProperty(Node, PInvoke.DEVPKEY_Device_FriendlyName, out string friendlyName))
             {
                 return null;
             }
@@ -69,11 +112,17 @@ sealed partial class Device(uint deviceNode, string instanceId)
     [GeneratedRegex(@"^Port_#([0-9]{4}).Hub_#([0-9]{4})$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
     private static partial Regex LocationInfoRegex();
 
+    /// <summary>
+    /// The USB bus ID of the device, or <see cref="BusId.IncompatibleHub"/> for non-USB devices, hubs, phantom devices, etc.
+    /// <para>
+    /// NOTE: This can have a valid value even if the device is currently not present.
+    /// </para>
+    /// </summary>
     public BusId BusId
     {
         get
         {
-            if (!TryGetProperty(DeviceNode, PInvoke.DEVPKEY_Device_LocationInfo, out string locationInfo))
+            if (!TryGetProperty(Node, PInvoke.DEVPKEY_Device_LocationInfo, out string locationInfo))
             {
                 return BusId.IncompatibleHub;
             }
@@ -90,19 +139,58 @@ sealed partial class Device(uint deviceNode, string instanceId)
         }
     }
 
-    public bool HasVBoxDriver => TryGetProperty(DeviceNode, PInvoke.DEVPKEY_Device_MatchingDeviceId, out string matchingDeviceId)
+    /// <summary>
+    /// true if the device is using the VBoxUSB driver (i.e., either a stub device, or a forced-bound device).
+    /// </summary>
+    public bool HasVBoxDriver => TryGetProperty(Node, PInvoke.DEVPKEY_Device_MatchingDeviceId, out string matchingDeviceId)
         && VidPid.TryParseId(matchingDeviceId, out var vidPid) && vidPid == DriverDetails.Instance.VidPid;
 
-    public Version DriverVersion => (TryGetProperty(DeviceNode, PInvoke.DEVPKEY_Device_DriverVersion, out string versionText)
+    /// <summary>
+    /// The current driver version.
+    /// <para>
+    /// NOTE: This is only interesting if HasVBoxDriver is true.
+    /// </para>
+    /// </summary>
+    public Version DriverVersion => (TryGetProperty(Node, PInvoke.DEVPKEY_Device_DriverVersion, out string versionText)
         && Version.TryParse(versionText, out var version)) ? version : new();
+
+    public IEnumerable<WindowsDevice> Children
+    {
+        get
+        {
+            // Failure means: the hub has no (more) children, or a race between
+            // removing the hub and enumerating its children. In any case, we are done enumerating.
+            if (PInvoke.CM_Get_Child(out var childNode, Node, 0) != CONFIGRET.CR_SUCCESS)
+            {
+                yield break;
+            }
+            if (!TryCreate(childNode, out var childDevice))
+            {
+                yield break;
+            }
+            yield return childDevice;
+
+            while (true)
+            {
+                if (PInvoke.CM_Get_Sibling(out childNode, childNode, 0) != CONFIGRET.CR_SUCCESS)
+                {
+                    yield break;
+                }
+                if (!TryCreate(childNode, out childDevice))
+                {
+                    continue;
+                }
+                yield return childDevice;
+            }
+        }
+    }
 
     static bool TryGetProperty(uint deviceNode, in DEVPROPKEY devPropKey, out byte[] value, out DEVPROPTYPE propertyType)
     {
         unsafe // DevSkim: ignore DS172412
         {
             var propertyBufferSize = 0u;
-            var cr = PInvoke.CM_Get_DevNode_Property(deviceNode, devPropKey, out propertyType, null, ref propertyBufferSize, 0);
-            if (cr != CONFIGRET.CR_BUFFER_SMALL)
+            if (PInvoke.CM_Get_DevNode_Property(deviceNode, devPropKey, out propertyType, null, ref propertyBufferSize, 0) != CONFIGRET.CR_BUFFER_SMALL)
             {
                 value = default!;
                 propertyType = DEVPROPTYPE.DEVPROP_TYPE_EMPTY;
@@ -214,32 +302,42 @@ sealed partial class Device(uint deviceNode, string instanceId)
         return true;
     }
 
-    public static IEnumerable<Device> GetAll(Guid? classGuid, bool presentOnly)
+    /// <returns>All devices, optionally filtered on installer class GUID and/or presence.</returns>
+    public static IEnumerable<WindowsDevice> GetAll(Guid? classGuid, bool presentOnly)
     {
         string[] instanceIds;
 
+        var filter = classGuid?.ToString("B");
+        uint flags = 0;
+        if (classGuid is not null)
+        {
+            flags |= PInvoke.CM_GETIDLIST_FILTER_CLASS;
+        }
+        if (presentOnly)
+        {
+            flags |= PInvoke.CM_GETIDLIST_FILTER_PRESENT;
+        }
+
         unsafe // DevSkim: ignore DS172412
         {
-            var filter = classGuid?.ToString("B");
-            uint flags = 0;
-            if (classGuid is not null)
+            if (PInvoke.CM_Get_Device_ID_List_Size(out var bufferLength, filter, flags) != CONFIGRET.CR_SUCCESS)
             {
-                flags |= PInvoke.CM_GETIDLIST_FILTER_CLASS;
+                yield break;
             }
-            if (presentOnly)
+            if (bufferLength <= 1)
             {
-                flags |= PInvoke.CM_GETIDLIST_FILTER_PRESENT;
+                // Empty list.
+                yield break;
             }
-
-            PInvoke.CM_Get_Device_ID_List_Size(out var size, filter, flags)
-                .ThrowOnError(nameof(PInvoke.CM_Get_Device_ID_List_Size));
-            var buffer = new char[checked((int)size)];
+            var buffer = new char[checked((int)bufferLength)];
             fixed (char* pBuffer = buffer)
             {
-                PInvoke.CM_Get_Device_ID_List(filter, pBuffer, size, flags)
-                    .ThrowOnError(nameof(PInvoke.CM_Get_Device_ID_List));
+                if (PInvoke.CM_Get_Device_ID_List(filter, pBuffer, bufferLength, flags) != CONFIGRET.CR_SUCCESS)
+                {
+                    yield break;
+                }
                 // The list is double-NUL terminated.
-                instanceIds = new string(pBuffer, 0, (int)size - 2).Split('\0');
+                instanceIds = new string(pBuffer, 0, (int)bufferLength - 2).Split('\0');
             }
         }
 
