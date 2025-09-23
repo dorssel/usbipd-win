@@ -4,6 +4,7 @@
 
 using System.Net;
 using Usbipd.Automation;
+using Windows.Win32;
 
 namespace Usbipd;
 
@@ -25,7 +26,9 @@ sealed record UsbDevice(string InstanceId, string Description, bool IsForced,
     public static IEnumerable<UsbDevice> GetAll()
     {
         var usbDevices = new Dictionary<string, UsbDevice>(RegistryUtilities.GetBoundDevices().Select(d => KeyValuePair.Create(d.InstanceId, d)));
-        foreach (var device in ConfigurationManager.GetConnectedUsbDevices())
+        // Add all connected devices that are not hubs or stubs, and not already in the list (i.e. all USB devices that are available for USBIP sharing).
+        foreach (var device in WindowsDeviceInterface.GetAll(PInvoke.GUID_DEVINTERFACE_USB_HUB).SelectMany(di => di.Device.Children)
+            .Where(d => !d.IsStub && !d.IsHub))
         {
             if (usbDevices.ContainsKey(device.InstanceId))
             {
@@ -38,8 +41,8 @@ sealed record UsbDevice(string InstanceId, string Description, bool IsForced,
             {
                 usbDevices[device.InstanceId] = new(
                     InstanceId: device.InstanceId,
-                    Description: ConfigurationManager.GetDescription(device.DeviceNode),
-                    BusId: ConfigurationManager.GetBusId(device.DeviceNode),
+                    Description: ConfigurationManager.GetDescription(device.Node),
+                    BusId: ConfigurationManager.GetBusId(device.Node),
                     IsForced: ConfigurationManager.HasVBoxDriver(device.InstanceId));
             }
             catch (ConfigurationManagerException) { }

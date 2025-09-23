@@ -14,10 +14,10 @@ namespace Usbipd;
 
 static class VBoxUsb
 {
-    static async Task<(ConfigurationManager.VBoxDevice, DeviceFile)> ClaimDeviceOnce(BusId busId)
+    static async Task<(WindowsDeviceInterface vboxDeviceInterface, DeviceFile deviceInterfaceFile)> ClaimDeviceOnce(BusId busId)
     {
-        var vboxDevice = ConfigurationManager.GetVBoxDevice(busId);
-        var dev = new DeviceFile(vboxDevice.InterfacePath);
+        var vboxDeviceInterface = ConfigurationManager.GetVBoxDeviceInterface(busId);
+        var dev = new DeviceFile(vboxDeviceInterface.InterfacePath);
         try
         {
             {
@@ -48,13 +48,13 @@ static class VBoxUsb
                 // "VBoxUSB".
 
                 // Best effort, not really a problem if this fails.
-                ConfigurationManager.SetDeviceFriendlyName(vboxDevice.DeviceNode);
+                ConfigurationManager.SetDeviceFriendlyName(vboxDeviceInterface.Device.Node);
             }
             catch (Win32Exception) { }
 
             var result = dev;
             dev = null!;
-            return (vboxDevice, result);
+            return (vboxDeviceInterface, result);
         }
         finally
         {
@@ -63,7 +63,7 @@ static class VBoxUsb
         throw new FileNotFoundException();
     }
 
-    public static async Task<(ConfigurationManager.VBoxDevice, DeviceFile)> ClaimDevice(BusId busId)
+    public static async Task<(WindowsDeviceInterface vboxDeviceInterface, DeviceFile deviceInterfaceFile)> ClaimDevice(BusId busId)
     {
         var sw = new Stopwatch();
         sw.Start();
