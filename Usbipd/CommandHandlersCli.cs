@@ -3,7 +3,6 @@
 //
 // SPDX-License-Identifier: GPL-3.0-only
 
-using System.ComponentModel;
 using System.Diagnostics;
 using System.Net;
 using System.Text.Encodings.Web;
@@ -105,8 +104,8 @@ sealed partial class CommandHandlers : ICommandHandlers
         {
             var (vendor, product) = device.HardwareId.Descriptions;
             return vendor is not null
-                ? $"{vendor}, {product ?? ConfigurationManager.UnknownDevice}"
-                : ConfigurationManager.UnknownDevice;
+                ? $"{vendor}, {product ?? WindowsDevice.UnknownDescription}"
+                : WindowsDevice.UnknownDescription;
         }
         else
         {
@@ -185,10 +184,12 @@ sealed partial class CommandHandlers : ICommandHandlers
         if (force != device.IsForced)
         {
             // Switch driver.
-            var reboot = force ? DriverTools.ForceVBoxDriver(device.InstanceId) : DriverTools.UnforceVBoxDriver(device.InstanceId);
-            if (reboot)
+            if (WindowsDevice.TryCreate(device.InstanceId, out var windowsDevice))
             {
-                console.ReportRebootRequired();
+                if (force ? DriverTools.ForceVBoxDriver(windowsDevice) : DriverTools.UnforceVBoxDriver(windowsDevice))
+                {
+                    console.ReportRebootRequired();
+                }
             }
         }
         _ = console.CheckAndReportServerRunning(false);
@@ -226,9 +227,12 @@ sealed partial class CommandHandlers : ICommandHandlers
             return Task.FromResult(ExitCode.AccessDenied);
         }
         RegistryUtilities.StopSharingDevice(device.Guid.Value);
-        if (DriverTools.UnforceVBoxDriver(device.InstanceId))
+        if (WindowsDevice.TryCreate(device.InstanceId, out var windowsDevice))
         {
-            console.ReportRebootRequired();
+            if (DriverTools.UnforceVBoxDriver(windowsDevice))
+            {
+                console.ReportRebootRequired();
+            }
         }
         return Task.FromResult(ExitCode.Success);
     }
@@ -257,16 +261,21 @@ sealed partial class CommandHandlers : ICommandHandlers
             {
                 RegistryUtilities.StopSharingDevice(device.Guid.Value);
             }
-            try
+            if (WindowsDevice.TryCreate(device.InstanceId, out var windowsDevice))
             {
-                if (DriverTools.UnforceVBoxDriver(device.InstanceId))
+                try
                 {
-                    reboot = true;
+                    if (DriverTools.UnforceVBoxDriver(windowsDevice))
+                    {
+                        reboot = true;
+                    }
                 }
-            }
-            catch (Exception ex) when (ex is Win32Exception or ConfigurationManagerException)
-            {
-                driverError = true;
+#pragma warning disable CA1031 // Do not catch general exception types
+                catch
+#pragma warning restore CA1031 // Do not catch general exception types
+                {
+                    driverError = true;
+                }
             }
         }
         if (driverError)
@@ -314,12 +323,14 @@ sealed partial class CommandHandlers : ICommandHandlers
         {
             try
             {
-                if (DriverTools.UnforceVBoxDriver(device.InstanceId))
+                if (DriverTools.UnforceVBoxDriver(device))
                 {
                     reboot = true;
                 }
             }
-            catch (Exception ex) when (ex is Win32Exception or ConfigurationManagerException)
+#pragma warning disable CA1031 // Do not catch general exception types
+            catch
+#pragma warning restore CA1031 // Do not catch general exception types
             {
                 driverError = true;
             }

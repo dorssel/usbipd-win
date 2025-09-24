@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 using System.Globalization;
+using System.Text;
 using System.Text.RegularExpressions;
 using Usbipd.Automation;
 using Windows.Win32;
@@ -95,20 +96,83 @@ sealed partial class WindowsDevice(uint deviceNode, string instanceId)
         && TryGetProperty(Node, PInvoke.DEVPKEY_Device_ProblemCode, out CM_PROB problem)
         && problem == CM_PROB.CM_PROB_DISABLED;
 
-    /// <summary>
-    /// The FriendlyName of the device (if any).
-    /// </summary>
-    public string? FriendlyName
+    public const string UnknownDescription = "Unknown device";
+
+    /// <returns>An amalgamated "best" description of the device.</returns>
+    public string Description
     {
         get
         {
-            if (!TryGetProperty(Node, PInvoke.DEVPKEY_Device_FriendlyName, out string friendlyName))
+            var isCompositeDevice = TryGetProperty(Node, PInvoke.DEVPKEY_Device_CompatibleIds, out string[] compatibleIds)
+                && compatibleIds.Contains(@"USB\COMPOSITE");
+            if (!isCompositeDevice)
             {
-                return null;
+                // NAME is FriendlyName (if it exists), or else it is Description (if it exists).
+                if (!TryGetProperty(Node, PInvoke.DEVPKEY_NAME, out string name))
+                {
+                    // This can happen for devices without a driver *and* without a USB string table.
+                    return UnknownDescription;
+                }
+                name = name.Trim();
+                return string.IsNullOrEmpty(name) ? UnknownDescription : name;
             }
-            friendlyName = friendlyName.Trim();
-            return string.IsNullOrEmpty(friendlyName) ? null : friendlyName;
+
+            // For USB\COMPOSITE we need to add the descriptions of the direct children.
+            // We remove duplicates, often something like "HID Device", but we also want to preserve the order.
+            var descriptionSet = new SortedSet<string>();
+            var descriptionList = new List<string>();
+
+            void AddDescription(string desc)
+            {
+                desc = desc.Trim();
+                if (!string.IsNullOrEmpty(desc) && descriptionSet.Add(desc))
+                {
+                    descriptionList.Add(desc);
+                }
+            }
+
+            // The FriendlyName (if it exists) is useful for USB\COMPOSITE.
+            // Description definitely is not (for composite devices).
+            if (TryGetProperty(Node, PInvoke.DEVPKEY_Device_FriendlyName, out string friendlyName))
+            {
+                AddDescription(friendlyName);
+            }
+
+            foreach (var childDevice in Children)
+            {
+                // NAME is FriendlyName (if it exists), or else it is Description (if it exists).
+                if (TryGetProperty(childDevice.Node, PInvoke.DEVPKEY_NAME, out string childName))
+                {
+                    AddDescription(childName);
+                }
+            }
+
+            if (descriptionList.Count == 0)
+            {
+                // This can happen if the USB\COMPOSITE device does not have a FriendlyName and the
+                // bus has not yet enumerated the children; for example, right after releasing the device
+                // back to Windows. Just fall back to the non-descriptive name for USB\COMPOSITE.
+                if (!TryGetProperty(Node, PInvoke.DEVPKEY_NAME, out string name))
+                {
+                    // This can happen for devices without a driver *and* without a USB string table.
+                    return UnknownDescription;
+                }
+                name = name.Trim();
+                return string.IsNullOrEmpty(name) ? UnknownDescription : name;
+            }
+            else
+            {
+                return string.Join(", ", descriptionList);
+            }
         }
+    }
+
+    /// <returns>true on success.</returns>
+    public bool SetFriendlyName()
+    {
+        // NOTE: Must include terminating NUL character.
+        return PInvoke.CM_Set_DevNode_Property(Node, PInvoke.DEVPKEY_Device_FriendlyName, DEVPROPTYPE.DEVPROP_TYPE_STRING,
+            Encoding.Unicode.GetBytes("USBIP Shared Device\0"), 0) == CONFIGRET.CR_SUCCESS;
     }
 
     [GeneratedRegex(@"^Port_#([0-9]{4}).Hub_#([0-9]{4})$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
@@ -176,7 +240,7 @@ sealed partial class WindowsDevice(uint deviceNode, string instanceId)
 
     static DeviceFile OpenInterface(string instanceId, Guid interfaceClassGuid)
     {
-        string[] interfacePaths;
+        string interfacePath;
 
         unsafe // DevSkim: ignore DS172412
         {
@@ -199,18 +263,13 @@ sealed partial class WindowsDevice(uint deviceNode, string instanceId)
                     {
                         throw new FileNotFoundException();
                     }
-                    // The list is double-NUL terminated.
-                    interfacePaths = new string(pBuffer, 0, (int)bufferSize - 2).Split('\0');
+                    // The "list" contains one entry and is double-NUL terminated.
+                    interfacePath = new string(pBuffer, 0, (int)bufferSize - 2);
                 }
             }
         }
 
-        if (interfacePaths.Length == 0)
-        {
-            throw new FileNotFoundException();
-        }
-
-        return new(interfacePaths[0]);
+        return new(interfacePath);
     }
 
     public DeviceFile OpenVBoxInterface()

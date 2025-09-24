@@ -41,7 +41,7 @@ sealed record UsbDevice(string InstanceId, string Description, bool IsForced,
             {
                 usbDevices[device.InstanceId] = new(
                     InstanceId: device.InstanceId,
-                    Description: ConfigurationManager.GetDescription(device.Node),
+                    Description: device.Description,
                     BusId: device.BusId,
                     IsForced: device.HasVBoxDriver);
             }
