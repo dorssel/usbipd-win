@@ -20,7 +20,8 @@ namespace Usbipd;
 sealed partial class WindowsDevice(uint deviceNode, string instanceId)
 {
     public uint Node { get; } = deviceNode;
-    public string InstanceId { get; } = instanceId;
+    // Instance IDs are case-insensitive. We always use uppercase to prevent confusion and comparison issues.
+    public string InstanceId { get; } = instanceId.ToUpperInvariant();
 
     /// <returns>false if the corresponding instance ID does not exist.</returns>
     public static bool TryCreate(uint deviceNode, out WindowsDevice device)
@@ -30,6 +31,7 @@ sealed partial class WindowsDevice(uint deviceNode, string instanceId)
             device = default!;
             return false;
         }
+        // Instance IDs are case-insensitive. We always use uppercase to prevent confusion and comparison issues.
         device = new(deviceNode, instanceId);
         return true;
     }
@@ -158,53 +160,99 @@ sealed partial class WindowsDevice(uint deviceNode, string instanceId)
     {
         get
         {
-            // Failure means: the hub has no (more) children, or a race between
-            // removing the hub and enumerating its children. In any case, we are done enumerating.
-            if (PInvoke.CM_Get_Child(out var childNode, Node, 0) != CONFIGRET.CR_SUCCESS)
+            if (!TryGetProperty(Node, PInvoke.DEVPKEY_Device_Children, out string[] childInstanceIds))
             {
                 yield break;
             }
-            if (!TryCreate(childNode, out var childDevice))
+            foreach (var childInstanceId in childInstanceIds)
             {
-                yield break;
-            }
-            yield return childDevice;
-
-            while (true)
-            {
-                if (PInvoke.CM_Get_Sibling(out childNode, childNode, 0) != CONFIGRET.CR_SUCCESS)
+                if (TryCreate(childInstanceId, out var childDevice))
                 {
-                    yield break;
+                    yield return childDevice;
                 }
-                if (!TryCreate(childNode, out childDevice))
-                {
-                    continue;
-                }
-                yield return childDevice;
             }
         }
+    }
+
+    static DeviceFile OpenInterface(string instanceId, Guid interfaceClassGuid)
+    {
+        string[] interfacePaths;
+
+        unsafe // DevSkim: ignore DS172412
+        {
+            fixed (char* pInstanceId = instanceId)
+            {
+                if (PInvoke.CM_Get_Device_Interface_List_Size(out var bufferSize, interfaceClassGuid, pInstanceId,
+                    CM_GET_DEVICE_INTERFACE_LIST_FLAGS.CM_GET_DEVICE_INTERFACE_LIST_PRESENT) != CONFIGRET.CR_SUCCESS)
+                {
+                    throw new FileNotFoundException();
+                }
+                if (bufferSize <= 1)
+                {
+                    throw new FileNotFoundException();
+                }
+                var buffer = new char[checked((int)bufferSize)];
+                fixed (char* pBuffer = buffer)
+                {
+                    if (PInvoke.CM_Get_Device_Interface_List(interfaceClassGuid, pInstanceId, pBuffer, bufferSize,
+                        CM_GET_DEVICE_INTERFACE_LIST_FLAGS.CM_GET_DEVICE_INTERFACE_LIST_PRESENT) != CONFIGRET.CR_SUCCESS)
+                    {
+                        throw new FileNotFoundException();
+                    }
+                    // The list is double-NUL terminated.
+                    interfacePaths = new string(pBuffer, 0, (int)bufferSize - 2).Split('\0');
+                }
+            }
+        }
+
+        if (interfacePaths.Length == 0)
+        {
+            throw new FileNotFoundException();
+        }
+
+        return new(interfacePaths[0]);
+    }
+
+    public DeviceFile OpenVBoxInterface()
+    {
+        return OpenInterface(InstanceId, Interop.VBoxUsb.GUID_CLASS_VBOXUSB);
+    }
+
+    public DeviceFile OpenHubInterface()
+    {
+        return TryGetProperty(Node, PInvoke.DEVPKEY_Device_Parent, out string hubInstanceId)
+                && TryCreate(hubInstanceId, out var hubDevice)
+            ? OpenInterface(hubDevice.InstanceId, PInvoke.GUID_DEVINTERFACE_USB_HUB)
+            : throw new FileNotFoundException();
     }
 
     static bool TryGetProperty(uint deviceNode, in DEVPROPKEY devPropKey, out byte[] value, out DEVPROPTYPE propertyType)
     {
         unsafe // DevSkim: ignore DS172412
         {
-            var propertyBufferSize = 0u;
-            if (PInvoke.CM_Get_DevNode_Property(deviceNode, devPropKey, out propertyType, null, ref propertyBufferSize, 0) != CONFIGRET.CR_BUFFER_SMALL)
+            var bufferSize = 0u;
+            if (PInvoke.CM_Get_DevNode_Property(deviceNode, devPropKey, out propertyType, null, ref bufferSize, 0) != CONFIGRET.CR_BUFFER_SMALL)
             {
                 value = default!;
                 propertyType = DEVPROPTYPE.DEVPROP_TYPE_EMPTY;
                 return false;
             }
-            var buffer = new byte[checked((int)propertyBufferSize)];
+            var buffer = new byte[checked((int)bufferSize)];
+            var bufferSizeConfirm = bufferSize;
             fixed (byte* pBuffer = buffer)
             {
-                if (PInvoke.CM_Get_DevNode_Property(deviceNode, devPropKey, out propertyType, pBuffer, ref propertyBufferSize, 0) != CONFIGRET.CR_SUCCESS)
+                if (PInvoke.CM_Get_DevNode_Property(deviceNode, devPropKey, out propertyType, pBuffer, ref bufferSizeConfirm, 0) != CONFIGRET.CR_SUCCESS)
                 {
                     value = default!;
                     propertyType = DEVPROPTYPE.DEVPROP_TYPE_EMPTY;
                     return false;
                 }
+            }
+            if (bufferSizeConfirm != bufferSize)
+            {
+                value = default!;
+                propertyType = DEVPROPTYPE.DEVPROP_TYPE_EMPTY;
+                return false;
             }
             value = buffer;
             return true;
@@ -219,7 +267,9 @@ sealed partial class WindowsDevice(uint deviceNode, string instanceId)
             return false;
         }
 
-        if (propertyType != DEVPROPTYPE.DEVPROP_TYPE_STRING)
+        // Must be a NUL-terminated UTF-16 string.
+        if ((propertyType != DEVPROPTYPE.DEVPROP_TYPE_STRING)
+            || (buffer.Length % sizeof(char) != 0) || (buffer.Length / sizeof(char) < 1))
         {
             value = default!;
             return false;
@@ -229,7 +279,6 @@ sealed partial class WindowsDevice(uint deviceNode, string instanceId)
         {
             fixed (byte* pBuffer = buffer)
             {
-                // The buffer includes the terminating NUL character.
                 value = new string((char*)pBuffer, 0, (buffer.Length / sizeof(char)) - 1);
                 return true;
             }
@@ -244,10 +293,19 @@ sealed partial class WindowsDevice(uint deviceNode, string instanceId)
             return false;
         }
 
-        if (propertyType != DEVPROPTYPE.DEVPROP_TYPE_STRING_LIST)
+        // Must be a NUL-terminated list of NUL-terminated UTF-16 strings.
+        if ((propertyType != DEVPROPTYPE.DEVPROP_TYPE_STRING_LIST)
+            || (buffer.Length % sizeof(char) != 0) || (buffer.Length / sizeof(char) < 1))
         {
             value = default!;
             return false;
+        }
+
+        if (buffer.Length / sizeof(char) == 1)
+        {
+            // Empty list.
+            value = [];
+            return true;
         }
 
         unsafe // DevSkim: ignore DS172412
@@ -269,13 +327,7 @@ sealed partial class WindowsDevice(uint deviceNode, string instanceId)
             return false;
         }
 
-        if (propertyType != DEVPROPTYPE.DEVPROP_TYPE_UINT32)
-        {
-            value = default!;
-            return false;
-        }
-
-        if (buffer.Length != sizeof(uint))
+        if ((propertyType != DEVPROPTYPE.DEVPROP_TYPE_UINT32) || (buffer.Length != sizeof(uint)))
         {
             value = default!;
             return false;
@@ -320,24 +372,24 @@ sealed partial class WindowsDevice(uint deviceNode, string instanceId)
 
         unsafe // DevSkim: ignore DS172412
         {
-            if (PInvoke.CM_Get_Device_ID_List_Size(out var bufferLength, filter, flags) != CONFIGRET.CR_SUCCESS)
+            if (PInvoke.CM_Get_Device_ID_List_Size(out var bufferSize, filter, flags) != CONFIGRET.CR_SUCCESS)
             {
                 yield break;
             }
-            if (bufferLength <= 1)
+            if (bufferSize <= 1)
             {
                 // Empty list.
                 yield break;
             }
-            var buffer = new char[checked((int)bufferLength)];
+            var buffer = new char[checked((int)bufferSize)];
             fixed (char* pBuffer = buffer)
             {
-                if (PInvoke.CM_Get_Device_ID_List(filter, pBuffer, bufferLength, flags) != CONFIGRET.CR_SUCCESS)
+                if (PInvoke.CM_Get_Device_ID_List(filter, pBuffer, bufferSize, flags) != CONFIGRET.CR_SUCCESS)
                 {
                     yield break;
                 }
                 // The list is double-NUL terminated.
-                instanceIds = new string(pBuffer, 0, (int)bufferLength - 2).Split('\0');
+                instanceIds = new string(pBuffer, 0, (int)bufferSize - 2).Split('\0');
             }
         }
 
@@ -347,6 +399,81 @@ sealed partial class WindowsDevice(uint deviceNode, string instanceId)
             {
                 yield return device;
             }
+        }
+    }
+
+    /// <returns>All present devices supporting a specific interface class.</returns>
+    public static IEnumerable<WindowsDevice> GetAll(Guid interfaceClassGuid)
+    {
+        string[] interfacePaths;
+
+        unsafe // DevSkim: ignore DS172412
+        {
+            if (PInvoke.CM_Get_Device_Interface_List_Size(out var bufferSize, interfaceClassGuid, null,
+                CM_GET_DEVICE_INTERFACE_LIST_FLAGS.CM_GET_DEVICE_INTERFACE_LIST_PRESENT) != CONFIGRET.CR_SUCCESS)
+            {
+                yield break;
+            }
+            if (bufferSize <= 1)
+            {
+                // Empty list.
+                yield break;
+            }
+            var buffer = new char[checked((int)bufferSize)];
+            fixed (char* pBuffer = buffer)
+            {
+                if (PInvoke.CM_Get_Device_Interface_List(interfaceClassGuid, null, pBuffer, bufferSize,
+                    CM_GET_DEVICE_INTERFACE_LIST_FLAGS.CM_GET_DEVICE_INTERFACE_LIST_PRESENT) != CONFIGRET.CR_SUCCESS)
+                {
+                    yield break;
+                }
+                // The list is double-NUL terminated.
+                interfacePaths = new string(pBuffer, 0, checked((int)bufferSize) - 2).Split('\0');
+            }
+        }
+
+        foreach (var interfacePath in interfacePaths)
+        {
+            string instanceId;
+
+            unsafe // DevSkim: ignore DS172412
+            {
+                var bufferSize = 0u;
+                if (PInvoke.CM_Get_Device_Interface_Property(interfacePath, PInvoke.DEVPKEY_Device_InstanceId, out var propertyType, null,
+                    ref bufferSize, 0) != CONFIGRET.CR_BUFFER_SMALL)
+                {
+                    continue;
+                }
+                // Must be a NUL-terminated UTF-16 string.
+                if ((propertyType != DEVPROPTYPE.DEVPROP_TYPE_STRING)
+                    || (bufferSize % sizeof(char) != 0) || (bufferSize / sizeof(char) < 1))
+                {
+                    continue;
+                }
+                var buffer = new byte[checked((int)bufferSize)];
+                var bufferSizeConfirm = bufferSize;
+                fixed (byte* pBuffer = buffer)
+                {
+                    if (PInvoke.CM_Get_Device_Interface_Property(interfacePath, PInvoke.DEVPKEY_Device_InstanceId, out propertyType, pBuffer,
+                        ref bufferSizeConfirm, 0) != CONFIGRET.CR_SUCCESS)
+                    {
+                        continue;
+                    }
+                    if ((propertyType != DEVPROPTYPE.DEVPROP_TYPE_STRING) || (bufferSizeConfirm != bufferSize))
+                    {
+                        continue;
+                    }
+                    // The buffer includes the terminating NUL character.
+                    instanceId = new string((char*)pBuffer, 0, (checked((int)bufferSize) / sizeof(char)) - 1);
+                }
+            }
+
+            if (!TryCreate(instanceId, out var device))
+            {
+                continue;
+            }
+
+            yield return device;
         }
     }
 }

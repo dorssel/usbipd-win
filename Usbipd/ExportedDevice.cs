@@ -132,8 +132,11 @@ sealed record ExportedDevice(string InstanceId, BusId BusId, Linux.UsbDeviceSpee
 
         // Query the parent USB hub for device details.
 
-        var hubInterfacePath = ConfigurationManager.GetHubInterfacePath(device.StubInstanceId ?? device.InstanceId);
-        using var hubFile = new DeviceFile(hubInterfacePath);
+        if (!WindowsDevice.TryCreate(device.StubInstanceId ?? device.InstanceId, out var windowsDevice))
+        {
+            throw new FileNotFoundException();
+        }
+        using var hubFile = windowsDevice.OpenHubInterface();
         using var cancellationTokenRegistration = cancellationToken.Register(hubFile.Dispose);
         try
         {

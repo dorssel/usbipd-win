@@ -52,28 +52,22 @@ sealed partial class DeviceFile : IDisposable
         {
             void OnCompletion(uint errorCode, uint numBytes, NativeOverlapped* nativeOverlapped)
             {
-                try
+                BoundHandle.FreeNativeOverlapped(nativeOverlapped);
+                if ((WIN32_ERROR)errorCode == WIN32_ERROR.ERROR_SUCCESS)
                 {
-                    if ((WIN32_ERROR)errorCode == WIN32_ERROR.ERROR_SUCCESS)
+                    if (exactOutput && ((output?.Length ?? 0) != numBytes))
                     {
-                        if (exactOutput && ((output?.Length ?? 0) != numBytes))
-                        {
-                            taskCompletionSource.SetException(
-                                new ProtocolViolationException($"DeviceIoControl returned {numBytes} bytes, expected {output?.Length ?? 0}"));
-                        }
-                        else
-                        {
-                            taskCompletionSource.SetResult(numBytes);
-                        }
+                        taskCompletionSource.SetException(
+                            new ProtocolViolationException($"DeviceIoControl returned {numBytes} bytes, expected {output?.Length ?? 0}"));
                     }
                     else
                     {
-                        taskCompletionSource.SetException(new Win32Exception((int)errorCode));
+                        taskCompletionSource.SetResult(numBytes);
                     }
                 }
-                finally
+                else
                 {
-                    BoundHandle.FreeNativeOverlapped(nativeOverlapped);
+                    taskCompletionSource.SetException(new Win32Exception((int)errorCode));
                 }
             }
 

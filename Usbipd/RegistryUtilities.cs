@@ -189,6 +189,8 @@ static class RegistryUtilities
                 // Must exist.
                 continue;
             }
+            // In the past, instance IDs where not normalized to upper case. Entries may still exist that have lower case letters.
+            instanceId = instanceId.ToUpperInvariant();
             if (persistedDevices.ContainsKey(instanceId))
             {
                 // Sanitize uniqueness.
@@ -199,33 +201,57 @@ static class RegistryUtilities
                 // Must exist.
                 continue;
             }
-            BusId? attachedBusId = null;
-            IPAddress? attachedIPAddress = null;
-            string? attachedStubInstanceId = null;
-            if (!ignoreAttached)
+            if (WindowsDevice.TryCreate(instanceId, out var device))
             {
+                // The device exists. Note that it may not be present (as the original device), it could be attached via a stub device.
                 // If the server is not running, ignore any left-over attaches as they are no longer valid.
-                using var attachedKey = deviceKey.OpenSubKey(AttachedName, false);
-                if (attachedKey is not null)
+                if (!ignoreAttached)
                 {
-                    if (BusId.TryParse(attachedKey.GetValue(BusIdName) as string ?? "", out var busId)
-                        && IPAddress.TryParse(attachedKey.GetValue(IPAddressName) as string ?? "", out var ipAddress)
-                        && attachedKey.GetValue(InstanceIdName) is string stubInstanceId)
+                    using var attachedKey = deviceKey.OpenSubKey(AttachedName, false);
+                    if (attachedKey is not null)
                     {
-                        attachedBusId = busId;
-                        attachedIPAddress = ipAddress;
-                        attachedStubInstanceId = stubInstanceId;
+                        if (BusId.TryParse(attachedKey.GetValue(BusIdName) as string ?? "", out var busId)
+                            && IPAddress.TryParse(attachedKey.GetValue(IPAddressName) as string ?? "", out var ipAddress)
+                            && attachedKey.GetValue(InstanceIdName) is string stubInstanceId)
+                        {
+                            // In the past, instance IDs where not normalized to upper case. Entries may still exist that have lower case letters.
+                            stubInstanceId = stubInstanceId.ToUpperInvariant();
+
+                            // Everything checks out, report the device as attached.
+                            persistedDevices.Add(instanceId, new(
+                                InstanceId: instanceId,
+                                Description: description,
+                                Guid: guid,
+                                IsForced: device.HasVBoxDriver,
+                                BusId: busId,
+                                IPAddress: ipAddress,
+                                StubInstanceId: stubInstanceId));
+                            continue;
+                        }
                     }
                 }
+                // This device is not attached.
+                persistedDevices.Add(instanceId, new(
+                    InstanceId: instanceId,
+                    Description: description,
+                    Guid: guid,
+                    IsForced: device.HasVBoxDriver,
+                    BusId: device.IsPresent ? device.BusId : null,
+                    IPAddress: null,
+                    StubInstanceId: null));
             }
-            persistedDevices.Add(instanceId, new(
-                InstanceId: instanceId,
-                Description: description,
-                Guid: guid,
-                IsForced: ConfigurationManager.HasVBoxDriver(instanceId),
-                BusId: attachedBusId ?? ConfigurationManager.GetBusId(instanceId),
-                IPAddress: attachedIPAddress,
-                StubInstanceId: attachedStubInstanceId));
+            else
+            {
+                // This device no longer exists (uninstalled), but we still have it persisted, it could be installed again.
+                persistedDevices.Add(instanceId, new(
+                    InstanceId: instanceId,
+                    Description: description,
+                    Guid: guid,
+                    IsForced: false,
+                    BusId: null,
+                    IPAddress: null,
+                    StubInstanceId: null));
+            }
         }
         return persistedDevices.Values;
     }

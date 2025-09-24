@@ -170,7 +170,7 @@ sealed class ConnectedClient(ILogger<ConnectedClient> logger, ClientContext clie
                     return;
                 }
                 // We use the modern way to restart the device, which works much better than the obsolete VBoxUsbMon port cycling.
-                using var restartingDevice = new ConfigurationManager.RestartingDevice(device);
+                using var restartingDevice = new RestartingDevice(device);
                 if (!device.HasVBoxDriver)
                 {
                     mon = new VBoxUsbMon();
@@ -192,7 +192,7 @@ sealed class ConnectedClient(ILogger<ConnectedClient> logger, ClientContext clie
             status = Status.ST_DEV_ERR;
             var sw = new Stopwatch();
             sw.Start();
-            (var vboxDeviceInterface, ClientContext.AttachedDevice) = await VBoxUsb.ClaimDevice(usbDevice.BusId.Value);
+            (var vboxDevice, ClientContext.AttachedDevice) = await VBoxUsb.ClaimDevice(usbDevice.BusId.Value);
             sw.Stop();
             Logger.Debug($"Claiming took {sw.ElapsedMilliseconds} ms");
             ClientContext.AttachedBusId = usbDevice.BusId;
@@ -245,7 +245,7 @@ sealed class ConnectedClient(ILogger<ConnectedClient> logger, ClientContext clie
 
                 // Detect unbind.
                 using var attachedKey = RegistryUtilities.SetDeviceAsAttached(usbDevice.Guid.Value, usbDevice.BusId.Value, ClientContext.ClientAddress,
-                    vboxDeviceInterface.Device.InstanceId);
+                    vboxDevice.InstanceId);
                 var result = PInvoke.RegNotifyChangeKeyValue(attachedKey.Handle, false,
                     Windows.Win32.System.Registry.REG_NOTIFY_FILTER.REG_NOTIFY_THREAD_AGNOSTIC, cancelEvent.SafeWaitHandle, true);
                 if (result != WIN32_ERROR.ERROR_SUCCESS)
@@ -268,7 +268,7 @@ sealed class ConnectedClient(ILogger<ConnectedClient> logger, ClientContext clie
                 try
                 {
                     // We use the modern way to restart the device, which works much better than the obsolete VBoxUsbMon port cycling.
-                    using var restartingDevice = new ConfigurationManager.RestartingDevice(vboxDeviceInterface.Device);
+                    using var restartingDevice = new RestartingDevice(vboxDevice);
                     if (mon is not null)
                     {
                         await mon.RemoveFilter(filterId);

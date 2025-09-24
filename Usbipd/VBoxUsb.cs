@@ -14,15 +14,15 @@ namespace Usbipd;
 
 static class VBoxUsb
 {
-    static async Task<(WindowsDeviceInterface vboxDeviceInterface, DeviceFile deviceInterfaceFile)> ClaimDeviceOnce(BusId busId)
+    static async Task<(WindowsDevice vboxDevice, DeviceFile deviceInterfaceFile)> ClaimDeviceOnce(BusId busId)
     {
-        var vboxDeviceInterface = ConfigurationManager.GetVBoxDeviceInterface(busId);
-        var dev = new DeviceFile(vboxDeviceInterface.InterfacePath);
+        var device = WindowsDevice.GetAll(GUID_CLASS_VBOXUSB).FirstOrDefault(di => di.BusId == busId) ?? throw new FileNotFoundException();
+        var file = device.OpenVBoxInterface();
         try
         {
             {
                 var output = new byte[Marshal.SizeOf<UsbSupVersion>()];
-                _ = await dev.IoControlAsync(SUPUSB_IOCTL.GET_VERSION, null, output);
+                _ = await file.IoControlAsync(SUPUSB_IOCTL.GET_VERSION, null, output);
                 BytesToStruct(output, out UsbSupVersion version);
                 if ((version.major != USBDRV_MAJOR_VERSION) || (version.minor < USBDRV_MINOR_VERSION))
                 {
@@ -33,7 +33,7 @@ static class VBoxUsb
             {
                 var claimDev = new UsbSupClaimDev();
                 var output = new byte[Marshal.SizeOf<UsbSupClaimDev>()];
-                _ = await dev.IoControlAsync(SUPUSB_IOCTL.USB_CLAIM_DEVICE, StructToBytes(claimDev), output);
+                _ = await file.IoControlAsync(SUPUSB_IOCTL.USB_CLAIM_DEVICE, StructToBytes(claimDev), output);
                 BytesToStruct(output, out claimDev);
                 if (!claimDev.fClaimed)
                 {
@@ -48,22 +48,22 @@ static class VBoxUsb
                 // "VBoxUSB".
 
                 // Best effort, not really a problem if this fails.
-                ConfigurationManager.SetDeviceFriendlyName(vboxDeviceInterface.Device.Node);
+                ConfigurationManager.SetDeviceFriendlyName(device.Node);
             }
             catch (Win32Exception) { }
 
-            var result = dev;
-            dev = null!;
-            return (vboxDeviceInterface, result);
+            var result = file;
+            file = null!;
+            return (device, result);
         }
         finally
         {
-            dev?.Dispose();
+            file?.Dispose();
         }
         throw new FileNotFoundException();
     }
 
-    public static async Task<(WindowsDeviceInterface vboxDeviceInterface, DeviceFile deviceInterfaceFile)> ClaimDevice(BusId busId)
+    public static async Task<(WindowsDevice vboxDevice, DeviceFile deviceInterfaceFile)> ClaimDevice(BusId busId)
     {
         var sw = new Stopwatch();
         sw.Start();
