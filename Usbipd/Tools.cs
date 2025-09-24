@@ -6,6 +6,7 @@ using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Runtime.InteropServices;
+using Windows.Win32.Devices.DeviceAndDriverInstallation;
 using Windows.Win32.Devices.Usb;
 using Windows.Win32.Foundation;
 
@@ -135,6 +136,14 @@ static class Tools
         if (!success)
         {
             ThrowWin32Error(function);
+        }
+    }
+
+    public static void ThrowOnError(this CONFIGRET configRet, string function)
+    {
+        if (configRet != CONFIGRET.CR_SUCCESS)
+        {
+            throw new ConfigurationManagerException(configRet, $"{function} returned {configRet}");
         }
     }
 

@@ -216,7 +216,7 @@ sealed partial class CommandHandlers : ICommandHandlers
             {
                 // NOTE: Setting any driver will enable the device.
                 // NOTE: Force will set a NULL driver first.
-                if (DriverTools.ForceVBoxDriver(device.InstanceId))
+                if (DriverTools.ForceVBoxDriver(device))
                 {
                     needReboot = true;
                 }
@@ -254,7 +254,7 @@ sealed partial class CommandHandlers : ICommandHandlers
 
             try
             {
-                if (DriverTools.UninstallStubDevice(device.InstanceId))
+                if (DriverTools.UninstallStubDevice(device))
                 {
                     needReboot = true;
                 }

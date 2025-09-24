@@ -48,7 +48,7 @@ static class VBoxUsb
                 // "VBoxUSB".
 
                 // Best effort, not really a problem if this fails.
-                ConfigurationManager.SetDeviceFriendlyName(device.Node);
+                _ = device.SetFriendlyName();
             }
             catch (Win32Exception) { }
 

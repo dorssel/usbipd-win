@@ -19,7 +19,7 @@ static class DriverTools
     /// </summary>
     /// <returns>true if a reboot is required.</returns>
     /// <exception cref="Win32Exception">On failure.</exception>
-    public static bool SetNullDriver(string originalInstanceId)
+    public static bool SetNullDriver(WindowsDevice device)
     {
         unsafe // DevSkim: ignore DS172412
         {
@@ -32,7 +32,7 @@ static class DriverTools
             {
                 cbSize = (uint)Marshal.SizeOf<SP_DEVINFO_DATA>(),
             };
-            PInvoke.SetupDiOpenDeviceInfo(deviceInfoList, originalInstanceId, default, 0, &deviceInfoData)
+            PInvoke.SetupDiOpenDeviceInfo(deviceInfoList, device.InstanceId, default, 0, &deviceInfoData)
                 .ThrowOnWin32Error(nameof(PInvoke.SetupDiOpenDeviceInfo));
             BOOL reboot;
             PInvoke.DiInstallDevice(default, deviceInfoList, deviceInfoData, null, DIINSTALLDEVICE_FLAGS.DIIDFLAG_INSTALLNULLDRIVER, &reboot)
@@ -49,7 +49,7 @@ static class DriverTools
     /// </summary>
     /// <returns>true if a reboot is required.</returns>
     /// <exception cref="Win32Exception">On failure.</exception>
-    public static bool SetVBoxDriver(string instanceId)
+    public static bool SetVBoxDriver(WindowsDevice device)
     {
         unsafe // DevSkim: ignore DS172412
         {
@@ -62,7 +62,7 @@ static class DriverTools
             {
                 cbSize = (uint)Marshal.SizeOf<SP_DEVINFO_DATA>(),
             };
-            PInvoke.SetupDiOpenDeviceInfo(deviceInfoList, instanceId, default, 0, &deviceInfoData)
+            PInvoke.SetupDiOpenDeviceInfo(deviceInfoList, device.InstanceId, default, 0, &deviceInfoData)
                 .ThrowOnWin32Error(nameof(PInvoke.SetupDiOpenDeviceInfo));
             var deviceInstallParams = new SP_DEVINSTALL_PARAMS_W()
             {
@@ -85,18 +85,19 @@ static class DriverTools
             PInvoke.DiInstallDevice(default, deviceInfoList, deviceInfoData, driverInfoData, 0, &reboot)
                 .ThrowOnWin32Error(nameof(PInvoke.DiInstallDevice));
 
-            ConfigurationManager.SetDeviceFriendlyName(deviceInfoData.DevInst);
+            // Best effort, not really a problem if this fails.
+            _ = device.SetFriendlyName();
 
             return reboot;
         }
     }
 
-    public static bool ForceVBoxDriver(string originalInstanceId)
+    public static bool ForceVBoxDriver(WindowsDevice device)
     {
         var reboot = false;
 
         // First, we must set a NULL driver to clear any existing Device Setup Class.
-        if (SetNullDriver(originalInstanceId))
+        if (SetNullDriver(device))
         {
             reboot = true;
         }
@@ -105,7 +106,7 @@ static class DriverTools
         // 200 ms seems to work, so delay for 500 ms for good measure...
         Thread.Sleep(TimeSpan.FromMilliseconds(500));
 
-        if (SetVBoxDriver(originalInstanceId))
+        if (SetVBoxDriver(device))
         {
             reboot = true;
         }
@@ -113,13 +114,8 @@ static class DriverTools
         return reboot;
     }
 
-    public static bool UnforceVBoxDriver(string originalInstanceId)
+    public static bool UnforceVBoxDriver(WindowsDevice device)
     {
-        if (!WindowsDevice.TryCreate(originalInstanceId, out var device))
-        {
-            // This instanceId is no longer installed ... we're done.
-            return false;
-        }
         if (!device.HasVBoxDriver)
         {
             // The device does not have the VBoxUsb driver installed ... we're done.
@@ -129,7 +125,7 @@ static class DriverTools
         var reboot = false;
 
         // First, we must set a NULL driver, just in case no default driver exists.
-        if (SetNullDriver(originalInstanceId))
+        if (SetNullDriver(device))
         {
             reboot = true;
         }
@@ -151,7 +147,8 @@ static class DriverTools
             {
                 cbSize = (uint)Marshal.SizeOf<SP_DEVINFO_DATA>(),
             };
-            PInvoke.SetupDiOpenDeviceInfo(deviceInfoSet, originalInstanceId, default, 0, &deviceInfoData).ThrowOnWin32Error(nameof(PInvoke.SetupDiOpenDeviceInfo));
+            PInvoke.SetupDiOpenDeviceInfo(deviceInfoSet, device.InstanceId, default, 0, &deviceInfoData)
+                .ThrowOnWin32Error(nameof(PInvoke.SetupDiOpenDeviceInfo));
             try
             {
                 BOOL tmpReboot;
@@ -170,7 +167,7 @@ static class DriverTools
         return reboot;
     }
 
-    public static bool UninstallStubDevice(string stubInstanceId)
+    public static bool UninstallStubDevice(WindowsDevice device)
     {
         var reboot = false;
 
@@ -185,7 +182,8 @@ static class DriverTools
             {
                 cbSize = (uint)Marshal.SizeOf<SP_DEVINFO_DATA>(),
             };
-            PInvoke.SetupDiOpenDeviceInfo(deviceInfoSet, stubInstanceId, default, 0, &deviceInfoData).ThrowOnWin32Error(nameof(PInvoke.SetupDiOpenDeviceInfo));
+            PInvoke.SetupDiOpenDeviceInfo(deviceInfoSet, device.InstanceId, default, 0, &deviceInfoData)
+                .ThrowOnWin32Error(nameof(PInvoke.SetupDiOpenDeviceInfo));
             BOOL tmpReboot;
             PInvoke.DiUninstallDevice(default, deviceInfoSet, deviceInfoData, 0, &tmpReboot).ThrowOnWin32Error(nameof(PInvoke.DiUninstallDevice));
             if (tmpReboot)

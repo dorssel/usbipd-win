@@ -65,12 +65,12 @@ sealed partial class RestartingDevice
             var data = new USB_CYCLE_PORT_PARAMS() { ConnectionIndex = Device.BusId.Port };
             var buf = Tools.StructToBytes(data);
             hubFile.IoControlAsync(PInvoke.IOCTL_USB_HUB_CYCLE_PORT, buf, buf).Wait();
-        }
-        catch (ConfigurationManagerException) { }
-        catch (Win32Exception) { }
-        catch (AggregateException ex) when (ex.InnerException is Win32Exception) { }
 
-        // This is the reverse of what the constructor accomplished.
-        _ = PInvoke.CM_Setup_DevNode(Device.Node, PInvoke.CM_SETUP_DEVNODE_READY);
+            // This is the reverse of what the constructor accomplished.
+            _ = PInvoke.CM_Setup_DevNode(Device.Node, PInvoke.CM_SETUP_DEVNODE_READY);
+        }
+#pragma warning disable CA1031 // Do not catch general exception types
+        catch { }
+#pragma warning restore CA1031 // Do not catch general exception types
     }
 }
