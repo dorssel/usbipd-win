@@ -115,7 +115,12 @@ static class DriverTools
 
     public static bool UnforceVBoxDriver(string originalInstanceId)
     {
-        if (!ConfigurationManager.HasVBoxDriver(originalInstanceId))
+        if (!WindowsDevice.TryCreate(originalInstanceId, out var device))
+        {
+            // This instanceId is no longer installed ... we're done.
+            return false;
+        }
+        if (!device.HasVBoxDriver)
         {
             // The device does not have the VBoxUsb driver installed ... we're done.
             return false;

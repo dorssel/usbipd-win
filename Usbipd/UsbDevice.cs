@@ -27,7 +27,7 @@ sealed record UsbDevice(string InstanceId, string Description, bool IsForced,
     {
         var usbDevices = new Dictionary<string, UsbDevice>(RegistryUtilities.GetBoundDevices().Select(d => KeyValuePair.Create(d.InstanceId, d)));
         // Add all connected devices that are not hubs or stubs, and not already in the list (i.e. all USB devices that are available for USBIP sharing).
-        foreach (var device in WindowsDeviceInterface.GetAll(PInvoke.GUID_DEVINTERFACE_USB_HUB).SelectMany(di => di.Device.Children)
+        foreach (var device in WindowsDevice.GetAll(PInvoke.GUID_DEVINTERFACE_USB_HUB).SelectMany(di => di.Children)
             .Where(d => !d.IsStub && !d.IsHub))
         {
             if (usbDevices.ContainsKey(device.InstanceId))
@@ -42,8 +42,8 @@ sealed record UsbDevice(string InstanceId, string Description, bool IsForced,
                 usbDevices[device.InstanceId] = new(
                     InstanceId: device.InstanceId,
                     Description: ConfigurationManager.GetDescription(device.Node),
-                    BusId: ConfigurationManager.GetBusId(device.Node),
-                    IsForced: ConfigurationManager.HasVBoxDriver(device.InstanceId));
+                    BusId: device.BusId,
+                    IsForced: device.HasVBoxDriver);
             }
             catch (ConfigurationManagerException) { }
         }

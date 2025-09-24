@@ -4,7 +4,6 @@
 
 CM_Disable_DevNode
 CM_Enable_DevNode
-CM_Get_Child
 CM_Get_Device_ID_List
 CM_Get_Device_ID_List_Size
 CM_Get_Device_Interface_List
@@ -12,8 +11,6 @@ CM_Get_Device_Interface_List_Size
 CM_Get_Device_Interface_Property
 CM_Get_DevNode_Property
 CM_Get_DevNode_Status
-CM_Get_Parent
-CM_Get_Sibling
 CM_Locate_DevNode
 CM_MapCrToWin32Err
 CM_Query_And_Remove_SubTree
@@ -61,6 +58,7 @@ SetupDiSetDeviceInstallParams
 SETUP_DI_DEVICE_INSTALL_FLAGS
 SETUP_DI_DEVICE_INSTALL_FLAGS_EX
 
+DEVPKEY_Device_Children
 DEVPKEY_Device_CompatibleIds
 DEVPKEY_Device_DevNodeStatus
 DEVPKEY_Device_DriverVersion
@@ -69,6 +67,7 @@ DEVPKEY_Device_HardwareIds
 DEVPKEY_Device_InstanceId
 DEVPKEY_Device_LocationInfo
 DEVPKEY_Device_MatchingDeviceId
+DEVPKEY_Device_Parent
 DEVPKEY_Device_ProblemCode
 DEVPKEY_NAME
 
