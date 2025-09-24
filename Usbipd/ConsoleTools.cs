@@ -138,7 +138,7 @@ static partial class ConsoleTools
     /// </summary>
     static void ReportText(this IConsole console, string level, string text)
     {
-        console.Error.WriteLine($"{Program.ApplicationName}: {level}: {EnforceFinalPeriod(text)}");
+        console.Error.WriteLine($"{AppDomain.CurrentDomain.FriendlyName}: {level}: {EnforceFinalPeriod(text)}");
     }
 
     sealed partial class TemporaryColor
