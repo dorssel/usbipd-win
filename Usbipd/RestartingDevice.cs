@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: GPL-3.0-only
 
-using System.ComponentModel;
 using Windows.Win32;
 using Windows.Win32.Devices.DeviceAndDriverInstallation;
 using Windows.Win32.Devices.Usb;
@@ -22,14 +21,15 @@ sealed partial class RestartingDevice
         unsafe // DevSkim: ignore DS172412
         {
             PNP_VETO_TYPE vetoType;
-            var vetoName = new string('\0', (int)PInvoke.MAX_PATH);
-            fixed (char* pVetoName = vetoName)
+            var buffer = new char[checked((int)PInvoke.MAX_PATH)];
+            fixed (char* pBuffer = buffer)
             {
-                var cr = PInvoke.CM_Query_And_Remove_SubTree(Device.Node, &vetoType, pVetoName, PInvoke.MAX_PATH,
+                var cr = PInvoke.CM_Query_And_Remove_SubTree(Device.Node, &vetoType, pBuffer, PInvoke.MAX_PATH,
                     PInvoke.CM_REMOVE_NO_RESTART | PInvoke.CM_REMOVE_UI_NOT_OK);
                 if (cr == CONFIGRET.CR_REMOVE_VETOED)
                 {
-                    vetoName = vetoName.TrimEnd('\0');
+                    buffer[^1] = '\0';
+                    var vetoName = new string(pBuffer);
                     throw new ConfigurationManagerException(cr, $"{nameof(PInvoke.CM_Query_And_Remove_SubTree)} returned {cr}: {vetoType}, {vetoName}");
                 }
                 cr.ThrowOnError(nameof(PInvoke.CM_Query_And_Remove_SubTree));

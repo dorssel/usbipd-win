@@ -10,7 +10,6 @@ CM_Get_Device_Interface_List
 CM_Get_Device_Interface_List_Size
 CM_Get_Device_Interface_Property
 CM_Get_DevNode_Property
-CM_Get_DevNode_Status
 CM_Locate_DevNode
 CM_MapCrToWin32Err
 CM_Query_And_Remove_SubTree
@@ -29,7 +28,6 @@ CM_SETUP_DEVNODE_READY
 MAX_PATH
 
 AdjustTokenPrivileges
-CloseServiceHandle
 CreateFile
 CreateService
 DeviceIoControl
@@ -46,17 +44,11 @@ SetEvent
 SetupCopyOEMInf
 SetupDiBuildDriverInfoList
 SetupDiCreateDeviceInfoList
-SetupDiEnumDeviceInfo
 SetupDiEnumDriverInfo
-SetupDiGetClassDevs
 SetupDiGetDriverInfoDetail
 SetupDiGetINFClass
 SetupDiOpenDeviceInfo
-SetupDiSetClassInstallParams
 SetupDiSetDeviceInstallParams
-
-SETUP_DI_DEVICE_INSTALL_FLAGS
-SETUP_DI_DEVICE_INSTALL_FLAGS_EX
 
 DEVPKEY_Device_Children
 DEVPKEY_Device_CompatibleIds
@@ -70,6 +62,9 @@ DEVPKEY_Device_MatchingDeviceId
 DEVPKEY_Device_Parent
 DEVPKEY_Device_ProblemCode
 DEVPKEY_NAME
+
+CM_DEVNODE_STATUS_FLAGS
+CM_PROB
 
 GUID_DEVINTERFACE_USB_HUB
 
@@ -119,8 +114,6 @@ FILE_WRITE_ACCESS
 SC_MANAGER_ALL_ACCESS
 
 SERVICES_ACTIVE_DATABASE
-
-TOKEN_ELEVATION_TYPE
 
 IOCTL_USB_GET_DESCRIPTOR_FROM_NODE_CONNECTION
 IOCTL_USB_GET_NODE_CONNECTION_INFORMATION_EX

@@ -21,7 +21,6 @@ static class Program
 {
     public static readonly string Product = Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyProductAttribute>()!.Product;
     public static readonly string Copyright = Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyCopyrightAttribute>()!.Copyright;
-    public static readonly string ApplicationName = Path.GetFileName(Process.GetCurrentProcess().ProcessName);
 
     static void AddParseError<T>(ArgumentResult argumentResult)
     {
