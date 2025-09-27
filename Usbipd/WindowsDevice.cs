@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 using System.Globalization;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using Usbipd.Automation;
@@ -18,26 +19,36 @@ namespace Usbipd;
 /// Each device has a numeric ID (device node) and an instance ID (string), which have a one-to-one correspondence.
 /// </para>
 /// </summary>
-sealed partial class WindowsDevice(uint deviceNode, string instanceId)
+sealed partial class WindowsDevice : IEquatable<WindowsDevice>
 {
-    public uint Node { get; } = deviceNode;
+    public uint Node { get; }
     // Instance IDs are case-insensitive. We always use uppercase to prevent confusion and comparison issues.
-    public string InstanceId { get; } = instanceId.ToUpperInvariant();
+    public string InstanceId { get; }
 
-    /// <returns>false if the corresponding instance ID does not exist.</returns>
-    public static bool TryCreate(uint deviceNode, out WindowsDevice device)
+    WindowsDevice(uint deviceNode, string instanceId)
     {
-        if (!TryGetProperty(deviceNode, PInvoke.DEVPKEY_Device_InstanceId, out string instanceId))
-        {
-            device = default!;
-            return false;
-        }
-        // Instance IDs are case-insensitive. We always use uppercase to prevent confusion and comparison issues.
-        device = new(deviceNode, instanceId);
-        return true;
+        Node = deviceNode;
+        InstanceId = instanceId.ToUpperInvariant();
     }
 
-    /// <returns>false if the corresponding device node does not exist.</returns>
+    #region IEquatable
+    public override int GetHashCode()
+    {
+        return InstanceId.GetHashCode(StringComparison.Ordinal);
+    }
+
+    public override bool Equals(object? obj)
+    {
+        return Equals(obj as WindowsDevice);
+    }
+
+    public bool Equals(WindowsDevice? other)
+    {
+        return other is not null && InstanceId == other.InstanceId;
+    }
+    #endregion
+
+    /// <returns>false if the device does not exist (neither present nor phantom).</returns>
     public static bool TryCreate(string instanceId, out WindowsDevice device)
     {
         unsafe // DevSkim: ignore DS172412
@@ -86,12 +97,13 @@ sealed partial class WindowsDevice(uint deviceNode, string instanceId)
     /// <summary>
     /// true if the device is currently present (plugged in).
     /// </summary>
-    public bool IsPresent => TryGetProperty(Node, PInvoke.DEVPKEY_Device_DevNodeStatus, out CM_DEVNODE_STATUS_FLAGS _);
+    public bool IsPresent => TryGetProperty(Node, PInvoke.DEVPKEY_Device_IsPresent, out bool isPresent) && isPresent;
 
     /// <summary>
     /// true if the device is currently present (plugged in), but disabled in Device Manager.
     /// </summary>
-    public bool IsDisabled => TryGetProperty(Node, PInvoke.DEVPKEY_Device_DevNodeStatus, out CM_DEVNODE_STATUS_FLAGS status)
+    public bool IsDisabled => IsPresent
+        && TryGetProperty(Node, PInvoke.DEVPKEY_Device_DevNodeStatus, out CM_DEVNODE_STATUS_FLAGS status)
         && status.HasFlag(CM_DEVNODE_STATUS_FLAGS.DN_HAS_PROBLEM)
         && TryGetProperty(Node, PInvoke.DEVPKEY_Device_ProblemCode, out CM_PROB problem)
         && problem == CM_PROB.CM_PROB_DISABLED;
@@ -399,6 +411,38 @@ sealed partial class WindowsDevice(uint deviceNode, string instanceId)
                 value = *(uint*)pBuffer;
                 return true;
             }
+        }
+    }
+
+    static bool TryGetProperty(uint deviceNode, in DEVPROPKEY devPropKey, out bool value)
+    {
+        if (!TryGetProperty(deviceNode, devPropKey, out var buffer, out var propertyType))
+        {
+            value = default!;
+            return false;
+        }
+
+        if ((propertyType != DEVPROPTYPE.DEVPROP_TYPE_BOOLEAN) || (buffer.Length != Marshal.SizeOf<DEVPROP_BOOLEAN>()))
+        {
+            value = default!;
+            return false;
+        }
+
+        var boolean = (DEVPROP_BOOLEAN)buffer[0];
+        if (boolean == DEVPROP_BOOLEAN.DEVPROP_TRUE)
+        {
+            value = true;
+            return true;
+        }
+        else if (boolean == DEVPROP_BOOLEAN.DEVPROP_FALSE)
+        {
+            value = false;
+            return true;
+        }
+        else
+        {
+            value = default!;
+            return false;
         }
     }
 
