@@ -57,6 +57,7 @@ DEVPKEY_Device_DriverVersion
 DEVPKEY_Device_FriendlyName
 DEVPKEY_Device_HardwareIds
 DEVPKEY_Device_InstanceId
+DEVPKEY_Device_IsPresent
 DEVPKEY_Device_LocationInfo
 DEVPKEY_Device_MatchingDeviceId
 DEVPKEY_Device_Parent
@@ -65,6 +66,9 @@ DEVPKEY_NAME
 
 CM_DEVNODE_STATUS_FLAGS
 CM_PROB
+DEVPROP_BOOLEAN
+DEVPROP_FALSE
+DEVPROP_TRUE
 
 GUID_DEVINTERFACE_USB_HUB
 
