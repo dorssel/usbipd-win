@@ -5,6 +5,7 @@
 using System.ComponentModel;
 using System.IO.Pipelines;
 using System.Net;
+using Windows.Win32.Devices.DeviceAndDriverInstallation;
 using Windows.Win32.Devices.Usb;
 using Windows.Win32.Foundation;
 using static Usbipd.Interop.Linux;
@@ -206,20 +207,39 @@ sealed class Tools_Tests
     }
 
     [TestMethod]
-    public void ThrowOnError_Success()
+    public void ThrowOnError_Win32Success()
     {
         BOOL success = true;
         success.ThrowOnWin32Error("dummy");
     }
 
     [TestMethod]
-    public void ThrowOnError_Error()
+    public void ThrowOnError_Win32Error()
     {
         const string testMessage = "TestMessage";
         BOOL failure = false;
         var exception = Assert.ThrowsExactly<Win32Exception>(() =>
         {
             failure.ThrowOnWin32Error(testMessage);
+        });
+        Assert.Contains(testMessage, exception.Message);
+    }
+
+    [TestMethod]
+    public void ThrowOnError_ConfigSuccess()
+    {
+        var success = CONFIGRET.CR_SUCCESS;
+        success.ThrowOnError("dummy");
+    }
+
+    [TestMethod]
+    public void ThrowOnError_ConfigError()
+    {
+        const string testMessage = "TestMessage";
+        var failure = CONFIGRET.CR_INVALID_DATA;
+        var exception = Assert.ThrowsExactly<ConfigurationManagerException>(() =>
+        {
+            failure.ThrowOnError(testMessage);
         });
         Assert.Contains(testMessage, exception.Message);
     }
