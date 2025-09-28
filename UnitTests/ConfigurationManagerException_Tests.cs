@@ -56,6 +56,16 @@ sealed class ConfigurationManagerException_Tests
 
     [TestMethod]
     [DynamicData(nameof(MappingData.KnownGood), typeof(MappingData))]
+    public void CodeConstructor(CONFIGRET configRet, WIN32_ERROR win32Error)
+    {
+        var configurationManagerException = new ConfigurationManagerException(configRet);
+        Assert.AreEqual(configRet, configurationManagerException.ConfigRet);
+        var win32Exception = (Win32Exception)configurationManagerException;
+        Assert.AreEqual(win32Error, (WIN32_ERROR)win32Exception.NativeErrorCode);
+    }
+
+    [TestMethod]
+    [DynamicData(nameof(MappingData.KnownGood), typeof(MappingData))]
     public void CodeAndMessageConstructor(CONFIGRET configRet, WIN32_ERROR win32Error)
     {
         var configurationManagerException = new ConfigurationManagerException(configRet, TestMessage);
