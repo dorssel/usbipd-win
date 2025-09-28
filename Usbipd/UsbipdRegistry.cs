@@ -12,22 +12,45 @@ using Windows.Win32;
 
 namespace Usbipd;
 
-static class RegistryUtilities
+sealed class UsbipdRegistry : IDisposable
 {
-    const string DevicesRegistryPath = @"SOFTWARE\usbipd-win";
+    static readonly UsbipdRegistry _Instance = new(Registry.LocalMachine);
+    public static UsbipdRegistry Instance => TestInstance ?? _Instance;
 
-    static RegistryKey OpenBaseKey(bool writable)
+#pragma warning disable CS0649 // Field is never assigned to. Used only by UnitTests.
+    internal static UsbipdRegistry? TestInstance;
+#pragma warning restore CS0649
+
+    readonly RegistryKey? ReadOnlyBaseKey;
+    readonly RegistryKey? WritableBaseKey;
+
+    public void Dispose()
     {
-        return Registry.LocalMachine.OpenSubKey(DevicesRegistryPath, writable)
-            ?? throw new UnexpectedResultException("Registry key not found; try reinstalling the software.");
+        ReadOnlyBaseKey?.Dispose();
+        WritableBaseKey?.Dispose();
     }
 
-    static readonly Lazy<RegistryKey> ReadOnlyBaseKey = new(() => OpenBaseKey(false));
-    static readonly Lazy<RegistryKey> WritableBaseKey = new(() => OpenBaseKey(true));
+    const string RegistryPath = @"SOFTWARE\usbipd-win";
 
-    static RegistryKey BaseKey(bool writable)
+    public UsbipdRegistry(RegistryKey parentKey)
     {
-        return (writable ? WritableBaseKey : ReadOnlyBaseKey).Value;
+        try
+        {
+            ReadOnlyBaseKey = parentKey.OpenSubKey(RegistryPath, false);
+        }
+        catch (Exception ex) when (ex is SecurityException or UnauthorizedAccessException) { }
+        try
+        {
+            WritableBaseKey = parentKey.OpenSubKey(RegistryPath, true);
+        }
+        catch (Exception ex) when (ex is SecurityException or UnauthorizedAccessException) { }
+    }
+
+    RegistryKey BaseKey(bool writable)
+    {
+        return ReadOnlyBaseKey is null
+            ? throw new UnexpectedResultException("Registry key not found; try reinstalling the software.")
+            : writable ? WritableBaseKey ?? throw new SecurityException("No write access to registry key.") : ReadOnlyBaseKey;
     }
 
     const string ApplicationFolderName = "APPLICATIONFOLDER";
@@ -44,33 +67,33 @@ static class RegistryUtilities
     /// <summary>
     /// <see langword="null"/> if not installed
     /// </summary>
-    public static string? InstallationFolder { get; } = Registry.LocalMachine.OpenSubKey(DevicesRegistryPath, false)?.GetValue(ApplicationFolderName) as string;
+    public string? InstallationFolder => ReadOnlyBaseKey?.GetValue(ApplicationFolderName) as string;
 
-    static RegistryKey GetDevicesKey(bool writable)
+    RegistryKey GetDevicesKey(bool writable)
     {
         return BaseKey(writable).OpenSubKey(DevicesName, writable)
             ?? throw new UnexpectedResultException("Registry key not found; try reinstalling the software.");
     }
 
-    static RegistryKey? GetDeviceKey(Guid guid, bool writable)
+    RegistryKey? GetDeviceKey(Guid guid, bool writable)
     {
         using var devicesKey = GetDevicesKey(writable);
         return devicesKey.OpenSubKey(guid.ToString("B"), writable);
     }
 
-    static RegistryKey GetPolicyKey(bool writable)
+    RegistryKey GetPolicyKey(bool writable)
     {
         return BaseKey(writable).OpenSubKey(PolicyName, writable)
             ?? throw new UnexpectedResultException("Registry key not found; try reinstalling the software.");
     }
 
-    static RegistryKey? GetPolicyRuleKey(Guid guid, bool writable)
+    RegistryKey? GetPolicyRuleKey(Guid guid, bool writable)
     {
         using var devicesKey = GetPolicyKey(writable);
         return devicesKey.OpenSubKey(guid.ToString("B"), writable);
     }
 
-    public static void Persist(string instanceId, string description)
+    public void Persist(string instanceId, string description)
     {
         var guid = Guid.NewGuid();
         using var deviceKey = GetDevicesKey(true).CreateSubKey($"{guid:B}");
@@ -78,13 +101,13 @@ static class RegistryUtilities
         deviceKey.SetValue(DescriptionName, description);
     }
 
-    public static void StopSharingDevice(Guid guid)
+    public void StopSharingDevice(Guid guid)
     {
         using var devicesKey = GetDevicesKey(true);
         devicesKey.DeleteSubKeyTree(guid.ToString("B"), false);
     }
 
-    public static void StopSharingAllDevices()
+    public void StopSharingAllDevices()
     {
         using var devicesKey = GetDevicesKey(true);
         foreach (var subKeyName in devicesKey.GetSubKeyNames())
@@ -93,7 +116,7 @@ static class RegistryUtilities
         }
     }
 
-    public static RegistryKey SetDeviceAsAttached(Guid guid, BusId busId, IPAddress address, string stubInstanceId)
+    public RegistryKey SetDeviceAsAttached(Guid guid, BusId busId, IPAddress address, string stubInstanceId)
     {
         using var key = GetDeviceKey(guid, true)
             ?? throw new UnexpectedResultException($"{nameof(SetDeviceAsAttached)}: Device key not found");
@@ -131,13 +154,13 @@ static class RegistryUtilities
         return attached is null;
     }
 
-    public static bool SetDeviceAsDetached(Guid guid)
+    public bool SetDeviceAsDetached(Guid guid)
     {
         using var deviceKey = GetDeviceKey(guid, false);
         return deviceKey is null || RemoveAttachedSubKey(deviceKey);
     }
 
-    public static bool SetAllDevicesAsDetached()
+    public bool SetAllDevicesAsDetached()
     {
         using var devicesKey = GetDevicesKey(false);
         var deviceKeyNames = devicesKey?.GetSubKeyNames() ?? [];
@@ -163,7 +186,7 @@ static class RegistryUtilities
     /// This retrieves the entire (valid) registry state.
     /// </para>
     /// </summary>
-    public static IEnumerable<UsbDevice> GetBoundDevices()
+    public IEnumerable<UsbDevice> GetBoundDevices()
     {
         var guids = new SortedSet<Guid>();
         using var devicesKey = GetDevicesKey(false);
@@ -256,19 +279,9 @@ static class RegistryUtilities
         return persistedDevices.Values;
     }
 
-    public static bool HasWriteAccess()
-    {
-        try
-        {
-            return BaseKey(true) is not null;
-        }
-        catch (SecurityException)
-        {
-            return false;
-        }
-    }
+    public bool HasWriteAccess => WritableBaseKey is not null;
 
-    public static Guid AddPolicyRule(PolicyRule rule)
+    public Guid AddPolicyRule(PolicyRule rule)
     {
         if (!rule.IsValid())
         {
@@ -286,13 +299,13 @@ static class RegistryUtilities
         return guid;
     }
 
-    public static void RemovePolicyRule(Guid guid)
+    public void RemovePolicyRule(Guid guid)
     {
         using var policyKey = GetPolicyKey(true);
         policyKey.DeleteSubKeyTree(guid.ToString("B"), false);
     }
 
-    public static void RemovePolicyRuleAll()
+    public void RemovePolicyRuleAll()
     {
         using var policyKey = GetPolicyKey(true);
         foreach (var subKeyName in policyKey.GetSubKeyNames())
@@ -307,7 +320,7 @@ static class RegistryUtilities
     /// This retrieves the entire (valid) registry state; it ignores invalid rules, as well as any duplicates.
     /// </para>
     /// </summary>
-    public static SortedDictionary<Guid, PolicyRule> GetPolicyRules()
+    public SortedDictionary<Guid, PolicyRule> GetPolicyRules()
     {
         var guids = new SortedSet<Guid>();
         using var policyKey = GetPolicyKey(false);

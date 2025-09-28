@@ -174,7 +174,7 @@ sealed partial class CommandHandlers : ICommandHandlers
         }
         if (!device.Guid.HasValue)
         {
-            RegistryUtilities.Persist(device.InstanceId, device.Description);
+            UsbipdRegistry.Instance.Persist(device.InstanceId, device.Description);
         }
         if (!force)
         {
@@ -226,7 +226,7 @@ sealed partial class CommandHandlers : ICommandHandlers
         {
             return Task.FromResult(ExitCode.AccessDenied);
         }
-        RegistryUtilities.StopSharingDevice(device.Guid.Value);
+        UsbipdRegistry.Instance.StopSharingDevice(device.Guid.Value);
         if (WindowsDevice.TryCreate(device.InstanceId, out var windowsDevice))
         {
             if (DriverTools.UnforceVBoxDriver(windowsDevice))
@@ -259,7 +259,7 @@ sealed partial class CommandHandlers : ICommandHandlers
         {
             if (device.Guid is not null)
             {
-                RegistryUtilities.StopSharingDevice(device.Guid.Value);
+                UsbipdRegistry.Instance.StopSharingDevice(device.Guid.Value);
             }
             if (WindowsDevice.TryCreate(device.InstanceId, out var windowsDevice))
             {
@@ -291,7 +291,7 @@ sealed partial class CommandHandlers : ICommandHandlers
 
     Task<ExitCode> ICommandHandlers.Unbind(Guid guid, IConsole console, CancellationToken cancellationToken)
     {
-        var device = RegistryUtilities.GetBoundDevices().SingleOrDefault(d => d.Guid.HasValue && d.Guid.Value == guid);
+        var device = UsbipdRegistry.Instance.GetBoundDevices().SingleOrDefault(d => d.Guid.HasValue && d.Guid.Value == guid);
         if (device is null)
         {
             console.ReportError($"There is no device with guid '{guid:D}'.");
@@ -315,7 +315,7 @@ sealed partial class CommandHandlers : ICommandHandlers
         {
             return Task.FromResult(ExitCode.AccessDenied);
         }
-        RegistryUtilities.StopSharingAllDevices();
+        UsbipdRegistry.Instance.StopSharingAllDevices();
         var reboot = false;
         var driverError = false;
         foreach (var device in WindowsDevice.GetAll(DriverDetails.Instance.ClassGuid, false)
@@ -398,7 +398,7 @@ sealed partial class CommandHandlers : ICommandHandlers
                 console.ReportInfo($"Device with busid '{device.BusId}' was already not attached.");
                 continue;
             }
-            if (!RegistryUtilities.SetDeviceAsDetached(device.Guid.Value))
+            if (!UsbipdRegistry.Instance.SetDeviceAsDetached(device.Guid.Value))
             {
                 console.ReportError($"Failed to detach device with busid '{device.BusId}'.");
                 error = true;
@@ -431,7 +431,7 @@ sealed partial class CommandHandlers : ICommandHandlers
 
     Task<ExitCode> ICommandHandlers.DetachAll(IConsole console, CancellationToken cancellationToken)
     {
-        if (!RegistryUtilities.SetAllDevicesAsDetached())
+        if (!UsbipdRegistry.Instance.SetAllDevicesAsDetached())
         {
             console.ReportError($"Failed to detach one or more devices.");
             return Task.FromResult(ExitCode.Failure);
@@ -476,7 +476,7 @@ sealed partial class CommandHandlers : ICommandHandlers
 
     Task<ExitCode> ICommandHandlers.PolicyAdd(PolicyRule rule, IConsole console, CancellationToken cancellationToken)
     {
-        if (RegistryUtilities.GetPolicyRules().FirstOrDefault(r => r.Value == rule) is var existingRule && existingRule.Key != default)
+        if (UsbipdRegistry.Instance.GetPolicyRules().FirstOrDefault(r => r.Value == rule) is var existingRule && existingRule.Key != default)
         {
             console.ReportError($"Policy rule already exists with guid '{existingRule.Key:D}'.");
             return Task.FromResult(ExitCode.Failure);
@@ -487,7 +487,7 @@ sealed partial class CommandHandlers : ICommandHandlers
             return Task.FromResult(ExitCode.AccessDenied);
         }
 
-        var guid = RegistryUtilities.AddPolicyRule(rule);
+        var guid = UsbipdRegistry.Instance.AddPolicyRule(rule);
         console.ReportInfo($"Policy rule created with guid '{guid:D}'.");
         return Task.FromResult(ExitCode.Success);
     }
@@ -495,7 +495,7 @@ sealed partial class CommandHandlers : ICommandHandlers
     Task<ExitCode> ICommandHandlers.PolicyList(IConsole console, CancellationToken cancellationToken)
     {
 #pragma warning disable CA1849 // Call async methods when in an async method
-        var policyRules = RegistryUtilities.GetPolicyRules();
+        var policyRules = UsbipdRegistry.Instance.GetPolicyRules();
         console.Out.WriteLine("Policy rules:");
         console.Out.WriteLine($"{"GUID",-36}  {"EFFECT",-6}  {"OPERATION",-9}  {"BUSID",-5}  {"VID:PID",-9}");
         foreach (var rule in policyRules)
@@ -522,7 +522,7 @@ sealed partial class CommandHandlers : ICommandHandlers
 
     Task<ExitCode> ICommandHandlers.PolicyRemove(Guid guid, IConsole console, CancellationToken cancellationToken)
     {
-        if (!RegistryUtilities.GetPolicyRules().ContainsKey(guid))
+        if (!UsbipdRegistry.Instance.GetPolicyRules().ContainsKey(guid))
         {
             console.ReportError($"There is no policy rule with guid '{guid:D}'.");
             return Task.FromResult(ExitCode.Failure);
@@ -533,7 +533,7 @@ sealed partial class CommandHandlers : ICommandHandlers
             return Task.FromResult(ExitCode.AccessDenied);
         }
 
-        RegistryUtilities.RemovePolicyRule(guid);
+        UsbipdRegistry.Instance.RemovePolicyRule(guid);
         return Task.FromResult(ExitCode.Success);
     }
 
@@ -544,7 +544,7 @@ sealed partial class CommandHandlers : ICommandHandlers
             return Task.FromResult(ExitCode.AccessDenied);
         }
 
-        RegistryUtilities.RemovePolicyRuleAll();
+        UsbipdRegistry.Instance.RemovePolicyRuleAll();
         return Task.FromResult(ExitCode.Success);
     }
 }

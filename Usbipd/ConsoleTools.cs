@@ -292,7 +292,7 @@ static partial class ConsoleTools
 
     public static bool CheckWriteAccess(IConsole console)
     {
-        if (!RegistryUtilities.HasWriteAccess())
+        if (!UsbipdRegistry.Instance.HasWriteAccess)
         {
             console.ReportError("Access denied; this operation requires administrator privileges.");
             return false;

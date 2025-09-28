@@ -25,7 +25,7 @@ sealed record UsbDevice(string InstanceId, string Description, bool IsForced,
     /// </summary>
     public static IEnumerable<UsbDevice> GetAll()
     {
-        var usbDevices = new Dictionary<string, UsbDevice>(RegistryUtilities.GetBoundDevices().Select(d => KeyValuePair.Create(d.InstanceId, d)));
+        var usbDevices = new Dictionary<string, UsbDevice>(UsbipdRegistry.Instance.GetBoundDevices().Select(d => KeyValuePair.Create(d.InstanceId, d)));
         // Add all connected devices that are not hubs or stubs, and not already in the list (i.e. all USB devices that are available for USBIP sharing).
         foreach (var device in WindowsDevice.GetAll(PInvoke.GUID_DEVINTERFACE_USB_HUB).SelectMany(di => di.Children)
             .Where(d => !d.IsStub && !d.IsHub))
