@@ -138,11 +138,11 @@ sealed class ConnectedClient(ILogger<ConnectedClient> logger, ClientContext clie
                 {
                     // The device is not currently bound, but it is allowed by the policy. Auto-bind it now...
                     Logger.AutoBind(ClientContext.ClientAddress, busId, bindDevice.InstanceId);
-                    RegistryUtilities.Persist(bindDevice.InstanceId, bindDevice.Description);
+                    UsbipdRegistry.Instance.Persist(bindDevice.InstanceId, bindDevice.Description);
                 }
             }
 
-            var usbDevice = RegistryUtilities.GetBoundDevices().SingleOrDefault(d => d.BusId.HasValue && d.BusId.Value == busId);
+            var usbDevice = UsbipdRegistry.Instance.GetBoundDevices().SingleOrDefault(d => d.BusId.HasValue && d.BusId.Value == busId);
             if (usbDevice is null)
             {
                 await SendOpCodeAsync(OpCode.OP_REP_IMPORT, Status.ST_NODEV);
@@ -244,7 +244,7 @@ sealed class ConnectedClient(ILogger<ConnectedClient> logger, ClientContext clie
                 }
 
                 // Detect unbind.
-                using var attachedKey = RegistryUtilities.SetDeviceAsAttached(usbDevice.Guid.Value, usbDevice.BusId.Value, ClientContext.ClientAddress,
+                using var attachedKey = UsbipdRegistry.Instance.SetDeviceAsAttached(usbDevice.Guid.Value, usbDevice.BusId.Value, ClientContext.ClientAddress,
                     vboxDevice.InstanceId);
                 var result = PInvoke.RegNotifyChangeKeyValue(attachedKey.Handle, false,
                     Windows.Win32.System.Registry.REG_NOTIFY_FILTER.REG_NOTIFY_THREAD_AGNOSTIC, cancelEvent.SafeWaitHandle, true);
@@ -259,7 +259,7 @@ sealed class ConnectedClient(ILogger<ConnectedClient> logger, ClientContext clie
             {
                 notification?.Dispose();
 
-                _ = RegistryUtilities.SetDeviceAsDetached(usbDevice.Guid.Value);
+                _ = UsbipdRegistry.Instance.SetDeviceAsDetached(usbDevice.Guid.Value);
 
                 ClientContext.AttachedDevice.Dispose();
 

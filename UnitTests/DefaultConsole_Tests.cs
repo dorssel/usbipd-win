@@ -37,6 +37,19 @@ sealed class DefaultConsole_Tests
     }
 
     [TestMethod]
+    public void IsErrorRedirected()
+    {
+        if (!Console.IsErrorRedirected)
+        {
+            Assert.Fail("Tests should always run with error redirected.");
+        }
+
+        var console = new DefaultConsole();
+
+        Assert.IsTrue(console.IsErrorRedirected);
+    }
+
+    [TestMethod]
     public void WindowWidth()
     {
         if (!Console.IsOutputRedirected)

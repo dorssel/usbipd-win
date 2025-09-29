@@ -573,7 +573,7 @@ static class Program
                     CustomParser = ParseGuid,
                 };
                 guidOption.CompletionSources.Add(completionContext => CompletionGuard(completionContext, () =>
-                    RegistryUtilities.GetPolicyRules().Select(r => r.Key.ToString("D"))));
+                    UsbipdRegistry.Instance.GetPolicyRules().Select(r => r.Key.ToString("D"))));
                 //
                 //  policy remove
                 //
@@ -662,7 +662,7 @@ static class Program
                 CustomParser = ParseGuid,
             };
             guidOption.CompletionSources.Add(completionContext => CompletionGuard(completionContext, () =>
-                RegistryUtilities.GetBoundDevices().Where(d => !d.BusId.HasValue).Select(d => d.Guid.GetValueOrDefault().ToString("D"))));
+                UsbipdRegistry.Instance.GetBoundDevices().Where(d => !d.BusId.HasValue).Select(d => d.Guid.GetValueOrDefault().ToString("D"))));
             //
             //  unbind [--hardware-id <VID>:<PID>]
             //

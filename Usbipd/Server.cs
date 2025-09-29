@@ -82,7 +82,7 @@ sealed partial class Server : BackgroundService
         Logger.Debug(GitVersionInformation.InformationalVersion);
 
         // Cleanup any left-overs in case the previous instance crashed.
-        _ = RegistryUtilities.SetAllDevicesAsDetached();
+        _ = UsbipdRegistry.Instance.SetAllDevicesAsDetached();
 
         // Non-interactive services have this disabled by default.
         // We require it so the ConfigurationManager can change the driver.
