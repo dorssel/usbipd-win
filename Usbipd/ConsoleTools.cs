@@ -228,8 +228,6 @@ static partial class ConsoleTools
         }
         if (!VBoxUsbMon.IsServiceInstalled())
         {
-            // We rely on the DIFX driver installer framework and on the (suboptimal) VBoxUsbMon.inf.
-            // Sometimes, DIFX cannot create the VBoxUsbMon service, but still appears to succeed.
             Report("The VBoxUsbMon driver is not correctly installed; a repair or re-install of this software should fix that.");
             return false;
         }

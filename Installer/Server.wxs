@@ -94,20 +94,52 @@ SPDX-License-Identifier: GPL-3.0-only
             </Component>
         </DirectoryRef>
 
+        <!-- See: https://github.com/dorssel/usbipd-win/wiki/Installer-design -->
+
+        <!-- See: https://learn.microsoft.com/en-us/windows/win32/msi/examples-of-conditional-statement-syntax -->
+        <!-- will be (or remains) installed -->
+        <?define InstallOrUpdateOrRepair="($usbipd.exe=3) OR WIX_UPGRADE_DETECTED" ?>
+        <!-- currently installed and remains installed -->
+        <?define UpdateOrRepair="((?usbipd.exe=3) AND ($usbipd.exe=3)) OR WIX_UPGRADE_DETECTED" ?>
+        <!-- currently installed and will be uninstalled -->
+        <?define UninstallOnly="(?usbipd.exe=3) AND ($usbipd.exe=2)" ?>
+
+        <!-- Detach all devices, such that any stub devices are inactive and not using the VBoxUSB driver (best effort). -->
+        <!-- NOTE: This will run the *old* (to be upgraded or repaired) version. -->
+        <SetProperty Id="DetachAll" Value="&quot;[#usbipd.exe]&quot; detach --all" Sequence="execute" Before="DetachAll" Condition="$(var.UpdateOrRepair)" />
+        <CustomAction Id="DetachAll" BinaryRef="Wix4UtilCA_$(sys.BUILDARCHSHORT)" DllEntry="WixQuietExec" Return="ignore" Impersonate="no" Execute="deferred" />
+
+        <!-- Disable all force-bound devices, such that (after DetachAll) the VBoxUSB driver is not used at all (best effort). -->
+        <!-- NOTE: This will run the *old* (to be upgraded or repaired) version (< 5.3.0 does not even have this). -->
+        <SetProperty Id="DisableForced" Value="&quot;[#usbipd.exe]&quot; installer disable_forced" Sequence="execute" Before="DisableForced" Condition="$(var.UpdateOrRepair)" />
+        <CustomAction Id="DisableForced" BinaryRef="Wix4UtilCA_$(sys.BUILDARCHSHORT)" DllEntry="WixQuietExec" Return="ignore" Impersonate="no" Execute="deferred" />
+
         <!-- This will restore the original Windows drivers for devices that were forced bound (best effort). -->
-        <SetProperty Id="UnbindAll" Value="&quot;[#usbipd.exe]&quot; unbind --all" Sequence="execute" Before="UnbindAll" Condition="(?usbipd.exe=3) AND ($usbipd.exe=2)" />
+        <SetProperty Id="UnbindAll" Value="&quot;[#usbipd.exe]&quot; unbind --all" Sequence="execute" Before="UnbindAll" Condition="$(var.UninstallOnly)" />
         <CustomAction Id="UnbindAll" BinaryRef="Wix4UtilCA_$(sys.BUILDARCHSHORT)" DllEntry="WixQuietExec" Return="ignore" Impersonate="no" Execute="deferred" />
 
-        <!-- This will uninstall the current VBoxUSB driver (best effort). -->
-        <SetProperty Id="UninstallDriver" Value="&quot;[#usbipd.exe]&quot; installer uninstall_driver" Sequence="execute" Before="UninstallDriver" Condition="(?usbipd.exe=3) AND ($usbipd.exe=2)" />
+        <!-- This will uninstall all stub devices, so they don't "use" the VBoxUSB driver (remember: they are already inactive at this point) (cleanup) (best effort). -->
+        <SetProperty Id="UninstallStubs1" Value="&quot;[#usbipd.exe]&quot; installer uninstall_stubs" Sequence="execute" Before="UninstallStubs1" Condition="$(var.UninstallOnly)" />
+        <CustomAction Id="UninstallStubs1" BinaryRef="Wix4UtilCA_$(sys.BUILDARCHSHORT)" DllEntry="WixQuietExec" Return="ignore" Impersonate="no" Execute="deferred" />
+
+        <!-- This will uninstall old versions of the VBoxUSB driver (cleanup) (best effort). -->
+        <SetProperty Id="UninstallOldDrivers1" Value="&quot;[#usbipd.exe]&quot; installer uninstall_old_drivers" Sequence="execute" Before="UninstallOldDrivers1" Condition="$(var.UninstallOnly)" />
+        <CustomAction Id="UninstallOldDrivers1" BinaryRef="Wix4UtilCA_$(sys.BUILDARCHSHORT)" DllEntry="WixQuietExec" Return="ignore" Impersonate="no" Execute="deferred" />
+
+        <!-- This will uninstall the current VBoxUSB driver (cleanup) (best effort). -->
+        <SetProperty Id="UninstallDriver" Value="&quot;[#usbipd.exe]&quot; installer uninstall_driver" Sequence="execute" Before="UninstallDriver" Condition="$(var.UninstallOnly)" />
         <CustomAction Id="UninstallDriver" BinaryRef="Wix4UtilCA_$(sys.BUILDARCHSHORT)" DllEntry="WixQuietExec" Return="ignore" Impersonate="no" Execute="deferred" />
 
+        <!-- This will uninstall all stub devices, so they don't "use" the VBoxUSB driver (remember: they are already inactive at this point) (cleanup) (best effort). -->
+        <SetProperty Id="UninstallStubs2" Value="&quot;[#usbipd.exe]&quot; installer uninstall_stubs" Sequence="execute" Before="UninstallStubs2" Condition="$(var.InstallOrUpdateOrRepair)" />
+        <CustomAction Id="UninstallStubs2" BinaryRef="Wix4UtilCA_$(sys.BUILDARCHSHORT)" DllEntry="WixQuietExec" Return="ignore" Impersonate="no" Execute="deferred" />
+
         <!-- This will install the VBoxUSB PnP driver (required). -->
-        <SetProperty Id="InstallDriver" Value="&quot;[#usbipd.exe]&quot; installer install_driver" Sequence="execute" Before="InstallDriver" Condition="$usbipd.exe=3" />
+        <SetProperty Id="InstallDriver" Value="&quot;[#usbipd.exe]&quot; installer install_driver" Sequence="execute" Before="InstallDriver" Condition="$(var.InstallOrUpdateOrRepair)" />
         <CustomAction Id="InstallDriver" BinaryRef="Wix4UtilCA_$(sys.BUILDARCHSHORT)" DllEntry="WixQuietExec" Return="check" Impersonate="no" Execute="deferred" />
 
         <!-- This will install VBoxUSBMon as a service (required). -->
-        <SetProperty Id="InstallMonitor" Value="&quot;[#usbipd.exe]&quot; installer install_monitor" Sequence="execute" Before="InstallMonitor" Condition="$usbipd.exe=3" />
+        <SetProperty Id="InstallMonitor" Value="&quot;[#usbipd.exe]&quot; installer install_monitor" Sequence="execute" Before="InstallMonitor" Condition="$(var.InstallOrUpdateOrRepair)" />
         <CustomAction Id="InstallMonitor" BinaryRef="Wix4UtilCA_$(sys.BUILDARCHSHORT)" DllEntry="WixQuietExec" Return="check" Impersonate="no" Execute="deferred" />
 
         <!--
@@ -115,21 +147,37 @@ SPDX-License-Identifier: GPL-3.0-only
         Now that usbipd depends on VBoxUsbMon, sometimes Windows requires a reboot before the service can start.
         The CLI tool will inform the user if the service is not running and that a reboot should fix that.
         -->
-        <SetProperty Id="TryStartService" Value="&quot;[System64Folder]\sc.exe&quot; start usbipd" Sequence="execute" Before="TryStartService" Condition="$usbipd.exe=3" />
+        <SetProperty Id="TryStartService" Value="&quot;[System64Folder]\sc.exe&quot; start usbipd" Sequence="execute" Before="TryStartService" Condition="$(var.InstallOrUpdateOrRepair)" />
         <CustomAction Id="TryStartService" BinaryRef="Wix4UtilCA_$(sys.BUILDARCHSHORT)" DllEntry="WixQuietExec" Return="ignore" Impersonate="no" Execute="deferred" />
 
+        <!-- This will update the VBoxUSB driver of all force-bound devices (required). -->
+        <SetProperty Id="UpdateDrivers" Value="&quot;[#usbipd.exe]&quot; installer update_drivers" Sequence="execute" Before="UpdateDrivers" Condition="$(var.InstallOrUpdateOrRepair)" />
+        <CustomAction Id="UpdateDrivers" BinaryRef="Wix4UtilCA_$(sys.BUILDARCHSHORT)" DllEntry="WixQuietExec" Return="check" Impersonate="no" Execute="deferred" />
+
+        <!-- This will uninstall old versions of the VBoxUSB driver (cleanup) (best effort). -->
+        <SetProperty Id="UninstallOldDrivers2" Value="&quot;[#usbipd.exe]&quot; installer uninstall_old_drivers" Sequence="execute" Before="UninstallOldDrivers2" Condition="$(var.InstallOrUpdateOrRepair)" />
+        <CustomAction Id="UninstallOldDrivers2" BinaryRef="Wix4UtilCA_$(sys.BUILDARCHSHORT)" DllEntry="WixQuietExec" Return="ignore" Impersonate="no" Execute="deferred" />
+
+        <!-- Enable all force-bound devices (best effort). -->
+        <SetProperty Id="EnableForced" Value="&quot;[#usbipd.exe]&quot; installer enable_forced" Sequence="execute" Before="EnableForced" Condition="$(var.InstallOrUpdateOrRepair)" />
+        <CustomAction Id="EnableForced" BinaryRef="Wix4UtilCA_$(sys.BUILDARCHSHORT)" DllEntry="WixQuietExec" Return="ignore" Impersonate="no" Execute="deferred" />
+
         <InstallExecuteSequence>
-            <!-- Condition: usbipd.exe is installed and will be uninstalled -->
-            <!-- NOTE: first make sure that no devices are using VBoxUSB, or else VBoxUSBMon does not stop -->
-            <Custom Action="UnbindAll" Before="StopServices" Condition="(?usbipd.exe=3) AND ($usbipd.exe=2)" />
-            <!-- Condition: usbipd.exe is installed and will be uninstalled -->
-            <Custom Action="UninstallDriver" After="StopServices" Condition="(?usbipd.exe=3) AND ($usbipd.exe=2)" />
-            <!-- Condition: usbipd.exe will be (or remains) installed -->
-            <Custom Action="InstallDriver" Before="InstallServices" Condition="$usbipd.exe=3" />
-            <!-- Condition: usbipd.exe will be (or remains) installed -->
-            <Custom Action="InstallMonitor" Before="InstallServices" Condition="$usbipd.exe=3" />
-            <!-- Condition: usbipd.exe will be (or remains) installed -->
-            <Custom Action="TryStartService" After="StartServices" Condition="$usbipd.exe=3" />
+            <Custom Action="DetachAll" Before="StopServices" Condition="$(var.UpdateOrRepair)" />
+            <Custom Action="DisableForced" Before="StopServices" Condition="$(var.UpdateOrRepair)" />
+            <Custom Action="UnbindAll" Before="StopServices" Condition="$(var.UninstallOnly)" />
+            <Custom Action="UninstallStubs1" Before="StopServices" Condition="$(var.UninstallOnly)" />
+            <Custom Action="UninstallOldDrivers1" Before="StopServices" Condition="$(var.UninstallOnly)" />
+            <Custom Action="UninstallDriver" Before="StopServices" Condition="$(var.UninstallOnly)" />
+
+            <Custom Action="UninstallStubs2" Before="InstallServices" Condition="$(var.InstallOrUpdateOrRepair)" />
+            <Custom Action="InstallDriver" Before="InstallServices" Condition="$(var.InstallOrUpdateOrRepair)" />
+            <Custom Action="InstallMonitor" Before="InstallServices" Condition="$(var.InstallOrUpdateOrRepair)" />
+
+            <Custom Action="TryStartService" After="StartServices" Condition="$(var.InstallOrUpdateOrRepair)" />
+            <Custom Action="UpdateDrivers" After="StartServices" Condition="$(var.InstallOrUpdateOrRepair)" />
+            <Custom Action="UninstallOldDrivers2" After="StartServices" Condition="$(var.InstallOrUpdateOrRepair)" />
+            <Custom Action="EnableForced" After="StartServices" Condition="$(var.InstallOrUpdateOrRepair)" />
         </InstallExecuteSequence>
     </Fragment>
     <Fragment>

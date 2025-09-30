@@ -4,7 +4,10 @@ SPDX-FileCopyrightText: 2020 Frans van Dorsselaer
 
 SPDX-License-Identifier: GPL-3.0-only
 -->
-<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+<Wix
+    xmlns="http://wixtoolset.org/schemas/v4/wxs"
+    xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util"
+    >
     <Package
         ProductCode="$(var.ProductCode)"
         Name="usbipd-win"
@@ -34,9 +37,24 @@ SPDX-License-Identifier: GPL-3.0-only
         This being a small product, a MajorUpgrade is a small price to pay to prevent any mishaps.
         Since we strictly follow component rules, we use afterInstallExecute to speed things up a bit.
         -->
-        <InstallExecuteSequence>
-            <RemoveExistingProducts After="InstallExecute" />
-        </InstallExecuteSequence>
+        <MajorUpgrade
+            IgnoreLanguage="yes"
+            DowngradeErrorMessage="A newer version of [ProductName] is already installed."
+            Schedule="afterInstallExecute"
+            />
+
+        <!-- ARM64 would happily (try to) install x64, only to fail at driver installation. Therefore, we do an explicit architecture check.-->
+        <!-- Always allow lauch if the product is already installed (bypass detection).-->
+        <util:QueryNativeMachine />
+        <?if $(sys.BUILDARCH)=x64 ?>
+            <!-- IMAGE_FILE_MACHINE_AMD64 == 0x8664 == 34404 -->
+            <Launch Condition="Installed OR (WIX_NATIVE_MACHINE = 34404)" Message="This installer only supports native x64 (AMD64) processors."/>
+        <?elseif $(sys.BUILDARCH)=arm64 ?>
+            <!-- IMAGE_FILE_MACHINE_ARM64 == 0xAA64 == 43620 -->
+            <Launch Condition="Installed OR (WIX_NATIVE_MACHINE = 43620)" Message="This installer only supports native ARM64 processors."/>
+        <?else?>
+            <?error Unsupported architecture. ?>
+        <?endif?>
 
         <Property Id="ARPURLINFOABOUT" Value="https://github.com/dorssel/usbipd-win" />
         <Property Id="ARPURLUPDATEINFO" Value="https://github.com/dorssel/usbipd-win/releases" />

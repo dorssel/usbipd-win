@@ -85,10 +85,13 @@ jobs:
         with:
           fail_ci_if_error: true
           files: TestResults/JUnit/*.xml
+          disable_search: true
           token: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
         with:
           fail_ci_if_error: true
+          files: '**/TestResults/coverage.cobertura.xml'
+          disable_search: true
           token: ${{ secrets.CODECOV_TOKEN }}
