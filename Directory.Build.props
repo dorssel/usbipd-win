@@ -51,6 +51,7 @@ SPDX-License-Identifier: GPL-3.0-only
 
     <!-- Bump MSTest.Sdk "transitive" dependencies (they are actually direct dependencies) -->
     <MicrosoftNETTestSdkVersion>17.14.1</MicrosoftNETTestSdkVersion>
+    <MicrosoftTestingExtensionsCodeCoverageVersion>18.0.4</MicrosoftTestingExtensionsCodeCoverageVersion>
 
     <!-- Deterministic builds -->
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
