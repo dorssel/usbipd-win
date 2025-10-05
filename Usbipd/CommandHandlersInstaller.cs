@@ -14,6 +14,15 @@ namespace Usbipd;
 
 sealed partial class CommandHandlers : ICommandHandlers
 {
+    async Task<ExitCode> ICommandHandlers.InstallerDelay(IConsole console, CancellationToken cancellationToken)
+    {
+        ConsoleTools.ReportInfo(console, $"delay");
+
+        await Task.Delay(TimeSpan.FromSeconds(2), cancellationToken);
+
+        return ExitCode.Success;
+    }
+
     Task<ExitCode> ICommandHandlers.InstallerInstallDriver(IConsole console, CancellationToken cancellationToken)
     {
         ConsoleTools.ReportInfo(console, "install_driver");

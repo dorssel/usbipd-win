@@ -35,6 +35,7 @@ interface ICommandHandlers
     Task<ExitCode> Server(string[] args, IConsole console, CancellationToken cancellationToken);
 
     // Installer
+    Task<ExitCode> InstallerDelay(IConsole console, CancellationToken cancellationToken);
     Task<ExitCode> InstallerInstallDriver(IConsole console, CancellationToken cancellationToken);
     Task<ExitCode> InstallerUpdateDrivers(IConsole console, CancellationToken cancellationToken);
     Task<ExitCode> InstallerInstallMonitor(IConsole console, CancellationToken cancellationToken);

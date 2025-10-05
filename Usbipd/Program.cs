@@ -748,6 +748,7 @@ static class Program
                 installCommand.Subcommands.Add(subcommand);
             }
 
+            AddInstallerSubcommand("delay", commandHandlers.InstallerDelay);
             AddInstallerSubcommand("install_driver", commandHandlers.InstallerInstallDriver);
             AddInstallerSubcommand("uninstall_driver", commandHandlers.InstallerUninstallDriver);
             AddInstallerSubcommand("update_drivers", commandHandlers.InstallerUpdateDrivers);
