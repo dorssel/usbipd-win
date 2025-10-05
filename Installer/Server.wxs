@@ -111,6 +111,11 @@ SPDX-License-Identifier: GPL-3.0-only
         <SetProperty Id="DetachAll" Value="&quot;[#usbipd.exe]&quot; detach --all" Sequence="execute" Before="DetachAll" Condition="$(var.UpdateOrRepair)" />
         <CustomAction Id="DetachAll" BinaryRef="Wix4UtilCA_$(sys.BUILDARCHSHORT)" DllEntry="WixQuietExec" Return="ignore" Impersonate="no" Execute="deferred" />
 
+        <!-- Delay so detach can finish its side effects. -->
+        <!-- NOTE: This will run the *old* (to be upgraded or repaired) version. -->
+        <SetProperty Id="DelayAfterDetach" Value="&quot;[#usbipd.exe]&quot; installer delay" Sequence="execute" Before="DelayAfterDetach" Condition="$(var.UpdateOrRepair)" />
+        <CustomAction Id="DelayAfterDetach" BinaryRef="Wix4UtilCA_$(sys.BUILDARCHSHORT)" DllEntry="WixQuietExec" Return="ignore" Impersonate="no" Execute="deferred" />
+
         <!-- Disable all force-bound devices, such that (after DetachAll) the VBoxUSB driver is not used at all (best effort). -->
         <!-- NOTE: This will run the *old* (to be upgraded or repaired) version (< 5.3.0 does not even have this). -->
         <SetProperty Id="DisableForced" Value="&quot;[#usbipd.exe]&quot; installer disable_forced" Sequence="execute" Before="DisableForced" Condition="$(var.UpdateOrRepair)" />
@@ -119,6 +124,10 @@ SPDX-License-Identifier: GPL-3.0-only
         <!-- This will restore the original Windows drivers for devices that were forced bound (best effort). -->
         <SetProperty Id="UnbindAll" Value="&quot;[#usbipd.exe]&quot; unbind --all" Sequence="execute" Before="UnbindAll" Condition="$(var.UninstallOnly)" />
         <CustomAction Id="UnbindAll" BinaryRef="Wix4UtilCA_$(sys.BUILDARCHSHORT)" DllEntry="WixQuietExec" Return="ignore" Impersonate="no" Execute="deferred" />
+
+        <!-- Delay so unbind can finish its side effects. -->
+        <SetProperty Id="DelayAfterUnbind" Value="&quot;[#usbipd.exe]&quot; installer delay" Sequence="execute" Before="DelayAfterUnbind" Condition="$(var.UninstallOnly)" />
+        <CustomAction Id="DelayAfterUnbind" BinaryRef="Wix4UtilCA_$(sys.BUILDARCHSHORT)" DllEntry="WixQuietExec" Return="ignore" Impersonate="no" Execute="deferred" />
 
         <!-- This will uninstall all stub devices, so they don't "use" the VBoxUSB driver (remember: they are already inactive at this point) (cleanup) (best effort). -->
         <SetProperty Id="UninstallStubs1" Value="&quot;[#usbipd.exe]&quot; installer uninstall_stubs" Sequence="execute" Before="UninstallStubs1" Condition="$(var.UninstallOnly)" />
@@ -166,8 +175,10 @@ SPDX-License-Identifier: GPL-3.0-only
 
         <InstallExecuteSequence>
             <Custom Action="DetachAll" Before="StopServices" Condition="$(var.UpdateOrRepair)" />
+            <Custom Action="DelayAfterDetach" Before="StopServices" Condition="$(var.UpdateOrRepair)" />
             <Custom Action="DisableForced" Before="StopServices" Condition="$(var.UpdateOrRepair)" />
             <Custom Action="UnbindAll" Before="StopServices" Condition="$(var.UninstallOnly)" />
+            <Custom Action="DelayAfterUnbind" Before="StopServices" Condition="$(var.UninstallOnly)" />
             <Custom Action="UninstallStubs1" Before="StopServices" Condition="$(var.UninstallOnly)" />
             <Custom Action="UninstallOldDrivers1" Before="StopServices" Condition="$(var.UninstallOnly)" />
             <Custom Action="UninstallDriver" Before="StopServices" Condition="$(var.UninstallOnly)" />
