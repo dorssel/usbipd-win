@@ -96,13 +96,15 @@ SPDX-License-Identifier: GPL-3.0-only
 
         <!-- See: https://github.com/dorssel/usbipd-win/wiki/Installer-design -->
 
+        <!-- NOTE: When upgrading, only the new installer will run the custom actions. -->
+
         <!-- See: https://learn.microsoft.com/en-us/windows/win32/msi/examples-of-conditional-statement-syntax -->
         <!-- will be (or remains) installed -->
-        <?define InstallOrUpdateOrRepair="($usbipd.exe=3) OR WIX_UPGRADE_DETECTED" ?>
+        <?define InstallOrUpdateOrRepair="(NOT UPGRADINGPRODUCTCODE) AND (($usbipd.exe=3) OR WIX_UPGRADE_DETECTED)" ?>
         <!-- currently installed and remains installed -->
-        <?define UpdateOrRepair="((?usbipd.exe=3) AND ($usbipd.exe=3)) OR WIX_UPGRADE_DETECTED" ?>
+        <?define UpdateOrRepair="(NOT UPGRADINGPRODUCTCODE) AND (((?usbipd.exe=3) AND ($usbipd.exe=3)) OR WIX_UPGRADE_DETECTED)" ?>
         <!-- currently installed and will be uninstalled -->
-        <?define UninstallOnly="(?usbipd.exe=3) AND ($usbipd.exe=2)" ?>
+        <?define UninstallOnly="(NOT UPGRADINGPRODUCTCODE) AND ((?usbipd.exe=3) AND ($usbipd.exe=2))" ?>
 
         <!-- Detach all devices, such that any stub devices are inactive and not using the VBoxUSB driver (best effort). -->
         <!-- NOTE: This will run the *old* (to be upgraded or repaired) version. -->
