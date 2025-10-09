@@ -26,7 +26,7 @@ sealed class Policy_Tests
         BaseTempRegistryKey = new TempRegistry(Registry.CurrentUser);
     }
 
-    [ClassCleanup(ClassCleanupBehavior.EndOfClass)]
+    [ClassCleanup]
     public static void ClassCleanup()
     {
         BaseTempRegistryKey.Dispose();

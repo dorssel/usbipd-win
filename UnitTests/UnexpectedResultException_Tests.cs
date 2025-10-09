@@ -23,7 +23,7 @@ sealed class UnexpectedResultException_Tests
     {
         var unexpectedResultException = new UnexpectedResultException(TestMessage);
         var exception = (Exception)unexpectedResultException;
-        Assert.IsTrue(exception.Message.Contains(TestMessage));
+        Assert.Contains(TestMessage, exception.Message);
         Assert.IsNull(exception.InnerException);
     }
 
@@ -32,7 +32,7 @@ sealed class UnexpectedResultException_Tests
     {
         var unexpectedResultException = new UnexpectedResultException(TestMessage, TestInnerException);
         var exception = (Exception)unexpectedResultException;
-        Assert.IsTrue(exception.Message.Contains(TestMessage));
+        Assert.Contains(TestMessage, exception.Message);
         Assert.AreSame(TestInnerException, exception.InnerException);
     }
 }

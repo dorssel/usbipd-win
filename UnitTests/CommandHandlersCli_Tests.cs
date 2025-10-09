@@ -22,7 +22,7 @@ sealed class CommandHandlersCli_Tests
         TestBaseKey = Registry.CurrentUser.CreateSubKey(TestBaseKeyName);
     }
 
-    [ClassCleanup(ClassCleanupBehavior.EndOfClass)]
+    [ClassCleanup]
     public static void ClassCleanup()
     {
         Registry.CurrentUser.DeleteSubKeyTree(TestBaseKeyName, false);
@@ -68,7 +68,7 @@ sealed class CommandHandlersCli_Tests
         var cli = (ICommandHandlers)new CommandHandlers();
         var console = new TestConsole();
 
-        await cli.License(console, TestContext.CancellationTokenSource.Token);
+        await cli.License(console, TestContext.CancellationToken);
     }
 
     [TestMethod]
@@ -77,7 +77,7 @@ sealed class CommandHandlersCli_Tests
         var cli = (ICommandHandlers)new CommandHandlers();
         var console = new TestConsole();
 
-        await cli.List(false, console, TestContext.CancellationTokenSource.Token);
+        await cli.List(false, console, TestContext.CancellationToken);
     }
 
     [TestMethod]
@@ -86,7 +86,7 @@ sealed class CommandHandlersCli_Tests
         var cli = (ICommandHandlers)new CommandHandlers();
         var console = new TestConsole();
 
-        await cli.List(true, console, TestContext.CancellationTokenSource.Token);
+        await cli.List(true, console, TestContext.CancellationToken);
     }
 
     [TestMethod]
@@ -95,7 +95,7 @@ sealed class CommandHandlersCli_Tests
         var cli = (ICommandHandlers)new CommandHandlers();
         var console = new TestConsole();
 
-        await cli.State(console, TestContext.CancellationTokenSource.Token);
+        await cli.State(console, TestContext.CancellationToken);
     }
 
     [TestMethod]
@@ -104,6 +104,6 @@ sealed class CommandHandlersCli_Tests
         var cli = (ICommandHandlers)new CommandHandlers();
         var console = new TestConsole();
 
-        await cli.PolicyList(console, TestContext.CancellationTokenSource.Token);
+        await cli.PolicyList(console, TestContext.CancellationToken);
     }
 }

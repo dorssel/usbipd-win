@@ -222,25 +222,32 @@ sealed class Automation_Tests
     public void JsonConverterBusId_Read_Invalid()
     {
         var converter = new JsonConverterBusId();
-        Assert.ThrowsExactly<FormatException>(() =>
+        void test()
         {
+            // setup
             var reader = new Utf8JsonReader("\"xxx\""u8);
             reader.Read();
 
+            // test
             converter.Read(ref reader, typeof(string), JsonSerializerOptions.Default);
-        });
+        }
+        Assert.ThrowsExactly<FormatException>(test);
     }
 
     [TestMethod]
     public void JsonConverterBusId_Read_Null()
     {
         var converter = new JsonConverterBusId();
-        Assert.ThrowsExactly<InvalidDataException>(() =>
+        void test()
         {
+            // setup
             var reader = new Utf8JsonReader("null"u8);
             reader.Read();
-            var busId = converter.Read(ref reader, typeof(string), JsonSerializerOptions.Default);
-        });
+
+            // test
+            converter.Read(ref reader, typeof(string), JsonSerializerOptions.Default);
+        }
+        Assert.ThrowsExactly<InvalidDataException>(test);
     }
 
     [TestMethod]
@@ -281,25 +288,32 @@ sealed class Automation_Tests
     public void JsonConverterIPAddress_Read_Invalid()
     {
         var converter = new JsonConverterIPAddress();
-        Assert.ThrowsExactly<FormatException>(() =>
+        void test()
         {
+            // setup
             var reader = new Utf8JsonReader("\"xxx\""u8);
             reader.Read();
 
+            // test
             converter.Read(ref reader, typeof(string), JsonSerializerOptions.Default);
-        });
+        }
+        Assert.ThrowsExactly<FormatException>(test);
     }
 
     [TestMethod]
     public void JsonConverterIPAddress_Read_Null()
     {
         var converter = new JsonConverterIPAddress();
-        Assert.ThrowsExactly<InvalidDataException>(() =>
+        void test()
         {
+            // setup
             var reader = new Utf8JsonReader("null"u8);
             reader.Read();
-            var address = converter.Read(ref reader, typeof(string), JsonSerializerOptions.Default);
-        });
+
+            // test
+            converter.Read(ref reader, typeof(string), JsonSerializerOptions.Default);
+        }
+        Assert.ThrowsExactly<InvalidDataException>(test);
     }
 
     [TestMethod]

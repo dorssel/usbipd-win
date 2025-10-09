@@ -105,7 +105,7 @@ sealed class DeviceFile_Tests
         var exception = Assert.ThrowsExactly<AggregateException>(() =>
         {
             deviceFile.IoControlAsync(TEST_IOCTL.FSCTL_QUERY_ALLOCATED_RANGES, null, null)
-                .Wait(TestContext.CancellationTokenSource.Token);
+                .Wait(TestContext.CancellationToken);
         });
         Assert.IsInstanceOfType<Win32Exception>(exception.InnerException);
     }
@@ -120,7 +120,7 @@ sealed class DeviceFile_Tests
         var exception = Assert.ThrowsExactly<AggregateException>(() =>
         {
             deviceFile.IoControlAsync(TEST_IOCTL.FSCTL_QUERY_ALLOCATED_RANGES, Tools.StructToBytes(rangeBuffer), outputBuffer)
-                .Wait(TestContext.CancellationTokenSource.Token);
+                .Wait(TestContext.CancellationToken);
         });
         Assert.IsInstanceOfType<ProtocolViolationException>(exception.InnerException);
     }
