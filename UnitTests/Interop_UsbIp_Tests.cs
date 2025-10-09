@@ -11,6 +11,8 @@ namespace UnitTests;
 [TestClass]
 sealed class Interop_UsbIp_Tests
 {
+    public TestContext TestContext { get; set; }
+
     static readonly byte[] TestUsbIpHeaderBytes = [
 #pragma warning disable format
         0x01, 0x02, 0x03, 0x04, // basic.command
@@ -85,25 +87,23 @@ sealed class Interop_UsbIp_Tests
     }
 
     [TestMethod]
-    public void ReadUsbIpHeaderAsync_Empty()
+    public async Task ReadUsbIpHeaderAsync_Empty()
     {
         using var memoryStream = new MemoryStream();
-        var exception = Assert.ThrowsExactly<AggregateException>(() =>
+        await Assert.ThrowsExactlyAsync<EndOfStreamException>(async () =>
         {
-            memoryStream.ReadUsbIpHeaderAsync(CancellationToken.None).Wait();
+            await memoryStream.ReadUsbIpHeaderAsync(TestContext.CancellationToken);
         });
-        Assert.IsInstanceOfType<EndOfStreamException>(exception.InnerException);
     }
 
     [TestMethod]
-    public void ReadUsbIpHeaderAsync_Short()
+    public async Task ReadUsbIpHeaderAsync_Short()
     {
         using var memoryStream = new MemoryStream(TestUsbIpHeaderBytes[0..^1]);
-        var exception = Assert.ThrowsExactly<AggregateException>(() =>
+        await Assert.ThrowsExactlyAsync<ProtocolViolationException>(async () =>
         {
-            memoryStream.ReadUsbIpHeaderAsync(CancellationToken.None).Wait();
+            await memoryStream.ReadUsbIpHeaderAsync(TestContext.CancellationToken);
         });
-        Assert.IsInstanceOfType<ProtocolViolationException>(exception.InnerException);
     }
 
     [TestMethod]
@@ -135,7 +135,7 @@ sealed class Interop_UsbIp_Tests
     {
         using var memoryStream = new MemoryStream(TestUsbIpIsoPacketDescriptorBytes);
         var usbIpIsoPacketDescriptors = await memoryStream.ReadUsbIpIsoPacketDescriptorsAsync(1, CancellationToken.None);
-        Assert.AreEqual(1, usbIpIsoPacketDescriptors.Length);
+        Assert.HasCount(1, usbIpIsoPacketDescriptors);
         Assert.AreEqual(TestUsbIpIsoPacketDescriptor.offset, usbIpIsoPacketDescriptors[0].offset);
         Assert.AreEqual(TestUsbIpIsoPacketDescriptor.length, usbIpIsoPacketDescriptors[0].length);
 #pragma warning disable MSTEST0017 // Assertion arguments should be passed in the correct order
@@ -145,25 +145,23 @@ sealed class Interop_UsbIp_Tests
     }
 
     [TestMethod]
-    public void ReadUsbIpIsoPacketDescriptorsAsync_Empty()
+    public async Task ReadUsbIpIsoPacketDescriptorsAsync_Empty()
     {
         using var memoryStream = new MemoryStream();
-        var exception = Assert.ThrowsExactly<AggregateException>(() =>
+        await Assert.ThrowsExactlyAsync<EndOfStreamException>(async () =>
         {
-            memoryStream.ReadUsbIpIsoPacketDescriptorsAsync(1, CancellationToken.None).Wait();
+            await memoryStream.ReadUsbIpIsoPacketDescriptorsAsync(1, TestContext.CancellationToken);
         });
-        Assert.IsInstanceOfType<EndOfStreamException>(exception.InnerException);
     }
 
     [TestMethod]
-    public void ReadUsbIpIsoPacketDescriptorsAsync_Short()
+    public async Task ReadUsbIpIsoPacketDescriptorsAsync_Short()
     {
         using var memoryStream = new MemoryStream(TestUsbIpIsoPacketDescriptorBytes[0..^1]);
-        var exception = Assert.ThrowsExactly<AggregateException>(() =>
+        await Assert.ThrowsExactlyAsync<ProtocolViolationException>(async () =>
         {
-            memoryStream.ReadUsbIpIsoPacketDescriptorsAsync(1, CancellationToken.None).Wait();
+            await memoryStream.ReadUsbIpIsoPacketDescriptorsAsync(1, TestContext.CancellationToken);
         });
-        Assert.IsInstanceOfType<ProtocolViolationException>(exception.InnerException);
     }
 
     [TestMethod]
@@ -172,7 +170,7 @@ sealed class Interop_UsbIp_Tests
         using var memoryStream = new MemoryStream(
             new byte[TestUsbIpIsoPacketDescriptorBytes.Length].Concat(TestUsbIpIsoPacketDescriptorBytes).ToArray());
         var usbIpIsoPacketDescriptors = await memoryStream.ReadUsbIpIsoPacketDescriptorsAsync(2, CancellationToken.None);
-        Assert.AreEqual(2, usbIpIsoPacketDescriptors.Length);
+        Assert.HasCount(2, usbIpIsoPacketDescriptors);
         Assert.AreEqual(0u, usbIpIsoPacketDescriptors[0].offset);
         Assert.AreEqual(0u, usbIpIsoPacketDescriptors[0].length);
         Assert.AreEqual(0u, usbIpIsoPacketDescriptors[0].actual_length);
@@ -186,15 +184,14 @@ sealed class Interop_UsbIp_Tests
     }
 
     [TestMethod]
-    public void ReadUsbIpIsoPacketDescriptorsAsync_Short_Multiple()
+    public async Task ReadUsbIpIsoPacketDescriptorsAsync_Short_Multiple()
     {
         using var memoryStream = new MemoryStream(
             new byte[TestUsbIpIsoPacketDescriptorBytes.Length].Concat(TestUsbIpIsoPacketDescriptorBytes[0..^1]).ToArray());
-        var exception = Assert.ThrowsExactly<AggregateException>(() =>
+        await Assert.ThrowsExactlyAsync<ProtocolViolationException>(async () =>
         {
-            memoryStream.ReadUsbIpIsoPacketDescriptorsAsync(2, CancellationToken.None).Wait();
+            await memoryStream.ReadUsbIpIsoPacketDescriptorsAsync(2, TestContext.CancellationToken);
         });
-        Assert.IsInstanceOfType<ProtocolViolationException>(exception.InnerException);
     }
 
     [TestMethod]
@@ -210,5 +207,4 @@ sealed class Interop_UsbIp_Tests
         Assert.IsTrue(bytes.SequenceEqual(new byte[TestUsbIpIsoPacketDescriptorBytes.Length]
             .Concat(TestUsbIpIsoPacketDescriptorBytes).Concat(new byte[TestUsbIpIsoPacketDescriptorBytes.Length]).ToArray()));
     }
-
 }

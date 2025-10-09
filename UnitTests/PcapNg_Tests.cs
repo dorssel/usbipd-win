@@ -82,7 +82,7 @@ sealed partial class PcapNg_Tests
             using var _ = new PcapNg(mockConfiguration.Object, MockLogger);
         }
         Assert.AreNotEqual(0, new FileInfo(temporaryFile.AbsolutePath).Length);
-        Assert.IsTrue(new FileInfo(temporaryFile.AbsolutePath).Length < 1000);
+        Assert.IsLessThan(1000, new FileInfo(temporaryFile.AbsolutePath).Length);
     }
 
     [TestMethod]

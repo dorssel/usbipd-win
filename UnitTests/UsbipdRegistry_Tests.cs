@@ -22,7 +22,7 @@ sealed class UsbipdRegistry_Tests
         TestBaseKey = Registry.CurrentUser.CreateSubKey(TestBaseKeyName);
     }
 
-    [ClassCleanup(ClassCleanupBehavior.EndOfClass)]
+    [ClassCleanup]
     public static void ClassCleanup()
     {
         Registry.CurrentUser.DeleteSubKeyTree(TestBaseKeyName, false);

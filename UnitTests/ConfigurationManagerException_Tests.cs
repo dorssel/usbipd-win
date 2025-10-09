@@ -27,7 +27,7 @@ sealed class ConfigurationManagerException_Tests
     {
         var configurationManagerException = new ConfigurationManagerException(TestMessage);
         var win32Exception = (Win32Exception)configurationManagerException;
-        Assert.IsTrue(win32Exception.Message.Contains(TestMessage));
+        Assert.Contains(TestMessage, win32Exception.Message);
         Assert.IsNull(win32Exception.InnerException);
     }
 
@@ -36,7 +36,7 @@ sealed class ConfigurationManagerException_Tests
     {
         var configurationManagerException = new ConfigurationManagerException(TestMessage, TestInnerException);
         var win32Exception = (Win32Exception)configurationManagerException;
-        Assert.IsTrue(win32Exception.Message.Contains(TestMessage));
+        Assert.Contains(TestMessage, win32Exception.Message);
         Assert.AreSame(TestInnerException, win32Exception.InnerException);
     }
 
@@ -71,7 +71,7 @@ sealed class ConfigurationManagerException_Tests
         var configurationManagerException = new ConfigurationManagerException(configRet, TestMessage);
         Assert.AreEqual(configRet, configurationManagerException.ConfigRet);
         var win32Exception = (Win32Exception)configurationManagerException;
-        Assert.IsTrue(win32Exception.Message.Contains(TestMessage));
+        Assert.Contains(TestMessage, win32Exception.Message);
         Assert.AreEqual(win32Error, (WIN32_ERROR)win32Exception.NativeErrorCode);
     }
 }

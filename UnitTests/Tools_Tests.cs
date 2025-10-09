@@ -31,7 +31,7 @@ sealed class Tools_Tests
     {
         using var memoryStream = new MemoryStream(TestStreamBytes);
         var buf = new byte[TestStreamBytes.Length - 1];
-        await memoryStream.ReadMessageAsync(buf, TestContext.CancellationTokenSource.Token);
+        await memoryStream.ReadMessageAsync(buf, TestContext.CancellationToken);
         Assert.AreEqual(TestStreamBytes.Length - 1, memoryStream.Position);
         Assert.IsTrue(buf.SequenceEqual(TestStreamBytes[0..^1]));
     }
@@ -40,7 +40,7 @@ sealed class Tools_Tests
     public async Task ReadMessageAsync_Nothing()
     {
         using var memoryStream = new MemoryStream(TestStreamBytes);
-        await memoryStream.ReadMessageAsync(Array.Empty<byte>(), TestContext.CancellationTokenSource.Token);
+        await memoryStream.ReadMessageAsync(Array.Empty<byte>(), TestContext.CancellationToken);
     }
 
     [TestMethod]
@@ -50,7 +50,7 @@ sealed class Tools_Tests
         var buf = new byte[TestStreamBytes.Length];
         var exception = await Assert.ThrowsExactlyAsync<EndOfStreamException>(async () =>
         {
-            await memoryStream.ReadMessageAsync(buf, TestContext.CancellationTokenSource.Token);
+            await memoryStream.ReadMessageAsync(buf, TestContext.CancellationToken);
         });
     }
 
@@ -61,7 +61,7 @@ sealed class Tools_Tests
         var buf = new byte[TestStreamBytes.Length + 1];
         var exception = await Assert.ThrowsExactlyAsync<ProtocolViolationException>(async () =>
         {
-            await memoryStream.ReadMessageAsync(buf, TestContext.CancellationTokenSource.Token);
+            await memoryStream.ReadMessageAsync(buf, TestContext.CancellationToken);
         });
     }
 
@@ -75,10 +75,10 @@ sealed class Tools_Tests
         var buf = new byte[TestStreamBytes.Length - 1];
         writeStream.Write(TestStreamBytes.AsSpan(0, 1));
         var task = readStream.ReadMessageAsync(buf, CancellationToken.None);
-        await Task.Delay(100, TestContext.CancellationTokenSource.Token);
+        await Task.Delay(100, TestContext.CancellationToken);
         Assert.AreEqual(TaskStatus.WaitingForActivation, task.Status);
         writeStream.Write(TestStreamBytes.AsSpan(1));
-        await task.WaitAsync(TestContext.CancellationTokenSource.Token);
+        await task.WaitAsync(TestContext.CancellationToken);
         Assert.IsTrue(buf.SequenceEqual(TestStreamBytes[0..^1]));
     }
 
