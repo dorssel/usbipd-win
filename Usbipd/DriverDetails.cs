@@ -68,7 +68,7 @@ sealed class DriverDetails
                 requiredSize = (uint)Unsafe.SizeOf<SP_DRVINFO_DETAIL_DATA_W>();
             }
             var buffer = new byte[requiredSize];
-            ref var details = ref MemoryMarshal.AsRef<SP_DRVINFO_DETAIL_DATA_W>(buffer);
+            ref var details = ref MemoryMarshal.AsRef<SP_DRVINFO_DETAIL_DATA_W>(buffer.AsSpan());
             details.cbSize = (uint)Unsafe.SizeOf<SP_DRVINFO_DETAIL_DATA_W>();
             PInvoke.SetupDiGetDriverInfoDetail(deviceInfoSet, null, driverInfoData, buffer)
                 .ThrowOnWin32Error(nameof(PInvoke.SetupDiGetDriverInfoDetail));

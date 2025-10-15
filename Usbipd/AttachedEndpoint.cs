@@ -83,7 +83,7 @@ sealed class AttachedEndpoint
 
         // Everything has been read and validated, now process...
 
-        Pcap.DumpPacketIsoRequest(basic, submit, packetDescriptors, basic.direction == UsbIpDir.USBIP_DIR_OUT ? buf : ReadOnlySpan<byte>.Empty);
+        Pcap.DumpPacketIsoRequest(basic, submit, packetDescriptors, basic.direction == UsbIpDir.USBIP_DIR_OUT ? buf : []);
 
         // VBoxUSB only excepts up to 8 iso packets per ioctl, so we may have to split
         // the request into multiple ioctls.

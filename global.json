@@ -1,11 +1,14 @@
 {
   "sdk": {
-    "version": "9.0.306",
+    "version": "10.0.100",
     "allowPrerelease": false,
     "rollForward": "latestPatch"
   },
   "msbuild-sdks": {
-    "MSTest.Sdk": "4.0.1",
+    "MSTest.Sdk": "4.0.2",
     "WixToolset.Sdk": "6.0.2"
+  },
+  "test": {
+    "runner": "Microsoft.Testing.Platform"
   }
 }
