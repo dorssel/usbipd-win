@@ -13,14 +13,13 @@ SPDX-License-Identifier: GPL-3.0-only
     <File Path=".editorconfig" />
     <File Path=".gitattributes" />
     <File Path=".gitignore" />
-    <File Path="codecov.yml" />
-    <File Path="COPYING.md" />
     <File Path="Directory.Build.props" />
     <File Path="Directory.Build.targets" />
     <File Path="Directory.Packages.props" />
     <File Path="GitVersion.yml" />
     <File Path="global.json" />
     <File Path="nuget.config" />
+    <File Path="Platform.Build.props" />
     <File Path="README.md" />
   </Folder>
   <Project Path="Installer/Installer.wixproj" Type="b7dd6f7e-def8-4e67-b5b7-07ef123db6f0">
