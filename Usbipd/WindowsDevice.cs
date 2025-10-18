@@ -10,6 +10,7 @@ using Usbipd.Automation;
 using Windows.Win32;
 using Windows.Win32.Devices.DeviceAndDriverInstallation;
 using Windows.Win32.Devices.Properties;
+using Windows.Win32.Foundation;
 
 namespace Usbipd;
 
@@ -299,35 +300,29 @@ sealed partial class WindowsDevice : IEquatable<WindowsDevice>
 
     static bool TryGetProperty(uint deviceNode, in DEVPROPKEY devPropKey, out byte[] value, out DEVPROPTYPE propertyType)
     {
-        unsafe // DevSkim: ignore DS172412
+        var bufferSize = 0u;
+        if (PInvoke.CM_Get_DevNode_Property(deviceNode, devPropKey, out _, null, ref bufferSize, 0) != CONFIGRET.CR_BUFFER_SMALL)
         {
-            var bufferSize = 0u;
-            if (PInvoke.CM_Get_DevNode_Property(deviceNode, devPropKey, out propertyType, null, ref bufferSize, 0) != CONFIGRET.CR_BUFFER_SMALL)
-            {
-                value = default!;
-                propertyType = DEVPROPTYPE.DEVPROP_TYPE_EMPTY;
-                return false;
-            }
-            var buffer = new byte[checked((int)bufferSize)];
-            var bufferSizeConfirm = bufferSize;
-            fixed (byte* pBuffer = buffer)
-            {
-                if (PInvoke.CM_Get_DevNode_Property(deviceNode, devPropKey, out propertyType, pBuffer, ref bufferSizeConfirm, 0) != CONFIGRET.CR_SUCCESS)
-                {
-                    value = default!;
-                    propertyType = DEVPROPTYPE.DEVPROP_TYPE_EMPTY;
-                    return false;
-                }
-            }
-            if (bufferSizeConfirm != bufferSize)
-            {
-                value = default!;
-                propertyType = DEVPROPTYPE.DEVPROP_TYPE_EMPTY;
-                return false;
-            }
-            value = buffer;
-            return true;
+            value = default!;
+            propertyType = DEVPROPTYPE.DEVPROP_TYPE_EMPTY;
+            return false;
         }
+        var buffer = new byte[checked((int)bufferSize)];
+        var bufferSizeConfirm = bufferSize;
+        if (PInvoke.CM_Get_DevNode_Property(deviceNode, devPropKey, out propertyType, buffer, ref bufferSizeConfirm, 0) != CONFIGRET.CR_SUCCESS)
+        {
+            value = default!;
+            propertyType = DEVPROPTYPE.DEVPROP_TYPE_EMPTY;
+            return false;
+        }
+        if (bufferSizeConfirm != bufferSize)
+        {
+            value = default!;
+            propertyType = DEVPROPTYPE.DEVPROP_TYPE_EMPTY;
+            return false;
+        }
+        value = buffer;
+        return true;
     }
 
     static bool TryGetProperty(uint deviceNode, in DEVPROPKEY devPropKey, out string value)
@@ -338,22 +333,23 @@ sealed partial class WindowsDevice : IEquatable<WindowsDevice>
             return false;
         }
 
-        // Must be a NUL-terminated UTF-16 string.
-        if ((propertyType != DEVPROPTYPE.DEVPROP_TYPE_STRING)
-            || (buffer.Length % sizeof(char) != 0) || (buffer.Length / sizeof(char) < 1))
+        // Must be a UTF-16 string.
+        if ((propertyType != DEVPROPTYPE.DEVPROP_TYPE_STRING) || (buffer.Length % sizeof(char) != 0))
+        {
+            value = default!;
+            return false;
+        }
+        var charBuffer = MemoryMarshal.Cast<byte, char>(buffer);
+
+        // Must be NUL terminated.
+        if (charBuffer.IsEmpty || (charBuffer[^1] != '\0'))
         {
             value = default!;
             return false;
         }
 
-        unsafe // DevSkim: ignore DS172412
-        {
-            fixed (byte* pBuffer = buffer)
-            {
-                value = new string((char*)pBuffer, 0, (buffer.Length / sizeof(char)) - 1);
-                return true;
-            }
-        }
+        value = new(charBuffer[..^1]);
+        return true;
     }
 
     static bool TryGetProperty(uint deviceNode, in DEVPROPKEY devPropKey, out string[] value)
@@ -364,30 +360,37 @@ sealed partial class WindowsDevice : IEquatable<WindowsDevice>
             return false;
         }
 
-        // Must be a NUL-terminated list of NUL-terminated UTF-16 strings.
-        if ((propertyType != DEVPROPTYPE.DEVPROP_TYPE_STRING_LIST)
-            || (buffer.Length % sizeof(char) != 0) || (buffer.Length / sizeof(char) < 1))
+        // Must be a UTF-16 string list.
+        if ((propertyType != DEVPROPTYPE.DEVPROP_TYPE_STRING_LIST) || (buffer.Length % sizeof(char) != 0))
+        {
+            value = default!;
+            return false;
+        }
+        var charBuffer = MemoryMarshal.Cast<byte, char>(buffer);
+
+        // Must be NUL terminated.
+        if (charBuffer.IsEmpty || (charBuffer[^1] != '\0'))
         {
             value = default!;
             return false;
         }
 
-        if (buffer.Length / sizeof(char) == 1)
+        if (charBuffer.Length == 1)
         {
             // Empty list.
             value = [];
             return true;
         }
 
-        unsafe // DevSkim: ignore DS172412
+        // Non-empty list must be double-NUL terminated.
+        if (charBuffer[^2] != '\0')
         {
-            fixed (byte* pBuffer = buffer)
-            {
-                // The buffer is double-NUL terminated.
-                value = new string((char*)pBuffer, 0, (buffer.Length / sizeof(char)) - 2).Split('\0');
-                return true;
-            }
+            value = default!;
+            return false;
         }
+
+        value = new string(charBuffer[..^2]).Split('\0');
+        return true;
     }
 
     static bool TryGetProperty(uint deviceNode, in DEVPROPKEY devPropKey, out uint value)
@@ -404,14 +407,8 @@ sealed partial class WindowsDevice : IEquatable<WindowsDevice>
             return false;
         }
 
-        unsafe // DevSkim: ignore DS172412
-        {
-            fixed (byte* pBuffer = buffer)
-            {
-                value = *(uint*)pBuffer;
-                return true;
-            }
-        }
+        value = MemoryMarshal.Read<uint>(buffer);
+        return true;
     }
 
     static bool TryGetProperty(uint deviceNode, in DEVPROPKEY devPropKey, out bool value)
@@ -537,39 +534,31 @@ sealed partial class WindowsDevice : IEquatable<WindowsDevice>
 
         foreach (var interfacePath in interfacePaths)
         {
-            string instanceId;
-
-            unsafe // DevSkim: ignore DS172412
+            var bufferSize = 0u;
+            if (PInvoke.CM_Get_Device_Interface_Property(interfacePath, PInvoke.DEVPKEY_Device_InstanceId, out var propertyType, null,
+                ref bufferSize, 0) != CONFIGRET.CR_BUFFER_SMALL)
             {
-                var bufferSize = 0u;
-                if (PInvoke.CM_Get_Device_Interface_Property(interfacePath, PInvoke.DEVPKEY_Device_InstanceId, out var propertyType, null,
-                    ref bufferSize, 0) != CONFIGRET.CR_BUFFER_SMALL)
-                {
-                    continue;
-                }
-                // Must be a NUL-terminated UTF-16 string.
-                if ((propertyType != DEVPROPTYPE.DEVPROP_TYPE_STRING)
-                    || (bufferSize % sizeof(char) != 0) || (bufferSize / sizeof(char) < 1))
-                {
-                    continue;
-                }
-                var buffer = new byte[checked((int)bufferSize)];
-                var bufferSizeConfirm = bufferSize;
-                fixed (byte* pBuffer = buffer)
-                {
-                    if (PInvoke.CM_Get_Device_Interface_Property(interfacePath, PInvoke.DEVPKEY_Device_InstanceId, out propertyType, pBuffer,
-                        ref bufferSizeConfirm, 0) != CONFIGRET.CR_SUCCESS)
-                    {
-                        continue;
-                    }
-                    if ((propertyType != DEVPROPTYPE.DEVPROP_TYPE_STRING) || (bufferSizeConfirm != bufferSize))
-                    {
-                        continue;
-                    }
-                    // The buffer includes the terminating NUL character.
-                    instanceId = new string((char*)pBuffer, 0, (checked((int)bufferSize) / sizeof(char)) - 1);
-                }
+                continue;
             }
+            // Must be a NUL-terminated UTF-16 string.
+            if ((propertyType != DEVPROPTYPE.DEVPROP_TYPE_STRING)
+                || (bufferSize % sizeof(char) != 0) || (bufferSize / sizeof(char) < 1))
+            {
+                continue;
+            }
+            var buffer = new byte[checked((int)bufferSize)];
+            var bufferSizeConfirm = bufferSize;
+            if (PInvoke.CM_Get_Device_Interface_Property(interfacePath, PInvoke.DEVPKEY_Device_InstanceId, out propertyType, buffer,
+                ref bufferSizeConfirm, 0) != CONFIGRET.CR_SUCCESS)
+            {
+                continue;
+            }
+            if ((propertyType != DEVPROPTYPE.DEVPROP_TYPE_STRING) || (bufferSizeConfirm != bufferSize))
+            {
+                continue;
+            }
+            // The buffer includes the terminating NUL character.
+            var instanceId = new string(MemoryMarshal.Cast<byte, char>(buffer)[..^1]);
 
             if (!TryCreate(instanceId, out var device))
             {
