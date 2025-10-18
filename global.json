@@ -5,7 +5,7 @@
     "rollForward": "latestPatch"
   },
   "msbuild-sdks": {
-    "MSTest.Sdk": "4.0.0",
+    "MSTest.Sdk": "4.0.1",
     "WixToolset.Sdk": "6.0.2"
   }
 }
