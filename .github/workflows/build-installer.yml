@@ -52,20 +52,20 @@ jobs:
       - name: Build
         run: |
           dotnet build --configuration Release --no-restore --property:Platform=x64
-          dotnet build --configuration Release --no-restore --property:Platform=arm64 Usbipd
+          dotnet build --configuration Release --no-restore --property:Platform=ARM64 Usbipd
 
       - name: Test
         run: |
           dotnet test --configuration Release --no-build --property:Platform=x64 `
-            -p:TestingPlatformCommandLineArguments="--report-trx --coverage --coverage-output-format cobertura --coverage-output coverage.cobertura.xml"
+            --report-trx --coverage --coverage-output-format cobertura --coverage-output coverage.cobertura.xml
 
       - name: Build (Installers)
         run: |
-          dotnet publish --configuration Release --no-build --runtime win-x64 Usbipd
-          dotnet publish --configuration Release --no-build --runtime win-arm64 Usbipd
+          dotnet publish --configuration Release --no-build --property:PublishProfile=x64 Usbipd
+          dotnet publish --configuration Release --no-build --property:PublishProfile=arm64 Usbipd
           dotnet publish --configuration Release --no-build Usbipd.PowerShell
           dotnet build --configuration Release --no-restore --property:Platform=x64 Installer
-          dotnet build --configuration Release --no-restore --property:Platform=arm64 Installer
+          dotnet build --configuration Release --no-restore --property:Platform=ARM64 Installer
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4

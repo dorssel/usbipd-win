@@ -33,7 +33,7 @@ sealed class Tools_Tests
         var buf = new byte[TestStreamBytes.Length - 1];
         await memoryStream.ReadMessageAsync(buf, TestContext.CancellationToken);
         Assert.AreEqual(TestStreamBytes.Length - 1, memoryStream.Position);
-        Assert.IsTrue(buf.SequenceEqual(TestStreamBytes[0..^1]));
+        Assert.IsTrue(buf.SequenceEqual(TestStreamBytes.AsSpan(0..^1)));
     }
 
     [TestMethod]
@@ -79,7 +79,7 @@ sealed class Tools_Tests
         Assert.AreEqual(TaskStatus.WaitingForActivation, task.Status);
         writeStream.Write(TestStreamBytes.AsSpan(1));
         await task.WaitAsync(TestContext.CancellationToken);
-        Assert.IsTrue(buf.SequenceEqual(TestStreamBytes[0..^1]));
+        Assert.IsTrue(buf.SequenceEqual(TestStreamBytes.AsSpan(0..^1)));
     }
 
     struct TestStructType
