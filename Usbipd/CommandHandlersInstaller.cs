@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Usbipd.Automation;
 using Windows.Win32;
@@ -108,7 +109,7 @@ sealed partial class CommandHandlers : ICommandHandlers
         }
         SP_DEVINSTALL_PARAMS_W deviceInstallParams = new()
         {
-            cbSize = (uint)Marshal.SizeOf<SP_DEVINSTALL_PARAMS_W>(),
+            cbSize = (uint)Unsafe.SizeOf<SP_DEVINSTALL_PARAMS_W>(),
             FlagsEx = SETUP_DI_DEVICE_INSTALL_FLAGS_EX.DI_FLAGSEX_ALLOWEXCLUDEDDRVS,
         };
         if (!PInvoke.SetupDiSetDeviceInstallParams(deviceInfoSet, null, deviceInstallParams))
@@ -126,7 +127,7 @@ sealed partial class CommandHandlers : ICommandHandlers
         }
         SP_DRVINFO_DATA_V2_W driverInfoData = new()
         {
-            cbSize = (uint)Marshal.SizeOf<SP_DRVINFO_DATA_V2_W>(),
+            cbSize = (uint)Unsafe.SizeOf<SP_DRVINFO_DATA_V2_W>(),
         };
         for (var index = 0u; ; index++)
         {
@@ -156,7 +157,7 @@ sealed partial class CommandHandlers : ICommandHandlers
                 fixed (byte* bufferPointer = buffer)
                 {
                     var details = (SP_DRVINFO_DETAIL_DATA_W*)bufferPointer;
-                    details->cbSize = (uint)Marshal.SizeOf<SP_DRVINFO_DETAIL_DATA_W>();
+                    details->cbSize = (uint)Unsafe.SizeOf<SP_DRVINFO_DETAIL_DATA_W>();
                     if (!PInvoke.SetupDiGetDriverInfoDetail(deviceInfoSet, null, driverInfoData, details, requiredSize, null))
                     {
                         console.ReportLastWin32Error(nameof(PInvoke.SetupDiGetDriverInfoDetail));

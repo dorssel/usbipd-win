@@ -9,7 +9,7 @@ using Usbipd.Automation;
 using Windows.Win32;
 using Windows.Win32.Devices.DeviceAndDriverInstallation;
 using Windows.Win32.Foundation;
-using static Usbipd.Interop.VBoxUsbMon;
+using static Usbipd.Interop.VBoxUsb;
 
 namespace Usbipd;
 

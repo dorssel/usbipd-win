@@ -31,6 +31,7 @@ SPDX-License-Identifier: GPL-3.0-only
   </ItemGroup>
 
   <ItemGroup>
+    <Content Remove="NativeMethods.json" />
     <Content Remove="packages.lock.json" />
     <None Include="packages.lock.json" />
   </ItemGroup>
@@ -52,22 +53,22 @@ SPDX-License-Identifier: GPL-3.0-only
   <ItemGroup>
     <!-- WSL -->
     <!-- Copy everything at the top level only, except the REUSE .license files (if any). -->
-    <None Update="WSL\*" CopyToOutputDirectory="PreserveNewest"/>
-    <None Remove="WSL\*\*"/>
-    <None Remove="WSL\*.license"/>
+    <None Update="WSL\*" CopyToOutputDirectory="PreserveNewest" />
+    <None Remove="WSL\*\*" />
+    <None Remove="WSL\*.license" />
     <!-- Also copy everything in the platform directory moving it to the top level, except the REUSE .license files (if any). -->
-    <None Include="WSL\$(Platform)\*" Link="WSL\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest"/>
-    <None Remove="WSL\$(Platform)\*.license"/>
+    <None Include="WSL\$(Platform)\*" Link="WSL\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <None Remove="WSL\$(Platform)\*.license" />
   </ItemGroup>
 
   <ItemGroup>
     <!-- Drivers -->
     <!-- Copy everything at the top level only, except the REUSE .license files (if any). -->
-    <None Include="..\Drivers\*" Link="Drivers\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest"/>
-    <None Remove="..\Drivers\*.license"/>
+    <None Include="..\Drivers\*" Link="Drivers\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <None Remove="..\Drivers\*.license" />
     <!-- Also copy everything in the platform directory moving it to the top level, except the REUSE .license files (if any). -->
-    <None Include="..\Drivers\$(Platform)\*" Link="Drivers\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest"/>
-    <None Remove="..\Drivers\$(Platform)\*.license"/>
+    <None Include="..\Drivers\$(Platform)\*" Link="Drivers\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <None Remove="..\Drivers\$(Platform)\*.license" />
   </ItemGroup>
 
 </Project>

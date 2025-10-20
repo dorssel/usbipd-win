@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 using System.ComponentModel;
-using System.Runtime.InteropServices;
+using System.Runtime.CompilerServices;
 using Windows.Win32;
 using Windows.Win32.Devices.DeviceAndDriverInstallation;
 using Windows.Win32.Foundation;
@@ -30,7 +30,7 @@ static class DriverTools
             }
             var deviceInfoData = new SP_DEVINFO_DATA()
             {
-                cbSize = (uint)Marshal.SizeOf<SP_DEVINFO_DATA>(),
+                cbSize = (uint)Unsafe.SizeOf<SP_DEVINFO_DATA>(),
             };
             PInvoke.SetupDiOpenDeviceInfo(deviceInfoList, device.InstanceId, default, 0, &deviceInfoData)
                 .ThrowOnWin32Error(nameof(PInvoke.SetupDiOpenDeviceInfo));
@@ -60,13 +60,13 @@ static class DriverTools
             }
             var deviceInfoData = new SP_DEVINFO_DATA()
             {
-                cbSize = (uint)Marshal.SizeOf<SP_DEVINFO_DATA>(),
+                cbSize = (uint)Unsafe.SizeOf<SP_DEVINFO_DATA>(),
             };
             PInvoke.SetupDiOpenDeviceInfo(deviceInfoList, device.InstanceId, default, 0, &deviceInfoData)
                 .ThrowOnWin32Error(nameof(PInvoke.SetupDiOpenDeviceInfo));
             var deviceInstallParams = new SP_DEVINSTALL_PARAMS_W()
             {
-                cbSize = (uint)Marshal.SizeOf<SP_DEVINSTALL_PARAMS_W>(),
+                cbSize = (uint)Unsafe.SizeOf<SP_DEVINSTALL_PARAMS_W>(),
                 Flags = SETUP_DI_DEVICE_INSTALL_FLAGS.DI_ENUMSINGLEINF,
                 FlagsEx = SETUP_DI_DEVICE_INSTALL_FLAGS_EX.DI_FLAGSEX_ALLOWEXCLUDEDDRVS,
                 DriverPath = DriverDetails.Instance.DriverPath,
@@ -77,7 +77,7 @@ static class DriverTools
                 .ThrowOnWin32Error(nameof(PInvoke.SetupDiBuildDriverInfoList));
             var driverInfoData = new SP_DRVINFO_DATA_V2_W()
             {
-                cbSize = (uint)Marshal.SizeOf<SP_DRVINFO_DATA_V2_W>(),
+                cbSize = (uint)Unsafe.SizeOf<SP_DRVINFO_DATA_V2_W>(),
             };
             PInvoke.SetupDiEnumDriverInfo(deviceInfoList, deviceInfoData, SETUP_DI_DRIVER_TYPE.SPDIT_CLASSDRIVER, 0, ref driverInfoData)
                 .ThrowOnWin32Error(nameof(PInvoke.SetupDiEnumDriverInfo));
@@ -145,7 +145,7 @@ static class DriverTools
             }
             var deviceInfoData = new SP_DEVINFO_DATA()
             {
-                cbSize = (uint)Marshal.SizeOf<SP_DEVINFO_DATA>(),
+                cbSize = (uint)Unsafe.SizeOf<SP_DEVINFO_DATA>(),
             };
             PInvoke.SetupDiOpenDeviceInfo(deviceInfoSet, device.InstanceId, default, 0, &deviceInfoData)
                 .ThrowOnWin32Error(nameof(PInvoke.SetupDiOpenDeviceInfo));
@@ -180,7 +180,7 @@ static class DriverTools
             }
             var deviceInfoData = new SP_DEVINFO_DATA()
             {
-                cbSize = (uint)Marshal.SizeOf<SP_DEVINFO_DATA>(),
+                cbSize = (uint)Unsafe.SizeOf<SP_DEVINFO_DATA>(),
             };
             PInvoke.SetupDiOpenDeviceInfo(deviceInfoSet, device.InstanceId, default, 0, &deviceInfoData)
                 .ThrowOnWin32Error(nameof(PInvoke.SetupDiOpenDeviceInfo));

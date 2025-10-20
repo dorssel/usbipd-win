@@ -5,6 +5,7 @@
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Windows.Win32.Devices.DeviceAndDriverInstallation;
 using Windows.Win32.Devices.Usb;
@@ -46,48 +47,30 @@ static class Tools
         }
     }
 
-    public static void StructToBytes<T>(in T s, Span<byte> bytes) where T : struct
+    public static void StructToBytes<T>(in T s, Span<byte> bytes) where T : unmanaged
     {
-        var required = Marshal.SizeOf<T>();
-        if (bytes.Length < required)
+        if (!MemoryMarshal.TryWrite(bytes, s))
         {
-            throw new ArgumentException($"buffer too small for structure: {bytes.Length} < {required}", nameof(bytes));
-        }
-        unsafe // DevSkim: ignore DS172412
-        {
-            fixed (byte* dst = bytes)
-            {
-                Marshal.StructureToPtr(s, (nint)dst, false);
-            }
+            throw new ArgumentException($"buffer too small for structure: {bytes.Length} < {Unsafe.SizeOf<T>()}", nameof(bytes));
         }
     }
 
-    public static byte[] StructToBytes<T>(in T s) where T : struct
+    public static byte[] StructToBytes<T>(in T s) where T : unmanaged
     {
-        var buf = new byte[Marshal.SizeOf<T>()];
+        var buf = new byte[Unsafe.SizeOf<T>()];
         StructToBytes(s, buf);
         return buf;
     }
 
-    public static void BytesToStruct<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors
-        | DynamicallyAccessedMemberTypes.NonPublicConstructors)] T>(ReadOnlySpan<byte> bytes, out T s) where T : struct
+    public static void BytesToStruct<T>(ReadOnlySpan<byte> bytes, out T s) where T : unmanaged
     {
-        var required = Marshal.SizeOf<T>();
-        if (bytes.Length < required)
+        if (!MemoryMarshal.TryRead(bytes, out s))
         {
-            throw new ArgumentException($"buffer too small for structure: {bytes.Length} < {required}", nameof(bytes));
-        }
-        unsafe // DevSkim: ignore DS172412
-        {
-            fixed (byte* src = bytes)
-            {
-                s = Marshal.PtrToStructure<T>((nint)src);
-            }
+            throw new ArgumentException($"buffer too small for structure: {bytes.Length} < {Unsafe.SizeOf<T>()}", nameof(bytes));
         }
     }
 
-    public static T BytesToStruct<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors
-        | DynamicallyAccessedMemberTypes.NonPublicConstructors)] T>(ReadOnlySpan<byte> bytes) where T : struct
+    public static T BytesToStruct<T>(ReadOnlySpan<byte> bytes) where T : unmanaged
     {
         BytesToStruct(bytes, out T result);
         return result;

@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: GPL-3.0-only
 
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Usbipd.Automation;
 using Windows.Win32;
@@ -33,7 +34,7 @@ sealed class DriverDetails
             }
             var deviceInstallParams = new SP_DEVINSTALL_PARAMS_W()
             {
-                cbSize = (uint)Marshal.SizeOf<SP_DEVINSTALL_PARAMS_W>(),
+                cbSize = (uint)Unsafe.SizeOf<SP_DEVINSTALL_PARAMS_W>(),
                 Flags = SETUP_DI_DEVICE_INSTALL_FLAGS.DI_ENUMSINGLEINF,
                 FlagsEx = SETUP_DI_DEVICE_INSTALL_FLAGS_EX.DI_FLAGSEX_ALLOWEXCLUDEDDRVS,
                 DriverPath = DriverPath,
@@ -44,7 +45,7 @@ sealed class DriverDetails
                 .ThrowOnWin32Error(nameof(PInvoke.SetupDiBuildDriverInfoList));
             var driverInfoData = new SP_DRVINFO_DATA_V2_W()
             {
-                cbSize = (uint)Marshal.SizeOf<SP_DRVINFO_DATA_V2_W>(),
+                cbSize = (uint)Unsafe.SizeOf<SP_DRVINFO_DATA_V2_W>(),
             };
             PInvoke.SetupDiEnumDriverInfo(deviceInfoSet, null, SETUP_DI_DRIVER_TYPE.SPDIT_CLASSDRIVER, 0, ref driverInfoData)
                 .ThrowOnWin32Error(nameof(PInvoke.SetupDiEnumDriverInfo));
@@ -68,7 +69,7 @@ sealed class DriverDetails
                 fixed (byte* bufferPointer = buffer)
                 {
                     var details = (SP_DRVINFO_DETAIL_DATA_W*)bufferPointer;
-                    details->cbSize = (uint)Marshal.SizeOf<SP_DRVINFO_DETAIL_DATA_W>();
+                    details->cbSize = (uint)Unsafe.SizeOf<SP_DRVINFO_DETAIL_DATA_W>();
                     PInvoke.SetupDiGetDriverInfoDetail(deviceInfoSet, null, driverInfoData, details, requiredSize, null)
                         .ThrowOnWin32Error(nameof(PInvoke.SetupDiGetDriverInfoDetail));
                     var hardwareId = new string((char*)&details->HardwareID);

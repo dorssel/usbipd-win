@@ -5,6 +5,7 @@
 using System.Runtime.CompilerServices;
 
 [assembly: CLSCompliant(false)]
+[assembly: DisableRuntimeMarshalling]
 
 [assembly: InternalsVisibleTo("UnitTests")]
 [assembly: InternalsVisibleTo("DynamicProxyGenAssembly2")]

@@ -6,6 +6,7 @@ using System.Buffers.Binary;
 using System.Diagnostics;
 using System.Net;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Channels;
 using Usbipd.Automation;
@@ -402,11 +403,14 @@ sealed partial class PcapNg
 
     static byte[] TimestampToBytes(ulong value)
     {
+        var result = new byte[8];
         // timestamps are written high 32-bits first, irrespective of endianness
-        return [.. BitConverter.GetBytes((uint)(value >> 32)), .. BitConverter.GetBytes(unchecked((uint)value))];
+        MemoryMarshal.Write(result, (uint)(value >> 32));
+        MemoryMarshal.Write(result.AsSpan(4), unchecked((uint)value));
+        return result;
     }
 
-    static void AddOption(BinaryWriter block, ushort code, byte[] data)
+    static void AddOption(BinaryWriter block, ushort code, ReadOnlySpan<byte> data)
     {
         Pad(block);
         block.Write(code);
@@ -421,7 +425,7 @@ sealed partial class PcapNg
 
     static void AddOption(BinaryWriter block, ushort code, ulong value)
     {
-        AddOption(block, code, BitConverter.GetBytes(value));
+        AddOption(block, code, MemoryMarshal.AsBytes([value]));
     }
 
     static void AddOption(BinaryWriter block, ushort code, string value)

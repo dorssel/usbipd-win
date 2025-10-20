@@ -3,9 +3,10 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.ServiceProcess;
-
+using static Usbipd.Interop.VBoxUsb;
 using static Usbipd.Interop.VBoxUsbMon;
 using static Usbipd.Tools;
 
@@ -30,7 +31,7 @@ sealed partial class VBoxUsbMon : IDisposable
 
     public static bool IsServiceInstalled()
     {
-        return ServiceController.GetDevices().Any(sc => sc.ServiceName.Equals(ServiceName, StringComparison.InvariantCultureIgnoreCase));
+        return ServiceController.GetDevices().Any(sc => sc.ServiceName.Equals(USBMON_SERVICE_NAME_W, StringComparison.InvariantCultureIgnoreCase));
     }
 
     public static bool IsVersionSupported(UsbSupVersion version)
@@ -40,10 +41,9 @@ sealed partial class VBoxUsbMon : IDisposable
 
     public async Task<UsbSupVersion> GetVersion()
     {
-        var output = new byte[Marshal.SizeOf<UsbSupVersion>()];
+        var output = new byte[Unsafe.SizeOf<UsbSupVersion>()];
         _ = await UsbMonitor.IoControlAsync(SUPUSBFLT_IOCTL.GET_VERSION, null, output);
-        BytesToStruct(output, out UsbSupVersion version);
-        return version;
+        return MemoryMarshal.AsRef<UsbSupVersion>(output);
     }
 
     public async Task<ulong> AddFilter(ExportedDevice device)
@@ -57,9 +57,9 @@ sealed partial class VBoxUsbMon : IDisposable
         filter.SetMatch(UsbFilterIdx.DEVICE_PROTOCOL, UsbFilterMatch.NUM_EXACT, device.DeviceProtocol);
         filter.SetMatch(UsbFilterIdx.PORT, UsbFilterMatch.NUM_EXACT, device.BusId.Port);
 
-        var output = new byte[Marshal.SizeOf<UsbSupFltAddOut>()];
+        var output = new byte[Unsafe.SizeOf<UsbSupFltAddOut>()];
         _ = await UsbMonitor.IoControlAsync(SUPUSBFLT_IOCTL.ADD_FILTER, StructToBytes(filter), output);
-        var fltAddOut = BytesToStruct<UsbSupFltAddOut>(output);
+        ref var fltAddOut = ref MemoryMarshal.AsRef<UsbSupFltAddOut>(output);
         return fltAddOut.rc == 0 ? fltAddOut.uId
             : throw new UnexpectedResultException($"SUPUSBFLT_IOCTL_ADD_FILTER failed with returnCode {fltAddOut.rc}");
     }
@@ -68,7 +68,7 @@ sealed partial class VBoxUsbMon : IDisposable
     {
         var output = new byte[sizeof(int)];
         _ = await UsbMonitor.IoControlAsync(SUPUSBFLT_IOCTL.REMOVE_FILTER, BitConverter.GetBytes(filterId), output);
-        var rc = BitConverter.ToInt32(output);
+        ref var rc = ref MemoryMarshal.AsRef<int>(output);
         if (rc != 0 /* VINF_SUCCESS */)
         {
             throw new UnexpectedResultException($"SUPUSBFLT_IOCTL_REMOVE_FILTER failed with returnCode {rc}");

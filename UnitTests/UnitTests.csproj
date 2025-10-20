@@ -25,6 +25,12 @@ SPDX-License-Identifier: GPL-3.0-only
   </ItemGroup>
 
   <ItemGroup>
+    <Content Remove="NativeMethods.json" />
+    <Content Remove="packages.lock.json" />
+    <None Include="packages.lock.json" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Update="VidPid_products.ids">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
