@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 using System.Globalization;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -419,7 +420,7 @@ sealed partial class WindowsDevice : IEquatable<WindowsDevice>
             return false;
         }
 
-        if ((propertyType != DEVPROPTYPE.DEVPROP_TYPE_BOOLEAN) || (buffer.Length != Marshal.SizeOf<DEVPROP_BOOLEAN>()))
+        if ((propertyType != DEVPROPTYPE.DEVPROP_TYPE_BOOLEAN) || (buffer.Length != Unsafe.SizeOf<DEVPROP_BOOLEAN>()))
         {
             value = default!;
             return false;
@@ -443,7 +444,7 @@ sealed partial class WindowsDevice : IEquatable<WindowsDevice>
         }
     }
 
-    static bool TryGetProperty<T>(uint deviceNode, in DEVPROPKEY devPropKey, out T value) where T : struct, Enum
+    static bool TryGetProperty<T>(uint deviceNode, in DEVPROPKEY devPropKey, out T value) where T : unmanaged, Enum
     {
         if (!TryGetProperty(deviceNode, devPropKey, out uint tmpValue))
         {

@@ -4,6 +4,7 @@
 
 using System.Buffers.Binary;
 using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using Usbipd.Automation;
@@ -80,43 +81,58 @@ sealed record ExportedDevice(string InstanceId, BusId BusId, Linux.UsbDeviceSpee
     {
         var result = new List<(byte, byte, byte)>();
 
-        // IOCTL_USB_GET_DESCRIPTOR_FROM_NODE_CONNECTION will always get the current configuration, any index is not used.
-        // This is not a problem, the result is only used informatively.
-        var buf = new byte[Marshal.SizeOf<USB_DESCRIPTOR_REQUEST>() + Marshal.SizeOf<USB_CONFIGURATION_DESCRIPTOR>()];
-        var request = new USB_DESCRIPTOR_REQUEST()
+        ushort totalConfigurationLength;
         {
-            ConnectionIndex = connectionIndex,
-            SetupPacket = {
-                wLength = (ushort)Marshal.SizeOf<USB_CONFIGURATION_DESCRIPTOR>(),
-                wValue = (ushort)(PInvoke.USB_CONFIGURATION_DESCRIPTOR_TYPE << 8),
-            }
-        };
-        StructToBytes(request, buf);
-        _ = await hub.IoControlAsync(PInvoke.IOCTL_USB_GET_DESCRIPTOR_FROM_NODE_CONNECTION, buf, buf);
-        BytesToStruct(buf.AsSpan(Marshal.SizeOf<USB_DESCRIPTOR_REQUEST>()), out USB_CONFIGURATION_DESCRIPTOR configuration);
-        buf = new byte[Marshal.SizeOf<USB_DESCRIPTOR_REQUEST>() + configuration.wTotalLength];
-        request.SetupPacket.wLength = configuration.wTotalLength;
-        StructToBytes(request, buf);
-        _ = await hub.IoControlAsync(PInvoke.IOCTL_USB_GET_DESCRIPTOR_FROM_NODE_CONNECTION, buf, buf);
+            // IOCTL_USB_GET_DESCRIPTOR_FROM_NODE_CONNECTION will always get the current configuration, any index is not used.
+            // This is not a problem, the result is only used informatively.
 
-        var offset = Marshal.SizeOf<USB_DESCRIPTOR_REQUEST>();
-        while (offset < buf.Length)
+            var buffer = new byte[Unsafe.SizeOf<USB_DESCRIPTOR_REQUEST>() + Unsafe.SizeOf<USB_CONFIGURATION_DESCRIPTOR>()];
+            ref var request = ref MemoryMarshal.AsRef<USB_DESCRIPTOR_REQUEST>(buffer.AsSpan(0, Unsafe.SizeOf<USB_DESCRIPTOR_REQUEST>()));
+            // All other fields are ignored on input (they are implied by the IOCTL code).
+            request.ConnectionIndex = connectionIndex;
+            request.SetupPacket.wValue = (ushort)(PInvoke.USB_CONFIGURATION_DESCRIPTOR_TYPE << 8);
+            _ = await hub.IoControlAsync(PInvoke.IOCTL_USB_GET_DESCRIPTOR_FROM_NODE_CONNECTION, buffer, buffer);
+            ref var configurationDescriptor = ref MemoryMarshal.AsRef<USB_CONFIGURATION_DESCRIPTOR>(buffer.AsSpan(Unsafe.SizeOf<USB_DESCRIPTOR_REQUEST>()));
+            totalConfigurationLength = configurationDescriptor.wTotalLength;
+        }
+
         {
-            BytesToStruct(buf.AsSpan(offset), out USB_COMMON_DESCRIPTOR common);
-            if (common.bLength == 0)
+            var buffer = new byte[Unsafe.SizeOf<USB_DESCRIPTOR_REQUEST>() + totalConfigurationLength];
+            ref var request = ref MemoryMarshal.AsRef<USB_DESCRIPTOR_REQUEST>(buffer.AsSpan(0, Unsafe.SizeOf<USB_DESCRIPTOR_REQUEST>()));
+            // All other fields are ignored on input (they are implied by the IOCTL code).
+            request.ConnectionIndex = connectionIndex;
+            request.SetupPacket.wValue = (ushort)(PInvoke.USB_CONFIGURATION_DESCRIPTOR_TYPE << 8);
+            _ = await hub.IoControlAsync(PInvoke.IOCTL_USB_GET_DESCRIPTOR_FROM_NODE_CONNECTION, buffer, buffer);
+
+            var offset = Unsafe.SizeOf<USB_DESCRIPTOR_REQUEST>();
+            while (offset < buffer.Length)
             {
-                // Broken configuration; prevent endless loop.
-                break;
-            }
-            if (common.bDescriptorType == PInvoke.USB_INTERFACE_DESCRIPTOR_TYPE)
-            {
-                BytesToStruct(buf.AsSpan(offset), out USB_INTERFACE_DESCRIPTOR descriptor);
-                if (descriptor.bAlternateSetting == 0)
+                if ((buffer.Length - offset) < Unsafe.SizeOf<USB_COMMON_DESCRIPTOR>())
                 {
-                    result.Add(new(descriptor.bInterfaceClass, descriptor.bInterfaceSubClass, descriptor.bInterfaceProtocol));
+                    // Broken configuration.
+                    break;
                 }
+                ref var common = ref MemoryMarshal.AsRef<USB_COMMON_DESCRIPTOR>(buffer.AsSpan(offset));
+                if (common.bLength < Unsafe.SizeOf<USB_COMMON_DESCRIPTOR>())
+                {
+                    // Broken configuration.
+                    break;
+                }
+                if (common.bDescriptorType == PInvoke.USB_INTERFACE_DESCRIPTOR_TYPE)
+                {
+                    if (common.bLength < Unsafe.SizeOf<USB_INTERFACE_DESCRIPTOR>())
+                    {
+                        // Broken configuration.
+                        break;
+                    }
+                    ref var interfaceDescriptor = ref MemoryMarshal.AsRef<USB_INTERFACE_DESCRIPTOR>(buffer.AsSpan(offset));
+                    if (interfaceDescriptor.bAlternateSetting == 0)
+                    {
+                        result.Add(new(interfaceDescriptor.bInterfaceClass, interfaceDescriptor.bInterfaceSubClass, interfaceDescriptor.bInterfaceProtocol));
+                    }
+                }
+                offset += common.bLength;
             }
-            offset += common.bLength;
         }
         return result;
     }
@@ -150,7 +166,7 @@ sealed record ExportedDevice(string InstanceId, BusId BusId, Linux.UsbDeviceSpee
             var data2 = new USB_NODE_CONNECTION_INFORMATION_EX_V2()
             {
                 ConnectionIndex = device.BusId.Value.Port,
-                Length = (uint)Marshal.SizeOf<USB_NODE_CONNECTION_INFORMATION_EX_V2>(),
+                Length = (uint)Unsafe.SizeOf<USB_NODE_CONNECTION_INFORMATION_EX_V2>(),
             };
             data2.SupportedUsbProtocols.Anonymous.Usb110 = true;
             data2.SupportedUsbProtocols.Anonymous.Usb200 = true;

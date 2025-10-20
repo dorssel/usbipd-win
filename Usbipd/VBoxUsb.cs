@@ -5,10 +5,10 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Net;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Usbipd.Automation;
 using static Usbipd.Interop.VBoxUsb;
-using static Usbipd.Tools;
 
 namespace Usbipd;
 
@@ -21,9 +21,9 @@ static class VBoxUsb
         try
         {
             {
-                var output = new byte[Marshal.SizeOf<UsbSupVersion>()];
+                var output = new byte[Unsafe.SizeOf<UsbSupVersion>()];
                 _ = await file.IoControlAsync(SUPUSB_IOCTL.GET_VERSION, null, output);
-                BytesToStruct(output, out UsbSupVersion version);
+                ref var version = ref MemoryMarshal.AsRef<UsbSupVersion>(output);
                 if ((version.major != USBDRV_MAJOR_VERSION) || (version.minor < USBDRV_MINOR_VERSION))
                 {
                     throw new NotSupportedException(
@@ -31,11 +31,11 @@ static class VBoxUsb
                 }
             }
             {
-                var claimDev = new UsbSupClaimDev();
-                var output = new byte[Marshal.SizeOf<UsbSupClaimDev>()];
-                _ = await file.IoControlAsync(SUPUSB_IOCTL.USB_CLAIM_DEVICE, StructToBytes(claimDev), output);
-                BytesToStruct(output, out claimDev);
-                if (!claimDev.fClaimed)
+                var output = new byte[Unsafe.SizeOf<UsbSupClaimDev>()];
+                // NOTE: input is not actually used by the driver, but it needs to be present and have the same length as the output.
+                _ = await file.IoControlAsync(SUPUSB_IOCTL.USB_CLAIM_DEVICE, output, output);
+                ref var claimDev = ref MemoryMarshal.AsRef<UsbSupClaimDev>(output);
+                if (!claimDev.Claimed)
                 {
                     throw new ProtocolViolationException("could not claim");
                 }

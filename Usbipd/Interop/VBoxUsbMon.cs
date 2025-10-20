@@ -74,15 +74,14 @@ static class VBoxUsbMon
 
     /// <summary>VBoxUsb: usbfilter.h: USBFILTER</summary>
     [StructLayout(LayoutKind.Sequential, Pack = 4)]
-    internal struct UsbFilter
+    internal unsafe struct UsbFilter // DevSkim: ignore DS172412
     {
         uint u32Magic;
         UsbFilterType enmType;
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = (int)UsbFilterIdx.END)]
-        public UsbFilterField[] aFields;
+        fixed ushort aFields[(int)UsbFilterIdx.END * 2];
+        public Span<UsbFilterField> Fields => MemoryMarshal.Cast<ushort, UsbFilterField>(MemoryMarshal.CreateSpan(ref aFields[0], (int)UsbFilterIdx.END * 2));
         readonly uint offCurEnd;
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 256)]
-        byte[] achStrTab;
+        fixed byte achStrTab[256];
 
         public static UsbFilter Create(UsbFilterType type)
         {
@@ -90,20 +89,18 @@ static class VBoxUsbMon
             {
                 u32Magic = USBFILTER_MAGIC,
                 enmType = type,
-                aFields = new UsbFilterField[(int)UsbFilterIdx.END],
-                achStrTab = new byte[256],
             };
             for (var i = 0; i < (int)UsbFilterIdx.END; ++i)
             {
-                result.aFields[i].enmMatch = UsbFilterMatch.IGNORE;
+                result.Fields[i].enmMatch = UsbFilterMatch.IGNORE;
             }
             return result;
         }
 
-        public readonly void SetMatch(UsbFilterIdx index, UsbFilterMatch match, ushort value)
+        public void SetMatch(UsbFilterIdx index, UsbFilterMatch match, ushort value)
         {
-            aFields[(int)index].enmMatch = match;
-            aFields[(int)index].u16Value = value;
+            Fields[(int)index].enmMatch = match;
+            Fields[(int)index].u16Value = value;
         }
     }
 
@@ -115,7 +112,8 @@ static class VBoxUsbMon
         public int rc;
     }
 
-    public const string ServiceName = "VBoxUSBMon";
+    /// <summary>VBoxUsb: usblib-win.h</summary>
+    public const string USBMON_SERVICE_NAME_W = "VBoxUSBMon";
 
     /// <summary>VBoxUsb: usblib-win.h</summary>
     public const string USBMON_DEVICE_NAME = @"\\.\VBoxUSBMon";
@@ -134,12 +132,4 @@ static class VBoxUsbMon
     public const uint USBMON_MAJOR_VERSION = 5;
     /// <summary>VBoxUsb: usblib-win.h</summary>
     public const uint USBMON_MINOR_VERSION = 0;
-
-    /// <summary>VBoxUsb: usblib-win.h: USBSUP_VERSION</summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 4)]
-    internal struct UsbSupVersion
-    {
-        public uint major;
-        public uint minor;
-    }
 }

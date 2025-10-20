@@ -4,6 +4,7 @@
 
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading.Channels;
 using Windows.Win32;
@@ -109,22 +110,21 @@ sealed class AttachedEndpoint
                     len = 0,
                     buf = gcHandle.AddrOfPinnedObject() + urbBufOffset,
                     numIsoPkts = 0,
-                    aIsoPkts = new UsbSupIsoPkt[8],
                 };
 
                 while (isoIndex < submit.number_of_packets // there are more iso packets in the original request
-                    && urb.numIsoPkts < urb.aIsoPkts.Length // and more will actually fit in this URB
+                    && urb.numIsoPkts < urb.IsoPkts.Length // and more will actually fit in this URB
                     && urb.len <= ushort.MaxValue) // and the next URB-relative offset will fit in ushort
                 {
-                    urb.aIsoPkts[urb.numIsoPkts].cb = (ushort)packetDescriptors[isoIndex].length;
-                    urb.aIsoPkts[urb.numIsoPkts].off = (ushort)urb.len;
-                    urb.len += urb.aIsoPkts[urb.numIsoPkts].cb;
+                    urb.IsoPkts[(int)urb.numIsoPkts].cb = (ushort)packetDescriptors[isoIndex].length;
+                    urb.IsoPkts[(int)urb.numIsoPkts].off = (ushort)urb.len;
+                    urb.len += urb.IsoPkts[(int)urb.numIsoPkts].cb;
                     urb.numIsoPkts++;
                     isoIndex++;
                 }
 
                 // No more iso packets will fit in this ioctl, or this was all of them, but we do have at least one.
-                var bytes = new byte[Marshal.SizeOf<UsbSupUrb>()];
+                var bytes = new byte[Unsafe.SizeOf<UsbSupUrb>()];
                 StructToBytes(urb, bytes);
                 // Note that we are adding the continuation task, not the actual ioctl.
                 ioctls.Add(Device.IoControlAsync(SUPUSB_IOCTL.SEND_URB, bytes, bytes).ContinueWith((task, state) =>
@@ -133,8 +133,8 @@ sealed class AttachedEndpoint
 
                     for (var i = 0; i < urb.numIsoPkts; ++i)
                     {
-                        packetDescriptors[urbIsoOffset + i].actual_length = urb.aIsoPkts[i].cb;
-                        packetDescriptors[urbIsoOffset + i].status = (uint)-(int)ConvertError(urb.aIsoPkts[i].stat);
+                        packetDescriptors[urbIsoOffset + i].actual_length = urb.IsoPkts[i].cb;
+                        packetDescriptors[urbIsoOffset + i].status = (uint)-(int)ConvertError(urb.IsoPkts[i].stat);
                     }
                 }, cancellationToken, TaskScheduler.Default));
 
@@ -230,18 +230,17 @@ sealed class AttachedEndpoint
             // but e.g. Linux ans some clients use 0. VBoxUsb requires 0 here.
             // We simply ignore number_of_packets.
             numIsoPkts = 0,
-            aIsoPkts = new UsbSupIsoPkt[8], // unused, but must be present for VBoxUsb
         };
 
         var requestLength = submit.transfer_buffer_length;
         var payloadOffset = 0;
         if (urb.type == UsbSupTransferType.USBSUP_TRANSFER_TYPE_MSG)
         {
-            payloadOffset = Marshal.SizeOf<USB_DEFAULT_PIPE_SETUP_PACKET>();
+            payloadOffset = Unsafe.SizeOf<USB_DEFAULT_PIPE_SETUP_PACKET>();
             urb.len += (uint)payloadOffset;
         }
 
-        var bytes = new byte[Marshal.SizeOf<UsbSupUrb>()];
+        var bytes = new byte[Unsafe.SizeOf<UsbSupUrb>()];
         var buf = new byte[urb.len];
 
         if (urb.type == UsbSupTransferType.USBSUP_TRANSFER_TYPE_MSG)

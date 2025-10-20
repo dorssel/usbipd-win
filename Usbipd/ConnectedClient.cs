@@ -8,6 +8,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using Usbipd.Automation;
@@ -223,7 +224,7 @@ sealed class ConnectedClient(ILogger<ConnectedClient> logger, ClientContext clie
                 {
                     CM_NOTIFY_FILTER filter = new()
                     {
-                        cbSize = (uint)Marshal.SizeOf<CM_NOTIFY_FILTER>(),
+                        cbSize = (uint)Unsafe.SizeOf<CM_NOTIFY_FILTER>(),
                         FilterType = CM_NOTIFY_FILTER_TYPE.CM_NOTIFY_FILTER_TYPE_DEVICEHANDLE,
                         u = {
                             DeviceHandle =
@@ -232,15 +233,19 @@ sealed class ConnectedClient(ILogger<ConnectedClient> logger, ClientContext clie
                             },
                         },
                     };
-                    PInvoke.CM_Register_Notification(filter, (void*)cancelEvent.SafeWaitHandle.DangerousGetHandle(),
-                        static (notify, context, action, eventData, eventDataSize) =>
+
+                    [UnmanagedCallersOnly(CallConvs = new Type[] { typeof(CallConvStdcall) })]
+                    static uint callback(HCMNOTIFICATION notify, void* context, CM_NOTIFY_ACTION action, CM_NOTIFY_EVENT_DATA* eventData, uint eventDataSize)
                     {
                         if (action is CM_NOTIFY_ACTION.CM_NOTIFY_ACTION_DEVICEREMOVEPENDING or CM_NOTIFY_ACTION.CM_NOTIFY_ACTION_DEVICEREMOVECOMPLETE)
                         {
                             _ = PInvoke.SetEvent((HANDLE)(nint)context);
                         }
                         return (uint)WIN32_ERROR.ERROR_SUCCESS;
-                    }, out notification).ThrowOnError(nameof(PInvoke.CM_Register_Notification));
+                    }
+
+                    PInvoke.CM_Register_Notification(filter, (void*)cancelEvent.SafeWaitHandle.DangerousGetHandle(), &callback, out notification)
+                        .ThrowOnError(nameof(PInvoke.CM_Register_Notification));
                 }
 
                 // Detect unbind.

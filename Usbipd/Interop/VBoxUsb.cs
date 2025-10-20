@@ -11,11 +11,12 @@ static class VBoxUsb
 {
     /// <summary>VBoxUsb: usblib-win.h: USBSUP_CLAIMDEV</summary>
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    internal struct UsbSupClaimDev
+    internal readonly struct UsbSupClaimDev
     {
+        /// <summary>Unused by the driver.</summary>
         readonly byte bInterfaceNumber;
-        [MarshalAs(UnmanagedType.U1)]
-        public bool fClaimed;
+        readonly byte fClaimed;
+        public readonly bool Claimed => fClaimed != 0;
     }
 
     /// <summary>VBoxUsb: usblib-win.h</summary>
@@ -99,18 +100,18 @@ static class VBoxUsb
 
     /// <summary>VBoxUsb: usblib-win.h: USBSUP_URB</summary>
     [StructLayout(LayoutKind.Sequential, Pack = 4)]
-    internal struct UsbSupUrb
+    internal unsafe struct UsbSupUrb // DevSkim: ignore DS172412
     {
-        public UsbSupTransferType type;           /* [in] USBSUP_TRANSFER_TYPE_XXX */
-        public uint ep;             /* [in] index to dev->pipe */
-        public UsbSupDirection dir;            /* [in] USBSUP_DIRECTION_XXX */
-        public UsbSupXferFlags flags;          /* [in] USBSUP_FLAG_XXX */
-        public UsbSupError error;          /* [out] USBSUP_XFER_XXX */
-        public ulong len;            /* [in/out] may change */
-        public nint buf;           /* [in/out] depends on dir */
-        public uint numIsoPkts;     /* [in] number of isochronous packets (8 max) */
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
-        public UsbSupIsoPkt[] aIsoPkts;    /* [in/out] isochronous packet descriptors */
+        public UsbSupTransferType type;     /* [in] USBSUP_TRANSFER_TYPE_XXX */
+        public uint ep;                     /* [in] index to dev->pipe */
+        public UsbSupDirection dir;         /* [in] USBSUP_DIRECTION_XXX */
+        public UsbSupXferFlags flags;       /* [in] USBSUP_FLAG_XXX */
+        public UsbSupError error;           /* [out] USBSUP_XFER_XXX */
+        public ulong len;                   /* [in/out] may change */
+        public nint buf;                    /* [in/out] depends on dir */
+        public uint numIsoPkts;             /* [in] number of isochronous packets (8 max) */
+        fixed uint aIsoPkts[8 * 2];  /* [in/out] isochronous packet descriptors */
+        public Span<UsbSupIsoPkt> IsoPkts => MemoryMarshal.Cast<uint, UsbSupIsoPkt>(MemoryMarshal.CreateSpan(ref aIsoPkts[0], 8 * 2));
     }
 
     /// <summary>VBoxUsb: usblib-win.h: USBSUP_SET_CONFIG</summary>
