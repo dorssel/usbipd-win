@@ -11,9 +11,9 @@ SPDX-License-Identifier: GPL-3.0-only
     <ContinuousIntegrationBuild Condition="'$(ContinuousIntegrationBuild)' != 'true'">false</ContinuousIntegrationBuild>
 
     <!-- Use the latest .NET SDK -->
-    <MainTargetFramework>net9.0</MainTargetFramework>
+    <MainTargetFramework>net10.0</MainTargetFramework>
     <!-- Use the latest C# language standard -->
-    <LangVersion>13.0</LangVersion>
+    <LangVersion>14.0</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
 
@@ -39,10 +39,8 @@ SPDX-License-Identifier: GPL-3.0-only
     <IsPackable>false</IsPackable>
     <IsPublishable>false</IsPublishable>
     <GenerateDependencyFile>false</GenerateDependencyFile>
-    <!-- See https://github.com/dotnet/roslyn/issues/41640 -->
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
     <PublishDocumentationFiles>false</PublishDocumentationFiles>
-    <NoWarn>CS1591</NoWarn>
 
     <!-- Deterministic builds -->
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>

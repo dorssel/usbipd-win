@@ -59,7 +59,7 @@ sealed partial class VBoxUsbMon : IDisposable
 
         var output = new byte[Unsafe.SizeOf<UsbSupFltAddOut>()];
         _ = await UsbMonitor.IoControlAsync(SUPUSBFLT_IOCTL.ADD_FILTER, StructToBytes(filter), output);
-        ref var fltAddOut = ref MemoryMarshal.AsRef<UsbSupFltAddOut>(output);
+        ref readonly var fltAddOut = ref MemoryMarshal.AsRef<UsbSupFltAddOut>(output);
         return fltAddOut.rc == 0 ? fltAddOut.uId
             : throw new UnexpectedResultException($"SUPUSBFLT_IOCTL_ADD_FILTER failed with returnCode {fltAddOut.rc}");
     }
@@ -68,7 +68,7 @@ sealed partial class VBoxUsbMon : IDisposable
     {
         var output = new byte[sizeof(int)];
         _ = await UsbMonitor.IoControlAsync(SUPUSBFLT_IOCTL.REMOVE_FILTER, BitConverter.GetBytes(filterId), output);
-        ref var rc = ref MemoryMarshal.AsRef<int>(output);
+        ref readonly var rc = ref MemoryMarshal.AsRef<int>(output);
         if (rc != 0 /* VINF_SUCCESS */)
         {
             throw new UnexpectedResultException($"SUPUSBFLT_IOCTL_REMOVE_FILTER failed with returnCode {rc}");
