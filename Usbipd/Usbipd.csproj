@@ -6,19 +6,16 @@ SPDX-License-Identifier: GPL-3.0-only
 -->
 <Project Sdk="Microsoft.NET.Sdk.Worker">
 
+  <Import Project="../Platform.Build.props" />
+
   <PropertyGroup>
     <TargetFramework>$(MainTargetFramework)</TargetFramework>
-    <TargetPlatformIdentifier>windows</TargetPlatformIdentifier>
-    <TargetPlatformVersion>$(MinimumWindowsVersion)</TargetPlatformVersion>
-    <TargetPlatformMinVersion>$(MinimumWindowsVersion)</TargetPlatformMinVersion>
-    <RuntimeIdentifiers>win-x64;win-arm64</RuntimeIdentifiers>
     <OutputType>Exe</OutputType>
     <ApplicationManifest>app.manifest</ApplicationManifest>
 
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 
     <IsPublishable>true</IsPublishable>
-    <PublishProfile Condition=" 'BuildingInsideVisualStudio' != 'true' ">Properties\PublishProfiles\InputForInstaller_$(RuntimeIdentifier).pubxml</PublishProfile>
     <PublishAot>true</PublishAot>
     <CopyOutputSymbolsToPublishDirectory>false</CopyOutputSymbolsToPublishDirectory>
     <OptimizationPreference>Speed</OptimizationPreference>
