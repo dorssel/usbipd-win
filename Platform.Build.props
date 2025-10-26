@@ -1,0 +1,34 @@
+﻿<!--
+SPDX-FileCopyrightText: 2025 Frans van Dorsselaer
+
+SPDX-License-Identifier: GPL-3.0-only
+-->
+<Project>
+
+  <PropertyGroup>
+    <!-- This product requires a supported version of Windows 10 or Windows Server 2019 -->
+    <!-- Currently, oldest version not EOL is Windows Server 2019 (version 1809) -->
+    <MinimumWindowsVersion>10.0.17763</MinimumWindowsVersion>
+
+    <TargetPlatformIdentifier>Windows</TargetPlatformIdentifier>
+    <TargetPlatformVersion>$(MinimumWindowsVersion)</TargetPlatformVersion>
+    <TargetPlatformMinVersion>$(MinimumWindowsVersion)</TargetPlatformMinVersion>
+
+    <!-- The drivers are available on these platforms only -->
+    <RuntimeIdentifiers>win-x64;win-arm64</RuntimeIdentifiers>
+    <!-- Since we use PInvoke, we cannot use AnyCPU -->
+    <Platforms>x64;ARM64</Platforms>
+
+    <!-- Since the output directory already starts with the platform XXX, and we only support win-XXX, there is no need for this -->
+    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+
+    <!-- Use 'dotnet build' or 'dotnet test' with '-p:Platform=XXX', which implies the runtime -->
+    <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == '' and '$(Platform)' == 'x64'">win-x64</RuntimeIdentifier>
+    <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == '' and '$(Platform)' == 'ARM64'">win-arm64</RuntimeIdentifier>
+
+    <!-- Use 'dotnet publish' with '-r win-XXX', which implies the platform -->
+    <Platform Condition="'$(Platform)' == '' and '$(RuntimeIdentifier)' == 'win-x64'">x64</Platform>
+    <Platform Condition="'$(Platform)' == '' and '$(RuntimeIdentifier)' == 'win-arm64'">ARM64</Platform>
+  </PropertyGroup>
+
+</Project>

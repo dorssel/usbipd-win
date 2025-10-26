@@ -15,9 +15,6 @@ SPDX-License-Identifier: GPL-3.0-only
     <!-- See: https://learn.microsoft.com/en-us/dotnet/standard/library-guidance/strong-naming#create-strong-named-net-libraries -->
     <SignAssembly Condition="$(TargetFramework.Contains('netstandard'))">true</SignAssembly>
     <AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)\strongname.snk</AssemblyOriginatorKeyFile>
-    <RuntimeIdentifiers Condition="'$(Platforms)' != 'AnyCPU'">win-x64;win-arm64</RuntimeIdentifiers>
-    <RuntimeIdentifier Condition="'$(Platforms)' != 'AnyCPU' and '$(Platform)' == 'x64'">win-x64</RuntimeIdentifier>
-    <RuntimeIdentifier Condition="'$(Platforms)' != 'AnyCPU' and '$(Platform)' == 'ARM64'">win-arm64</RuntimeIdentifier>
   </PropertyGroup>
 
   <Target Name="RemoveDebug" AfterTargets="Publish">
