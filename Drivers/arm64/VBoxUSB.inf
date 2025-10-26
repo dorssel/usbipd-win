@@ -1,4 +1,4 @@
-; $Id: VBoxUSB.inf 170187 2025-08-11 17:18:47Z klaus $
+; $Id: VBoxUSB.inf 170711 2025-09-29 16:57:21Z klaus $
 ;; @file
 ; VBox host drivers - USB drivers - Win32 USB device
 ;
@@ -39,7 +39,7 @@ Signature="$Windows NT$"
 Class=USB
 ClassGUID={36FC9E60-C465-11CF-8056-444553540000}
 provider=%ORACLE%
-DriverVer = 09/10/2025,7.2.2.20484 ; r170484
+DriverVer = 10/17/2025,7.2.4.20995 ; r170995
 CatalogFile=VBoxUSB.cat
 PnpLockdown=1
 
@@ -56,10 +56,12 @@ DefaultDestDir = 12
 %ORACLE%=VBoxUSB,NTARM64
 
 [VBoxUSB.NTARM64]
-%VBoxUSB_DrvDesc%=VBoxUSB,USB\VID_80EE&PID_CAFE
+%VBoxUSB_DrvDesc%=VBoxUSB_Drv,USB\VID_80EE&PID_CAFE
+
+[VBoxUSB_Drv.NTARM64]
 CopyFiles=VBoxUSB_CopyFiles
 
-[VBoxUSB.NTARM64.Services]
+[VBoxUSB_Drv.NTARM64.Services]
 AddService=VBoxUSB,0x00000002,VBoxUSB_Service,VBoxUSB_AddReg
 
 [DefaultUninstall.NTARM64.Services]
@@ -72,7 +74,7 @@ DisplayName    = %VBoxUSB_SvcDesc%
 ServiceType    = %SERVICE_TYPE_KERNEL_DRIVER%
 StartType      = %SERVICE_STARTTYPE_DEMAND%
 ErrorControl   = %SERVICE_ERRORCTL_NORMAL%
-ServiceBinary  = %10%\System32\Drivers\VBoxUSB.sys
+ServiceBinary  = %12%\VBoxUSB.sys
 LoadOrderGroup = Base
 
 [VBoxUSB_AddReg]
