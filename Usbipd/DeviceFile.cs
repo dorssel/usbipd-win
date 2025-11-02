@@ -72,16 +72,12 @@ sealed partial class DeviceFile : IDisposable
             }
 
             var nativeOverlapped = BoundHandle.AllocateNativeOverlapped(OnCompletion, null, new object?[] { input, output });
-            fixed (byte* pInput = input, pOutput = output)
+            if (!PInvoke.DeviceIoControl(FileHandle, ioControlCode, input, output, out _, ref *nativeOverlapped))
             {
-                if (!PInvoke.DeviceIoControl(FileHandle, ioControlCode, pInput, (uint)(input?.Length ?? 0),
-                    pOutput, (uint)(output?.Length ?? 0), null, nativeOverlapped))
+                var errorCode = (WIN32_ERROR)Marshal.GetLastPInvokeError();
+                if (errorCode != WIN32_ERROR.ERROR_IO_PENDING)
                 {
-                    var errorCode = (WIN32_ERROR)Marshal.GetLastPInvokeError();
-                    if (errorCode != WIN32_ERROR.ERROR_IO_PENDING)
-                    {
-                        OnCompletion((uint)errorCode, 0, nativeOverlapped);
-                    }
+                    OnCompletion((uint)errorCode, 0, nativeOverlapped);
                 }
             }
         }

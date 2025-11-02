@@ -21,24 +21,20 @@ static class DriverTools
     /// <exception cref="Win32Exception">On failure.</exception>
     public static bool SetNullDriver(WindowsDevice device)
     {
-        unsafe // DevSkim: ignore DS172412
+        using var deviceInfoList = PInvoke.SetupDiCreateDeviceInfoList(null, default);
+        if (deviceInfoList.IsInvalid)
         {
-            using var deviceInfoList = PInvoke.SetupDiCreateDeviceInfoList(null, default);
-            if (deviceInfoList.IsInvalid)
-            {
-                Tools.ThrowWin32Error(nameof(PInvoke.SetupDiCreateDeviceInfoList));
-            }
-            var deviceInfoData = new SP_DEVINFO_DATA()
-            {
-                cbSize = (uint)Unsafe.SizeOf<SP_DEVINFO_DATA>(),
-            };
-            PInvoke.SetupDiOpenDeviceInfo(deviceInfoList, device.InstanceId, default, 0, &deviceInfoData)
-                .ThrowOnWin32Error(nameof(PInvoke.SetupDiOpenDeviceInfo));
-            BOOL reboot;
-            PInvoke.DiInstallDevice(default, deviceInfoList, deviceInfoData, null, DIINSTALLDEVICE_FLAGS.DIIDFLAG_INSTALLNULLDRIVER, &reboot)
-                .ThrowOnWin32Error(nameof(DIINSTALLDEVICE_FLAGS.DIIDFLAG_INSTALLNULLDRIVER));
-            return reboot;
+            Tools.ThrowWin32Error(nameof(PInvoke.SetupDiCreateDeviceInfoList));
         }
+        var deviceInfoData = new SP_DEVINFO_DATA()
+        {
+            cbSize = (uint)Unsafe.SizeOf<SP_DEVINFO_DATA>(),
+        };
+        PInvoke.SetupDiOpenDeviceInfo(deviceInfoList, device.InstanceId, default, 0, ref deviceInfoData)
+            .ThrowOnWin32Error(nameof(PInvoke.SetupDiOpenDeviceInfo));
+        PInvoke.DiInstallDevice(default, deviceInfoList, deviceInfoData, null, DIINSTALLDEVICE_FLAGS.DIIDFLAG_INSTALLNULLDRIVER, out var reboot)
+            .ThrowOnWin32Error(nameof(DIINSTALLDEVICE_FLAGS.DIIDFLAG_INSTALLNULLDRIVER));
+        return reboot;
     }
 
     /// <summary>
@@ -51,45 +47,41 @@ static class DriverTools
     /// <exception cref="Win32Exception">On failure.</exception>
     public static bool SetVBoxDriver(WindowsDevice device)
     {
-        unsafe // DevSkim: ignore DS172412
+        using var deviceInfoList = PInvoke.SetupDiCreateDeviceInfoList(null, default);
+        if (deviceInfoList.IsInvalid)
         {
-            using var deviceInfoList = PInvoke.SetupDiCreateDeviceInfoList(null, default);
-            if (deviceInfoList.IsInvalid)
-            {
-                Tools.ThrowWin32Error(nameof(PInvoke.SetupDiCreateDeviceInfoList));
-            }
-            var deviceInfoData = new SP_DEVINFO_DATA()
-            {
-                cbSize = (uint)Unsafe.SizeOf<SP_DEVINFO_DATA>(),
-            };
-            PInvoke.SetupDiOpenDeviceInfo(deviceInfoList, device.InstanceId, default, 0, &deviceInfoData)
-                .ThrowOnWin32Error(nameof(PInvoke.SetupDiOpenDeviceInfo));
-            var deviceInstallParams = new SP_DEVINSTALL_PARAMS_W()
-            {
-                cbSize = (uint)Unsafe.SizeOf<SP_DEVINSTALL_PARAMS_W>(),
-                Flags = SETUP_DI_DEVICE_INSTALL_FLAGS.DI_ENUMSINGLEINF,
-                FlagsEx = SETUP_DI_DEVICE_INSTALL_FLAGS_EX.DI_FLAGSEX_ALLOWEXCLUDEDDRVS,
-                DriverPath = DriverDetails.Instance.DriverPath,
-            };
-            PInvoke.SetupDiSetDeviceInstallParams(deviceInfoList, deviceInfoData, deviceInstallParams)
-                .ThrowOnWin32Error(nameof(PInvoke.SetupDiSetDeviceInstallParams));
-            PInvoke.SetupDiBuildDriverInfoList(deviceInfoList, &deviceInfoData, SETUP_DI_DRIVER_TYPE.SPDIT_CLASSDRIVER)
-                .ThrowOnWin32Error(nameof(PInvoke.SetupDiBuildDriverInfoList));
-            var driverInfoData = new SP_DRVINFO_DATA_V2_W()
-            {
-                cbSize = (uint)Unsafe.SizeOf<SP_DRVINFO_DATA_V2_W>(),
-            };
-            PInvoke.SetupDiEnumDriverInfo(deviceInfoList, deviceInfoData, SETUP_DI_DRIVER_TYPE.SPDIT_CLASSDRIVER, 0, ref driverInfoData)
-                .ThrowOnWin32Error(nameof(PInvoke.SetupDiEnumDriverInfo));
-            BOOL reboot;
-            PInvoke.DiInstallDevice(default, deviceInfoList, deviceInfoData, driverInfoData, 0, &reboot)
-                .ThrowOnWin32Error(nameof(PInvoke.DiInstallDevice));
-
-            // Best effort, not really a problem if this fails.
-            _ = device.SetFriendlyName();
-
-            return reboot;
+            Tools.ThrowWin32Error(nameof(PInvoke.SetupDiCreateDeviceInfoList));
         }
+        var deviceInfoData = new SP_DEVINFO_DATA()
+        {
+            cbSize = (uint)Unsafe.SizeOf<SP_DEVINFO_DATA>(),
+        };
+        PInvoke.SetupDiOpenDeviceInfo(deviceInfoList, device.InstanceId, default, 0, ref deviceInfoData)
+            .ThrowOnWin32Error(nameof(PInvoke.SetupDiOpenDeviceInfo));
+        var deviceInstallParams = new SP_DEVINSTALL_PARAMS_W()
+        {
+            cbSize = (uint)Unsafe.SizeOf<SP_DEVINSTALL_PARAMS_W>(),
+            Flags = SETUP_DI_DEVICE_INSTALL_FLAGS.DI_ENUMSINGLEINF,
+            FlagsEx = SETUP_DI_DEVICE_INSTALL_FLAGS_EX.DI_FLAGSEX_ALLOWEXCLUDEDDRVS,
+            DriverPath = DriverDetails.Instance.DriverPath,
+        };
+        PInvoke.SetupDiSetDeviceInstallParams(deviceInfoList, deviceInfoData, deviceInstallParams)
+            .ThrowOnWin32Error(nameof(PInvoke.SetupDiSetDeviceInstallParams));
+        PInvoke.SetupDiBuildDriverInfoList(deviceInfoList, ref deviceInfoData, SETUP_DI_DRIVER_TYPE.SPDIT_CLASSDRIVER)
+            .ThrowOnWin32Error(nameof(PInvoke.SetupDiBuildDriverInfoList));
+        var driverInfoData = new SP_DRVINFO_DATA_V2_W()
+        {
+            cbSize = (uint)Unsafe.SizeOf<SP_DRVINFO_DATA_V2_W>(),
+        };
+        PInvoke.SetupDiEnumDriverInfo(deviceInfoList, deviceInfoData, SETUP_DI_DRIVER_TYPE.SPDIT_CLASSDRIVER, 0, ref driverInfoData)
+            .ThrowOnWin32Error(nameof(PInvoke.SetupDiEnumDriverInfo));
+        PInvoke.DiInstallDevice(default, deviceInfoList, deviceInfoData, driverInfoData, 0, out var reboot)
+            .ThrowOnWin32Error(nameof(PInvoke.DiInstallDevice));
+
+        // Best effort, not really a problem if this fails.
+        _ = device.SetFriendlyName();
+
+        return reboot;
     }
 
     public static bool ForceVBoxDriver(WindowsDevice device)
@@ -134,63 +126,51 @@ static class DriverTools
         // 200 ms seems to work, so delay for 500 ms for good measure...
         Thread.Sleep(TimeSpan.FromMilliseconds(500));
 
-        unsafe // DevSkim: ignore DS172412
+        // Now we let Windows install the default PnP driver.
+        // We don't fail if no such driver can be found.
+        using var deviceInfoSet = PInvoke.SetupDiCreateDeviceInfoList(null, default);
+        if (deviceInfoSet.IsInvalid)
         {
-            // Now we let Windows install the default PnP driver.
-            // We don't fail if no such driver can be found.
-            using var deviceInfoSet = PInvoke.SetupDiCreateDeviceInfoList(null, default);
-            if (deviceInfoSet.IsInvalid)
+            Tools.ThrowWin32Error(nameof(PInvoke.SetupDiCreateDeviceInfoList));
+        }
+        var deviceInfoData = new SP_DEVINFO_DATA()
+        {
+            cbSize = (uint)Unsafe.SizeOf<SP_DEVINFO_DATA>(),
+        };
+        PInvoke.SetupDiOpenDeviceInfo(deviceInfoSet, device.InstanceId, default, 0, ref deviceInfoData)
+            .ThrowOnWin32Error(nameof(PInvoke.SetupDiOpenDeviceInfo));
+        try
+        {
+            PInvoke.DiInstallDevice(default, deviceInfoSet, deviceInfoData, null, 0, out var tmpReboot)
+                .ThrowOnWin32Error(nameof(PInvoke.DiInstallDevice));
+            if (tmpReboot)
             {
-                Tools.ThrowWin32Error(nameof(PInvoke.SetupDiCreateDeviceInfoList));
+                reboot = true;
             }
-            var deviceInfoData = new SP_DEVINFO_DATA()
-            {
-                cbSize = (uint)Unsafe.SizeOf<SP_DEVINFO_DATA>(),
-            };
-            PInvoke.SetupDiOpenDeviceInfo(deviceInfoSet, device.InstanceId, default, 0, &deviceInfoData)
-                .ThrowOnWin32Error(nameof(PInvoke.SetupDiOpenDeviceInfo));
-            try
-            {
-                BOOL tmpReboot;
-                PInvoke.DiInstallDevice(default, deviceInfoSet, deviceInfoData, null, 0, &tmpReboot).ThrowOnWin32Error(nameof(PInvoke.DiInstallDevice));
-                if (tmpReboot)
-                {
-                    reboot = true;
-                }
-            }
-            catch (Win32Exception ex) when ((WIN32_ERROR)ex.NativeErrorCode == WIN32_ERROR.ERROR_NO_DRIVER_SELECTED)
-            {
-                // Not really an error; this just means Windows does not have a default PnP driver for it.
-                // The device will be listed under "Other devices" with a question mark.
-            }
+        }
+        catch (Win32Exception ex) when ((WIN32_ERROR)ex.NativeErrorCode == WIN32_ERROR.ERROR_NO_DRIVER_SELECTED)
+        {
+            // Not really an error; this just means Windows does not have a default PnP driver for it.
+            // The device will be listed under "Other devices" with a question mark.
         }
         return reboot;
     }
 
     public static bool UninstallStubDevice(WindowsDevice device)
     {
-        var reboot = false;
-
-        unsafe // DevSkim: ignore DS172412
+        using var deviceInfoSet = PInvoke.SetupDiCreateDeviceInfoList(null, default);
+        if (deviceInfoSet.IsInvalid)
         {
-            using var deviceInfoSet = PInvoke.SetupDiCreateDeviceInfoList(null, default);
-            if (deviceInfoSet.IsInvalid)
-            {
-                Tools.ThrowWin32Error(nameof(PInvoke.SetupDiCreateDeviceInfoList));
-            }
-            var deviceInfoData = new SP_DEVINFO_DATA()
-            {
-                cbSize = (uint)Unsafe.SizeOf<SP_DEVINFO_DATA>(),
-            };
-            PInvoke.SetupDiOpenDeviceInfo(deviceInfoSet, device.InstanceId, default, 0, &deviceInfoData)
-                .ThrowOnWin32Error(nameof(PInvoke.SetupDiOpenDeviceInfo));
-            BOOL tmpReboot;
-            PInvoke.DiUninstallDevice(default, deviceInfoSet, deviceInfoData, 0, &tmpReboot).ThrowOnWin32Error(nameof(PInvoke.DiUninstallDevice));
-            if (tmpReboot)
-            {
-                reboot = true;
-            }
+            Tools.ThrowWin32Error(nameof(PInvoke.SetupDiCreateDeviceInfoList));
         }
+        var deviceInfoData = new SP_DEVINFO_DATA()
+        {
+            cbSize = (uint)Unsafe.SizeOf<SP_DEVINFO_DATA>(),
+        };
+        PInvoke.SetupDiOpenDeviceInfo(deviceInfoSet, device.InstanceId, default, 0, ref deviceInfoData)
+            .ThrowOnWin32Error(nameof(PInvoke.SetupDiOpenDeviceInfo));
+        PInvoke.DiUninstallDevice(default, deviceInfoSet, deviceInfoData, 0, out var reboot)
+            .ThrowOnWin32Error(nameof(PInvoke.DiUninstallDevice));
 
         return reboot;
     }
