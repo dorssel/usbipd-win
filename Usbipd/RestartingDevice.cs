@@ -18,23 +18,16 @@ sealed partial class RestartingDevice
     public RestartingDevice(WindowsDevice device)
     {
         Device = device;
-        unsafe // DevSkim: ignore DS172412
+
+        var buffer = new char[checked((int)PInvoke.MAX_PATH)];
+        var cr = PInvoke.CM_Query_And_Remove_SubTree(Device.Node, out var vetoType, buffer, PInvoke.CM_REMOVE_NO_RESTART | PInvoke.CM_REMOVE_UI_NOT_OK);
+        if (cr == CONFIGRET.CR_REMOVE_VETOED)
         {
-            PNP_VETO_TYPE vetoType;
-            var buffer = new char[checked((int)PInvoke.MAX_PATH)];
-            fixed (char* pBuffer = buffer)
-            {
-                var cr = PInvoke.CM_Query_And_Remove_SubTree(Device.Node, &vetoType, pBuffer, PInvoke.MAX_PATH,
-                    PInvoke.CM_REMOVE_NO_RESTART | PInvoke.CM_REMOVE_UI_NOT_OK);
-                if (cr == CONFIGRET.CR_REMOVE_VETOED)
-                {
-                    buffer[^1] = '\0';
-                    var vetoName = new string(pBuffer);
-                    throw new ConfigurationManagerException(cr, $"{nameof(PInvoke.CM_Query_And_Remove_SubTree)} returned {cr}: {vetoType}, {vetoName}");
-                }
-                cr.ThrowOnError(nameof(PInvoke.CM_Query_And_Remove_SubTree));
-            }
+            var length = buffer.TakeWhile(c => c != '\0').Count();
+            var vetoName = new string(buffer[..length]);
+            throw new ConfigurationManagerException(cr, $"{nameof(PInvoke.CM_Query_And_Remove_SubTree)} returned {cr}: {vetoType}, {vetoName}");
         }
+        cr.ThrowOnError(nameof(PInvoke.CM_Query_And_Remove_SubTree));
     }
 
     readonly WindowsDevice Device;

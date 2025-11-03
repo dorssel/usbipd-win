@@ -115,6 +115,11 @@ sealed partial class CommandHandlers : ICommandHandlers
 
     Task<ExitCode> ICommandHandlers.List(bool usbIds, IConsole console, CancellationToken cancellationToken)
     {
+        if (!CheckInstalled(console))
+        {
+            return Task.FromResult(ExitCode.Failure);
+        }
+
 #pragma warning disable CA1849 // Call async methods when in an async method
         var allDevices = UsbDevice.GetAll().ToList();
         console.Out.WriteLine("Connected:");
@@ -198,11 +203,21 @@ sealed partial class CommandHandlers : ICommandHandlers
 
     Task<ExitCode> ICommandHandlers.Bind(BusId busId, bool force, IConsole console, CancellationToken cancellationToken)
     {
+        if (!CheckInstalled(console))
+        {
+            return Task.FromResult(ExitCode.Failure);
+        }
+
         return Task.FromResult(Bind(busId, force, console));
     }
 
     Task<ExitCode> ICommandHandlers.Bind(VidPid vidPid, bool force, IConsole console, CancellationToken cancellationToken)
     {
+        if (!CheckInstalled(console))
+        {
+            return Task.FromResult(ExitCode.Failure);
+        }
+
         return GetBusIdByHardwareId(vidPid, console) is BusId busId
             ? Task.FromResult(Bind(busId, force, console))
             : Task.FromResult(ExitCode.Failure);
@@ -210,6 +225,11 @@ sealed partial class CommandHandlers : ICommandHandlers
 
     Task<ExitCode> ICommandHandlers.Unbind(BusId busId, IConsole console, CancellationToken cancellationToken)
     {
+        if (!CheckInstalled(console))
+        {
+            return Task.FromResult(ExitCode.Failure);
+        }
+
         var device = UsbDevice.GetAll().SingleOrDefault(d => d.BusId.HasValue && d.BusId.Value == busId);
         if (device is null)
         {
@@ -239,6 +259,11 @@ sealed partial class CommandHandlers : ICommandHandlers
 
     static ExitCode Unbind(IEnumerable<UsbDevice> devices, IConsole console)
     {
+        if (!CheckInstalled(console))
+        {
+            return ExitCode.Failure;
+        }
+
         // Unbind acts as a cleanup and has to support partially failed binds.
 
         var deviceList = devices.ToList();
@@ -291,6 +316,11 @@ sealed partial class CommandHandlers : ICommandHandlers
 
     Task<ExitCode> ICommandHandlers.Unbind(Guid guid, IConsole console, CancellationToken cancellationToken)
     {
+        if (!CheckInstalled(console))
+        {
+            return Task.FromResult(ExitCode.Failure);
+        }
+
         var device = UsbipdRegistry.Instance.GetBoundDevices().SingleOrDefault(d => d.Guid.HasValue && d.Guid.Value == guid);
         if (device is null)
         {
@@ -302,11 +332,21 @@ sealed partial class CommandHandlers : ICommandHandlers
 
     Task<ExitCode> ICommandHandlers.Unbind(VidPid vidPid, IConsole console, CancellationToken cancellationToken)
     {
+        if (!CheckInstalled(console))
+        {
+            return Task.FromResult(ExitCode.Failure);
+        }
+
         return Task.FromResult(Unbind(GetDevicesByHardwareId(vidPid, false, console), console));
     }
 
     Task<ExitCode> ICommandHandlers.UnbindAll(IConsole console, CancellationToken cancellationToken)
     {
+        if (!CheckInstalled(console))
+        {
+            return Task.FromResult(ExitCode.Failure);
+        }
+
         // UnbindAll() is even more special. It will also delete corrupt registry entries and
         // also removes stub drivers for devices that are neither shared nor connected.
         // Therefore, UnbindAll() cannot use the generic Unbind() helper.
@@ -349,6 +389,11 @@ sealed partial class CommandHandlers : ICommandHandlers
     async Task<ExitCode> ICommandHandlers.AttachWsl(BusId busId, bool autoAttach, bool unplugged, string? distribution, IPAddress? hostAddress,
         IConsole console, CancellationToken cancellationToken)
     {
+        if (!CheckInstalled(console))
+        {
+            return ExitCode.Failure;
+        }
+
         var device = UsbDevice.GetAll().SingleOrDefault(d => d.BusId.HasValue && d.BusId.Value == busId);
         if (device is null)
         {
@@ -389,6 +434,11 @@ sealed partial class CommandHandlers : ICommandHandlers
 
     static ExitCode Detach(IEnumerable<UsbDevice> devices, IConsole console)
     {
+        if (!CheckInstalled(console))
+        {
+            return ExitCode.Failure;
+        }
+
         var error = false;
         foreach (var device in devices)
         {
@@ -409,6 +459,11 @@ sealed partial class CommandHandlers : ICommandHandlers
 
     Task<ExitCode> ICommandHandlers.Detach(BusId busId, IConsole console, CancellationToken cancellationToken)
     {
+        if (!CheckInstalled(console))
+        {
+            return Task.FromResult(ExitCode.Failure);
+        }
+
         var device = UsbDevice.GetAll().SingleOrDefault(d => d.BusId.HasValue && d.BusId.Value == busId);
         if (device is null)
         {
@@ -420,6 +475,11 @@ sealed partial class CommandHandlers : ICommandHandlers
 
     Task<ExitCode> ICommandHandlers.Detach(VidPid vidPid, IConsole console, CancellationToken cancellationToken)
     {
+        if (!CheckInstalled(console))
+        {
+            return Task.FromResult(ExitCode.Failure);
+        }
+
         var devices = GetDevicesByHardwareId(vidPid, true, console);
         if (devices.Count == 0)
         {
@@ -431,6 +491,11 @@ sealed partial class CommandHandlers : ICommandHandlers
 
     Task<ExitCode> ICommandHandlers.DetachAll(IConsole console, CancellationToken cancellationToken)
     {
+        if (!CheckInstalled(console))
+        {
+            return Task.FromResult(ExitCode.Failure);
+        }
+
         if (!UsbipdRegistry.Instance.SetAllDevicesAsDetached())
         {
             console.ReportError($"Failed to detach one or more devices.");
@@ -441,6 +506,11 @@ sealed partial class CommandHandlers : ICommandHandlers
 
     async Task<ExitCode> ICommandHandlers.State(IConsole console, CancellationToken cancellationToken)
     {
+        if (!CheckInstalled(console))
+        {
+            return ExitCode.Failure;
+        }
+
         console.SetError(TextWriter.Null);
 
         var devices = new List<Device>();
@@ -476,6 +546,11 @@ sealed partial class CommandHandlers : ICommandHandlers
 
     Task<ExitCode> ICommandHandlers.PolicyAdd(PolicyRule rule, IConsole console, CancellationToken cancellationToken)
     {
+        if (!CheckInstalled(console))
+        {
+            return Task.FromResult(ExitCode.Failure);
+        }
+
         if (UsbipdRegistry.Instance.GetPolicyRules().FirstOrDefault(r => r.Value == rule) is var existingRule && existingRule.Key != default)
         {
             console.ReportError($"Policy rule already exists with guid '{existingRule.Key:D}'.");
@@ -494,6 +569,11 @@ sealed partial class CommandHandlers : ICommandHandlers
 
     Task<ExitCode> ICommandHandlers.PolicyList(IConsole console, CancellationToken cancellationToken)
     {
+        if (!CheckInstalled(console))
+        {
+            return Task.FromResult(ExitCode.Failure);
+        }
+
 #pragma warning disable CA1849 // Call async methods when in an async method
         var policyRules = UsbipdRegistry.Instance.GetPolicyRules();
         console.Out.WriteLine("Policy rules:");
@@ -522,6 +602,11 @@ sealed partial class CommandHandlers : ICommandHandlers
 
     Task<ExitCode> ICommandHandlers.PolicyRemove(Guid guid, IConsole console, CancellationToken cancellationToken)
     {
+        if (!CheckInstalled(console))
+        {
+            return Task.FromResult(ExitCode.Failure);
+        }
+
         if (!UsbipdRegistry.Instance.GetPolicyRules().ContainsKey(guid))
         {
             console.ReportError($"There is no policy rule with guid '{guid:D}'.");
@@ -539,6 +624,11 @@ sealed partial class CommandHandlers : ICommandHandlers
 
     Task<ExitCode> ICommandHandlers.PolicyRemoveAll(IConsole console, CancellationToken cancellationToken)
     {
+        if (!CheckInstalled(console))
+        {
+            return Task.FromResult(ExitCode.Failure);
+        }
+
         if (!CheckWriteAccess(console))
         {
             return Task.FromResult(ExitCode.AccessDenied);

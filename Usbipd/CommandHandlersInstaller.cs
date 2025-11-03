@@ -28,17 +28,12 @@ sealed partial class CommandHandlers : ICommandHandlers
     {
         ConsoleTools.ReportInfo(console, "install_driver");
 
+        ConsoleTools.ReportInfo(console, $"Installing VBoxUSB version {DriverDetails.Instance.Version}");
+        // See: https://learn.microsoft.com/en-us/windows-hardware/drivers/install/preinstalling-driver-packages
+        if (!PInvoke.SetupCopyOEMInf(DriverDetails.Instance.DriverPath, null, OEM_SOURCE_MEDIA_TYPE.SPOST_PATH, 0, null))
         {
-            ConsoleTools.ReportInfo(console, $"Installing VBoxUSB version {DriverDetails.Instance.Version}");
-            // See: https://learn.microsoft.com/en-us/windows-hardware/drivers/install/preinstalling-driver-packages
-            unsafe // DevSkim: ignore DS172412
-            {
-                if (!PInvoke.SetupCopyOEMInf(DriverDetails.Instance.DriverPath, null, OEM_SOURCE_MEDIA_TYPE.SPOST_PATH, 0, null, null, null))
-                {
-                    console.ReportLastWin32Error(nameof(PInvoke.SetupCopyOEMInf));
-                    return Task.FromResult(ExitCode.Failure);
-                }
-            }
+            console.ReportLastWin32Error(nameof(PInvoke.SetupCopyOEMInf));
+            return Task.FromResult(ExitCode.Failure);
         }
 
         return Task.FromResult(ExitCode.Success);
@@ -48,20 +43,15 @@ sealed partial class CommandHandlers : ICommandHandlers
     {
         ConsoleTools.ReportInfo(console, $"uninstall_driver");
 
-        BOOL needReboot;
-
         ConsoleTools.ReportInfo(console, $"Uninstalling VBoxUSB version {DriverDetails.Instance.Version}");
-        unsafe // DevSkim: ignore DS172412
+        if (!PInvoke.DiUninstallDriver(HWND.Null, DriverDetails.Instance.DriverPath, 0, out var needReboot))
         {
-            if (!PInvoke.DiUninstallDriver(HWND.Null, DriverDetails.Instance.DriverPath, 0, &needReboot))
-            {
-                console.ReportLastWin32Error(nameof(PInvoke.DiUninstallDriver));
-                return Task.FromResult(ExitCode.Failure);
-            }
+            console.ReportLastWin32Error(nameof(PInvoke.DiUninstallDriver));
+            return Task.FromResult(ExitCode.Failure);
         }
 
         // This is a best effort, we ignore reboot.
-        console.ReportInfo($"Need reboot: {needReboot}");
+        console.ReportInfo($"Need reboot: {(bool)needReboot}");
 
         return Task.FromResult(ExitCode.Success);
     }
@@ -77,18 +67,15 @@ sealed partial class CommandHandlers : ICommandHandlers
             console.ReportLastWin32Error(nameof(PInvoke.OpenSCManager));
             return Task.FromResult(ExitCode.Failure);
         }
-        unsafe // DevSkim: ignore DS172412
+        using var service = PInvoke.CreateService(manager, "VBoxUSBMon", "VirtualBox USB Monitor Service",
+            (uint)GENERIC_ACCESS_RIGHTS.GENERIC_ALL, ENUM_SERVICE_TYPE.SERVICE_KERNEL_DRIVER, SERVICE_START_TYPE.SERVICE_DEMAND_START,
+            SERVICE_ERROR.SERVICE_ERROR_NORMAL,
+            Path.Combine(Path.GetDirectoryName(DriverDetails.Instance.DriverPath)!, "VBoxUSBMon.sys"),
+            null, null, null, null);
+        if (service.IsInvalid)
         {
-            using var service = PInvoke.CreateService(manager, "VBoxUSBMon", "VirtualBox USB Monitor Service",
-                (uint)GENERIC_ACCESS_RIGHTS.GENERIC_ALL, ENUM_SERVICE_TYPE.SERVICE_KERNEL_DRIVER, SERVICE_START_TYPE.SERVICE_DEMAND_START,
-                SERVICE_ERROR.SERVICE_ERROR_NORMAL,
-                Path.Combine(Path.GetDirectoryName(DriverDetails.Instance.DriverPath)!, "VBoxUSBMon.sys"),
-                null, null, null, null, null);
-            if (service.IsInvalid)
-            {
-                console.ReportLastWin32Error(nameof(PInvoke.CreateService));
-                return Task.FromResult(ExitCode.Failure);
-            }
+            console.ReportLastWin32Error(nameof(PInvoke.CreateService));
+            return Task.FromResult(ExitCode.Failure);
         }
 
         return Task.FromResult(ExitCode.Success);
@@ -117,13 +104,10 @@ sealed partial class CommandHandlers : ICommandHandlers
             console.ReportLastWin32Error(nameof(PInvoke.SetupDiSetDeviceInstallParams));
             return Task.FromResult(ExitCode.Failure);
         }
-        unsafe // DevSkim: ignore DS172412
+        if (!PInvoke.SetupDiBuildDriverInfoList(deviceInfoSet, SETUP_DI_DRIVER_TYPE.SPDIT_CLASSDRIVER))
         {
-            if (!PInvoke.SetupDiBuildDriverInfoList(deviceInfoSet, null, SETUP_DI_DRIVER_TYPE.SPDIT_CLASSDRIVER))
-            {
-                console.ReportLastWin32Error(nameof(PInvoke.SetupDiBuildDriverInfoList));
-                return Task.FromResult(ExitCode.Failure);
-            }
+            console.ReportLastWin32Error(nameof(PInvoke.SetupDiBuildDriverInfoList));
+            return Task.FromResult(ExitCode.Failure);
         }
         SP_DRVINFO_DATA_V2_W driverInfoData = new()
         {
@@ -141,63 +125,61 @@ sealed partial class CommandHandlers : ICommandHandlers
                 console.ReportLastWin32Error(nameof(PInvoke.SetupDiEnumDriverInfo));
                 return Task.FromResult(ExitCode.Failure);
             }
-            unsafe // DevSkim: ignore DS172412
+            if (!PInvoke.SetupDiGetDriverInfoDetail(deviceInfoSet, null, driverInfoData, null, out var requiredSize)
+                && ((WIN32_ERROR)Marshal.GetLastPInvokeError() != WIN32_ERROR.ERROR_INSUFFICIENT_BUFFER))
             {
-                var requiredSize = 0u;
-                if (!PInvoke.SetupDiGetDriverInfoDetail(deviceInfoSet, null, driverInfoData, null, 0, &requiredSize))
-                {
-                    if ((WIN32_ERROR)Marshal.GetLastPInvokeError() != WIN32_ERROR.ERROR_INSUFFICIENT_BUFFER)
-                    {
-                        console.ReportLastWin32Error(nameof(PInvoke.SetupDiGetDriverInfoDetail));
-                        success = false;
-                        continue;
-                    }
-                }
-                var buffer = new byte[requiredSize];
-                fixed (byte* bufferPointer = buffer)
-                {
-                    var details = (SP_DRVINFO_DETAIL_DATA_W*)bufferPointer;
-                    details->cbSize = (uint)Unsafe.SizeOf<SP_DRVINFO_DETAIL_DATA_W>();
-                    if (!PInvoke.SetupDiGetDriverInfoDetail(deviceInfoSet, null, driverInfoData, details, requiredSize, null))
-                    {
-                        console.ReportLastWin32Error(nameof(PInvoke.SetupDiGetDriverInfoDetail));
-                        success = false;
-                        continue;
-                    }
-                    var hardwareId = new string((char*)&details->HardwareID);
-                    if (!VidPid.TryParseId(hardwareId, out var vidPid))
-                    {
-                        // This can happen for other drivers -> not a failure.
-                        continue;
-                    }
-                    if (vidPid != DriverDetails.Instance.VidPid)
-                    {
-                        // This is not a VBoxUSB driver -> don't touch it.
-                        continue;
-                    }
-                    var version = new Version(
-                        (int)((driverInfoData.DriverVersion >> 48) & 0xffff),
-                        (int)((driverInfoData.DriverVersion >> 32) & 0xffff),
-                        (int)((driverInfoData.DriverVersion >> 16) & 0xffff),
-                        (int)(driverInfoData.DriverVersion & 0xffff));
-                    if (version == DriverDetails.Instance.Version)
-                    {
-                        // This is the current VBoxUSB driver -> don't remove it.
-                        continue;
-                    }
-                    ConsoleTools.ReportInfo(console, $"Uninstalling old VBoxUSB version {version}, {details->InfFileName}");
-                    BOOL tmpNeedReboot;
-                    if (!PInvoke.DiUninstallDriver(HWND.Null, details->InfFileName.ToString(), 0, &tmpNeedReboot))
-                    {
-                        console.ReportLastWin32Error(nameof(PInvoke.DiUninstallDriver));
-                        success = false;
-                        continue;
-                    }
-                    if (tmpNeedReboot)
-                    {
-                        needReboot = true;
-                    }
-                }
+                console.ReportLastWin32Error(nameof(PInvoke.SetupDiGetDriverInfoDetail));
+                success = false;
+                continue;
+            }
+            if (requiredSize < Unsafe.SizeOf<SP_DRVINFO_DETAIL_DATA_W>())
+            {
+                // This can happen for drivers that do not have any ID at all (neither hardware ID nor compatible ID).
+                // For the AsRef below we need at least the base size.
+                requiredSize = (uint)Unsafe.SizeOf<SP_DRVINFO_DETAIL_DATA_W>();
+            }
+            var buffer = new byte[requiredSize];
+            ref var details = ref MemoryMarshal.AsRef<SP_DRVINFO_DETAIL_DATA_W>(buffer);
+            details.cbSize = (uint)Unsafe.SizeOf<SP_DRVINFO_DETAIL_DATA_W>();
+            if (!PInvoke.SetupDiGetDriverInfoDetail(deviceInfoSet, null, driverInfoData, buffer))
+            {
+                console.ReportLastWin32Error(nameof(PInvoke.SetupDiGetDriverInfoDetail));
+                success = false;
+                continue;
+            }
+            var hardwareId = (details.CompatIDsOffset > 0) ?
+                new string(details.HardwareID.AsSpan(checked((int)(details.CompatIDsOffset - 1)))) : string.Empty;
+            if (!VidPid.TryParseId(hardwareId, out var vidPid))
+            {
+                // This can happen for other drivers -> not a failure.
+                continue;
+            }
+            if (vidPid != DriverDetails.Instance.VidPid)
+            {
+                // This is not a VBoxUSB driver -> don't touch it.
+                continue;
+            }
+            var version = new Version(
+                (int)((driverInfoData.DriverVersion >> 48) & 0xffff),
+                (int)((driverInfoData.DriverVersion >> 32) & 0xffff),
+                (int)((driverInfoData.DriverVersion >> 16) & 0xffff),
+                (int)(driverInfoData.DriverVersion & 0xffff));
+            if (version == DriverDetails.Instance.Version)
+            {
+                // This is the current VBoxUSB driver -> don't remove it.
+                continue;
+            }
+            var infFileName = details.InfFileName.ToString();
+            ConsoleTools.ReportInfo(console, $"Uninstalling old VBoxUSB version {version}, {infFileName}");
+            if (!PInvoke.DiUninstallDriver(HWND.Null, infFileName, 0, out var tmpNeedReboot))
+            {
+                console.ReportLastWin32Error(nameof(PInvoke.DiUninstallDriver));
+                success = false;
+                continue;
+            }
+            if (tmpNeedReboot)
+            {
+                needReboot = true;
             }
         }
 

@@ -14,6 +14,10 @@ sealed partial class CommandHandlers : ICommandHandlers
     {
         // Pre-conditions that may fail due to user mistakes. Fail gracefully...
 
+        if (!CheckInstalled(console))
+        {
+            return ExitCode.Failure;
+        }
         if (!CheckWriteAccess(console))
         {
             return ExitCode.AccessDenied;

@@ -288,6 +288,16 @@ static partial class ConsoleTools
         console.ReportWarning("A reboot may be required before the changes take effect.");
     }
 
+    public static bool CheckInstalled(IConsole console)
+    {
+        if (UsbipdRegistry.Instance.InstallationFolder is null)
+        {
+            console.ReportError("The application appears not to be installed; a repair or re-install of this software may fix that.");
+            return false;
+        }
+        return true;
+    }
+
     public static bool CheckWriteAccess(IConsole console)
     {
         if (!UsbipdRegistry.Instance.HasWriteAccess)
