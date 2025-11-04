@@ -26,6 +26,10 @@ sealed partial class DeviceFile : IDisposable
             {
                 throw new Win32Exception("CreateFile");
             }
+            if (!PInvoke.SetFileCompletionNotificationModes(FileHandle, (byte)PInvoke.FILE_SKIP_COMPLETION_PORT_ON_SUCCESS))
+            {
+                throw new Win32Exception("SetFileCompletionNotificationModes");
+            }
             BoundHandle = ThreadPoolBoundHandle.BindHandle(FileHandle);
         }
         catch
@@ -72,16 +76,30 @@ sealed partial class DeviceFile : IDisposable
             }
 
             var nativeOverlapped = BoundHandle.AllocateNativeOverlapped(OnCompletion, null, new object?[] { input, output });
-            if (!PInvoke.DeviceIoControl(FileHandle, ioControlCode, input, output, out _, ref *nativeOverlapped))
+            if (PInvoke.DeviceIoControl(FileHandle, ioControlCode, input, output, out var bytesReturned, nativeOverlapped))
+            {
+                // synchronous completion (will not call OnCompletion due to FILE_SKIP_COMPLETION_PORT_ON_SUCCESS).
+                BoundHandle.FreeNativeOverlapped(nativeOverlapped);
+                return exactOutput && ((output?.Length ?? 0) != bytesReturned)
+                    ? throw new ProtocolViolationException($"DeviceIoControl returned {bytesReturned} bytes, expected {output?.Length ?? 0}")
+                    : Task.FromResult(bytesReturned);
+            }
+            else
             {
                 var errorCode = (WIN32_ERROR)Marshal.GetLastPInvokeError();
-                if (errorCode != WIN32_ERROR.ERROR_IO_PENDING)
+                if (errorCode == WIN32_ERROR.ERROR_IO_PENDING)
                 {
-                    OnCompletion((uint)errorCode, 0, nativeOverlapped);
+                    // asynchronous pending (will eventually call OnCompletion).
+                    return taskCompletionSource.Task;
+                }
+                else
+                {
+                    // synchronous error (will not call OnCompletion).
+                    BoundHandle.FreeNativeOverlapped(nativeOverlapped);
+                    throw new Win32Exception((int)errorCode);
                 }
             }
         }
-        return taskCompletionSource.Task;
     }
 
     public Task<uint> IoControlAsync<T>(T ioControlCode, byte[]? input, byte[]? output, bool exactOutput = true) where T : Enum
