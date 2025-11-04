@@ -41,6 +41,7 @@ OpenSCManager
 RegDeleteKey
 RegNotifyChangeKeyValue
 SetEvent
+SetFileCompletionNotificationModes
 SetupCopyOEMInf
 SetupDiBuildDriverInfoList
 SetupDiCreateDeviceInfoList
@@ -49,6 +50,8 @@ SetupDiGetDriverInfoDetail
 SetupDiGetINFClass
 SetupDiOpenDeviceInfo
 SetupDiSetDeviceInstallParams
+
+FILE_SKIP_COMPLETION_PORT_ON_SUCCESS
 
 DEVPKEY_Device_Children
 DEVPKEY_Device_CompatibleIds

@@ -102,12 +102,11 @@ sealed class DeviceFile_Tests
     {
         using var temporaryFile = new TemporaryFile(true);
         using var deviceFile = new DeviceFile(temporaryFile.AbsolutePath);
-        var exception = Assert.ThrowsExactly<AggregateException>(() =>
+        Assert.ThrowsExactly<Win32Exception>(() =>
         {
             deviceFile.IoControlAsync(TEST_IOCTL.FSCTL_QUERY_ALLOCATED_RANGES, null, null)
                 .Wait(TestContext.CancellationToken);
         });
-        Assert.IsInstanceOfType<Win32Exception>(exception.InnerException);
     }
 
     [TestMethod]
@@ -117,11 +116,10 @@ sealed class DeviceFile_Tests
         using var deviceFile = new DeviceFile(temporaryFile.AbsolutePath);
         var rangeBuffer = new FILE_ALLOCATED_RANGE_BUFFER();
         var outputBuffer = new byte[1];
-        var exception = Assert.ThrowsExactly<AggregateException>(() =>
+        Assert.ThrowsExactly<ProtocolViolationException>(() =>
         {
             deviceFile.IoControlAsync(TEST_IOCTL.FSCTL_QUERY_ALLOCATED_RANGES, Tools.StructToBytes(rangeBuffer), outputBuffer)
                 .Wait(TestContext.CancellationToken);
         });
-        Assert.IsInstanceOfType<ProtocolViolationException>(exception.InnerException);
     }
 }
