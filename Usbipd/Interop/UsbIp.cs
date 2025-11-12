@@ -181,7 +181,7 @@ static class UsbIp
     {
         var bytes = new byte[Unsafe.SizeOf<UsbIpHeader>()];
         await stream.ReadMessageAsync(bytes, cancellationToken);
-        MemoryMarshal.AsRef<UsbIpHeader>(bytes).ReverseEndianness();
+        MemoryMarshal.AsRef<UsbIpHeader>(bytes.AsSpan()).ReverseEndianness();
         return MemoryMarshal.AsRef<UsbIpHeader>(bytes);
     }
 
@@ -193,7 +193,7 @@ static class UsbIp
     {
         var bytes = new byte[count * Unsafe.SizeOf<UsbIpIsoPacketDescriptor>()];
         await stream.ReadMessageAsync(bytes, cancellationToken);
-        MemoryMarshal.Cast<byte, int>(bytes).ReverseEndianness();
+        MemoryMarshal.Cast<byte, int>(bytes.AsSpan()).ReverseEndianness();
         return MemoryMarshal.Cast<byte, UsbIpIsoPacketDescriptor>(bytes).ToArray();
     }
 
@@ -204,7 +204,7 @@ static class UsbIp
     {
         var bytes = new byte[Unsafe.SizeOf<UsbIpHeader>()];
         MemoryMarshal.Write(bytes, header);
-        MemoryMarshal.AsRef<UsbIpHeader>(bytes).ReverseEndianness();
+        MemoryMarshal.AsRef<UsbIpHeader>(bytes.AsSpan()).ReverseEndianness();
         return bytes;
     }
 
@@ -214,7 +214,7 @@ static class UsbIp
     internal static byte[] ToBytes(this UsbIpIsoPacketDescriptor[] descriptors)
     {
         var bytes = MemoryMarshal.Cast<UsbIpIsoPacketDescriptor, byte>(descriptors).ToArray();
-        MemoryMarshal.Cast<byte, int>(bytes).ReverseEndianness();
+        MemoryMarshal.Cast<byte, int>(bytes.AsSpan()).ReverseEndianness();
         return bytes;
     }
 }

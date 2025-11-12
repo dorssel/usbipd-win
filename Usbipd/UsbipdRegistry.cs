@@ -14,8 +14,7 @@ namespace Usbipd;
 
 sealed class UsbipdRegistry : IDisposable
 {
-    static readonly UsbipdRegistry _Instance = new(Registry.LocalMachine);
-    public static UsbipdRegistry Instance => TestInstance ?? _Instance;
+    public static UsbipdRegistry Instance { get => TestInstance ?? field; } = new(Registry.LocalMachine);
 
 #pragma warning disable CS0649 // Field is never assigned to. Used only by UnitTests.
     internal static UsbipdRegistry? TestInstance;
