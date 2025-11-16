@@ -1,0 +1,7 @@
+SPDX-FileCopyrightText: 2023 Frans van Dorsselaer
+
+SPDX-License-Identifier: GPL-3.0-only
+
+NOTE:
+The README file is shipped as part of the binary release, which is covered by the COPYING file.
+The SPDX tags are for source licenses only.

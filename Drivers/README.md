@@ -1,9 +1,3 @@
-<!--
-SPDX-FileCopyrightText: 2020 Frans van Dorsselaer
-
-SPDX-License-Identifier: GPL-3.0-only
--->
-
 # Declaration of License Compliance
 
 These drivers are from a binary distribution of VirtualBox, version 7.2.4, provided
