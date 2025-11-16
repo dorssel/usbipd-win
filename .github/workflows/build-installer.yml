@@ -33,15 +33,14 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: NuGet Cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            ${{ github.workspace }}/.nuget/packages
-          key: nuget-cache-build-${{ hashFiles('global.json', '.config/dotnet-tools.json', '**/packages.lock.json') }}
-
       - name: Setup .NET
         uses: actions/setup-dotnet@v5
+        with:
+          cache: true
+          cache-dependency-path: |
+            global.json
+            .config/dotnet-tools.json
+            '**/packages.lock.json'
 
       - name: Install dependencies
         run: |
