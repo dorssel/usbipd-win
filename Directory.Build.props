@@ -17,9 +17,6 @@ SPDX-License-Identifier: GPL-3.0-only
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
 
-    <!-- This allows building on Linux; however, building the installer requires Windows -->
-    <EnableWindowsTargeting>true</EnableWindowsTargeting>
-
     <!-- Be very strict -->
     <WarningLevel>9999</WarningLevel>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
