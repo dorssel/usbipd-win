@@ -10,7 +10,7 @@ SPDX-License-Identifier: GPL-3.0-only
     >
     <Fragment>
         <ComponentGroup Id="Drivers" Directory="APPLICATIONFOLDER" Subdirectory="Drivers" Source="$(var.DriversDir)">
-            <File Id="Drivers_README.md" Name="README.md" Source="../README.md" />
+            <File Id="Drivers_README.md" Name="README.md" Source="$(var.DriversDir)\..\README.md" />
             <File Id="VBoxUSB.cat" Name="VBoxUSB.cat" />
             <File Id="VBoxUSB.sys" Name="VBoxUSB.sys" />
             <File Id="VBoxUSB.inf" Name="VBoxUSB.inf" />
