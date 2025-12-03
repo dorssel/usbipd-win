@@ -131,11 +131,11 @@ static class Program
         }
     }
 
-    internal static IEnumerable<string> CompletionGuard(CompletionContext completionContext, Func<IEnumerable<string>?> complete)
+    internal static IEnumerable<CompletionItem> CompletionGuard(CompletionContext completionContext, Func<IEnumerable<CompletionItem>?> complete)
     {
         try
         {
-            return complete()?.Where(s => s.StartsWith(completionContext.WordToComplete)) ?? [];
+            return complete()?.Where(s => s.Label.StartsWith(completionContext.WordToComplete)) ?? [];
         }
 #pragma warning disable CA1031 // Do not catch general exception types (justification: completions are supposed to help, not crash)
         catch
@@ -145,10 +145,15 @@ static class Program
         }
     }
 
-    internal static IEnumerable<string> CompatibleBusIdCompletions(CompletionContext completionContext)
+    internal static IEnumerable<CompletionItem> CompatibleBusIdCompletions(CompletionContext completionContext)
     {
+        // NOTE: Sorting is broken at the time of this writing, see https://github.com/dotnet/command-line-api/issues/2705.
         return CompletionGuard(completionContext, () =>
-            UsbDevice.GetAll().Where(d => d.BusId.HasValue && !d.BusId.Value.IsIncompatibleHub).Select(d => d.BusId.GetValueOrDefault().ToString()));
+            UsbDevice.GetAll().Where(d => d.BusId.HasValue && !d.BusId.Value.IsIncompatibleHub)
+            .Index().Select(i => new CompletionItem(
+                label: i.Item.BusId.GetValueOrDefault().ToString(),
+                sortText: $"{i.Index:D4}",
+                documentation: i.Item.Description)));
     }
 
     internal static async Task<int> Main(params string[] args)
@@ -226,6 +231,7 @@ static class Program
             var busIdOption = new Option<BusId>("--busid", "-b")
             {
                 Description = "Attach device having <BUSID>",
+                // NOTE: By specifying HelpName, the help text will *not* include the completion hints (which could be empty, or a really long list).
                 HelpName = "BUSID",
                 CustomParser = ParseCompatibleBusId,
             };
@@ -236,12 +242,13 @@ static class Program
             var wslOption = new Option<string>("--wsl", "-w")
             {
                 Description = "Attach to WSL, optionally specifying the distribution to use",
+                // NOTE: By specifying HelpName, the help text will *not* include the completion hints (which could be empty, or a really long list).
                 HelpName = "[DISTRIBUTION]",
                 Required = true,
                 Arity = ArgumentArity.ZeroOrOne,
             };
             wslOption.CompletionSources.Add(completionContext => CompletionGuard(completionContext, () =>
-                Wsl.CreateAsync(CancellationToken.None).Result?.Select(d => d.Name)));
+                Wsl.CreateAsync(CancellationToken.None).Result?.Select(d => new CompletionItem(d.Name))));
             //
             //  attach [--hardware-id <VID>:<PID>]
             //
@@ -249,11 +256,12 @@ static class Program
             var hardwareIdOption = new Option<VidPid>("--hardware-id", "-i")
             {
                 Description = "Attach device having <VID>:<PID>",
+                // NOTE: By specifying HelpName, the help text will *not* include the completion hints (which could be empty, or a really long list).
                 HelpName = "VID:PID",
                 CustomParser = ParseVidPid,
             };
             hardwareIdOption.CompletionSources.Add(completionContext => CompletionGuard(completionContext, () =>
-                UsbDevice.GetAll().Where(d => d.BusId.HasValue).GroupBy(d => d.HardwareId).Select(g => g.Key.ToString())));
+                UsbDevice.GetAll().Where(d => d.BusId.HasValue).GroupBy(d => d.HardwareId).Select(g => new CompletionItem(g.Key.ToString()))));
             //
             //  attach [--host-ip <IPADDRESS>]
             //
@@ -261,6 +269,7 @@ static class Program
             var hostIpOption = new Option<IPAddress>("--host-ip", "-o")
             {
                 Description = "Use <IPADDRESS> for WSL to connect back to the host",
+                // NOTE: By specifying HelpName, the help text will *not* include the completion hints (which could be empty, or a really long list).
                 HelpName = "IPADDRESS",
                 CustomParser = ParseIPAddress,
             };
@@ -274,7 +283,8 @@ static class Program
                     .Where(ua => ua.Address.GetAddressBytes()[0] != 127)
                     .Select(ua => ua.Address.ToString())
                     .Order()
-                    .Distinct()));
+                    .Distinct()
+                    .Select(ip => new CompletionItem(ip))));
             //
             //  attach [--unplugged]
             //
@@ -327,6 +337,7 @@ static class Program
             var busIdOption = new Option<BusId>("--busid", "-b")
             {
                 Description = "Share device having <BUSID>",
+                // NOTE: By specifying HelpName, the help text will *not* include the completion hints (which could be empty, or a really long list).
                 HelpName = "BUSID",
                 CustomParser = ParseCompatibleBusId,
             };
@@ -346,11 +357,12 @@ static class Program
             var hardwareIdOption = new Option<VidPid>("--hardware-id", "-i")
             {
                 Description = "Share device having <VID>:<PID>",
+                // NOTE: By specifying HelpName, the help text will *not* include the completion hints (which could be empty, or a really long list).
                 HelpName = "VID:PID",
                 CustomParser = ParseVidPid,
             };
             hardwareIdOption.CompletionSources.Add(completionContext => CompletionGuard(completionContext, () =>
-                UsbDevice.GetAll().Where(d => d.BusId.HasValue).GroupBy(d => d.HardwareId).Select(g => g.Key.ToString())));
+                UsbDevice.GetAll().Where(d => d.BusId.HasValue).GroupBy(d => d.HardwareId).Select(g => new CompletionItem(g.Key.ToString()))));
             //
             //  bind
             //
@@ -393,6 +405,7 @@ static class Program
             var busIdOption = new Option<BusId>("--busid", "-b")
             {
                 Description = "Detach device having <BUSID>",
+                // NOTE: By specifying HelpName, the help text will *not* include the completion hints (which could be empty, or a really long list).
                 HelpName = "BUSID",
                 CustomParser = ParseCompatibleBusId,
             };
@@ -404,11 +417,12 @@ static class Program
             var hardwareIdOption = new Option<VidPid>("--hardware-id", "-i")
             {
                 Description = "Detach all devices having <VID>:<PID>",
+                // NOTE: By specifying HelpName, the help text will *not* include the completion hints (which could be empty, or a really long list).
                 HelpName = "VID:PID",
                 CustomParser = ParseVidPid,
             };
             hardwareIdOption.CompletionSources.Add(completionContext => CompletionGuard(completionContext, () =>
-                UsbDevice.GetAll().Where(d => d.BusId.HasValue).GroupBy(d => d.HardwareId).Select(g => g.Key.ToString())));
+                UsbDevice.GetAll().Where(d => d.BusId.HasValue).GroupBy(d => d.HardwareId).Select(g => new CompletionItem(g.Key.ToString()))));
             //
             //  detach
             //
@@ -479,7 +493,8 @@ static class Program
                 var effectOption = new Option<PolicyRuleEffect>("--effect", "-e")
                 {
                     Description = "Allow or Deny",
-                    HelpName = "EFFECT",
+                    // NOTE: This gets an automatic completion list because of the Enum type.
+                    // HelpName = "EFFECT",
                     Required = true,
                 };
                 //
@@ -488,7 +503,8 @@ static class Program
                 var operationOption = new Option<PolicyRuleOperation>("--operation", "-o")
                 {
                     Description = "Currently only supports 'AutoBind'",
-                    HelpName = "OPERATION",
+                    // NOTE: This gets an automatic completion list because of the Enum type.
+                    // HelpName = "OPERATION",
                     Required = true,
                 };
                 //
@@ -497,6 +513,7 @@ static class Program
                 var busIdOption = new Option<BusId>("--busid", "-b")
                 {
                     Description = "Add a policy for device having <BUSID>",
+                    // NOTE: By specifying HelpName, the help text will *not* include the completion hints (which could be empty, or a really long list).
                     HelpName = "BUSID",
                     CustomParser = ParseCompatibleBusId,
                 };
@@ -508,11 +525,12 @@ static class Program
                 var hardwareIdOption = new Option<VidPid>("--hardware-id", "-i")
                 {
                     Description = "Add a policy for device having <VID>:<PID>",
+                    // NOTE: By specifying HelpName, the help text will *not* include the completion hints (which could be empty, or a really long list).
                     HelpName = "VID:PID",
                     CustomParser = ParseVidPid,
                 };
                 hardwareIdOption.CompletionSources.Add(completionContext => CompletionGuard(completionContext, () =>
-                    UsbDevice.GetAll().GroupBy(d => d.HardwareId).Select(g => g.Key.ToString())));
+                    UsbDevice.GetAll().GroupBy(d => d.HardwareId).Select(g => new CompletionItem(g.Key.ToString()))));
                 //
                 //  policy add
                 //
@@ -569,11 +587,12 @@ static class Program
                 var guidOption = new Option<Guid>("--guid", "-g")
                 {
                     Description = "Remove the policy rule having <GUID>",
+                    // NOTE: By specifying HelpName, the help text will *not* include the completion hints (which could be empty, or a really long list).
                     HelpName = "GUID",
                     CustomParser = ParseGuid,
                 };
                 guidOption.CompletionSources.Add(completionContext => CompletionGuard(completionContext, () =>
-                    UsbipdRegistry.Instance.GetPolicyRules().Select(r => r.Key.ToString("D"))));
+                    UsbipdRegistry.Instance.GetPolicyRules().Select(r => new CompletionItem(r.Key.ToString("D")))));
                 //
                 //  policy remove
                 //
@@ -648,6 +667,7 @@ static class Program
             var busIdOption = new Option<BusId>("--busid", "-b")
             {
                 Description = "Stop sharing device having <BUSID>",
+                // NOTE: By specifying HelpName, the help text will *not* include the completion hints (which could be empty, or a really long list).
                 HelpName = "BUSID",
                 CustomParser = ParseCompatibleBusId,
             };
@@ -658,11 +678,13 @@ static class Program
             var guidOption = new Option<Guid>("--guid", "-g")
             {
                 Description = "Stop sharing persisted device having <GUID>",
+                // NOTE: By specifying HelpName, the help text will *not* include the completion hints (which could be empty, or a really long list).
                 HelpName = "GUID",
                 CustomParser = ParseGuid,
             };
             guidOption.CompletionSources.Add(completionContext => CompletionGuard(completionContext, () =>
-                UsbipdRegistry.Instance.GetBoundDevices().Where(d => !d.BusId.HasValue).Select(d => d.Guid.GetValueOrDefault().ToString("D"))));
+                UsbipdRegistry.Instance.GetBoundDevices().Where(d => !d.BusId.HasValue)
+                .Select(d => new CompletionItem(d.Guid.GetValueOrDefault().ToString("D")))));
             //
             //  unbind [--hardware-id <VID>:<PID>]
             //
@@ -670,11 +692,12 @@ static class Program
             var hardwareIdOption = new Option<VidPid>("--hardware-id", "-i")
             {
                 Description = "Stop sharing all devices having <VID>:<PID>",
+                // NOTE: By specifying HelpName, the help text will *not* include the completion hints (which could be empty, or a really long list).
                 HelpName = "VID:PID",
                 CustomParser = ParseVidPid,
             };
             hardwareIdOption.CompletionSources.Add(completionContext => CompletionGuard(completionContext, () =>
-                UsbDevice.GetAll().GroupBy(d => d.HardwareId).Select(g => g.Key.ToString())));
+                UsbDevice.GetAll().GroupBy(d => d.HardwareId).Select(g => new CompletionItem(g.Key.ToString()))));
             //
             //  unbind
             //
