@@ -27,6 +27,9 @@ SPDX-License-Identifier: GPL-3.0-only
     <NuGetAuditLevel>low</NuGetAuditLevel>
     <NuGetAuditMode>all</NuGetAuditMode>
 
+    <!-- This allows building on Linux (required for Dependabot); however, building the installer requires Windows -->
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+
     <!-- Common defaults -->
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
