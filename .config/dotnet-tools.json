@@ -10,7 +10,7 @@
       "rollForward": false
     },
     "gitversion.tool": {
-      "version": "6.5.0",
+      "version": "6.5.1",
       "commands": [
         "dotnet-gitversion"
       ],
