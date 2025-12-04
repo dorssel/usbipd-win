@@ -2,11 +2,11 @@
   "version": 2,
   "dependencies": {
     "net10.0-windows10.0.17763": {
-      "Dorssel.GitVersion.MsBuild": {
+      "GitVersion.MsBuild": {
         "type": "Direct",
-        "requested": "[1.1.1, )",
-        "resolved": "1.1.1",
-        "contentHash": "b3j6DfBrXvmzj1ke7L1Svf09BNpBz9/R8Qk2K/zXarwjBdAN0yADKu3l+azVG8SHrwi95RO3E18fBYuedcrD7Q=="
+        "requested": "[6.5.1, )",
+        "resolved": "6.5.1",
+        "contentHash": "92zAmfGWVtjHM8eR7O+1WWxqP+gulXvVqu3Sb1+KzuImdmxBt/bln/dMRvsIyV69KEiSrtbUoet4HBjG+bOLyw=="
       },
       "Microsoft.DotNet.ILCompiler": {
         "type": "Direct",

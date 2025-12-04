@@ -52,7 +52,7 @@ SPDX-License-Identifier: GPL-3.0-only
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Dorssel.GitVersion.MsBuild" PrivateAssets="all" />
+    <PackageReference Include="GitVersion.MsBuild" PrivateAssets="all" />
   </ItemGroup>
 
   <Target Name="SetCopyright" AfterTargets="GetVersion">
