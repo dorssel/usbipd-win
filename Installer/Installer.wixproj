@@ -8,8 +8,6 @@ SPDX-License-Identifier: GPL-3.0-only
   <PropertyGroup>
     <Platforms>x64;ARM64</Platforms>
     <RuntimeIdentifiers>win-x64;win-arm64</RuntimeIdentifiers>
-    <GenerateGitVersionInformation>false</GenerateGitVersionInformation>
-    <UpdateAssemblyInfo>false</UpdateAssemblyInfo>
     <OutputName>usbipd-win</OutputName>
     <PublishDir>..\Usbipd\bin\publish\$(Platform)</PublishDir>
     <PowerShellDir>..\Usbipd.PowerShell\bin\publish</PowerShellDir>
@@ -17,6 +15,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <Pedantic>true</Pedantic>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="Dorssel.GitVersion.MsBuild" PrivateAssets="all" />
     <PackageReference Include="WixToolset.Firewall.wixext" />
     <PackageReference Include="WixToolset.UI.wixext" />
     <PackageReference Include="WixToolset.Util.wixext" />
