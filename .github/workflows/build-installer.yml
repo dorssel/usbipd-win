@@ -70,7 +70,7 @@ jobs:
           dotnet build --configuration Release --no-restore --property:Platform=ARM64 Installer
 
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: msi-installers
           path: 'Installer/bin/*/release/*.msi'
