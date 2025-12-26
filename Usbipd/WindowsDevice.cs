@@ -53,19 +53,20 @@ sealed partial class WindowsDevice : IEquatable<WindowsDevice>
     /// <returns>false if the device does not exist (neither present nor phantom).</returns>
     public static bool TryCreate(string instanceId, out WindowsDevice device)
     {
+        uint deviceNode;
+        device = default!;
         unsafe // DevSkim: ignore DS172412
         {
             fixed (char* pInstanceId = instanceId)
             {
-                if (PInvoke.CM_Locate_DevNode(out var deviceNode, pInstanceId, CM_LOCATE_DEVNODE_FLAGS.CM_LOCATE_DEVNODE_PHANTOM) != CONFIGRET.CR_SUCCESS)
+                if (PInvoke.CM_Locate_DevNode(out deviceNode, pInstanceId, CM_LOCATE_DEVNODE_FLAGS.CM_LOCATE_DEVNODE_PHANTOM) != CONFIGRET.CR_SUCCESS)
                 {
-                    device = default!;
                     return false;
                 }
-                device = new(deviceNode, instanceId);
-                return true;
             }
         }
+        device = new(deviceNode, instanceId);
+        return true;
     }
 
     /// <summary>
@@ -80,19 +81,20 @@ sealed partial class WindowsDevice : IEquatable<WindowsDevice>
     {
         get
         {
+            uint length;
             unsafe // DevSkim: ignore DS172412
             {
                 fixed (char* pInstanceId = InstanceId)
                 {
-                    if (PInvoke.CM_Get_Device_Interface_List_Size(out var length, PInvoke.GUID_DEVINTERFACE_USB_HUB, pInstanceId,
+                    if (PInvoke.CM_Get_Device_Interface_List_Size(out length, PInvoke.GUID_DEVINTERFACE_USB_HUB, pInstanceId,
                         CM_GET_DEVICE_INTERFACE_LIST_FLAGS.CM_GET_DEVICE_INTERFACE_LIST_ALL_DEVICES) != CONFIGRET.CR_SUCCESS)
                     {
                         return false;
                     }
-                    // A non-empty list (i.e., for a hub) would be double-NUL terminated.
-                    return length >= 2;
                 }
             }
+            // A non-empty list (i.e., for a hub) would be double-NUL terminated.
+            return length >= 2;
         }
     }
 
@@ -254,35 +256,37 @@ sealed partial class WindowsDevice : IEquatable<WindowsDevice>
 
     static DeviceFile OpenInterface(string instanceId, Guid interfaceClassGuid)
     {
-        string interfacePath;
-
+        uint bufferSize;
         unsafe // DevSkim: ignore DS172412
         {
             fixed (char* pInstanceId = instanceId)
             {
-                if (PInvoke.CM_Get_Device_Interface_List_Size(out var bufferSize, interfaceClassGuid, pInstanceId,
+                if (PInvoke.CM_Get_Device_Interface_List_Size(out bufferSize, interfaceClassGuid, pInstanceId,
                     CM_GET_DEVICE_INTERFACE_LIST_FLAGS.CM_GET_DEVICE_INTERFACE_LIST_PRESENT) != CONFIGRET.CR_SUCCESS)
                 {
                     throw new FileNotFoundException();
                 }
-                if (bufferSize <= 1)
+            }
+        }
+        if (bufferSize <= 1)
+        {
+            throw new FileNotFoundException();
+        }
+        var buffer = new char[checked((int)bufferSize)];
+        unsafe // DevSkim: ignore DS172412
+        {
+            fixed (char* pInstanceId = instanceId)
+            fixed (char* pBuffer = buffer)
+            {
+                if (PInvoke.CM_Get_Device_Interface_List(interfaceClassGuid, pInstanceId, pBuffer, bufferSize,
+                    CM_GET_DEVICE_INTERFACE_LIST_FLAGS.CM_GET_DEVICE_INTERFACE_LIST_PRESENT) != CONFIGRET.CR_SUCCESS)
                 {
                     throw new FileNotFoundException();
                 }
-                var buffer = new char[checked((int)bufferSize)];
-                fixed (char* pBuffer = buffer)
-                {
-                    if (PInvoke.CM_Get_Device_Interface_List(interfaceClassGuid, pInstanceId, pBuffer, bufferSize,
-                        CM_GET_DEVICE_INTERFACE_LIST_FLAGS.CM_GET_DEVICE_INTERFACE_LIST_PRESENT) != CONFIGRET.CR_SUCCESS)
-                    {
-                        throw new FileNotFoundException();
-                    }
-                    // The "list" contains one entry and is double-NUL terminated.
-                    interfacePath = new string(pBuffer, 0, (int)bufferSize - 2);
-                }
             }
         }
-
+        // The "list" contains one entry and is double-NUL terminated.
+        var interfacePath = new string(buffer.AsSpan()[0..^2]);
         return new(interfacePath);
     }
 
@@ -458,8 +462,6 @@ sealed partial class WindowsDevice : IEquatable<WindowsDevice>
     /// <returns>All devices, optionally filtered on installer class GUID and/or presence.</returns>
     public static IEnumerable<WindowsDevice> GetAll(Guid? classGuid, bool presentOnly)
     {
-        string[] instanceIds;
-
         var filter = classGuid?.ToString("B");
         uint flags = 0;
         if (classGuid is not null)
@@ -471,29 +473,28 @@ sealed partial class WindowsDevice : IEquatable<WindowsDevice>
             flags |= PInvoke.CM_GETIDLIST_FILTER_PRESENT;
         }
 
+        if (PInvoke.CM_Get_Device_ID_List_Size(out var bufferSize, filter, flags) != CONFIGRET.CR_SUCCESS)
+        {
+            yield break;
+        }
+        if (bufferSize <= 1)
+        {
+            // Empty list.
+            yield break;
+        }
+        var buffer = new char[checked((int)bufferSize)];
         unsafe // DevSkim: ignore DS172412
         {
-            if (PInvoke.CM_Get_Device_ID_List_Size(out var bufferSize, filter, flags) != CONFIGRET.CR_SUCCESS)
-            {
-                yield break;
-            }
-            if (bufferSize <= 1)
-            {
-                // Empty list.
-                yield break;
-            }
-            var buffer = new char[checked((int)bufferSize)];
             fixed (char* pBuffer = buffer)
             {
                 if (PInvoke.CM_Get_Device_ID_List(filter, pBuffer, bufferSize, flags) != CONFIGRET.CR_SUCCESS)
                 {
                     yield break;
                 }
-                // The list is double-NUL terminated.
-                instanceIds = new string(pBuffer, 0, (int)bufferSize - 2).Split('\0');
             }
         }
-
+        // The list is double-NUL terminated.
+        var instanceIds = new string(buffer.AsSpan()[0..^2]).Split('\0');
         foreach (var instanceId in instanceIds)
         {
             if (TryCreate(instanceId, out var device))
@@ -507,8 +508,6 @@ sealed partial class WindowsDevice : IEquatable<WindowsDevice>
     public static IEnumerable<WindowsDevice> GetAll(Guid interfaceClassGuid)
     {
         string[] interfacePaths;
-
-        unsafe // DevSkim: ignore DS172412
         {
             if (PInvoke.CM_Get_Device_Interface_List_Size(out var bufferSize, interfaceClassGuid, null,
                 CM_GET_DEVICE_INTERFACE_LIST_FLAGS.CM_GET_DEVICE_INTERFACE_LIST_PRESENT) != CONFIGRET.CR_SUCCESS)
@@ -521,18 +520,20 @@ sealed partial class WindowsDevice : IEquatable<WindowsDevice>
                 yield break;
             }
             var buffer = new char[checked((int)bufferSize)];
-            fixed (char* pBuffer = buffer)
+            unsafe // DevSkim: ignore DS172412
             {
-                if (PInvoke.CM_Get_Device_Interface_List(interfaceClassGuid, null, pBuffer, bufferSize,
-                    CM_GET_DEVICE_INTERFACE_LIST_FLAGS.CM_GET_DEVICE_INTERFACE_LIST_PRESENT) != CONFIGRET.CR_SUCCESS)
+                fixed (char* pBuffer = buffer)
                 {
-                    yield break;
+                    if (PInvoke.CM_Get_Device_Interface_List(interfaceClassGuid, null, pBuffer, bufferSize,
+                        CM_GET_DEVICE_INTERFACE_LIST_FLAGS.CM_GET_DEVICE_INTERFACE_LIST_PRESENT) != CONFIGRET.CR_SUCCESS)
+                    {
+                        yield break;
+                    }
                 }
-                // The list is double-NUL terminated.
-                interfacePaths = new string(pBuffer, 0, checked((int)bufferSize) - 2).Split('\0');
             }
+            // The list is double-NUL terminated.
+            interfacePaths = new string(buffer.AsSpan()[..^2]).Split('\0');
         }
-
         foreach (var interfacePath in interfacePaths)
         {
             var bufferSize = 0u;
@@ -560,12 +561,10 @@ sealed partial class WindowsDevice : IEquatable<WindowsDevice>
             }
             // The buffer includes the terminating NUL character.
             var instanceId = new string(MemoryMarshal.Cast<byte, char>(buffer)[..^1]);
-
             if (!TryCreate(instanceId, out var device))
             {
                 continue;
             }
-
             yield return device;
         }
     }

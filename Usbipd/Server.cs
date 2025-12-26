@@ -72,7 +72,7 @@ sealed partial class Server : BackgroundService
         {
             unsafe // DevSkim: ignore DS172412
             {
-                PInvoke.AdjustTokenPrivileges(token, false, &tokenPrivileges, null).ThrowOnWin32Error(nameof(PInvoke.AdjustTokenPrivileges));
+                PInvoke.AdjustTokenPrivileges(token, false, &tokenPrivileges).ThrowOnWin32Error(nameof(PInvoke.AdjustTokenPrivileges));
             }
         }
     }
