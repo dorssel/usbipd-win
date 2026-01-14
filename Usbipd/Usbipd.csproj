@@ -46,7 +46,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <PackageReference Include="Microsoft.Windows.CsWin32" PrivateAssets="all" />
     <PackageReference Include="System.CommandLine" />
     <!-- Fix for GitHub build ... reason unknown -->
-    <PackageDownload Condition="$(ContinuousIntegrationBuild)" Include="Microsoft.NETCore.App.Runtime.NativeAOT.win-x64" Version="[10.0.1]" />
+    <PackageDownload Condition="$(ContinuousIntegrationBuild)" Include="Microsoft.NETCore.App.Runtime.NativeAOT.win-x64" Version="[10.0.2]" />
   </ItemGroup>
 
   <ItemGroup>
