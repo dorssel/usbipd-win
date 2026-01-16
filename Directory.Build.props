@@ -42,6 +42,9 @@ SPDX-License-Identifier: GPL-3.0-only
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
     <PublishDocumentationFiles>false</PublishDocumentationFiles>
 
+    <!-- Bump MSTest.Sdk "transitive" dependencies (they are actually direct dependencies) -->
+    <MicrosoftTestingExtensionsCodeCoverageVersion>18.3.2</MicrosoftTestingExtensionsCodeCoverageVersion>
+
     <!-- Deterministic builds -->
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
     <RestoreLockedMode Condition="$(ContinuousIntegrationBuild)">true</RestoreLockedMode>
