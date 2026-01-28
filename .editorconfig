@@ -90,6 +90,7 @@ csharp_style_prefer_primary_constructors = true:suggestion
 csharp_style_prefer_range_operator = true:suggestion
 csharp_style_prefer_readonly_struct = true:suggestion
 csharp_style_prefer_readonly_struct_member = true:suggestion
+csharp_style_prefer_simple_property_accessors = true:suggestion
 csharp_style_prefer_switch_expression = true:suggestion
 csharp_style_prefer_top_level_statements = true:suggestion
 csharp_style_prefer_tuple_swap = true:suggestion
