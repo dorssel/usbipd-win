@@ -1,6 +1,6 @@
 # Declaration of License Compliance
 
-These drivers are from a binary distribution of VirtualBox, version 7.2.4, provided
+These drivers are from a binary distribution of VirtualBox, version 7.2.6, provided
 by Oracle Corporation, subject to the terms and conditions of the
 [GNU General Public License, version 3](https://www.gnu.org/licenses/gpl-3.0.html).
 
