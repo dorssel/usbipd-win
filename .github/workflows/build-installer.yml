@@ -18,6 +18,8 @@ permissions:
   issues: read
   checks: write
   pull-requests: write
+  id-token: write
+  attestations: write
 
 jobs:
   build:
@@ -69,11 +71,20 @@ jobs:
           dotnet publish --configuration Release --no-build --runtime win-arm64 --property:PublishProfile=arm64 Usbipd
           dotnet build --configuration Release --no-restore --property:Platform=ARM64 Installer
 
+      # GitHub will always zip the artifacts and add .zip to the filename.
+      # Therefore, it makes no sense to upload individual .msi files. We always upload everything as a single artifacts container.
       - name: Upload Artifacts
+        id: upload
         uses: actions/upload-artifact@v6
         with:
-          name: msi-installers
+          name: artifacts
           path: 'Installer/bin/*/release/*.msi'
+
+      - name: Build Attestation
+        uses: actions/attest-build-provenance@v3
+        with:
+          subject-name: artifacts.zip
+          subject-digest: sha256:${{ steps.upload.outputs.artifact-digest }}
 
       - name: Convert test results
         if: ${{ !cancelled() }}
