@@ -10,6 +10,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Channels;
 using Usbipd.Automation;
+using Windows.Security.Authentication.OnlineId;
 using static Usbipd.Interop.UsbIp;
 using static Usbipd.Interop.VBoxUsb;
 
@@ -23,7 +24,10 @@ sealed partial class PcapNg
         Logger = logger;
 
         var path = config["usbipd:PcapNg:Path"];
-        Logger.Debug($"usbipd:PcapNg:Path = '{path}'");
+        if (Logger.IsEnabled(LogLevel.Debug))
+        {
+            Logger.Debug($"usbipd:PcapNg:Path = '{path}'");
+        }
         if (string.IsNullOrEmpty(path))
         {
             return;
@@ -42,7 +46,10 @@ sealed partial class PcapNg
                 SnapLength = int.MaxValue;
             }
         }
-        Logger.Debug($"usbipd:PcapNg:SnapLength = {(SnapLength == 0 ? "unlimited" : SnapLength)}");
+        if (Logger.IsEnabled(LogLevel.Debug))
+        {
+            Logger.Debug($"usbipd:PcapNg:SnapLength = {(SnapLength == 0 ? "unlimited" : SnapLength)}");
+        }
 
         try
         {

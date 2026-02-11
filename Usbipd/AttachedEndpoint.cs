@@ -276,7 +276,10 @@ sealed class AttachedEndpoint
             {
                 bConfigurationValue = submit.setup.wValue.Anonymous.LowByte,
             };
-            Logger.Debug($"Trapped SET_CONFIGURATION: {setConfig.bConfigurationValue}");
+            if (Logger.IsEnabled(LogLevel.Debug))
+            {
+                Logger.Debug($"Trapped SET_CONFIGURATION: {setConfig.bConfigurationValue}");
+            }
             _ = await Device.IoControlAsync(SUPUSB_IOCTL.USB_SET_CONFIG, StructToBytes(setConfig), null);
             ioctl = Task.CompletedTask;
         }
@@ -290,7 +293,10 @@ sealed class AttachedEndpoint
                 bInterfaceNumber = submit.setup.wIndex.Anonymous.LowByte,
                 bAlternateSetting = submit.setup.wValue.Anonymous.LowByte,
             };
-            Logger.Debug($"Trapped SET_INTERFACE: {selectInterface.bInterfaceNumber} -> {selectInterface.bAlternateSetting}");
+            if (Logger.IsEnabled(LogLevel.Debug))
+            {
+                Logger.Debug($"Trapped SET_INTERFACE: {selectInterface.bInterfaceNumber} -> {selectInterface.bAlternateSetting}");
+            }
             _ = await Device.IoControlAsync(SUPUSB_IOCTL.USB_SELECT_INTERFACE, StructToBytes(selectInterface), null);
             ioctl = Task.CompletedTask;
         }
@@ -304,7 +310,10 @@ sealed class AttachedEndpoint
             {
                 bEndpoint = submit.setup.wIndex.Anonymous.LowByte,
             };
-            Logger.Debug($"Trapped CLEAR_FEATURE: {clearEndpoint.bEndpoint}");
+            if (Logger.IsEnabled(LogLevel.Debug))
+            {
+                Logger.Debug($"Trapped CLEAR_FEATURE: {clearEndpoint.bEndpoint}");
+            }
             _ = await Device.IoControlAsync(SUPUSB_IOCTL.USB_CLEAR_ENDPOINT, StructToBytes(clearEndpoint), null);
             ioctl = Task.CompletedTask;
         }
@@ -395,7 +404,10 @@ sealed class AttachedEndpoint
 
             if (urb.error != UsbSupError.USBSUP_XFER_OK)
             {
-                Logger.Debug($"{urb.error} -> {ConvertError(urb.error)} -> {header.ret_submit.status}");
+                if (Logger.IsEnabled(LogLevel.Debug))
+                {
+                    Logger.Debug($"{urb.error} -> {ConvertError(urb.error)} -> {header.ret_submit.status}");
+                }
             }
 
             Pcap.DumpPacketNonIsoReply(basic, submit, header.ret_submit,
@@ -483,7 +495,10 @@ sealed class AttachedEndpoint
 
         // There are pending SUBMITs, but we only want to abort after receiving all UNLINKS first.
         ++UnlinkHoldoffCount;
-        Logger.Trace($"Unlinking: PendingSubmits={pendingSubmits}, PendingUnlinks={UnlinkHoldoffCount}");
+        if (Logger.IsEnabled(LogLevel.Trace))
+        {
+            Logger.Trace($"Unlinking: PendingSubmits={pendingSubmits}, PendingUnlinks={UnlinkHoldoffCount}");
+        }
         if (UnlinkHoldoffCount >= pendingSubmits)
         {
             // NOTE: VBoxUSB does not support canceling individual URBs.

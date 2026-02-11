@@ -74,7 +74,9 @@ sealed class Tools_Tests
 
         var buf = new byte[TestStreamBytes.Length - 1];
         writeStream.Write(TestStreamBytes.AsSpan(0, 1));
+#pragma warning disable CA2025 // Do not pass 'IDisposable' instances into unawaited tasks
         var task = readStream.ReadMessageAsync(buf, CancellationToken.None);
+#pragma warning restore CA2025 // Do not pass 'IDisposable' instances into unawaited tasks
         await Task.Delay(100, TestContext.CancellationToken);
         Assert.AreEqual(TaskStatus.WaitingForActivation, task.Status);
         writeStream.Write(TestStreamBytes.AsSpan(1));
