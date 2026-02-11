@@ -32,7 +32,10 @@ sealed class ConnectedClient(ILogger<ConnectedClient> logger, ClientContext clie
         try
         {
             var opCode = await ReceiveOpCodeAsync(cancellationToken);
-            Logger.Debug($"Received opcode: {opCode}");
+            if (Logger.IsEnabled(LogLevel.Debug))
+            {
+                Logger.Debug($"Received opcode: {opCode}");
+            }
             switch (opCode)
             {
                 case OpCode.OP_REQ_DEVLIST:
@@ -195,7 +198,10 @@ sealed class ConnectedClient(ILogger<ConnectedClient> logger, ClientContext clie
             sw.Start();
             (var vboxDevice, ClientContext.AttachedDevice) = await VBoxUsb.ClaimDevice(usbDevice.BusId.Value);
             sw.Stop();
-            Logger.Debug($"Claiming took {sw.ElapsedMilliseconds} ms");
+            if (Logger.IsEnabled(LogLevel.Debug))
+            {
+                Logger.Debug($"Claiming took {sw.ElapsedMilliseconds} ms");
+            }
             ClientContext.AttachedBusId = usbDevice.BusId;
 
             CM_Unregister_NotificationSafeHandle? notification = null;

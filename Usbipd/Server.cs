@@ -24,7 +24,10 @@ sealed partial class Server : BackgroundService
         {
             port = USBIP_PORT;
         }
-        Logger.Debug($"usbipd:Port = {port}");
+        if (Logger.IsEnabled(LogLevel.Debug))
+        {
+            Logger.Debug($"usbipd:Port = {port}");
+        }
         TcpListener = TcpListener.Create(port);
     }
 
@@ -113,7 +116,10 @@ sealed partial class Server : BackgroundService
 
             _ = Task.Run(async () =>
             {
-                Logger.Debug($"new connection from {clientAddress}");
+                if (Logger.IsEnabled(LogLevel.Debug))
+                {
+                    Logger.Debug($"new connection from {clientAddress}");
+                }
                 try
                 {
                     using var cancellationTokenRegistration = stoppingToken.Register(() => tcpClient.Close());
@@ -126,7 +132,10 @@ sealed partial class Server : BackgroundService
                 }
                 catch (Exception ex)
                 {
-                    Logger.Debug($"connection close: {ex.Message}");
+                    if (Logger.IsEnabled(LogLevel.Debug))
+                    {
+                        Logger.Debug($"connection close: {ex.Message}");
+                    }
                     throw;
                 }
                 finally
