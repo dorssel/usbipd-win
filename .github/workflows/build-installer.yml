@@ -41,12 +41,10 @@ jobs:
           cache: true
           cache-dependency-path: |
             global.json
-            .config/dotnet-tools.json
             '**/packages.lock.json'
 
       - name: Install dependencies
         run: |
-          dotnet tool restore
           dotnet restore
           dotnet restore Installer
 
@@ -58,7 +56,8 @@ jobs:
       - name: Test
         run: |
           dotnet test --configuration Release --no-build --property:Platform=x64 `
-            --report-trx --coverage --coverage-output-format cobertura --coverage-output coverage.cobertura.xml
+            --report-spekt-junit `
+            --coverage --coverage-output-format cobertura --coverage-output coverage.cobertura.xml
 
       - name: Build x64 Installer
         run: |
@@ -86,19 +85,13 @@ jobs:
           subject-name: artifacts.zip
           subject-digest: sha256:${{ steps.upload.outputs.artifact-digest }}
 
-      - name: Convert test results
-        if: ${{ !cancelled() }}
-        shell: bash
-        run: |
-          find . -name "*.trx" -exec dotnet tool run trx2junit --output TestResults/JUnit {} +
-
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
         uses: codecov/codecov-action@v5
         with:
           fail_ci_if_error: true
           report_type: test_results
-          files: TestResults/JUnit/*.xml
+          files: '**/TestResults/TestResults.xml'
           disable_search: true
           token: ${{ secrets.CODECOV_TOKEN }}
 
