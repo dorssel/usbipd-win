@@ -20,6 +20,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <PackageVersion Include="WixToolset.UI.wixext" Version="6.0.2" />
     <PackageVersion Include="WixToolset.Util.wixext" Version="6.0.2" />
     <!-- UnitTests -->
+    <PackageVersion Include="JunitXml.TestLogger" Version="8.0.0" />
     <PackageVersion Include="Moq" Version="4.20.72" />
   </ItemGroup>
 </Project>

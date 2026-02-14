@@ -46,12 +46,10 @@ jobs:
           cache: true
           cache-dependency-path: |
             global.json
-            .config/dotnet-tools.json
             '**/packages.lock.json'
 
       - name: Install dependencies
         run: |
-          dotnet tool restore
           dotnet restore
 
       - name: Build
