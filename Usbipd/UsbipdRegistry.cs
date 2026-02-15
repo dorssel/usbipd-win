@@ -20,13 +20,25 @@ sealed class UsbipdRegistry : IDisposable
     internal static UsbipdRegistry? TestInstance;
 #pragma warning restore CS0649
 
-    readonly RegistryKey? ReadOnlyBaseKey;
-    readonly RegistryKey? WritableBaseKey;
+    readonly RegistryKey? _ReadOnlyBaseKey;
+    readonly RegistryKey? _ReadOnlyDeviceKey;
+    readonly RegistryKey? _WritableDevicesKey;
+    readonly RegistryKey? _ReadOnlyPolicyKey;
+    readonly RegistryKey? _WritablePolicyKey;
+
+    RegistryKey ReadOnlyBaseKey => _ReadOnlyBaseKey ?? throw new UnexpectedResultException("Registry key not found; try reinstalling the software.");
+    RegistryKey ReadOnlyDeviceKey => _ReadOnlyDeviceKey ?? throw new UnexpectedResultException("Registry key not found; try reinstalling the software.");
+    RegistryKey WritableDevicesKey => _WritableDevicesKey ?? throw new SecurityException("No write access to registry key.");
+    RegistryKey ReadOnlyPolicyKey => _ReadOnlyPolicyKey ?? throw new UnexpectedResultException("Registry key not found; try reinstalling the software.");
+    RegistryKey WritablePolicyKey => _WritablePolicyKey ?? throw new SecurityException("No write access to registry key.");
 
     public void Dispose()
     {
-        ReadOnlyBaseKey?.Dispose();
-        WritableBaseKey?.Dispose();
+        _ReadOnlyBaseKey?.Dispose();
+        _ReadOnlyDeviceKey?.Dispose();
+        _WritableDevicesKey?.Dispose();
+        _ReadOnlyPolicyKey?.Dispose();
+        _WritablePolicyKey?.Dispose();
     }
 
     const string RegistryPath = @"SOFTWARE\usbipd-win";
@@ -35,21 +47,29 @@ sealed class UsbipdRegistry : IDisposable
     {
         try
         {
-            ReadOnlyBaseKey = parentKey.OpenSubKey(RegistryPath, false);
+            _ReadOnlyBaseKey = parentKey.OpenSubKey(RegistryPath, false);
         }
         catch (Exception ex) when (ex is SecurityException or UnauthorizedAccessException) { }
         try
         {
-            WritableBaseKey = parentKey.OpenSubKey(RegistryPath, true);
+            _ReadOnlyDeviceKey = _ReadOnlyBaseKey?.OpenSubKey(DevicesName, false);
         }
         catch (Exception ex) when (ex is SecurityException or UnauthorizedAccessException) { }
-    }
-
-    RegistryKey BaseKey(bool writable)
-    {
-        return ReadOnlyBaseKey is null
-            ? throw new UnexpectedResultException("Registry key not found; try reinstalling the software.")
-            : writable ? WritableBaseKey ?? throw new SecurityException("No write access to registry key.") : ReadOnlyBaseKey;
+        try
+        {
+            _WritableDevicesKey = _ReadOnlyBaseKey?.OpenSubKey(DevicesName, true);
+        }
+        catch (Exception ex) when (ex is SecurityException or UnauthorizedAccessException) { }
+        try
+        {
+            _ReadOnlyPolicyKey = _ReadOnlyBaseKey?.OpenSubKey(PolicyName, false);
+        }
+        catch (Exception ex) when (ex is SecurityException or UnauthorizedAccessException) { }
+        try
+        {
+            _WritablePolicyKey = _ReadOnlyBaseKey?.OpenSubKey(PolicyName, true);
+        }
+        catch (Exception ex) when (ex is SecurityException or UnauthorizedAccessException) { }
     }
 
     const string ApplicationFolderName = "APPLICATIONFOLDER";
@@ -66,30 +86,26 @@ sealed class UsbipdRegistry : IDisposable
     /// <summary>
     /// <see langword="null"/> if not installed
     /// </summary>
-    public string? InstallationFolder => ReadOnlyBaseKey?.GetValue(ApplicationFolderName) as string;
+    public string? InstallationFolder => _ReadOnlyBaseKey?.GetValue(ApplicationFolderName) as string;
 
     RegistryKey GetDevicesKey(bool writable)
     {
-        return BaseKey(writable).OpenSubKey(DevicesName, writable)
-            ?? throw new UnexpectedResultException("Registry key not found; try reinstalling the software.");
+        return writable ? WritableDevicesKey : ReadOnlyDeviceKey;
     }
 
-    RegistryKey? GetDeviceKey(Guid guid, bool writable)
+    RegistryKey? OpenDeviceKey(Guid guid, bool writable)
     {
-        using var devicesKey = GetDevicesKey(writable);
-        return devicesKey.OpenSubKey(guid.ToString("B"), writable);
+        return GetDevicesKey(writable).OpenSubKey(guid.ToString("B"), writable);
     }
 
     RegistryKey GetPolicyKey(bool writable)
     {
-        return BaseKey(writable).OpenSubKey(PolicyName, writable)
-            ?? throw new UnexpectedResultException("Registry key not found; try reinstalling the software.");
+        return writable ? WritablePolicyKey : ReadOnlyPolicyKey;
     }
 
     RegistryKey? GetPolicyRuleKey(Guid guid, bool writable)
     {
-        using var devicesKey = GetPolicyKey(writable);
-        return devicesKey.OpenSubKey(guid.ToString("B"), writable);
+        return GetPolicyKey(writable).OpenSubKey(guid.ToString("B"), writable);
     }
 
     public void Persist(string instanceId, string description)
@@ -102,13 +118,12 @@ sealed class UsbipdRegistry : IDisposable
 
     public void StopSharingDevice(Guid guid)
     {
-        using var devicesKey = GetDevicesKey(true);
-        devicesKey.DeleteSubKeyTree(guid.ToString("B"), false);
+        GetDevicesKey(true).DeleteSubKeyTree(guid.ToString("B"), false);
     }
 
     public void StopSharingAllDevices()
     {
-        using var devicesKey = GetDevicesKey(true);
+        var devicesKey = GetDevicesKey(true);
         foreach (var subKeyName in devicesKey.GetSubKeyNames())
         {
             devicesKey.DeleteSubKeyTree(subKeyName, false);
@@ -117,7 +132,7 @@ sealed class UsbipdRegistry : IDisposable
 
     public RegistryKey SetDeviceAsAttached(Guid guid, BusId busId, IPAddress address, string stubInstanceId)
     {
-        using var key = GetDeviceKey(guid, true)
+        using var key = OpenDeviceKey(guid, true)
             ?? throw new UnexpectedResultException($"{nameof(SetDeviceAsAttached)}: Device key not found");
         var attached = key.CreateSubKey(AttachedName, true, RegistryOptions.Volatile)
             ?? throw new UnexpectedResultException($"{nameof(SetDeviceAsAttached)}: Unable to create ${AttachedName} subkey");
@@ -155,13 +170,13 @@ sealed class UsbipdRegistry : IDisposable
 
     public bool SetDeviceAsDetached(Guid guid)
     {
-        using var deviceKey = GetDeviceKey(guid, false);
+        using var deviceKey = OpenDeviceKey(guid, false);
         return deviceKey is null || RemoveAttachedSubKey(deviceKey);
     }
 
     public bool SetAllDevicesAsDetached()
     {
-        using var devicesKey = GetDevicesKey(false);
+        var devicesKey = GetDevicesKey(false);
         var deviceKeyNames = devicesKey?.GetSubKeyNames() ?? [];
         var failure = false;
         foreach (var deviceKeyName in deviceKeyNames)
@@ -188,8 +203,7 @@ sealed class UsbipdRegistry : IDisposable
     public IEnumerable<UsbDevice> GetBoundDevices()
     {
         var guids = new SortedSet<Guid>();
-        using var devicesKey = GetDevicesKey(false);
-        foreach (var subKeyName in devicesKey.GetSubKeyNames())
+        foreach (var subKeyName in GetDevicesKey(false).GetSubKeyNames())
         {
             if (Guid.TryParseExact(subKeyName, "B", out var guid))
             {
@@ -201,7 +215,7 @@ sealed class UsbipdRegistry : IDisposable
         var persistedDevices = new Dictionary<string, UsbDevice>();
         foreach (var guid in guids)
         {
-            using var deviceKey = GetDeviceKey(guid, false);
+            using var deviceKey = OpenDeviceKey(guid, false);
             if (deviceKey is null)
             {
                 continue;
@@ -278,7 +292,8 @@ sealed class UsbipdRegistry : IDisposable
         return persistedDevices.Values;
     }
 
-    public bool HasWriteAccess => WritableBaseKey is not null;
+    public bool HasDevicesWriteAccess => _WritableDevicesKey is not null;
+    public bool HasPolicyWriteAccess => _WritablePolicyKey is not null;
 
     public Guid AddPolicyRule(PolicyRule rule)
     {
@@ -300,13 +315,12 @@ sealed class UsbipdRegistry : IDisposable
 
     public void RemovePolicyRule(Guid guid)
     {
-        using var policyKey = GetPolicyKey(true);
-        policyKey.DeleteSubKeyTree(guid.ToString("B"), false);
+        GetPolicyKey(true).DeleteSubKeyTree(guid.ToString("B"), false);
     }
 
     public void RemovePolicyRuleAll()
     {
-        using var policyKey = GetPolicyKey(true);
+        var policyKey = GetPolicyKey(true);
         foreach (var subKeyName in policyKey.GetSubKeyNames())
         {
             policyKey.DeleteSubKeyTree(subKeyName, false);
@@ -322,8 +336,7 @@ sealed class UsbipdRegistry : IDisposable
     public SortedDictionary<Guid, PolicyRule> GetPolicyRules()
     {
         var guids = new SortedSet<Guid>();
-        using var policyKey = GetPolicyKey(false);
-        foreach (var subKeyName in policyKey.GetSubKeyNames())
+        foreach (var subKeyName in GetPolicyKey(false).GetSubKeyNames())
         {
             if (Guid.TryParseExact(subKeyName, "B", out var guid))
             {

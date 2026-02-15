@@ -38,6 +38,8 @@ This will install:
   The location of this tool will be added to the `PATH` environment variable.
 - A firewall rule called `usbipd` to allow all local subnets to connect to the service.\
   You can modify this firewall rule to fine tune access control.
+- A `USBIPD Administrators` user group.\
+  Users that you add to this group will be able to (un)bind devices without elevated privileges.
 
 > [!NOTE]
 > If you are using a third-party firewall, you may have to reconfigure it to allow
@@ -61,6 +63,7 @@ usbipd bind --busid=<BUSID>
 ```
 
 Sharing a device is persistent; it survives reboots.
+To allow users to (un)bind devices without elevated privileges, add them to the `USBIPD Administrators` group.
 
 > [!TIP]
 > See the [wiki](https://github.com/dorssel/usbipd-win/wiki/Tested-Devices) for a list of tested devices.
