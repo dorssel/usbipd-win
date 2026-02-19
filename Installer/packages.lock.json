@@ -4,15 +4,15 @@
     "native,Version=v0.0": {
       "Dorssel.GitVersion.MsBuild": {
         "type": "Direct",
-        "requested": "[2.0.0, )",
-        "resolved": "2.0.0",
-        "contentHash": "6ZyY8dsPDDxpRP4P0ic6CGPTRBxZLwo7eDFmeCr8UaSgX23eaEoSd0/uSgCh7kmK+vDY94OMbuD9kYAA4RoxLA=="
+        "requested": "[2.1.0, )",
+        "resolved": "2.1.0",
+        "contentHash": "Dkiov8KyUy9JQHkFmcnkWfxC1MGCqBwLBSdCBaU3q7KLgcWS2qU6qriVbDURk21zZQseEub5LgwqEOwv3KFoxw=="
       },
       "GitVersion.MsBuild": {
         "type": "Direct",
-        "requested": "[6.5.1, )",
-        "resolved": "6.5.1",
-        "contentHash": "92zAmfGWVtjHM8eR7O+1WWxqP+gulXvVqu3Sb1+KzuImdmxBt/bln/dMRvsIyV69KEiSrtbUoet4HBjG+bOLyw=="
+        "requested": "[6.6.0, )",
+        "resolved": "6.6.0",
+        "contentHash": "DleYRs4QwkTFmqODJKBgQ3wRbPytZ/Zb5ZdBczUslXkAizp+2vVS+NuivgjwzZNnLKyVFa3IYUAcGbcMAgs3Ww=="
       },
       "WixToolset.Firewall.wixext": {
         "type": "Direct",
