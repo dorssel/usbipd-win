@@ -80,7 +80,7 @@ jobs:
           path: 'Installer/bin/*/release/*.msi'
 
       - name: Build Attestation
-        uses: actions/attest-build-provenance@v3
+        uses: actions/attest@v4
         with:
           subject-name: artifacts.zip
           subject-digest: sha256:${{ steps.upload.outputs.artifact-digest }}
