@@ -74,7 +74,7 @@ jobs:
       # Therefore, it makes no sense to upload individual .msi files. We always upload everything as a single artifacts container.
       - name: Upload Artifacts
         id: upload
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: artifacts
           path: 'Installer/bin/*/release/*.msi'
