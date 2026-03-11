@@ -10,7 +10,6 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Channels;
 using Usbipd.Automation;
-using Windows.Security.Authentication.OnlineId;
 using static Usbipd.Interop.UsbIp;
 using static Usbipd.Interop.VBoxUsb;
 

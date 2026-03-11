@@ -25,17 +25,17 @@ static class VBoxUsb
     /// <summary>VBoxUsb: usblib-win.h</summary>
     internal enum SUPUSB_IOCTL : uint
     {
-        GET_DEVICE = (PInvoke.FILE_DEVICE_UNKNOWN << 16) | (PInvoke.FILE_WRITE_ACCESS << 14) | (0x603 << 2) | (PInvoke.METHOD_BUFFERED),
-        SEND_URB = (PInvoke.FILE_DEVICE_UNKNOWN << 16) | (PInvoke.FILE_WRITE_ACCESS << 14) | (0x607 << 2) | (PInvoke.METHOD_BUFFERED),
-        USB_RESET = (PInvoke.FILE_DEVICE_UNKNOWN << 16) | (PInvoke.FILE_WRITE_ACCESS << 14) | (0x608 << 2) | (PInvoke.METHOD_BUFFERED),
-        USB_SELECT_INTERFACE = (PInvoke.FILE_DEVICE_UNKNOWN << 16) | (PInvoke.FILE_WRITE_ACCESS << 14) | (0x609 << 2) | (PInvoke.METHOD_BUFFERED),
-        USB_SET_CONFIG = (PInvoke.FILE_DEVICE_UNKNOWN << 16) | (PInvoke.FILE_WRITE_ACCESS << 14) | (0x60a << 2) | (PInvoke.METHOD_BUFFERED),
-        USB_CLAIM_DEVICE = (PInvoke.FILE_DEVICE_UNKNOWN << 16) | (PInvoke.FILE_WRITE_ACCESS << 14) | (0x60b << 2) | (PInvoke.METHOD_BUFFERED),
-        USB_RELEASE_DEVICE = (PInvoke.FILE_DEVICE_UNKNOWN << 16) | (PInvoke.FILE_WRITE_ACCESS << 14) | (0x60c << 2) | (PInvoke.METHOD_BUFFERED),
-        IS_OPERATIONAL = (PInvoke.FILE_DEVICE_UNKNOWN << 16) | (PInvoke.FILE_WRITE_ACCESS << 14) | (0x60d << 2) | (PInvoke.METHOD_BUFFERED),
-        USB_CLEAR_ENDPOINT = (PInvoke.FILE_DEVICE_UNKNOWN << 16) | (PInvoke.FILE_WRITE_ACCESS << 14) | (0x60e << 2) | (PInvoke.METHOD_BUFFERED),
-        GET_VERSION = (PInvoke.FILE_DEVICE_UNKNOWN << 16) | (PInvoke.FILE_WRITE_ACCESS << 14) | (0x60f << 2) | (PInvoke.METHOD_BUFFERED),
-        USB_ABORT_ENDPOINT = (PInvoke.FILE_DEVICE_UNKNOWN << 16) | (PInvoke.FILE_WRITE_ACCESS << 14) | (0x610 << 2) | (PInvoke.METHOD_BUFFERED),
+        GET_DEVICE = (PInvoke.FILE_DEVICE_UNKNOWN << 16) | (PInvoke.FILE_WRITE_ACCESS << 14) | (0x603 << 2) | PInvoke.METHOD_BUFFERED,
+        SEND_URB = (PInvoke.FILE_DEVICE_UNKNOWN << 16) | (PInvoke.FILE_WRITE_ACCESS << 14) | (0x607 << 2) | PInvoke.METHOD_BUFFERED,
+        USB_RESET = (PInvoke.FILE_DEVICE_UNKNOWN << 16) | (PInvoke.FILE_WRITE_ACCESS << 14) | (0x608 << 2) | PInvoke.METHOD_BUFFERED,
+        USB_SELECT_INTERFACE = (PInvoke.FILE_DEVICE_UNKNOWN << 16) | (PInvoke.FILE_WRITE_ACCESS << 14) | (0x609 << 2) | PInvoke.METHOD_BUFFERED,
+        USB_SET_CONFIG = (PInvoke.FILE_DEVICE_UNKNOWN << 16) | (PInvoke.FILE_WRITE_ACCESS << 14) | (0x60a << 2) | PInvoke.METHOD_BUFFERED,
+        USB_CLAIM_DEVICE = (PInvoke.FILE_DEVICE_UNKNOWN << 16) | (PInvoke.FILE_WRITE_ACCESS << 14) | (0x60b << 2) | PInvoke.METHOD_BUFFERED,
+        USB_RELEASE_DEVICE = (PInvoke.FILE_DEVICE_UNKNOWN << 16) | (PInvoke.FILE_WRITE_ACCESS << 14) | (0x60c << 2) | PInvoke.METHOD_BUFFERED,
+        IS_OPERATIONAL = (PInvoke.FILE_DEVICE_UNKNOWN << 16) | (PInvoke.FILE_WRITE_ACCESS << 14) | (0x60d << 2) | PInvoke.METHOD_BUFFERED,
+        USB_CLEAR_ENDPOINT = (PInvoke.FILE_DEVICE_UNKNOWN << 16) | (PInvoke.FILE_WRITE_ACCESS << 14) | (0x60e << 2) | PInvoke.METHOD_BUFFERED,
+        GET_VERSION = (PInvoke.FILE_DEVICE_UNKNOWN << 16) | (PInvoke.FILE_WRITE_ACCESS << 14) | (0x60f << 2) | PInvoke.METHOD_BUFFERED,
+        USB_ABORT_ENDPOINT = (PInvoke.FILE_DEVICE_UNKNOWN << 16) | (PInvoke.FILE_WRITE_ACCESS << 14) | (0x610 << 2) | PInvoke.METHOD_BUFFERED,
     }
 
     /// <summary>VBoxUsb: usblib-win.h</summary>

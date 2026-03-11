@@ -121,11 +121,11 @@ static class VBoxUsbMon
     /// <summary>VBoxUsb: usblib-win.h</summary>
     internal enum SUPUSBFLT_IOCTL : uint
     {
-        GET_VERSION = (PInvoke.FILE_DEVICE_UNKNOWN << 16) | (PInvoke.FILE_WRITE_ACCESS << 14) | (0x610 << 2) | (PInvoke.METHOD_BUFFERED),
-        ADD_FILTER = (PInvoke.FILE_DEVICE_UNKNOWN << 16) | (PInvoke.FILE_WRITE_ACCESS << 14) | (0x611 << 2) | (PInvoke.METHOD_BUFFERED),
-        REMOVE_FILTER = (PInvoke.FILE_DEVICE_UNKNOWN << 16) | (PInvoke.FILE_WRITE_ACCESS << 14) | (0x612 << 2) | (PInvoke.METHOD_BUFFERED),
-        RUN_FILTERS = (PInvoke.FILE_DEVICE_UNKNOWN << 16) | (PInvoke.FILE_WRITE_ACCESS << 14) | (0x615 << 2) | (PInvoke.METHOD_BUFFERED),
-        GET_DEVICE = (PInvoke.FILE_DEVICE_UNKNOWN << 16) | (PInvoke.FILE_WRITE_ACCESS << 14) | (0x617 << 2) | (PInvoke.METHOD_BUFFERED),
+        GET_VERSION = (PInvoke.FILE_DEVICE_UNKNOWN << 16) | (PInvoke.FILE_WRITE_ACCESS << 14) | (0x610 << 2) | PInvoke.METHOD_BUFFERED,
+        ADD_FILTER = (PInvoke.FILE_DEVICE_UNKNOWN << 16) | (PInvoke.FILE_WRITE_ACCESS << 14) | (0x611 << 2) | PInvoke.METHOD_BUFFERED,
+        REMOVE_FILTER = (PInvoke.FILE_DEVICE_UNKNOWN << 16) | (PInvoke.FILE_WRITE_ACCESS << 14) | (0x612 << 2) | PInvoke.METHOD_BUFFERED,
+        RUN_FILTERS = (PInvoke.FILE_DEVICE_UNKNOWN << 16) | (PInvoke.FILE_WRITE_ACCESS << 14) | (0x615 << 2) | PInvoke.METHOD_BUFFERED,
+        GET_DEVICE = (PInvoke.FILE_DEVICE_UNKNOWN << 16) | (PInvoke.FILE_WRITE_ACCESS << 14) | (0x617 << 2) | PInvoke.METHOD_BUFFERED,
     }
 
     /// <summary>VBoxUsb: usblib-win.h</summary>
