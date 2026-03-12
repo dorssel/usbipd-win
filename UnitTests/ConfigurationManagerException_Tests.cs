@@ -40,22 +40,16 @@ sealed class ConfigurationManagerException_Tests
         Assert.AreSame(TestInnerException, win32Exception.InnerException);
     }
 
-    sealed class MappingData
-    {
-        static readonly Dictionary<CONFIGRET, WIN32_ERROR> _KnownGood = new()
-        {
-            { CONFIGRET.CR_SUCCESS, WIN32_ERROR.NO_ERROR }, // no error
-            { CONFIGRET.CR_ACCESS_DENIED, WIN32_ERROR.ERROR_ACCESS_DENIED }, // non-trivial error
-            { CONFIGRET.CR_FAILURE, WIN32_ERROR.ERROR_CAN_NOT_COMPLETE }, // trivial error
-            { CONFIGRET.CR_DEFAULT, WIN32_ERROR.ERROR_CAN_NOT_COMPLETE }, // default error
-            { (CONFIGRET)0xbaadf00d, WIN32_ERROR.ERROR_CAN_NOT_COMPLETE }, // unknown error
-        };
-
-        public static IEnumerable<object[]> KnownGood => from value in _KnownGood select new object[] { value.Key, value.Value };
-    }
+    public static IEnumerable<(CONFIGRET, WIN32_ERROR)> ErrorMappings = [
+        (CONFIGRET.CR_SUCCESS, WIN32_ERROR.NO_ERROR), // no error
+        (CONFIGRET.CR_ACCESS_DENIED, WIN32_ERROR.ERROR_ACCESS_DENIED), // non-trivial error
+        (CONFIGRET.CR_FAILURE, WIN32_ERROR.ERROR_CAN_NOT_COMPLETE), // trivial error
+        (CONFIGRET.CR_DEFAULT, WIN32_ERROR.ERROR_CAN_NOT_COMPLETE), // default error
+        ((CONFIGRET)0xbaadf00d, WIN32_ERROR.ERROR_CAN_NOT_COMPLETE), // unknown error
+    ];
 
     [TestMethod]
-    [DynamicData(nameof(MappingData.KnownGood), typeof(MappingData))]
+    [DynamicData(nameof(ErrorMappings))]
     public void CodeConstructor(CONFIGRET configRet, WIN32_ERROR win32Error)
     {
         var configurationManagerException = new ConfigurationManagerException(configRet);
@@ -65,7 +59,7 @@ sealed class ConfigurationManagerException_Tests
     }
 
     [TestMethod]
-    [DynamicData(nameof(MappingData.KnownGood), typeof(MappingData))]
+    [DynamicData(nameof(ErrorMappings))]
     public void CodeAndMessageConstructor(CONFIGRET configRet, WIN32_ERROR win32Error)
     {
         var configurationManagerException = new ConfigurationManagerException(configRet, TestMessage);

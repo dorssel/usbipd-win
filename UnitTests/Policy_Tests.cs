@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: GPL-3.0-only
 
-using System.Data;
 using Microsoft.Win32;
 using Usbipd.Automation;
 
@@ -11,10 +10,15 @@ namespace UnitTests;
 [TestClass]
 sealed class Policy_Tests
 {
-    static readonly BusId TestBusId = BusId.Parse("3-42");
-    static readonly VidPid TestHardwareId = VidPid.Parse("0123:cdef");
-    static readonly BusId OtherBusId = BusId.Parse("1-1");
-    static readonly VidPid OtherHardwareId = VidPid.Parse("4567:89ab");
+    const string TestBusIdString = "3-42";
+    const string TestHardwareIdString = "0123:cdef";
+    const string OtherBusIdString = "1-1";
+    const string OtherHardwareIdString = "4567:89ab";
+
+    static readonly BusId TestBusId = BusId.Parse(TestBusIdString);
+    static readonly VidPid TestHardwareId = VidPid.Parse(TestHardwareIdString);
+    static readonly BusId OtherBusId = BusId.Parse(OtherBusIdString);
+    static readonly VidPid OtherHardwareId = VidPid.Parse(OtherHardwareIdString);
 
     static TempRegistry BaseTempRegistryKey = null!;
 
@@ -40,37 +44,34 @@ sealed class Policy_Tests
     [TestMethod]
     public void Constructor_Success()
     {
-        _ = new PolicyRuleAutoBind(PolicyRuleEffect.Allow, TestBusId, TestHardwareId);
+        _ = new PolicyRuleAutoBind(PolicyRuleEffect.Allow, BusId.Parse(TestBusIdString), VidPid.Parse(TestHardwareIdString));
     }
 
-    sealed class AutoBindData
+    // NOTE: MSTest cannot serialize PolicyRuleAutoBind, so we have to deconstruct/reconstruct.
+    // NOTE: VS cannot serialize BusId or VidPid (no DataContract), so we pass them as strings.
+
+    public static IEnumerable<(PolicyRuleEffect, string?, string?)> ValidAutoBinds = [
+        (PolicyRuleEffect.Allow, TestBusIdString, null),
+        (PolicyRuleEffect.Allow, null, TestHardwareIdString),
+        (PolicyRuleEffect.Allow, TestBusIdString, TestHardwareIdString),
+    ];
+
+    public static IEnumerable<(PolicyRuleEffect, string?, string?)> InvalidAutoBinds = [
+        (PolicyRuleEffect.Allow, null, null),
+        (PolicyRuleEffect.Allow, nameof(BusId.IncompatibleHub), null),
+        (PolicyRuleEffect.Allow, nameof(BusId.IncompatibleHub), TestHardwareIdString),
+    ];
+
+    static PolicyRuleAutoBind ConstructPolicyRuleAutoBind(PolicyRuleEffect effect, string? busIdString, string? vidPidString)
     {
-        // NOTE: MSTest cannot serialize PolicyRuleAutoBind (yet), so we have to deconstruct/reconstruct.
-
-        static readonly PolicyRuleAutoBind[] _Valid = [
-            new(PolicyRuleEffect.Allow, TestBusId, null),
-            new(PolicyRuleEffect.Allow, null, TestHardwareId),
-            new(PolicyRuleEffect.Allow, TestBusId, TestHardwareId),
-        ];
-
-        static readonly PolicyRuleAutoBind[] _Invalid = [
-            new(PolicyRuleEffect.Allow, null, null),
-            new(PolicyRuleEffect.Allow, BusId.IncompatibleHub, null),
-            new(PolicyRuleEffect.Allow, BusId.IncompatibleHub, TestHardwareId),
-        ];
-
-        public static IEnumerable<object?[]> Valid
-            => from rule in _Valid select new object?[] { rule.Effect, rule.BusId, rule.HardwareId };
-
-        public static IEnumerable<object?[]> Invalid
-            => from rule in _Invalid select new object?[] { rule.Effect, rule.BusId, rule.HardwareId };
+        return new(effect, busIdString is null ? null : BusId.Parse(busIdString), vidPidString is null ? null : VidPid.Parse(vidPidString));
     }
 
     [TestMethod]
-    [DynamicData(nameof(AutoBindData.Valid), typeof(AutoBindData))]
-    public void Persist_AutoBind(PolicyRuleEffect effect, BusId? busId, VidPid? hardwareId)
+    [DynamicData(nameof(ValidAutoBinds))]
+    public void Persist_AutoBind(PolicyRuleEffect effect, string? busIdString, string? vidPidString)
     {
-        var rule = new PolicyRuleAutoBind(effect, busId, hardwareId);
+        var rule = ConstructPolicyRuleAutoBind(effect, busIdString, vidPidString);
 
         using var tempRegistry = CreateTempRegistry();
         rule.Save(tempRegistry.Key);
@@ -82,19 +83,19 @@ sealed class Policy_Tests
     }
 
     [TestMethod]
-    [DynamicData(nameof(AutoBindData.Valid), typeof(AutoBindData))]
-    public void Valid_AutoBind(PolicyRuleEffect effect, BusId? busId, VidPid? hardwareId)
+    [DynamicData(nameof(ValidAutoBinds))]
+    public void Valid_AutoBind(PolicyRuleEffect effect, string? busIdString, string? vidPidString)
     {
-        var rule = new PolicyRuleAutoBind(effect, busId, hardwareId);
+        var rule = ConstructPolicyRuleAutoBind(effect, busIdString, vidPidString);
 
         Assert.IsTrue(rule.IsValid());
     }
 
     [TestMethod]
-    [DynamicData(nameof(AutoBindData.Invalid), typeof(AutoBindData))]
-    public void Invalid_AutoBind(PolicyRuleEffect effect, BusId? busId, VidPid? hardwareId)
+    [DynamicData(nameof(InvalidAutoBinds))]
+    public void Invalid_AutoBind(PolicyRuleEffect effect, string? busIdString, string? vidPidString)
     {
-        var rule = new PolicyRuleAutoBind(effect, busId, hardwareId);
+        var rule = ConstructPolicyRuleAutoBind(effect, busIdString, vidPidString);
 
         Assert.IsFalse(rule.IsValid());
     }
@@ -105,10 +106,10 @@ sealed class Policy_Tests
     }
 
     [TestMethod]
-    [DynamicData(nameof(AutoBindData.Invalid), typeof(AutoBindData))]
-    public void Match_Invalid_AutoBind(PolicyRuleEffect effect, BusId? busId, VidPid? hardwareId)
+    [DynamicData(nameof(InvalidAutoBinds))]
+    public void Match_Invalid_AutoBind(PolicyRuleEffect effect, string? busIdString, string? vidPidString)
     {
-        var rule = new PolicyRuleAutoBind(effect, busId, hardwareId);
+        var rule = ConstructPolicyRuleAutoBind(effect, busIdString, vidPidString);
 
         Assert.ThrowsExactly<InvalidOperationException>(() =>
         {
@@ -117,10 +118,10 @@ sealed class Policy_Tests
     }
 
     [TestMethod]
-    [DynamicData(nameof(AutoBindData.Valid), typeof(AutoBindData))]
-    public void Match_Valid_AutoBind(PolicyRuleEffect effect, BusId? busId, VidPid? hardwareId)
+    [DynamicData(nameof(ValidAutoBinds))]
+    public void Match_Valid_AutoBind(PolicyRuleEffect effect, string? busIdString, string? vidPidString)
     {
-        var rule = new PolicyRuleAutoBind(effect, busId, hardwareId);
+        var rule = ConstructPolicyRuleAutoBind(effect, busIdString, vidPidString);
 
         Assert.IsTrue(rule.Matches(CreateTestUsbDevice(TestBusId, TestHardwareId)));
         Assert.IsFalse(rule.Matches(CreateTestUsbDevice(OtherBusId, OtherHardwareId)));
