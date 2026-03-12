@@ -17,9 +17,6 @@ public
 readonly record struct BusId
     : IComparable<BusId>
 {
-#if !NETSTANDARD
-    [JsonConstructor]
-#endif
     public BusId(ushort bus, ushort port)
     {
         // Do not allow the explicit creation of the special IncompatibleHub value.
@@ -37,23 +34,9 @@ readonly record struct BusId
         (Bus, Port) = (bus, port);
     }
 
-    public ushort Bus
-    {
-        get;
-#if !NETSTANDARD
-        // Required for MSTest DynamicData (de)serialization.
-        init;
-#endif
-    }
+    public ushort Bus { get; }
 
-    public ushort Port
-    {
-        get;
-#if !NETSTANDARD
-        // Required for MSTest DynamicData (de)serialization.
-        init;
-#endif
-    }
+    public ushort Port { get; }
 
     /// <summary>
     /// The special value 0-0 for hubs that do not expose a compatible busid.

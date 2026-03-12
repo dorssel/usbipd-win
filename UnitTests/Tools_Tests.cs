@@ -163,46 +163,34 @@ sealed class Tools_Tests
         });
     }
 
-    sealed class SpeedData
-    {
-        static readonly Dictionary<USB_DEVICE_SPEED, UsbDeviceSpeed> _KnownGood = new()
-        {
-            { USB_DEVICE_SPEED.UsbLowSpeed, UsbDeviceSpeed.USB_SPEED_LOW },
-            { USB_DEVICE_SPEED.UsbFullSpeed, UsbDeviceSpeed.USB_SPEED_FULL },
-            { USB_DEVICE_SPEED.UsbHighSpeed, UsbDeviceSpeed.USB_SPEED_HIGH },
-            { USB_DEVICE_SPEED.UsbSuperSpeed, UsbDeviceSpeed.USB_SPEED_SUPER },
-            { (USB_DEVICE_SPEED)0x0badf00d, UsbDeviceSpeed.USB_SPEED_UNKNOWN },
-        };
-
-        public static IEnumerable<object[]> KnownGood => from value in _KnownGood select new object[] { value.Key, value.Value };
-    }
+    public static IEnumerable<(USB_DEVICE_SPEED, UsbDeviceSpeed)> SpeedMappings = [
+        (USB_DEVICE_SPEED.UsbLowSpeed, UsbDeviceSpeed.USB_SPEED_LOW),
+        (USB_DEVICE_SPEED.UsbFullSpeed, UsbDeviceSpeed.USB_SPEED_FULL),
+        (USB_DEVICE_SPEED.UsbHighSpeed, UsbDeviceSpeed.USB_SPEED_HIGH),
+        (USB_DEVICE_SPEED.UsbSuperSpeed, UsbDeviceSpeed.USB_SPEED_SUPER),
+        ((USB_DEVICE_SPEED)0x0badf00d, UsbDeviceSpeed.USB_SPEED_UNKNOWN),
+    ];
 
     [TestMethod]
-    [DynamicData(nameof(SpeedData.KnownGood), typeof(SpeedData))]
+    [DynamicData(nameof(SpeedMappings))]
     public void MapWindowsSpeedToLinuxSpeed_Test(USB_DEVICE_SPEED windows, UsbDeviceSpeed linux)
     {
         Assert.AreEqual(linux, MapWindowsSpeedToLinuxSpeed(windows));
     }
 
-    sealed class ErrorData
-    {
-        static readonly Dictionary<UsbSupError, Errno> _KnownGood = new()
-        {
-            { UsbSupError.USBSUP_XFER_OK, Errno.SUCCESS },
-            { UsbSupError.USBSUP_XFER_STALL, Errno.EPIPE },
-            { UsbSupError.USBSUP_XFER_DNR, Errno.ETIME },
-            { UsbSupError.USBSUP_XFER_CRC, Errno.EILSEQ },
-            { UsbSupError.USBSUP_XFER_NAC, Errno.EPROTO },
-            { UsbSupError.USBSUP_XFER_UNDERRUN, Errno.EREMOTEIO },
-            { UsbSupError.USBSUP_XFER_OVERRUN, Errno.EOVERFLOW },
-            { (UsbSupError)0xbaadf00d, Errno.EPROTO },
-        };
-
-        public static IEnumerable<object[]> KnownGood => from value in _KnownGood select new object[] { value.Key, value.Value };
-    }
+    public static IEnumerable<(UsbSupError, Errno)> ErrorMappings = [
+        (UsbSupError.USBSUP_XFER_OK, Errno.SUCCESS),
+        (UsbSupError.USBSUP_XFER_STALL, Errno.EPIPE),
+        (UsbSupError.USBSUP_XFER_DNR, Errno.ETIME),
+        (UsbSupError.USBSUP_XFER_CRC, Errno.EILSEQ),
+        (UsbSupError.USBSUP_XFER_NAC, Errno.EPROTO),
+        (UsbSupError.USBSUP_XFER_UNDERRUN, Errno.EREMOTEIO),
+        (UsbSupError.USBSUP_XFER_OVERRUN, Errno.EOVERFLOW),
+        ((UsbSupError)0xbaadf00d, Errno.EPROTO),
+    ];
 
     [TestMethod]
-    [DynamicData(nameof(ErrorData.KnownGood), typeof(ErrorData))]
+    [DynamicData(nameof(ErrorMappings))]
     public void ConvertError_Test(UsbSupError vbox, Errno linux)
     {
         Assert.AreEqual(linux, ConvertError(vbox));

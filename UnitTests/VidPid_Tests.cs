@@ -43,64 +43,57 @@ sealed class VidPid_Tests
         Assert.AreEqual(testPid, vidPid.Pid);
     }
 
-    sealed class VidPidData
+    public static IEnumerable<string> ValidVidPidStrings = [
+        "0000:0000",
+        "0123:0000",
+        "4567:0000",
+        "89ab:0000",
+        "89AB:0000",
+        "cdef:0000",
+        "CDEF:0000",
+        "0000:0123",
+        "0000:4567",
+        "0000:89ab",
+        "0000:89AB",
+        "0000:cdef",
+        "0000:CDEF",
+        "fFfF:FfFf",
+    ];
+
+    public static IEnumerable<string> InvalidVidPidStrings = [
+        "",
+        ":",
+        "000:0000",
+        "0000:000",
+        "00000:0000",
+        "0000:00000",
+        " 0000:0000",
+        "0000 :0000",
+        "0000: 0000",
+        "0000:0000 ",
+        "000g:0000",
+        "0000:000g",
+    ];
+
+    static int ExpectedCompare(string left, string right)
     {
-        static readonly string[] _Invalid = [
-            "",
-            ":",
-            "000:0000",
-            "0000:000",
-            "00000:0000",
-            "0000:00000",
-            " 0000:0000",
-            "0000 :0000",
-            "0000: 0000",
-            "0000:0000 ",
-            "000g:0000",
-            "0000:000g",
-        ];
+        var leftVid = ushort.Parse(left.Split(':')[0], NumberStyles.AllowHexSpecifier);
+        var leftPid = ushort.Parse(left.Split(':')[1], NumberStyles.AllowHexSpecifier);
+        var rightVid = ushort.Parse(right.Split(':')[0], NumberStyles.AllowHexSpecifier);
+        var rightPid = ushort.Parse(right.Split(':')[1], NumberStyles.AllowHexSpecifier);
 
-        public static IEnumerable<string[]> Invalid => from value in _Invalid select new string[] { value };
-
-        static readonly string[] _Valid = [
-            "0000:0000",
-            "0123:0000",
-            "4567:0000",
-            "89ab:0000",
-            "89AB:0000",
-            "cdef:0000",
-            "CDEF:0000",
-            "0000:0123",
-            "0000:4567",
-            "0000:89ab",
-            "0000:89AB",
-            "0000:cdef",
-            "0000:CDEF",
-            "fFfF:FfFf",
-        ];
-
-        public static IEnumerable<string[]> Valid => from value in _Valid select new string[] { value };
-
-        static int ExpectedCompare(string left, string right)
-        {
-            var leftVid = ushort.Parse(left.Split(':')[0], NumberStyles.AllowHexSpecifier);
-            var leftPid = ushort.Parse(left.Split(':')[1], NumberStyles.AllowHexSpecifier);
-            var rightVid = ushort.Parse(right.Split(':')[0], NumberStyles.AllowHexSpecifier);
-            var rightPid = ushort.Parse(right.Split(':')[1], NumberStyles.AllowHexSpecifier);
-
-            return
-                leftVid < rightVid ? -1 :
-                leftVid > rightVid ? 1 :
-                leftPid < rightPid ? -1 :
-                leftPid > rightPid ? 1 : 0;
-        }
-
-        public static IEnumerable<object[]> Compare
-            => from left in _Valid from right in _Valid select new object[] { left, right, ExpectedCompare(left, right) };
+        return
+            leftVid < rightVid ? -1 :
+            leftVid > rightVid ? 1 :
+            leftPid < rightPid ? -1 :
+            leftPid > rightPid ? 1 : 0;
     }
 
+    public static IEnumerable<(string, string, int)> VidPidComparisons
+        = from left in ValidVidPidStrings from right in ValidVidPidStrings select (left, right, ExpectedCompare(left, right));
+
     [TestMethod]
-    [DynamicData(nameof(VidPidData.Invalid), typeof(VidPidData))]
+    [DynamicData(nameof(InvalidVidPidStrings))]
     public void TryParseInvalid(string text)
     {
         var result = VidPid.TryParse(text, out var vidPid);
@@ -110,7 +103,7 @@ sealed class VidPid_Tests
     }
 
     [TestMethod]
-    [DynamicData(nameof(VidPidData.Valid), typeof(VidPidData))]
+    [DynamicData(nameof(ValidVidPidStrings))]
     public void TryParseValid(string text)
     {
         var result = VidPid.TryParse(text, out var vidPid);
@@ -123,7 +116,7 @@ sealed class VidPid_Tests
     }
 
     [TestMethod]
-    [DynamicData(nameof(VidPidData.Invalid), typeof(VidPidData))]
+    [DynamicData(nameof(InvalidVidPidStrings))]
     public void ParseInvalid(string text)
     {
         Assert.ThrowsExactly<FormatException>(() =>
@@ -133,7 +126,7 @@ sealed class VidPid_Tests
     }
 
     [TestMethod]
-    [DynamicData(nameof(VidPidData.Valid), typeof(VidPidData))]
+    [DynamicData(nameof(ValidVidPidStrings))]
     public void ParseValid(string text)
     {
         var vidPid = VidPid.Parse(text);
@@ -144,7 +137,7 @@ sealed class VidPid_Tests
     }
 
     [TestMethod]
-    [DynamicData(nameof(VidPidData.Compare), typeof(VidPidData))]
+    [DynamicData(nameof(VidPidComparisons))]
     public void Compare(string left, string right, int expected)
     {
         var result = VidPid.Parse(left).CompareTo(VidPid.Parse(right));
@@ -152,7 +145,7 @@ sealed class VidPid_Tests
     }
 
     [TestMethod]
-    [DynamicData(nameof(VidPidData.Compare), typeof(VidPidData))]
+    [DynamicData(nameof(VidPidComparisons))]
     public void LessThan(string left, string right, int expected)
     {
         var result = VidPid.Parse(left) < VidPid.Parse(right);
@@ -160,7 +153,7 @@ sealed class VidPid_Tests
     }
 
     [TestMethod]
-    [DynamicData(nameof(VidPidData.Compare), typeof(VidPidData))]
+    [DynamicData(nameof(VidPidComparisons))]
     public void LessThanOrEqual(string left, string right, int expected)
     {
         var result = VidPid.Parse(left) <= VidPid.Parse(right);
@@ -168,7 +161,7 @@ sealed class VidPid_Tests
     }
 
     [TestMethod]
-    [DynamicData(nameof(VidPidData.Compare), typeof(VidPidData))]
+    [DynamicData(nameof(VidPidComparisons))]
     public void GreaterThan(string left, string right, int expected)
     {
         var result = VidPid.Parse(left) > VidPid.Parse(right);
@@ -176,7 +169,7 @@ sealed class VidPid_Tests
     }
 
     [TestMethod]
-    [DynamicData(nameof(VidPidData.Compare), typeof(VidPidData))]
+    [DynamicData(nameof(VidPidComparisons))]
     public void GreaterThanOrEqual(string left, string right, int expected)
     {
         var result = VidPid.Parse(left) >= VidPid.Parse(right);
@@ -184,7 +177,7 @@ sealed class VidPid_Tests
     }
 
     [TestMethod]
-    [DynamicData(nameof(VidPidData.Valid), typeof(VidPidData))]
+    [DynamicData(nameof(ValidVidPidStrings))]
     public void ToStringValid(string text)
     {
         var vidPid = VidPid.Parse(text);
@@ -240,57 +233,50 @@ sealed class VidPid_Tests
         Assert.IsNull(vidPid.Product);
     }
 
-    sealed class HardwareIdData
-    {
-        static readonly string[] _Invalid = [
-            "",
-            "VID_&PID_",
-            "VID_111&PID_1111",
-            "VID_1111&PID_111",
-            "VID_11111&PID_1111",
-            "VID_1111&PID_11111",
-            "VID_1111 &PID_1111",
-            "VID_1111& PID_1111",
-            "VID_111g&PID_1111",
-            "VID_1111&PID_111g",
-            "ID_1111&PID_1111",
-            "1111&1111",
-            "VID_1111:PID_1111",
-            "1111:1111",
-        ];
+    public static IEnumerable<string> ValidHardwareIdStrings = [
+        "VID_0000&PID_0000",
+        "VID_0123&PID_0000",
+        "VID_4567&PID_0000",
+        "VID_89ab&PID_0000",
+        "VID_89AB&PID_0000",
+        "VID_cdef&PID_0000",
+        "VID_CDEF&PID_0000",
+        "VID_0000&PID_0123",
+        "VID_0000&PID_4567",
+        "VID_0000&PID_89ab",
+        "VID_0000&PID_89AB",
+        "VID_0000&PID_cdef",
+        "VID_0000&PID_CDEF",
+        "VID_fFfF&PID_FfFf",
+        "xxxVID_1111&PID_1111xxx",
+    ];
 
-        public static IEnumerable<string[]> Invalid => from value in _Invalid select new string[] { value };
-
-        static readonly string[] _Valid = [
-            "VID_0000&PID_0000",
-            "VID_0123&PID_0000",
-            "VID_4567&PID_0000",
-            "VID_89ab&PID_0000",
-            "VID_89AB&PID_0000",
-            "VID_cdef&PID_0000",
-            "VID_CDEF&PID_0000",
-            "VID_0000&PID_0123",
-            "VID_0000&PID_4567",
-            "VID_0000&PID_89ab",
-            "VID_0000&PID_89AB",
-            "VID_0000&PID_cdef",
-            "VID_0000&PID_CDEF",
-            "VID_fFfF&PID_FfFf",
-            "xxxVID_1111&PID_1111xxx",
-        ];
-
-        public static IEnumerable<string[]> Valid => from value in _Valid select new string[] { value };
-    }
+    public static IEnumerable<string> InvalidHardwareIdStrings = [
+        "",
+        "VID_&PID_",
+        "VID_111&PID_1111",
+        "VID_1111&PID_111",
+        "VID_11111&PID_1111",
+        "VID_1111&PID_11111",
+        "VID_1111 &PID_1111",
+        "VID_1111& PID_1111",
+        "VID_111g&PID_1111",
+        "VID_1111&PID_111g",
+        "ID_1111&PID_1111",
+        "1111&1111",
+        "VID_1111:PID_1111",
+        "1111:1111",
+    ];
 
     [TestMethod]
-    [DynamicData(nameof(HardwareIdData.Invalid), typeof(HardwareIdData))]
+    [DynamicData(nameof(InvalidHardwareIdStrings))]
     public void FromHardwareOrInstanceId_ParseError(string text)
     {
         Assert.IsFalse(VidPid.TryParseId(text, out _));
     }
 
     [TestMethod]
-    [DynamicData(nameof(HardwareIdData.Valid), typeof(HardwareIdData))]
+    [DynamicData(nameof(ValidHardwareIdStrings))]
     public void FromHardwareOrInstanceIdValid(string text)
     {
         Assert.IsTrue(VidPid.TryParseId(text, out var vidPid));

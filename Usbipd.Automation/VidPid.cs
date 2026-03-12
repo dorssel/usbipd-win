@@ -3,9 +3,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 using System.Globalization;
-#if !NETSTANDARD
-using System.Text.Json.Serialization;
-#endif
 using System.Text.RegularExpressions;
 
 namespace Usbipd.Automation;
@@ -16,16 +13,13 @@ public
 readonly record struct VidPid
     : IComparable<VidPid>
 {
-#if !NETSTANDARD
-    [JsonConstructor]
-#endif
     public VidPid(ushort vid, ushort pid)
     {
         (Vid, Pid) = (vid, pid);
     }
 
-    public ushort Vid { get; init; }
-    public ushort Pid { get; init; }
+    public ushort Vid { get; }
+    public ushort Pid { get; }
 
     public override readonly string ToString()
     {

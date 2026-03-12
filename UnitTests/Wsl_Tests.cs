@@ -10,38 +10,22 @@ namespace UnitTests;
 [TestClass]
 sealed class Wsl_Tests
 {
-    sealed class NetworkData
-    {
-        static readonly (string host, string client)[] SameNetworkData = [
-            ("0.0.0.0/0", "255.255.255.255"),
-            ("1.2.3.4/32", "1.2.3.4"),
-            ("1.2.3.4/31", "1.2.3.5"),
-        ];
+    public static IEnumerable<(string Host, string Client)> SameNetworks = [
+        ("0.0.0.0/0", "255.255.255.255"),
+        ("1.2.3.4/32", "1.2.3.4"),
+        ("1.2.3.4/31", "1.2.3.5"),
+    ];
 
-        static readonly (string host, string client)[] DifferentNetworkData = [
-            ("0.0.0.0/1", "128.0.0.0"),
-            ("1.2.3.4/32", "1.2.3.5"),
-            ("1.2.3.4/24", "0::1.2.3.4"),
-            ("0::1.2.3.4/24", "1.2.3.4"),
-            ("0::1.2.3.4/24", "0::1.2.3.4"),
-        ];
+    public static IEnumerable<(string Host, string Client)> DifferentNetworks = [
+        ("0.0.0.0/1", "128.0.0.0"),
+        ("1.2.3.4/32", "1.2.3.5"),
+        ("1.2.3.4/24", "0::1.2.3.4"),
+        ("0::1.2.3.4/24", "1.2.3.4"),
+        ("0::1.2.3.4/24", "0::1.2.3.4"),
+    ];
 
-        public static IEnumerable<object[]> TestData
-        {
-            get
-            {
-                foreach (var (host, client) in SameNetworkData)
-                {
-                    yield return new object[] { host, client, true };
-                }
-                foreach (var (host, client) in DifferentNetworkData)
-                {
-                    yield return new object[] { host, client, false };
-                }
-                yield break;
-            }
-        }
-    }
+    public static IEnumerable<(string, string, bool)> ExpectedSameNetworks =
+        [.. SameNetworks.Select(pair => (pair.Host, pair.Client, true)), .. DifferentNetworks.Select(pair => (pair.Host, pair.Client, false))];
 
     static (IPAddress address, IPAddress mask) FromCIDR(string cidr)
     {
@@ -50,7 +34,7 @@ sealed class Wsl_Tests
     }
 
     [TestMethod]
-    [DynamicData(nameof(NetworkData.TestData), typeof(NetworkData))]
+    [DynamicData(nameof(ExpectedSameNetworks))]
     public void IsOnSameIPv4Network(string host, string client, bool expected)
     {
         var (hostAddress, hostMask) = FromCIDR(host);

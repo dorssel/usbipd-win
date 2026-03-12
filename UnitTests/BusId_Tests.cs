@@ -58,64 +58,45 @@ sealed class BusId_Tests
         Assert.IsTrue(BusId.IncompatibleHub.IsIncompatibleHub);
     }
 
-    sealed class BusIdData
-    {
-        static readonly string[] _Invalid = [
-            "",
-            "1",
-            "1-",
-            "-1",
-            " 1-1",
-            "1 -1",
-            "1- 1",
-            "1-1 ",
-            "a-1",
-            "1-a",
-            "0-0",
-            "0-1",
-            "1-0",
-            "1-100",
-            "100-1",
-            "01-1",
-            "1-01",
-        ];
+    public static IEnumerable<string> ValidBusIdStrings = [
+        "IncompatibleHub",
+        "1-1",
+        "1-2",
+        "1-98",
+        "1-99",
+        "2-1",
+        "2-2",
+        "2-98",
+        "2-99",
+        "98-1",
+        "98-2",
+        "98-98",
+        "98-99",
+        "99-1",
+        "99-2",
+        "99-98",
+        "99-99",
+    ];
 
-        public static IEnumerable<string[]> Invalid => from value in _Invalid select new string[] { value };
-
-        static readonly string[] _Valid = [
-            "IncompatibleHub",
-            "1-1",
-            "1-2",
-            "1-98",
-            "1-99",
-            "2-1",
-            "2-2",
-            "2-98",
-            "2-99",
-            "98-1",
-            "98-2",
-            "98-98",
-            "98-99",
-            "99-1",
-            "99-2",
-            "99-98",
-            "99-99",
-        ];
-
-        public static IEnumerable<string[]> Valid => from value in _Valid select new string[] { value };
-
-        static int ExpectedCompare(string left, string right)
-        {
-            return BusFromValidBusId(left) < BusFromValidBusId(right) ? -1
-                : BusFromValidBusId(left) > BusFromValidBusId(right) ? 1
-                : PortFromValidBusId(left) < PortFromValidBusId(right) ? -1
-                : PortFromValidBusId(left) > PortFromValidBusId(right) ? 1
-                : 0;
-        }
-
-        public static IEnumerable<object[]> Compare
-            => from left in _Valid from right in _Valid select new object[] { left, right, ExpectedCompare(left, right) };
-    }
+    public static IEnumerable<string> InvalidBusIdStrings = [
+        "",
+        "1",
+        "1-",
+        "-1",
+        " 1-1",
+        "1 -1",
+        "1- 1",
+        "1-1 ",
+        "a-1",
+        "1-a",
+        "0-0",
+        "0-1",
+        "1-0",
+        "1-100",
+        "100-1",
+        "01-1",
+        "1-01",
+    ];
 
     static ushort BusFromValidBusId(string text)
     {
@@ -127,8 +108,20 @@ sealed class BusId_Tests
         return (text == "IncompatibleHub") ? (ushort)0 : ushort.Parse(text.Split('-')[1]);
     }
 
+    static int ExpectedCompare(string left, string right)
+    {
+        return BusFromValidBusId(left) < BusFromValidBusId(right) ? -1
+            : BusFromValidBusId(left) > BusFromValidBusId(right) ? 1
+            : PortFromValidBusId(left) < PortFromValidBusId(right) ? -1
+            : PortFromValidBusId(left) > PortFromValidBusId(right) ? 1
+            : 0;
+    }
+
+    public static IEnumerable<(string, string, int)> BusIdComparisons
+        = from left in ValidBusIdStrings from right in ValidBusIdStrings select (left, right, ExpectedCompare(left, right));
+
     [TestMethod]
-    [DynamicData(nameof(BusIdData.Invalid), typeof(BusIdData))]
+    [DynamicData(nameof(InvalidBusIdStrings))]
     public void TryParseInvalid(string text)
     {
         var result = BusId.TryParse(text, out var busId);
@@ -139,7 +132,7 @@ sealed class BusId_Tests
     }
 
     [TestMethod]
-    [DynamicData(nameof(BusIdData.Valid), typeof(BusIdData))]
+    [DynamicData(nameof(ValidBusIdStrings))]
     public void TryParseValid(string text)
     {
         var result = BusId.TryParse(text, out var busId);
@@ -149,7 +142,7 @@ sealed class BusId_Tests
     }
 
     [TestMethod]
-    [DynamicData(nameof(BusIdData.Invalid), typeof(BusIdData))]
+    [DynamicData(nameof(InvalidBusIdStrings))]
     public void ParseInvalid(string text)
     {
         Assert.ThrowsExactly<FormatException>(() =>
@@ -159,7 +152,7 @@ sealed class BusId_Tests
     }
 
     [TestMethod]
-    [DynamicData(nameof(BusIdData.Valid), typeof(BusIdData))]
+    [DynamicData(nameof(ValidBusIdStrings))]
     public void ParseValid(string text)
     {
         var busId = BusId.Parse(text);
@@ -168,7 +161,7 @@ sealed class BusId_Tests
     }
 
     [TestMethod]
-    [DynamicData(nameof(BusIdData.Compare), typeof(BusIdData))]
+    [DynamicData(nameof(BusIdComparisons))]
     public void Compare(string left, string right, int expected)
     {
         var result = BusId.Parse(left).CompareTo(BusId.Parse(right));
@@ -176,7 +169,7 @@ sealed class BusId_Tests
     }
 
     [TestMethod]
-    [DynamicData(nameof(BusIdData.Compare), typeof(BusIdData))]
+    [DynamicData(nameof(BusIdComparisons))]
     public void LessThan(string left, string right, int expected)
     {
         var result = BusId.Parse(left) < BusId.Parse(right);
@@ -184,7 +177,7 @@ sealed class BusId_Tests
     }
 
     [TestMethod]
-    [DynamicData(nameof(BusIdData.Compare), typeof(BusIdData))]
+    [DynamicData(nameof(BusIdComparisons))]
     public void LessThanOrEqual(string left, string right, int expected)
     {
         var result = BusId.Parse(left) <= BusId.Parse(right);
@@ -192,7 +185,7 @@ sealed class BusId_Tests
     }
 
     [TestMethod]
-    [DynamicData(nameof(BusIdData.Compare), typeof(BusIdData))]
+    [DynamicData(nameof(BusIdComparisons))]
     public void GreaterThan(string left, string right, int expected)
     {
         var result = BusId.Parse(left) > BusId.Parse(right);
@@ -200,7 +193,7 @@ sealed class BusId_Tests
     }
 
     [TestMethod]
-    [DynamicData(nameof(BusIdData.Compare), typeof(BusIdData))]
+    [DynamicData(nameof(BusIdComparisons))]
     public void GreaterThanOrEqual(string left, string right, int expected)
     {
         var result = BusId.Parse(left) >= BusId.Parse(right);
@@ -208,7 +201,7 @@ sealed class BusId_Tests
     }
 
     [TestMethod]
-    [DynamicData(nameof(BusIdData.Valid), typeof(BusIdData))]
+    [DynamicData(nameof(ValidBusIdStrings))]
     public void ToStringValid(string text)
     {
         var busId = BusId.Parse(text);

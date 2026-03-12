@@ -104,37 +104,27 @@ sealed partial class PcapNg_Tests
         pcapNg.Dispose();
     }
 
-    sealed class TypeData
-    {
-        static readonly Dictionary<UsbSupTransferType, byte> _KnownGood = new()
-        {
-            { UsbSupTransferType.USBSUP_TRANSFER_TYPE_ISOC, 0 },
-            { UsbSupTransferType.USBSUP_TRANSFER_TYPE_INTR, 1 },
-            { UsbSupTransferType.USBSUP_TRANSFER_TYPE_MSG, 2 },
-            { UsbSupTransferType.USBSUP_TRANSFER_TYPE_BULK, 3 },
-        };
+    public static IEnumerable<(UsbSupTransferType, byte)> ValidTypeMappings = [
+        (UsbSupTransferType.USBSUP_TRANSFER_TYPE_ISOC, 0),
+        (UsbSupTransferType.USBSUP_TRANSFER_TYPE_INTR, 1),
+        (UsbSupTransferType.USBSUP_TRANSFER_TYPE_MSG, 2),
+        (UsbSupTransferType.USBSUP_TRANSFER_TYPE_BULK, 3),
+    ];
 
-        static readonly List<UsbSupTransferType> _Invalid =
-        [
-            UsbSupTransferType.USBSUP_TRANSFER_TYPE_CTRL,
-            (UsbSupTransferType)0xbaadf00d,
-        ];
-
-        public static IEnumerable<object[]> KnownGood => from value in _KnownGood select new object[] { value.Key, value.Value };
-
-        public static IEnumerable<object[]> Invalid => from value in _Invalid select new object[] { value };
-    }
-
+    public static IEnumerable<UsbSupTransferType> InvalidTypes = [
+        UsbSupTransferType.USBSUP_TRANSFER_TYPE_CTRL,
+        (UsbSupTransferType)0xbaadf00d,
+    ];
 
     [TestMethod]
-    [DynamicData(nameof(TypeData.KnownGood), typeof(TypeData))]
+    [DynamicData(nameof(ValidTypeMappings))]
     public void ConvertType_Success(UsbSupTransferType from, byte to)
     {
         Assert.AreEqual(to, PcapNg.ConvertType(from));
     }
 
     [TestMethod]
-    [DynamicData(nameof(TypeData.Invalid), typeof(TypeData))]
+    [DynamicData(nameof(InvalidTypes))]
     public void ConvertType_Invalid(UsbSupTransferType from)
     {
         Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => PcapNg.ConvertType(from));
