@@ -62,9 +62,9 @@ sealed class ConnectedClient(ILogger<ConnectedClient> logger, ClientContext clie
         }
     }
 
-    static IEnumerable<UsbDevice> GetDevicesAvailableForClient(IPAddress ipAddress)
+    static IEnumerable<Device> GetDevicesAvailableForClient(IPAddress ipAddress)
     {
-        return UsbDevice.GetAll().Where(device =>
+        return DeviceExtensions.GetAll().Where(device =>
         {
             if (!device.BusId.HasValue)
             {
@@ -76,7 +76,7 @@ sealed class ConnectedClient(ILogger<ConnectedClient> logger, ClientContext clie
                 // The hub the device is plugged into is incompatible.
                 return false;
             }
-            if (device.Guid.HasValue)
+            if (device.PersistedGuid.HasValue)
             {
                 // Device is already bound, so available for attach.
                 return true;
@@ -138,7 +138,7 @@ sealed class ConnectedClient(ILogger<ConnectedClient> logger, ClientContext clie
                     await SendOpCodeAsync(OpCode.OP_REP_IMPORT, Status.ST_NODEV);
                     return;
                 }
-                if (!bindDevice.Guid.HasValue)
+                if (!bindDevice.PersistedGuid.HasValue)
                 {
                     // The device is not currently bound, but it is allowed by the policy. Auto-bind it now...
                     Logger.AutoBind(ClientContext.ClientAddress, busId, bindDevice.InstanceId);
@@ -146,36 +146,36 @@ sealed class ConnectedClient(ILogger<ConnectedClient> logger, ClientContext clie
                 }
             }
 
-            var usbDevice = UsbipdRegistry.Instance.GetBoundDevices().SingleOrDefault(d => d.BusId.HasValue && d.BusId.Value == busId);
-            if (usbDevice is null)
+            var device = UsbipdRegistry.Instance.GetBoundDevices().SingleOrDefault(d => d.BusId.HasValue && d.BusId.Value == busId);
+            if (device is null)
             {
                 await SendOpCodeAsync(OpCode.OP_REP_IMPORT, Status.ST_NODEV);
                 return;
             }
-            Debug.Assert(usbDevice.BusId.HasValue);
-            Debug.Assert(usbDevice.Guid.HasValue);
+            Debug.Assert(device.BusId.HasValue);
+            Debug.Assert(device.PersistedGuid.HasValue);
 
-            if (usbDevice.IPAddress is not null)
+            if (device.ClientIPAddress is not null)
             {
                 await SendOpCodeAsync(OpCode.OP_REP_IMPORT, Status.ST_DEV_BUSY);
                 return;
             }
 
-            var exportedDevice = await ExportedDevice.GetExportedDevice(usbDevice, cancellationToken);
+            var exportedDevice = await ExportedDevice.GetExportedDevice(device, cancellationToken);
 
             status = Status.ST_NA;
 
             ulong filterId = 0;
             try
             {
-                if (!WindowsDevice.TryCreate(usbDevice.InstanceId, out var device))
+                if (!WindowsDevice.TryCreate(device.InstanceId, out var windowsDevice))
                 {
                     await SendOpCodeAsync(OpCode.OP_REP_IMPORT, Status.ST_NODEV);
                     return;
                 }
                 // We use the modern way to restart the device, which works much better than the obsolete VBoxUsbMon port cycling.
-                using var restartingDevice = new RestartingDevice(device);
-                if (!device.HasVBoxDriver)
+                using var restartingDevice = new RestartingDevice(windowsDevice);
+                if (!windowsDevice.HasVBoxDriver)
                 {
                     mon = new VBoxUsbMon();
                     var version = await mon.GetVersion();
@@ -196,16 +196,16 @@ sealed class ConnectedClient(ILogger<ConnectedClient> logger, ClientContext clie
             status = Status.ST_DEV_ERR;
             var sw = new Stopwatch();
             sw.Start();
-            (var vboxDevice, ClientContext.AttachedDevice) = await VBoxUsb.ClaimDevice(usbDevice.BusId.Value);
+            (var vboxDevice, ClientContext.AttachedDevice) = await VBoxUsb.ClaimDevice(device.BusId.Value);
             sw.Stop();
             if (Logger.IsEnabled(LogLevel.Debug))
             {
                 Logger.Debug($"Claiming took {sw.ElapsedMilliseconds} ms");
             }
-            ClientContext.AttachedBusId = usbDevice.BusId;
+            ClientContext.AttachedBusId = device.BusId;
 
             CM_Unregister_NotificationSafeHandle? notification = null;
-            Logger.ClientAttach(ClientContext.ClientAddress, busId, usbDevice.InstanceId);
+            Logger.ClientAttach(ClientContext.ClientAddress, busId, device.InstanceId);
             try
             {
                 status = Status.ST_OK;
@@ -255,7 +255,7 @@ sealed class ConnectedClient(ILogger<ConnectedClient> logger, ClientContext clie
                 }
 
                 // Detect unbind.
-                using var attachedKey = UsbipdRegistry.Instance.SetDeviceAsAttached(usbDevice.Guid.Value, usbDevice.BusId.Value, ClientContext.ClientAddress,
+                using var attachedKey = UsbipdRegistry.Instance.SetDeviceAsAttached(device.PersistedGuid.Value, device.BusId.Value, ClientContext.ClientAddress,
                     vboxDevice.InstanceId);
                 var result = PInvoke.RegNotifyChangeKeyValue(attachedKey.Handle, false,
                     Windows.Win32.System.Registry.REG_NOTIFY_FILTER.REG_NOTIFY_THREAD_AGNOSTIC, cancelEvent.SafeWaitHandle, true);
@@ -270,11 +270,11 @@ sealed class ConnectedClient(ILogger<ConnectedClient> logger, ClientContext clie
             {
                 notification?.Dispose();
 
-                _ = UsbipdRegistry.Instance.SetDeviceAsDetached(usbDevice.Guid.Value);
+                _ = UsbipdRegistry.Instance.SetDeviceAsDetached(device.PersistedGuid.Value);
 
                 ClientContext.AttachedDevice.Dispose();
 
-                Logger.ClientDetach(ClientContext.ClientAddress, busId, usbDevice.InstanceId);
+                Logger.ClientDetach(ClientContext.ClientAddress, busId, device.InstanceId);
 
                 try
                 {

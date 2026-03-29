@@ -18,10 +18,10 @@ sealed record PolicyRuleAutoBind(PolicyRuleEffect Effect, BusId? BusId, VidPid? 
         return (BusId.HasValue || HardwareId.HasValue) && !(BusId.HasValue && BusId.Value.IsIncompatibleHub);
     }
 
-    public override bool Matches(UsbDevice usbDevice)
+    public override bool Matches(Device device)
     {
         return IsValid()
-            ? (!BusId.HasValue || BusId.Value == usbDevice.BusId) && (!HardwareId.HasValue || HardwareId.Value == usbDevice.HardwareId)
+            ? (!BusId.HasValue || BusId.Value == device.BusId) && (!HardwareId.HasValue || HardwareId.Value == device.HardwareId)
             : throw new InvalidOperationException("Invalid policy rule");
     }
 

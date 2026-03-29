@@ -100,9 +100,9 @@ sealed class Policy_Tests
         Assert.IsFalse(rule.IsValid());
     }
 
-    static UsbDevice CreateTestUsbDevice(BusId busId, VidPid hardwareId)
+    static Device CreateTestDevice(BusId busId, VidPid hardwareId)
     {
-        return new UsbDevice($"VID_{hardwareId.Vid:X04}&PID_{hardwareId.Pid:X04}", "Description", false, busId, null, null, null);
+        return new Device($"VID_{hardwareId.Vid:X04}&PID_{hardwareId.Pid:X04}", "Description", false, busId, null, null, null);
     }
 
     [TestMethod]
@@ -113,7 +113,7 @@ sealed class Policy_Tests
 
         Assert.ThrowsExactly<InvalidOperationException>(() =>
         {
-            rule.Matches(CreateTestUsbDevice(TestBusId, TestHardwareId));
+            rule.Matches(CreateTestDevice(TestBusId, TestHardwareId));
         });
     }
 
@@ -123,23 +123,23 @@ sealed class Policy_Tests
     {
         var rule = ConstructPolicyRuleAutoBind(effect, busIdString, vidPidString);
 
-        Assert.IsTrue(rule.Matches(CreateTestUsbDevice(TestBusId, TestHardwareId)));
-        Assert.IsFalse(rule.Matches(CreateTestUsbDevice(OtherBusId, OtherHardwareId)));
+        Assert.IsTrue(rule.Matches(CreateTestDevice(TestBusId, TestHardwareId)));
+        Assert.IsFalse(rule.Matches(CreateTestDevice(OtherBusId, OtherHardwareId)));
         if (rule.BusId is null)
         {
-            Assert.IsTrue(rule.Matches(CreateTestUsbDevice(OtherBusId, TestHardwareId)));
+            Assert.IsTrue(rule.Matches(CreateTestDevice(OtherBusId, TestHardwareId)));
         }
         else
         {
-            Assert.IsFalse(rule.Matches(CreateTestUsbDevice(OtherBusId, TestHardwareId)));
+            Assert.IsFalse(rule.Matches(CreateTestDevice(OtherBusId, TestHardwareId)));
         }
         if (rule.HardwareId is null)
         {
-            Assert.IsTrue(rule.Matches(CreateTestUsbDevice(TestBusId, OtherHardwareId)));
+            Assert.IsTrue(rule.Matches(CreateTestDevice(TestBusId, OtherHardwareId)));
         }
         else
         {
-            Assert.IsFalse(rule.Matches(CreateTestUsbDevice(TestBusId, OtherHardwareId)));
+            Assert.IsFalse(rule.Matches(CreateTestDevice(TestBusId, OtherHardwareId)));
         }
     }
 }

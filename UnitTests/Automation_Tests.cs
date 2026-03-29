@@ -88,7 +88,15 @@ sealed class Automation_Tests
     [TestMethod]
     public void Device_JsonConstructor()
     {
-        var device = new Device(TestInstanceId, TestDescription, true, TestBusId, TestPersistedGuid, TestStubInstanceId, TestClientIPAddress);
+        var device = new Device(
+            instanceId: TestInstanceId,
+            description: TestDescription,
+            isForced: true,
+            busId: TestBusId,
+            persistedGuid: TestPersistedGuid,
+            stubInstanceId: TestStubInstanceId,
+            clientIPAddress: TestClientIPAddress
+            );
         Assert.AreEqual(TestInstanceId, device.InstanceId);
         Assert.AreEqual(TestHardwareId, device.HardwareId);
         Assert.AreEqual(TestDescription, device.Description);
