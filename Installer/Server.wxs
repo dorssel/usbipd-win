@@ -7,6 +7,7 @@ SPDX-License-Identifier: GPL-3.0-only
 <Wix
     xmlns="http://wixtoolset.org/schemas/v4/wxs"
     xmlns:fw="http://wixtoolset.org/schemas/v4/wxs/firewall"
+    xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util"
     >
     <Fragment>
         <DirectoryRef Id="APPLICATIONFOLDER" FileSource="$(var.PublishDir)">
@@ -63,6 +64,16 @@ SPDX-License-Identifier: GPL-3.0-only
                     Remove="both"
                     Stop="both"
                     />
+                <util:Group
+                    Id="UsbipdAdministrators"
+                    Name="USBIPD Administrators"
+                    Comment="Members of this group can bind any USB device for sharing with other machines."
+                    CreateGroup="yes"
+                    FailIfExists="no"
+                    UpdateIfExists="yes"
+                    RemoveOnUninstall="yes"
+                    RemoveComment="no"
+                    />
                 <!--
                 The registry uses the full product name by convention.
                 -->
@@ -72,7 +83,12 @@ SPDX-License-Identifier: GPL-3.0-only
                     <RegistryKey
                         Key="Devices"
                         ForceCreateOnInstall="yes"
-                    />
+                    >
+                        <util:PermissionEx
+                            User="USBIPD Administrators"
+                            GenericAll="yes"
+                            />
+                    </RegistryKey>
                     <RegistryKey
                         Key="Policy"
                         ForceCreateOnInstall="yes"
