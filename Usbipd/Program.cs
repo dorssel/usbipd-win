@@ -149,7 +149,7 @@ static class Program
     {
         // NOTE: Sorting is broken at the time of this writing, see https://github.com/dotnet/command-line-api/issues/2705.
         return CompletionGuard(completionContext, () =>
-            UsbDevice.GetAll().Where(d => d.BusId.HasValue && !d.BusId.Value.IsIncompatibleHub)
+            DeviceExtensions.GetAll().Where(d => d.BusId.HasValue && !d.BusId.Value.IsIncompatibleHub)
             .Index().Select(i => new CompletionItem(
                 label: i.Item.BusId.GetValueOrDefault().ToString(),
                 sortText: $"{i.Index:D4}",
@@ -261,7 +261,7 @@ static class Program
                 CustomParser = ParseVidPid,
             };
             hardwareIdOption.CompletionSources.Add(completionContext => CompletionGuard(completionContext, () =>
-                UsbDevice.GetAll().Where(d => d.BusId.HasValue).GroupBy(d => d.HardwareId).Select(g => new CompletionItem(g.Key.ToString()))));
+                DeviceExtensions.GetAll().Where(d => d.BusId.HasValue).GroupBy(d => d.HardwareId).Select(g => new CompletionItem(g.Key.ToString()))));
             //
             //  attach [--host-ip <IPADDRESS>]
             //
@@ -362,7 +362,7 @@ static class Program
                 CustomParser = ParseVidPid,
             };
             hardwareIdOption.CompletionSources.Add(completionContext => CompletionGuard(completionContext, () =>
-                UsbDevice.GetAll().Where(d => d.BusId.HasValue).GroupBy(d => d.HardwareId).Select(g => new CompletionItem(g.Key.ToString()))));
+                DeviceExtensions.GetAll().Where(d => d.BusId.HasValue).GroupBy(d => d.HardwareId).Select(g => new CompletionItem(g.Key.ToString()))));
             //
             //  bind
             //
@@ -422,7 +422,7 @@ static class Program
                 CustomParser = ParseVidPid,
             };
             hardwareIdOption.CompletionSources.Add(completionContext => CompletionGuard(completionContext, () =>
-                UsbDevice.GetAll().Where(d => d.BusId.HasValue).GroupBy(d => d.HardwareId).Select(g => new CompletionItem(g.Key.ToString()))));
+                DeviceExtensions.GetAll().Where(d => d.BusId.HasValue).GroupBy(d => d.HardwareId).Select(g => new CompletionItem(g.Key.ToString()))));
             //
             //  detach
             //
@@ -530,7 +530,7 @@ static class Program
                     CustomParser = ParseVidPid,
                 };
                 hardwareIdOption.CompletionSources.Add(completionContext => CompletionGuard(completionContext, () =>
-                    UsbDevice.GetAll().GroupBy(d => d.HardwareId).Select(g => new CompletionItem(g.Key.ToString()))));
+                    DeviceExtensions.GetAll().GroupBy(d => d.HardwareId).Select(g => new CompletionItem(g.Key.ToString()))));
                 //
                 //  policy add
                 //
@@ -684,7 +684,7 @@ static class Program
             };
             guidOption.CompletionSources.Add(completionContext => CompletionGuard(completionContext, () =>
                 UsbipdRegistry.Instance.GetBoundDevices().Where(d => !d.BusId.HasValue)
-                .Select(d => new CompletionItem(d.Guid.GetValueOrDefault().ToString("D")))));
+                .Select(d => new CompletionItem(d.PersistedGuid.GetValueOrDefault().ToString("D")))));
             //
             //  unbind [--hardware-id <VID>:<PID>]
             //
@@ -697,7 +697,7 @@ static class Program
                 CustomParser = ParseVidPid,
             };
             hardwareIdOption.CompletionSources.Add(completionContext => CompletionGuard(completionContext, () =>
-                UsbDevice.GetAll().GroupBy(d => d.HardwareId).Select(g => new CompletionItem(g.Key.ToString()))));
+                DeviceExtensions.GetAll().GroupBy(d => d.HardwareId).Select(g => new CompletionItem(g.Key.ToString()))));
             //
             //  unbind
             //

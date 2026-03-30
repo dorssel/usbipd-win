@@ -11,6 +11,13 @@ using System.Text.Json.Serialization;
 
 namespace Usbipd.Automation;
 
+/// <summary>
+/// All data concerning a USB device that can be handled one way or another, including:
+/// <list type="bullet">
+///     <item>Currently connected (non-hub) devices (operational or not).</item>
+///     <item>Disconnected (persisted) devices that are bound.</item>
+/// </list>
+/// </summary>
 #if NETSTANDARD
 [DataContract]
 public

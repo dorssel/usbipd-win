@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 using Microsoft.Win32;
+using Usbipd.Automation;
 
 namespace UnitTests;
 
@@ -103,10 +104,10 @@ sealed class UsbipdRegistry_Tests
         var bound = UsbipdRegistry.Instance.GetBoundDevices();
 
         // Manually remove the InstanceId value from one of the devices.
-        TestRegistry.OpenSubKey($@"SOFTWARE\usbipd-win\Devices\{bound.First().Guid:B}", true)!.DeleteValue("InstanceId");
+        TestRegistry.OpenSubKey($@"SOFTWARE\usbipd-win\Devices\{bound.First().PersistedGuid:B}", true)!.DeleteValue("InstanceId");
 
         Assert.HasCount(1, UsbipdRegistry.Instance.GetBoundDevices());
-        Assert.DoesNotContain(d => d.Guid == bound.First().Guid, UsbipdRegistry.Instance.GetBoundDevices());
+        Assert.DoesNotContain(d => d.PersistedGuid == bound.First().PersistedGuid, UsbipdRegistry.Instance.GetBoundDevices());
     }
 
     [TestMethod]
@@ -132,10 +133,10 @@ sealed class UsbipdRegistry_Tests
         var bound = UsbipdRegistry.Instance.GetBoundDevices();
 
         // Manually remove the InstanceId value from one of the devices.
-        TestRegistry.OpenSubKey($@"SOFTWARE\usbipd-win\Devices\{bound.First().Guid:B}", true)!.DeleteValue("Description");
+        TestRegistry.OpenSubKey($@"SOFTWARE\usbipd-win\Devices\{bound.First().PersistedGuid:B}", true)!.DeleteValue("Description");
 
         Assert.HasCount(1, UsbipdRegistry.Instance.GetBoundDevices());
-        Assert.DoesNotContain(d => d.Guid == bound.First().Guid, UsbipdRegistry.Instance.GetBoundDevices());
+        Assert.DoesNotContain(d => d.PersistedGuid == bound.First().PersistedGuid, UsbipdRegistry.Instance.GetBoundDevices());
     }
 
     [TestMethod]
@@ -146,10 +147,10 @@ sealed class UsbipdRegistry_Tests
 
         var bound = UsbipdRegistry.Instance.GetBoundDevices();
 
-        UsbipdRegistry.Instance.StopSharingDevice(bound.First().Guid!.Value);
+        UsbipdRegistry.Instance.StopSharingDevice(bound.First().PersistedGuid!.Value);
 
         Assert.HasCount(1, UsbipdRegistry.Instance.GetBoundDevices());
-        Assert.DoesNotContain(d => d.Guid == bound.First().Guid, UsbipdRegistry.Instance.GetBoundDevices());
+        Assert.DoesNotContain(d => d.PersistedGuid == bound.First().PersistedGuid, UsbipdRegistry.Instance.GetBoundDevices());
     }
 
     [TestMethod]

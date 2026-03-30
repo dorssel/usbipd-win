@@ -137,7 +137,7 @@ sealed record ExportedDevice(string InstanceId, BusId BusId, Linux.UsbDeviceSpee
         return result;
     }
 
-    public static async Task<ExportedDevice> GetExportedDevice(UsbDevice device, CancellationToken cancellationToken)
+    public static async Task<ExportedDevice> GetExportedDevice(Device device, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
 

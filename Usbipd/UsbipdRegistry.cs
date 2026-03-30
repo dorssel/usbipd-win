@@ -185,7 +185,7 @@ sealed class UsbipdRegistry : IDisposable
     /// This retrieves the entire (valid) registry state.
     /// </para>
     /// </summary>
-    public IEnumerable<UsbDevice> GetBoundDevices()
+    public IEnumerable<Device> GetBoundDevices()
     {
         var guids = new SortedSet<Guid>();
         using var devicesKey = GetDevicesKey(false);
@@ -198,7 +198,7 @@ sealed class UsbipdRegistry : IDisposable
             }
         }
         var ignoreAttached = !Server.IsRunning();
-        var persistedDevices = new Dictionary<string, UsbDevice>();
+        var persistedDevices = new Dictionary<string, Device>();
         foreach (var guid in guids)
         {
             using var deviceKey = GetDeviceKey(guid, false);
@@ -241,38 +241,41 @@ sealed class UsbipdRegistry : IDisposable
 
                             // Everything checks out, report the device as attached.
                             persistedDevices.Add(instanceId, new(
-                                InstanceId: instanceId,
-                                Description: description,
-                                Guid: guid,
-                                IsForced: device.HasVBoxDriver,
-                                BusId: busId,
-                                IPAddress: ipAddress,
-                                StubInstanceId: stubInstanceId));
+                                instanceId: instanceId,
+                                description: description,
+                                isForced: device.HasVBoxDriver,
+                                busId: busId,
+                                persistedGuid: guid,
+                                stubInstanceId: stubInstanceId,
+                                clientIPAddress: ipAddress
+                                ));
                             continue;
                         }
                     }
                 }
                 // This device is not attached.
                 persistedDevices.Add(instanceId, new(
-                    InstanceId: instanceId,
-                    Description: description,
-                    Guid: guid,
-                    IsForced: device.HasVBoxDriver,
-                    BusId: device.IsPresent ? device.BusId : null,
-                    IPAddress: null,
-                    StubInstanceId: null));
+                    instanceId: instanceId,
+                    description: description,
+                    isForced: device.HasVBoxDriver,
+                    busId: device.IsPresent ? device.BusId : null,
+                    persistedGuid: guid,
+                    stubInstanceId: null,
+                    clientIPAddress: null
+                    ));
             }
             else
             {
                 // This device no longer exists (uninstalled), but we still have it persisted, it could be installed again.
                 persistedDevices.Add(instanceId, new(
-                    InstanceId: instanceId,
-                    Description: description,
-                    Guid: guid,
-                    IsForced: false,
-                    BusId: null,
-                    IPAddress: null,
-                    StubInstanceId: null));
+                    instanceId: instanceId,
+                    description: description,
+                    isForced: false,
+                    busId: null,
+                    persistedGuid: guid,
+                    stubInstanceId: null,
+                    clientIPAddress: null
+                    ));
             }
         }
         return persistedDevices.Values;
