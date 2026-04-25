@@ -27,15 +27,73 @@ jobs:
 
       - name: Get current version of drivers
         run: |
-          CURRENT_DRIVER_VERSION=$(grep DriverVer Drivers/x64/VBoxUSB.inf | cut -d',' -f 2 | cut -d'.' -f 1-3)
-          echo "CURRENT_DRIVER_VERSION=$CURRENT_DRIVER_VERSION" >> "$GITHUB_ENV"
+          CURRENT=$(grep DriverVer Drivers/x64/VBoxUSB.inf | cut -d',' -f 2 | cut -d'.' -f 1-3)
+          echo "CURRENT=$CURRENT" >> "$GITHUB_ENV"
 
       - name: Get latest version of VirtualBox
         run: |
-          LATEST_DRIVER_VERSION=$(curl --fail https://download.virtualbox.org/virtualbox/LATEST-STABLE.TXT)
-          echo "LATEST_DRIVER_VERSION=$LATEST_DRIVER_VERSION" >> "$GITHUB_ENV"
+          LATEST=$(curl --fail https://download.virtualbox.org/virtualbox/LATEST-STABLE.TXT)
+          echo "LATEST=$LATEST" >> "$GITHUB_ENV"
 
-      - name: Report
+      - name: Determine if update is needed
+        id: check-update
         run: |
-          echo "Current driver version: $CURRENT_DRIVER_VERSION"
-          echo "Latest driver version: $LATEST_DRIVER_VERSION"
+          if [ "$CURRENT" = "$LATEST" ]; then
+            echo "has-update=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "has-update=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install 7zip
+        if: ${{ steps.check-update.outputs.has-update == 'true' }}
+        run: |
+          sudo apt-get install 7zip
+
+      - name: Download VirtualBox
+        if: ${{ steps.check-update.outputs.has-update == 'true' }}
+        run: |
+          mkdir -p tmp
+          INSTALLER=$(curl --fail "https://download.virtualbox.org/virtualbox/$LATEST/MD5SUMS" | grep -i win.exe | cut -d'*' -f 2) # DevSkim: ignore DS126858
+          echo "INSTALLER=$INSTALLER" >> "$GITHUB_ENV"
+          curl --fail "https://download.virtualbox.org/virtualbox/$LATEST/$INSTALLER" --output tmp/installer.exe
+
+      - name: Extract files from installer
+        if: ${{ steps.check-update.outputs.has-update == 'true' }}
+        run: |
+          7z x tmp/installer.exe -otmp/extracted
+          7z x tmp/extracted/.rsrc/RCDATA/BIN_00 -otmp/extracted/x64
+          7z x tmp/extracted/.rsrc/RCDATA/BIN_01 -otmp/extracted/arm64
+
+      - name: Copy new drivers
+        if: ${{ steps.check-update.outputs.has-update == 'true' }}
+        run: |
+          cp tmp/extracted/x64/file_VBoxUSB.sys Drivers/x64/VBoxUSB.sys
+          cp tmp/extracted/x64/file_VBoxUSB.inf Drivers/x64/VBoxUSB.inf
+          cp tmp/extracted/x64/file_VBoxUSB_W10.cat Drivers/x64/VBoxUSB.cat
+          cp tmp/extracted/x64/file_VBoxUSBMon.sys Drivers/x64/VBoxUSBMon.sys
+          cp tmp/extracted/arm64/file_VBoxUSB.sys Drivers/arm64/VBoxUSB.sys
+          cp tmp/extracted/arm64/file_VBoxUSB.inf Drivers/arm64/VBoxUSB.inf
+          cp tmp/extracted/arm64/file_VBoxUSB_W10.cat Drivers/arm64/VBoxUSB.cat
+          cp tmp/extracted/arm64/file_VBoxUSBMon.sys Drivers/arm64/VBoxUSBMon.sys
+
+      - name: Modify source to match version
+        if: ${{ steps.check-update.outputs.has-update == 'true' }}
+        run: |
+          sed --in-place "s|$CURRENT|$LATEST|g" Drivers/README.md
+          sed --in-place "s|$CURRENT|$LATEST|g" UnitTests/DriverDetails_Tests.cs
+
+      - name: Cleanup temporary files
+        if: ${{ steps.check-update.outputs.has-update == 'true' }}
+        run: |
+          rm -r tmp
+
+      - name: Create Pull Request
+        if: ${{ steps.check-update.outputs.has-update == 'true' }}
+        uses: peter-evans/create-pull-request@v8
+        with:
+          commit-message: 'Bump drivers from ${{ env.CURRENT }} to ${{ env.LATEST }}'
+          title: 'Bump drivers from ${{ env.CURRENT }} to ${{ env.LATEST }}'
+          branch: update-drivers
+          body: |
+            This is an automated pull request, updating the VirtualBox drivers after a detected change.
+            Please review manually before merging.
