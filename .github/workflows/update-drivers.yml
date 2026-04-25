@@ -1,0 +1,41 @@
+# SPDX-FileCopyrightText: 2026 Frans van Dorsselaer
+#
+# SPDX-License-Identifier: GPL-3.0-only
+
+---
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+
+name: drivers
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '3 16 * * *'
+
+permissions: read-all
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Get current version of drivers
+        run: |
+          CURRENT_DRIVER_VERSION=$(grep DriverVer Drivers/x64/VBoxUSB.inf | cut -d',' -f 2 | cut -d'.' -f 1-3)
+          echo "CURRENT_DRIVER_VERSION=$CURRENT_DRIVER_VERSION" >> "$GITHUB_ENV"
+
+      - name: Get latest version of VirtualBox
+        run: |
+          LATEST_DRIVER_VERSION=$(curl --fail https://download.virtualbox.org/virtualbox/LATEST-STABLE.TXT)
+          echo "LATEST_DRIVER_VERSION=$LATEST_DRIVER_VERSION" >> "$GITHUB_ENV"
+
+      - name: Report
+        run: |
+          echo "Current driver version: $CURRENT_DRIVER_VERSION"
+          echo "Latest driver version: $LATEST_DRIVER_VERSION"
