@@ -35,6 +35,6 @@ sealed class DriverDetails_Tests
     public void Version()
     {
         // Keep this test up-to-date when updating the driver.
-        Assert.AreEqual("7.2.6", DriverDetails.Instance.Version.ToString(3));
+        Assert.AreEqual("7.2.8", DriverDetails.Instance.Version.ToString(3));
     }
 }
