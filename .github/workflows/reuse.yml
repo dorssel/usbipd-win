@@ -5,25 +5,22 @@
 ---
 # yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
 
-name: DevSkim
+name: REUSE
 
 on:
   push:
     branches: [master]
   pull_request:
     branches: [master]
-  schedule:
-    - cron: '32 16 * * 4'
 
 permissions: {}
 
 jobs:
-  analyze:
+  check:
     runs-on: ubuntu-latest
 
     permissions:
       contents: read
-      security-events: write
 
     steps:
       - name: Checkout
@@ -31,10 +28,5 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Run DevSkim scanner
-        uses: microsoft/DevSkim-Action@4b5047945a44163b94642a1cecc0d93a3f428cc6 # v1.0.16
-
-      - name: Upload DevSkim scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@7211b7c8077ea37d8641b6271f6a365a22a5fbfa # v4.36.0
-        with:
-          sarif_file: devskim-results.sarif
+      - name: REUSE Compliance Check
+        uses: fsfe/reuse-action@676e2d560c9a403aa252096d99fcab3e1132b0f5 # v6.0.0

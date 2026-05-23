@@ -12,7 +12,7 @@ on:
   schedule:
     - cron: '0 12 * * *'
 
-permissions: read-all
+permissions: {}
 
 jobs:
   check:
@@ -23,14 +23,17 @@ jobs:
       pull-requests: write
 
     steps:
-      - uses: actions/checkout@v6
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
 
       - name: Check for new usb.ids
         run: |
           curl --fail --output Usbipd.Automation/usb.ids http://www.linux-usb.org/usb.ids # DevSkim: ignore DS137138
 
       - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v8
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
         with:
           commit-message: 'Update usb.ids'
           title: 'Update usb.ids'
