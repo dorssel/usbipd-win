@@ -12,16 +12,15 @@ on:
   release:
     types: [released]
 
-permissions: read-all
+permissions: {}
 
 jobs:
   publish:
     runs-on: windows-latest
 
     steps:
-      # Commit - docs: add dorssel as a contributor for bug (#303)
-      # Date & Time - June 28, 2024 11:03 PM GMT+5:30
-      - uses: vedantmgoyal9/winget-releaser@4ffc7888bffd451b357355dc214d43bb9f23917e
+      - name: WinGet Releaser
+        uses: vedantmgoyal9/winget-releaser@4ffc7888bffd451b357355dc214d43bb9f23917e # v2
         with:
           identifier: dorssel.usbipd-win
           token: ${{ secrets.WINGET_TOKEN }}

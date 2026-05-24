@@ -15,14 +15,14 @@ on:
   schedule:
     - cron: '20 0 * * 4'
 
-permissions: read-all
+permissions: {}
 
 jobs:
   analyze:
-    name: Analyze
     runs-on: windows-latest
 
     permissions:
+      contents: read
       security-events: write
 
     env:
@@ -30,18 +30,19 @@ jobs:
       DOTNET_CLI_WORKLOAD_UPDATE_NOTIFY_DISABLE: true
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
+          persist-credentials: false
           fetch-depth: 0
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v4
+        uses: github/codeql-action/init@7211b7c8077ea37d8641b6271f6a365a22a5fbfa # v4.36.0
         with:
           languages: csharp
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v5
+        uses: actions/setup-dotnet@c2fa09f4bde5ebb9d1777cf28262a3eb3db3ced7 # v5.2.0
         with:
           cache: true
           cache-dependency-path: |
@@ -57,4 +58,4 @@ jobs:
           dotnet build --configuration Release --no-restore --property:Platform=x64
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v4
+        uses: github/codeql-action/analyze@7211b7c8077ea37d8641b6271f6a365a22a5fbfa # v4.36.0
