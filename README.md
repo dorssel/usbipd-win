@@ -7,8 +7,8 @@ SPDX-License-Identifier: GPL-3.0-only
 # usbipd-win
 
 [![Build](https://github.com/dorssel/usbipd-win/actions/workflows/build-installer.yml/badge.svg?branch=master)](https://github.com/dorssel/usbipd-win/actions/workflows/build-installer.yml?query=branch%3Amaster)
-[![CodeQL](https://github.com/dorssel/usbipd-win/actions/workflows/codeql-analysis.yml/badge.svg?branch=master)](https://github.com/dorssel/usbipd-win/actions/workflows/codeql-analysis.yml?query=workflow%3ACodeQL+branch%3Amaster)
-[![MegaLinter](https://github.com/dorssel/usbipd-win/actions/workflows/lint.yml/badge.svg?branch=master)](https://github.com/dorssel/usbipd-win/actions/workflows/lint.yml?query=workflow%3ALint+branch%3Amaster)
+[![CodeQL](https://github.com/dorssel/usbipd-win/actions/workflows/codeql-analysis.yml/badge.svg?branch=master)](https://github.com/dorssel/usbipd-win/actions/workflows/codeql-analysis.yml?query=branch%3Amaster)
+[![MegaLinter](https://github.com/dorssel/usbipd-win/actions/workflows/mega-linter.yml/badge.svg?branch=master)](https://github.com/dorssel/usbipd-win/actions/workflows/mega-linter.yml?query=branch%3Amaster)
 [![REUSE status](https://api.reuse.software/badge/github.com/dorssel/usbipd-win)](https://api.reuse.software/info/github.com/dorssel/usbipd-win)
 [![Codecov](https://codecov.io/gh/dorssel/usbipd-win/branch/master/graph/badge.svg?token=L0QI0AZRJI)](https://codecov.io/gh/dorssel/usbipd-win)
 [![GitHub all releases](https://img.shields.io/github/downloads/dorssel/usbipd-win/total?logo=github)](https://github.com/dorssel/usbipd-win/releases)
