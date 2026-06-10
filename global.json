@@ -1,8 +1,8 @@
 {
   "sdk": {
-    "version": "10.0.300",
+    "version": "10.0.301",
     "allowPrerelease": false,
-    "rollForward": "latestPatch"
+    "rollForward": "disable"
   },
   "msbuild-sdks": {
     "MSTest.Sdk": "4.2.3",
