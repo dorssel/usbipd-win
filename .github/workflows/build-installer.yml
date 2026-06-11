@@ -20,7 +20,7 @@ jobs:
     runs-on: windows-latest
 
     permissions:
-      contents: read
+      contents: write
       issues: read
       checks: write
       pull-requests: write
@@ -105,3 +105,7 @@ jobs:
           files: '**/TestResults/coverage.cobertura.xml'
           disable_search: true
           token: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Submit Dependencies to GitHub
+        if: github.ref == 'refs/heads/master'
+        uses: advanced-security/component-detection-dependency-submission-action@9c110eb34dee187cd9eca76a652b9f6a0ed22927 # v0.1.1
