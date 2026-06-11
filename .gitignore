@@ -9,6 +9,7 @@ packages/
 TestResults/
 .vs/
 .vscode/
-*.user
+*.binlog
 *.lutconfig
+*.user
 launchSettings.json
