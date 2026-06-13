@@ -19,6 +19,7 @@ permissions: {}
 
 jobs:
   analyze:
+    name: Analyze (DevSkim)
     runs-on: ubuntu-latest
 
     permissions:

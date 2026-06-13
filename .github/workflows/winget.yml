@@ -19,7 +19,7 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      - name: WinGet Releaser
+      - name: Publish (WinGet)
         uses: vedantmgoyal9/winget-releaser@4ffc7888bffd451b357355dc214d43bb9f23917e # v2
         with:
           identifier: dorssel.usbipd-win

@@ -19,6 +19,7 @@ permissions: {}
 
 jobs:
   analyze:
+    name: Analyze (CodeQL)
     runs-on: windows-latest
 
     permissions:
