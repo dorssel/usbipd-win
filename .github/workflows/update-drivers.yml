@@ -16,6 +16,7 @@ permissions: {}
 
 jobs:
   check:
+    name: Check (drivers)
     runs-on: ubuntu-latest
 
     permissions:

@@ -16,6 +16,7 @@ permissions: {}
 
 jobs:
   check:
+    name: Check (usb.ids)
     runs-on: ubuntu-latest
 
     permissions:
