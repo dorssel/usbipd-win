@@ -21,7 +21,7 @@ jobs:
     runs-on: windows-latest
 
     permissions:
-      contents: read
+      contents: write
       issues: read
       checks: write
       pull-requests: write
@@ -106,34 +106,6 @@ jobs:
           files: '**/TestResults/coverage.cobertura.xml'
           disable_search: true
           token: ${{ secrets.CODECOV_TOKEN }}
-
-      - name: Upload binary dependency log(s)
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: binlogs
-          path: |
-            **/*.binlog
-            **/project.assets.json
-          retention-days: 1
-
-  dependencies:
-    name: Dependencies
-    runs-on: ubuntu-latest
-    needs: build
-    permissions:
-      contents: write
-      pull-requests: write
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          persist-credentials: false
-
-      - name: Download Binary Log(s)
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
-        with:
-          name: binlogs
 
       - name: Submit Dependencies to GitHub
         uses: advanced-security/component-detection-dependency-submission-action@9c110eb34dee187cd9eca76a652b9f6a0ed22927 # v0.1.1
