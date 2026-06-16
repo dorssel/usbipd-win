@@ -101,3 +101,4 @@ jobs:
           body: |
             This is an automated pull request, updating the VirtualBox drivers after a detected change.
             Please review manually before merging.
+          sign-commits: true
