@@ -110,9 +110,8 @@ jobs:
       - name: Submit Dependencies to GitHub
         uses: advanced-security/component-detection-dependency-submission-action@9c110eb34dee187cd9eca76a652b9f6a0ed22927 # v0.1.1
         with:
-          detectorArgs: MSBuildBinaryLog=EnableIfDefaultOff
-          # This should really read 'MSBuildBinaryLog', but since it is experimental we need this 'Linux' workaround.
-          detectorsFilter: Linux
+          detectorArgs: MSBuildBinaryLog=Enable
+          detectorsFilter: MSBuildBinaryLog
 
       - name: Dependency Review
         if: github.event_name == 'pull_request'
