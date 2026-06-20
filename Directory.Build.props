@@ -48,11 +48,16 @@ SPDX-License-Identifier: GPL-3.0-only
     <!-- Deterministic builds -->
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
     <RestoreLockedMode Condition="$(ContinuousIntegrationBuild)">true</RestoreLockedMode>
-    <RestoreLockedMode Condition="'$(GITHUB_DEPENDABOT_JOB_TOKEN)' == ''">false</RestoreLockedMode>
 
     <!-- Assembly metadata -->
     <Product>usbipd-win</Product>
     <Company>Frans van Dorsselaer</Company>
+  </PropertyGroup>
+
+  <!-- Required for Dependabot -->
+  <PropertyGroup Label="Dependabot" Condition="'$(GITHUB_DEPENDABOT_JOB_TOKEN)' == ''">
+    <RestoreLockedMode>false</RestoreLockedMode>
+    <GitVersion_AllowShallowEnabled>true</GitVersion_AllowShallowEnabled>
   </PropertyGroup>
 
   <ItemGroup>
