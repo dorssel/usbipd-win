@@ -42,6 +42,9 @@ SPDX-License-Identifier: GPL-3.0-only
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
     <PublishDocumentationFiles>false</PublishDocumentationFiles>
 
+    <!-- GitVersion will handle this -->
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+
     <!-- Bump MSTest.Sdk "transitive" dependencies (they are actually direct dependencies) -->
     <MicrosoftTestingExtensionsCodeCoverageVersion>18.8.0</MicrosoftTestingExtensionsCodeCoverageVersion>
 
