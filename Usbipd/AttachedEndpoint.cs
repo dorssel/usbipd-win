@@ -274,7 +274,7 @@ sealed class AttachedEndpoint
             // VBoxUsb needs this to get the endpoint handles
             var setConfig = new UsbSupSetConfig()
             {
-                bConfigurationValue = submit.setup.wValue.Anonymous.LowByte,
+                bConfigurationValue = submit.setup.wValue.LowByte,
             };
             if (Logger.IsEnabled(LogLevel.Debug))
             {
@@ -290,8 +290,8 @@ sealed class AttachedEndpoint
             // VBoxUsb needs this to get the endpoint handles
             var selectInterface = new UsbSupSelectInterface()
             {
-                bInterfaceNumber = submit.setup.wIndex.Anonymous.LowByte,
-                bAlternateSetting = submit.setup.wValue.Anonymous.LowByte,
+                bInterfaceNumber = submit.setup.wIndex.LowByte,
+                bAlternateSetting = submit.setup.wValue.LowByte,
             };
             if (Logger.IsEnabled(LogLevel.Debug))
             {
@@ -308,7 +308,7 @@ sealed class AttachedEndpoint
             // VBoxUsb needs this to notify the host controller
             var clearEndpoint = new UsbSupClearEndpoint()
             {
-                bEndpoint = submit.setup.wIndex.Anonymous.LowByte,
+                bEndpoint = submit.setup.wIndex.LowByte,
             };
             if (Logger.IsEnabled(LogLevel.Debug))
             {
@@ -358,7 +358,7 @@ sealed class AttachedEndpoint
             if ((basic.ep == 0)
                 && (submit.setup.bmRequestType.B == (PInvoke.BMREQUEST_TO_DEVICE | (PInvoke.BMREQUEST_DEVICE_TO_HOST << 7)))
                 && (submit.setup.bRequest == PInvoke.USB_REQUEST_GET_DESCRIPTOR)
-                && (submit.setup.wValue.Anonymous.HiByte == PInvoke.USB_CONFIGURATION_DESCRIPTOR_TYPE))
+                && (submit.setup.wValue.HiByte == PInvoke.USB_CONFIGURATION_DESCRIPTOR_TYPE))
             {
                 try
                 {

@@ -11,6 +11,8 @@
 .json            text
 .license         text
 
+packages.lock.json   linguist-generated
+
 *.md    text
 *.txt   text
 

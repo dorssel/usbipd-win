@@ -168,16 +168,16 @@ sealed record ExportedDevice(string InstanceId, BusId BusId, Linux.UsbDeviceSpee
                 ConnectionIndex = device.BusId.Value.Port,
                 Length = (uint)Unsafe.SizeOf<USB_NODE_CONNECTION_INFORMATION_EX_V2>(),
             };
-            data2.SupportedUsbProtocols.Anonymous.Usb110 = true;
-            data2.SupportedUsbProtocols.Anonymous.Usb200 = true;
-            data2.SupportedUsbProtocols.Anonymous.Usb300 = true;
+            data2.SupportedUsbProtocols.Usb110 = true;
+            data2.SupportedUsbProtocols.Usb200 = true;
+            data2.SupportedUsbProtocols.Usb300 = true;
             var buf2 = StructToBytes(data2);
             _ = await hubFile.IoControlAsync(PInvoke.IOCTL_USB_GET_NODE_CONNECTION_INFORMATION_EX_V2, buf2, buf2);
             BytesToStruct(buf2, out data2);
 
-            if (data2.SupportedUsbProtocols.Anonymous.Usb300)
+            if (data2.SupportedUsbProtocols.Usb300)
             {
-                if (data2.Flags.Anonymous.DeviceIsOperatingAtSuperSpeedPlusOrHigher)
+                if (data2.Flags.DeviceIsOperatingAtSuperSpeedPlusOrHigher)
                 {
                     // NOTE: Linux vhci_hcd supports USB_SPEED_SUPER_PLUS since kernel version 6.12.
                     // See: https://elixir.bootlin.com/linux/v6.12/source/drivers/usb/usbip/vhci_sysfs.c#L286
@@ -188,7 +188,7 @@ sealed record ExportedDevice(string InstanceId, BusId BusId, Linux.UsbDeviceSpee
                     // speed = Linux.UsbDeviceSpeed.USB_SPEED_SUPER_PLUS;
                     speed = Linux.UsbDeviceSpeed.USB_SPEED_SUPER;
                 }
-                else if (data2.Flags.Anonymous.DeviceIsOperatingAtSuperSpeedOrHigher)
+                else if (data2.Flags.DeviceIsOperatingAtSuperSpeedOrHigher)
                 {
                     speed = Linux.UsbDeviceSpeed.USB_SPEED_SUPER;
                 }
