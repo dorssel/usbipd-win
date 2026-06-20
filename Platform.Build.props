@@ -7,7 +7,7 @@ SPDX-License-Identifier: GPL-3.0-only
 <Project>
 
   <!-- Required for Dependabot -->
-  <PropertyGroup Label="Dependabot" Condition="'$(GITHUB_DEPENDABOT_JOB_TOKEN)' != ''">
+  <PropertyGroup Label="Dependabot" Condition="'$(DEPENDABOT)' == 'true'">
     <Platform>x64</Platform>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
   </PropertyGroup>
