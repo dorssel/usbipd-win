@@ -6,6 +6,12 @@ SPDX-License-Identifier: GPL-3.0-only
 -->
 <Project>
 
+  <!-- Required for Dependabot -->
+  <PropertyGroup Label="Dependabot" Condition="'$(GITHUB_DEPENDABOT_JOB_TOKEN)' != ''">
+    <Platform>x64</Platform>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+  </PropertyGroup>
+
   <PropertyGroup>
     <!-- This product requires a supported version of Windows 10 or Windows Server 2019 -->
     <!-- Currently, oldest version not EOL is Windows Server 2019 (version 1809) -->
