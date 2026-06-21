@@ -66,13 +66,13 @@ jobs:
       - name: Build x64 Installer
         run: |
           dotnet publish --configuration Release --no-build --runtime win-x64 --property:PublishProfile=x64 Usbipd --binaryLogger:publish-x64.binlog
-          dotnet publish --configuration Release --no-build Usbipd.PowerShell --binaryLogger:publish-arm64.binlog
-          dotnet build --configuration Release --no-restore --property:Platform=x64 Installer
+          dotnet publish --configuration Release --no-build Usbipd.PowerShell --binaryLogger:publish-PowerShell.binlog
+          dotnet build --configuration Release --no-restore --property:Platform=x64 Installer --binaryLogger:installer-x64.binlog
 
       - name: Build arm64 Installer
         run: |
-          dotnet publish --configuration Release --no-build --runtime win-arm64 --property:PublishProfile=arm64 Usbipd
-          dotnet build --configuration Release --no-restore --property:Platform=ARM64 Installer
+          dotnet publish --configuration Release --no-build --runtime win-arm64 --property:PublishProfile=arm64 Usbipd --binaryLogger:publish-arm64.binlog
+          dotnet build --configuration Release --no-restore --property:Platform=ARM64 Installer --binaryLogger:installer-arm64.binlog
 
       # GitHub will always zip the artifacts and add .zip to the filename.
       # Therefore, it makes no sense to upload individual .msi files. We always upload everything as a single artifacts container.
