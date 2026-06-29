@@ -37,7 +37,7 @@ jobs:
 
       - name: MegaLinter (.NET flavor)
         id: ml
-        uses: oxsecurity/megalinter/flavors/dotnet@0e3ce9b9c8c10effb9b269509cc47ca17cae31c7 # v9.5.0
+        uses: oxsecurity/megalinter/flavors/dotnet@ef3e84b8b836d76db562d0f3ed7da61e8fd538bc # v9.6.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           MEGALINTER_CONFIG: .github/linters/.mega-linter.yml
