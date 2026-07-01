@@ -425,6 +425,7 @@ static partial class Wsl
                     return ExitCode.Failure;
                 case "mirrored":
                 case "virtioproxy":
+                case "consomme":
                     hostAddress = IPAddress.Loopback;
                     break;
                 case "nat":
