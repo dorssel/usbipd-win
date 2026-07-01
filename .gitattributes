@@ -40,3 +40,5 @@
 
 packages.lock.json  text linguist-generated
 usb.ids             text eol=lf
+
+CODEOWNERS  text
