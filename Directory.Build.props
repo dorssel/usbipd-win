@@ -60,7 +60,7 @@ SPDX-License-Identifier: GPL-3.0-only
   <!-- Required for Dependabot -->
   <PropertyGroup Label="Dependabot" Condition="'$(DEPENDABOT)' == 'true'">
     <RestoreLockedMode>false</RestoreLockedMode>
-    <GitVersion_AllowShallowEnabled>true</GitVersion_AllowShallowEnabled>
+    <DisableGitVersionTask>true</DisableGitVersionTask>
   </PropertyGroup>
 
   <ItemGroup>

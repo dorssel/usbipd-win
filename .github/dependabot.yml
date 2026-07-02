@@ -16,6 +16,10 @@ updates:
     directory: '/'
     schedule:
       interval: 'daily'
+    groups:
+      all-actions:
+        patterns:
+          - '*'
   - package-ecosystem: 'dotnet-sdk'
     directory: '/'
     schedule:
