@@ -60,14 +60,14 @@ SPDX-License-Identifier: GPL-3.0-only
   <!-- Required for Dependabot -->
   <PropertyGroup Label="Dependabot" Condition="'$(DEPENDABOT)' == 'true'">
     <RestoreLockedMode>false</RestoreLockedMode>
-    <DisableGitVersionTask>true</DisableGitVersionTask>
+    <GitVersion_AllowShallowEnabled>true</GitVersion_AllowShallowEnabled>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="GitVersion.MsBuild" PrivateAssets="all" />
   </ItemGroup>
 
-  <Target Name="SetCopyright" AfterTargets="GetVersion" Condition="'$(DisableGitVersionTask)' != 'true'">
+  <Target Name="SetCopyright" AfterTargets="GetVersion">
     <PropertyGroup>
       <!-- For deterministic builds, use the commit year as the copyright year. -->
       <CopyrightYear Condition="$(ContinuousIntegrationBuild)">$([System.DateTime]::Parse($(GitVersion_CommitDate)).ToString("yyyy"))</CopyrightYear>
