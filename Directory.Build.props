@@ -67,7 +67,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <PackageReference Include="GitVersion.MsBuild" PrivateAssets="all" />
   </ItemGroup>
 
-  <Target Name="SetCopyright" AfterTargets="GetVersion">
+  <Target Name="SetCopyright" AfterTargets="GetVersion" Condition="'$(DisableGitVersionTask)' != 'true'">
     <PropertyGroup>
       <!-- For deterministic builds, use the commit year as the copyright year. -->
       <CopyrightYear Condition="$(ContinuousIntegrationBuild)">$([System.DateTime]::Parse($(GitVersion_CommitDate)).ToString("yyyy"))</CopyrightYear>
