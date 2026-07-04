@@ -23,7 +23,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <File Path="README.md" />
   </Folder>
   <Project Path="Installer/Installer.wixproj" Type="b7dd6f7e-def8-4e67-b5b7-07ef123db6f0">
-    <Build Solution="Release|*" Project="false" />
+    <Build Project="false" />
   </Project>
   <Project Path="UnitTests/UnitTests.csproj">
     <Platform Solution="*|ARM64" Project="ARM64" />

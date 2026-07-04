@@ -15,12 +15,6 @@ SPDX-License-Identifier: GPL-3.0-only
     <DefineConstants>PublishDir=$(PublishDir);PowerShellDir=$(PowerShellDir);DriversDir=..\Drivers\$(Platform);Copyright=$(Copyright)</DefineConstants>
     <Pedantic>true</Pedantic>
   </PropertyGroup>
-  <ItemGroup>
-    <PackageReference Include="Dorssel.GitVersion.MsBuild" PrivateAssets="all" />
-    <PackageReference Include="WixToolset.Firewall.wixext" />
-    <PackageReference Include="WixToolset.UI.wixext" />
-    <PackageReference Include="WixToolset.Util.wixext" />
-  </ItemGroup>
   <Target Name="SetTarget" AfterTargets="GetVersion">
     <!--
     Now that we have determined the version, augment the OutputName to include the version number.
