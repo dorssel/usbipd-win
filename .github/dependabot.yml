@@ -12,23 +12,25 @@
 
 version: 2
 updates:
-  - package-ecosystem: 'github-actions'
-    directory: '/'
+  - package-ecosystem: github-actions
+    directory: /
     schedule:
-      interval: 'daily'
+      interval: daily
     groups:
       all-actions:
         patterns:
           - '*'
-  - package-ecosystem: 'dotnet-sdk'
-    directory: '/'
+  - package-ecosystem: dotnet-sdk
+    directory: /
     schedule:
-      interval: 'weekly'
-      day: 'wednesday'
-  - package-ecosystem: 'nuget'
-    directory: '/'
+      interval: weekly
+      day: wednesday
+  - package-ecosystem: nuget
+    directories:
+      - /
+      - /Installer/dependabot
     schedule:
-      interval: 'daily'
+      interval: daily
     ignore:
       # These are bundeled (transitive) by MSTest.Sdk
       - dependency-name: Microsoft.NET.Test.Sdk
@@ -37,4 +39,4 @@ updates:
     groups:
       wix:
         patterns:
-          - 'WixToolset.*'
+          - WixToolset.*
