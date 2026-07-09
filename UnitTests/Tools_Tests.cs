@@ -33,7 +33,7 @@ sealed class Tools_Tests
         var buf = new byte[TestStreamBytes.Length - 1];
         await memoryStream.ReadMessageAsync(buf, TestContext.CancellationToken);
         Assert.AreEqual(TestStreamBytes.Length - 1, memoryStream.Position);
-        Assert.IsTrue(buf.SequenceEqual(TestStreamBytes.AsSpan(0..^1)));
+        Assert.AreSequenceEqual(TestStreamBytes.AsSpan(0..^1).ToArray(), buf);
     }
 
     [TestMethod]
@@ -81,7 +81,7 @@ sealed class Tools_Tests
         Assert.AreEqual(TaskStatus.WaitingForActivation, task.Status);
         writeStream.Write(TestStreamBytes.AsSpan(1));
         await task.WaitAsync(TestContext.CancellationToken);
-        Assert.IsTrue(buf.SequenceEqual(TestStreamBytes.AsSpan(0..^1)));
+        Assert.AreSequenceEqual(TestStreamBytes.AsSpan(0..^1).ToArray(), buf);
     }
 
     struct TestStructType
@@ -111,7 +111,7 @@ sealed class Tools_Tests
     {
         var buf = new byte[TestStructBytes.Length];
         StructToBytes(TestStruct, buf);
-        Assert.IsTrue(buf.SequenceEqual(TestStructBytes));
+        Assert.AreSequenceEqual(TestStructBytes, buf);
     }
 
     [TestMethod]
@@ -128,7 +128,7 @@ sealed class Tools_Tests
     public void StructToBytes_Success()
     {
         var buf = StructToBytes(TestStruct);
-        Assert.IsTrue(buf.SequenceEqual(TestStructBytes));
+        Assert.AreSequenceEqual(TestStructBytes, buf);
     }
 
     [TestMethod]
