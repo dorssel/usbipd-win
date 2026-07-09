@@ -5,7 +5,7 @@
     "rollForward": "disable"
   },
   "msbuild-sdks": {
-    "MSTest.Sdk": "4.2.3",
+    "MSTest.Sdk": "4.3.0",
     "WixToolset.Sdk": "7.0.0"
   },
   "test": {

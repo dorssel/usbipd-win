@@ -47,7 +47,7 @@ sealed class Struct_Tests
             {
                 Marshal.StructureToPtr(instance, (nint)dst, false);
 
-                Assert.IsTrue(instanceBytes.SequenceEqual(marshalled));
+                Assert.AreSequenceEqual(instanceBytes.ToArray(), marshalled);
 
                 Marshal.DestroyStructure<T>((nint)dst);
             }

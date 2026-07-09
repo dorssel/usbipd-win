@@ -61,7 +61,7 @@ jobs:
         run: |
           dotnet test --configuration Release --no-build --property:Platform=x64 `
             --report-spekt-junit `
-            --coverage --coverage-output-format cobertura --coverage-output coverage.cobertura.xml
+            --coverage --coverage-output-format cobertura
 
       - name: Build x64 Installer
         run: |
@@ -96,7 +96,7 @@ jobs:
         with:
           fail_ci_if_error: true
           report_type: test_results
-          files: '**/TestResults/TestResults.xml'
+          files: TestResults/TestResults.xml
           disable_search: true
           token: ${{ secrets.CODECOV_TOKEN }}
 
@@ -104,7 +104,7 @@ jobs:
         uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
         with:
           fail_ci_if_error: true
-          files: '**/TestResults/coverage.cobertura.xml'
+          files: TestResults/*.cobertura.xml
           disable_search: true
           token: ${{ secrets.CODECOV_TOKEN }}
 

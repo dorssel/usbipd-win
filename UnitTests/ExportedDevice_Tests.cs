@@ -89,7 +89,7 @@ sealed class ExportedDevice_Tests
     {
         using var stream = new MemoryStream();
         TestDevice.Serialize(stream, false);
-        Assert.IsTrue(stream.ToArray().SequenceEqual(TestDeviceBytes));
+        Assert.AreSequenceEqual(TestDeviceBytes, stream.ToArray());
     }
 
     [TestMethod]
@@ -97,6 +97,6 @@ sealed class ExportedDevice_Tests
     {
         using var stream = new MemoryStream();
         TestDevice.Serialize(stream, true);
-        Assert.IsTrue(stream.ToArray().SequenceEqual(TestDeviceBytes.Concat(TestDeviceInterfacesBytes)));
+        Assert.AreSequenceEqual(TestDeviceBytes.Concat(TestDeviceInterfacesBytes), stream.ToArray());
     }
 }

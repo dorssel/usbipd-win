@@ -54,6 +54,6 @@ sealed class Program_Tests
     public void CompletionGuard_DoesNotThrow()
     {
         var completions = Program.CompletionGuard(null!, null!);
-        Assert.IsTrue(completions.SequenceEqual([]));
+        Assert.AreSequenceEqual([], completions);
     }
 }

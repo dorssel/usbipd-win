@@ -110,7 +110,7 @@ sealed class Interop_UsbIp_Tests
     public void UsbIpHeader_ToBytes_Success()
     {
         var bytes = TestUsbIpHeader.ToBytes();
-        Assert.IsTrue(bytes.SequenceEqual(TestUsbIpHeaderBytes));
+        Assert.AreSequenceEqual(TestUsbIpHeaderBytes, bytes);
     }
 
     static readonly byte[] TestUsbIpIsoPacketDescriptorBytes = [
@@ -204,7 +204,7 @@ sealed class Interop_UsbIp_Tests
             new(),
         };
         var bytes = usbIpIsoPacketDescriptors.ToBytes();
-        Assert.IsTrue(bytes.SequenceEqual(new byte[TestUsbIpIsoPacketDescriptorBytes.Length]
-            .Concat(TestUsbIpIsoPacketDescriptorBytes).Concat(new byte[TestUsbIpIsoPacketDescriptorBytes.Length]).ToArray()));
+        Assert.AreSequenceEqual(new byte[TestUsbIpIsoPacketDescriptorBytes.Length]
+            .Concat(TestUsbIpIsoPacketDescriptorBytes).Concat(new byte[TestUsbIpIsoPacketDescriptorBytes.Length]).ToArray(), bytes);
     }
 }
