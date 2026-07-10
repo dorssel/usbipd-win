@@ -10,9 +10,9 @@
       },
       "GitVersion.MsBuild": {
         "type": "Direct",
-        "requested": "[6.8.1, )",
-        "resolved": "6.8.1",
-        "contentHash": "x3lIU/s5zFuacWETug6PmeAo0lDXjYjEVWq5OPEQy4FXxbc6MrW/4/+4Ewvmgxsakd8IHvcQPhthYJ4KDg0Tww=="
+        "requested": "[6.8.2, )",
+        "resolved": "6.8.2",
+        "contentHash": "eTd8jUiogUXpVssFyDWWdMrPr5Cdc57tWaQ3Cv/eMIhnumOHZhDkc/wcy8hYU8aH7NS4VT2w/pHjVITDSTXMGw=="
       },
       "WixToolset.Firewall.wixext": {
         "type": "Direct",
