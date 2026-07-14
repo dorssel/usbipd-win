@@ -44,9 +44,9 @@
       },
       "System.CommandLine": {
         "type": "Direct",
-        "requested": "[2.0.9, )",
-        "resolved": "2.0.9",
-        "contentHash": "SW0WhEk4NFVZ4lOnsLrHQOV/7s0eTidezNybHQWXfqhuXWB17X3RXbrifeWBbUx1iu+NcYchVSufmW7svjUEnA=="
+        "requested": "[2.0.10, )",
+        "resolved": "2.0.10",
+        "contentHash": "6i1D6/U3i1f/PiXTt9pDvbJwdXEe0F2DZPup6BHzeIu5yPk/lkFzgtrJnPbj54JWUh8Y9vJeKG/TZIT6MkF8TA=="
       },
       "Microsoft.Extensions.Configuration": {
         "type": "Transitive",
