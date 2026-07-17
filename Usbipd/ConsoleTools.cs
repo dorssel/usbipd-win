@@ -298,9 +298,19 @@ static partial class ConsoleTools
         return true;
     }
 
-    public static bool CheckWriteAccess(IConsole console)
+    public static bool CheckDevicesWriteAccess(IConsole console)
     {
-        if (!UsbipdRegistry.Instance.HasWriteAccess)
+        if (!UsbipdRegistry.Instance.HasDevicesWriteAccess)
+        {
+            console.ReportError("Access denied; this operation requires administrator privileges.");
+            return false;
+        }
+        return true;
+    }
+
+    public static bool CheckPolicyWriteAccess(IConsole console)
+    {
+        if (!UsbipdRegistry.Instance.HasPolicyWriteAccess)
         {
             console.ReportError("Access denied; this operation requires administrator privileges.");
             return false;
