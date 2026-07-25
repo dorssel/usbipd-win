@@ -6,7 +6,7 @@ SPDX-License-Identifier: GPL-3.0-only
 -->
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
     <Fragment>
-        <ComponentGroup Id="PowerShell" Directory="APPLICATIONFOLDER" Source="$(PowerShellDir)">
+        <ComponentGroup Id="PowerShell" Directory="APPLICATIONFOLDER">
             <File Id="Usbipd.PowerShell.dll" Name="Usbipd.PowerShell.dll" />
         </ComponentGroup>
     </Fragment>

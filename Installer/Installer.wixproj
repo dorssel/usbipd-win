@@ -10,11 +10,18 @@ SPDX-License-Identifier: GPL-3.0-only
     <Platforms>x64;ARM64</Platforms>
     <RuntimeIdentifiers>win-x64;win-arm64</RuntimeIdentifiers>
     <OutputName>usbipd-win</OutputName>
-    <PublishDir>..\Usbipd\bin\publish\$(Platform)</PublishDir>
-    <PowerShellDir>..\Usbipd.PowerShell\bin\publish</PowerShellDir>
-    <DefineConstants>PublishDir=$(PublishDir);PowerShellDir=$(PowerShellDir);DriversDir=..\Drivers\$(Platform);Copyright=$(Copyright)</DefineConstants>
+    <DefineConstants>Copyright=$(Copyright)</DefineConstants>
     <Pedantic>true</Pedantic>
+    <BuildProjectReferences>false</BuildProjectReferences>
   </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Usbipd\Usbipd.csproj" Publish="true" />
+    <ProjectReference Include="..\Usbipd.PowerShell\Usbipd.PowerShell.csproj" Publish="true" />
+  </ItemGroup>
+  <ItemGroup>
+    <BindPath Include="..\Usbipd\bin\publish\$(Platform)" />
+    <BindPath Include="..\Usbipd.PowerShell\bin\publish" />
+  </ItemGroup>
   <Target Name="SetTarget" AfterTargets="GetVersion">
     <!--
     Now that we have determined the version, augment the OutputName to include the version number.

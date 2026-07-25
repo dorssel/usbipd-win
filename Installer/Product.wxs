@@ -158,7 +158,7 @@ SPDX-License-Identifier: GPL-3.0-only
 
     <Fragment>
         <StandardDirectory Id="ProgramFiles64Folder">
-            <Directory Id="APPLICATIONFOLDER" Name="usbipd-win" FileSource="$(var.PublishDir)" />
+            <Directory Id="APPLICATIONFOLDER" Name="usbipd-win" />
         </StandardDirectory>
     </Fragment>
 </Wix>
