@@ -52,12 +52,18 @@ jobs:
           dotnet restore
           dotnet restore Installer
 
-      - name: Build
+      - name: Build x64
         run: |
-          dotnet build --configuration Release --no-restore --property:Platform=x64 --binaryLogger:build-x64.binlog
-          dotnet build --configuration Release --no-restore --property:Platform=ARM64 Usbipd --binaryLogger:build-arm64.binlog
+          dotnet build --configuration Release --no-restore --property:Platform=x64 `
+            --binaryLogger:build-x64.binlog
 
-      - name: Test
+      - name: Build arm64
+        run: |
+          dotnet build --configuration Release --no-restore --property:Platform=ARM64 --property:BuildProjectReferences=false Usbipd `
+            --binaryLogger:build-arm64.binlog
+          # NOTE: Only build Usbipd for arm64. All platform-independent projects have already been built.
+
+      - name: Test (x64 only)
         run: |
           dotnet test --configuration Release --no-build --property:Platform=x64 `
             --report-spekt-junit `

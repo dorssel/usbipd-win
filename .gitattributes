@@ -14,14 +14,17 @@
 *.license       text
 *.json          text
 *.yml   text
+*.xml   text
 
 *.slnx  text
 *.snk   binary
 
-*.csproj   text
-*.cs       text eol=crlf
-*.props    text
-*.targets  text
+*.csproj    text
+*.cs        text eol=crlf
+*.props     text
+*.targets   text
+*.manifest	text
+*.rc2       text
 
 *.wixproj   text
 *.wxs       text

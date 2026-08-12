@@ -1,0 +1,40 @@
+// SPDX-FileCopyrightText: 2026 Frans van Dorsselaer
+//
+// SPDX-License-Identifier: GPL-3.0-only
+
+#ifdef APSTUDIO_INVOKED
+#error This file is not editable with the visual studio resource editor.
+#endif
+
+
+LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
+
+VS_VERSION_INFO VERSIONINFO
+    FILEVERSION VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH, CI_BUILD_NUMBER
+    PRODUCTVERSION VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH, COMMITS_SINCE_VERSION_SOURCE
+    FILEFLAGSMASK VS_FFI_FILEFLAGSMASK
+    FILEFLAGS FILE_FLAGS
+    FILEOS VOS_NT_WINDOWS32
+    FILETYPE VFT_APP
+    FILESUBTYPE 0
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "{{BlockCulture}}"
+        BEGIN
+            VALUE "CompanyName", "{{CompanyName}}"
+            VALUE "FileDescription", "Utility for sharing locally connected USB devices to other machines"
+            VALUE "FileVersion", "{{FileVersion}}"
+            VALUE "InternalName", "usbipd"
+            VALUE "LegalCopyright", "{{LegalCopyright}}"
+            VALUE "OriginalFilename", "usbipd.exe"
+            VALUE "ProductName", "{{ProductName}}"
+            VALUE "ProductVersion", "{{ProductVersion}}"
+            {{OptionalPrivateBuild}}
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", {{LCID}}, {{CodePage}}
+    END
+END
