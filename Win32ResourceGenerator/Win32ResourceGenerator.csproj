@@ -1,0 +1,36 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!--
+SPDX-FileCopyrightText: 2026 Frans van Dorsselaer
+
+SPDX-License-Identifier: GPL-3.0-only
+-->
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+
+    <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+
+    <Configurations>Release</Configurations>
+    <Configuration>Release</Configuration>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.Windows.CsWin32" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.Windows.SDK.BuildTools" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="EmbeddedResources\**" />
+    <EmbeddedResource Remove="EmbeddedResources\**\*.license" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>WindowsSDKBuildToolsBinVersionedArchFolder</_Parameter1>
+      <_Parameter2>$(WindowsSDKBuildToolsBinVersionedArchFolder)</_Parameter2>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+</Project>

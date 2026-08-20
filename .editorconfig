@@ -191,7 +191,7 @@ charset = utf-8-bom
 indent_size = 2
 insert_final_newline = false
 
-[*.{manifest,props,targets}]
+[*.{props,targets}]
 charset = utf-8-bom
 indent_size = 2
 
@@ -214,3 +214,15 @@ insert_final_newline = false
 [{global.json,dotnet-tools.json,Directory.Packages.props}]
 charset = utf-8
 insert_final_newline = false
+
+[*.{xml,manifest}]
+charset = utf-8
+indent_size = 2
+tab_width = 2
+insert_final_newline = true
+
+[*.{rc,rc2}]
+charset = utf-8
+indent_size = 4
+tab_width = 4
+insert_final_newline = true

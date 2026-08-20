@@ -7,6 +7,7 @@ SPDX-License-Identifier: GPL-3.0-only
 <Wix
     xmlns="http://wixtoolset.org/schemas/v4/wxs"
     xmlns:fw="http://wixtoolset.org/schemas/v4/wxs/firewall"
+    xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util"
     >
     <Fragment>
         <DirectoryRef Id="APPLICATIONFOLDER">
@@ -91,6 +92,12 @@ SPDX-License-Identifier: GPL-3.0-only
 
             <Component Id="COPYING.md">
                 <File Id="COPYING.md" Name="COPYING.md" />
+            </Component>
+
+            <Component Id="EventManifest.xml">
+                <File Id="EventManifest.xml" Name="EventManifest.xml">
+                    <util:EventManifest MessageFile="[#usbipd.exe]" ResourceFile="[#usbipd.exe]" />
+                </File>
             </Component>
         </DirectoryRef>
 
@@ -197,6 +204,7 @@ SPDX-License-Identifier: GPL-3.0-only
         <ComponentGroup Id="usbipd">
             <ComponentRef Id="COPYING.md" />
             <ComponentRef Id="usbipd.exe" />
+            <ComponentRef Id="EventManifest.xml" />
         </ComponentGroup>
     </Fragment>
 </Wix>

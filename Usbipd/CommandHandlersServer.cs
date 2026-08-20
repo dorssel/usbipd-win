@@ -2,8 +2,6 @@
 //
 // SPDX-License-Identifier: GPL-3.0-only
 
-using System.Diagnostics;
-using Microsoft.Extensions.Hosting.WindowsServices;
 using static Usbipd.ConsoleTools;
 
 namespace Usbipd;
@@ -34,43 +32,34 @@ sealed partial class CommandHandlers : ICommandHandlers
 
         using var host = Host.CreateDefaultBuilder()
             .UseWindowsService()
-            .ConfigureAppConfiguration((context, builder) =>
-            {
-                var defaultConfig = new Dictionary<string, string?>();
-                if (WindowsServiceHelpers.IsWindowsService())
-                {
-                    // EventLog defaults to Warning, which is OK for .NET components,
-                    //      but we want to specifically log Information from our own component.
-                    defaultConfig.Add($"Logging:EventLog:LogLevel:{nameof(Usbipd)}", "Information");
-                }
-                else
-                {
-                    // When not running as a Windows service, do not spam the EventLog.
-                    defaultConfig.Add("Logging:EventLog:LogLevel:Default", "None");
-                }
-                // set the above as defaults
-                _ = builder.AddInMemoryCollection(defaultConfig);
+            .ConfigureAppConfiguration((context, builder) => _ = builder
+                // set the defaults
+                .AddInMemoryCollection(new Dictionary<string, string?>
+                    {
+                        // Our ETW logger only logs explicit LoggerMessages (and not ASP.NET and what not).
+                        { $"Logging:Etw:LogLevel:Default", "None" },
+                        // It is smart enough to only log events when a listener is attached.
+                        { $"Logging:Etw:LogLevel:{nameof(Usbipd)}", "Trace" }
+                    })
                 // allow overrides from the environment
-                _ = builder.AddEnvironmentVariables();
+                .AddEnvironmentVariables()
                 // allow overrides from the command line
-                _ = builder.AddCommandLine(args);
-            })
-            .ConfigureLogging((context, logging) =>
-            {
-                if (!EventLog.SourceExists(Program.Product))
-                {
-                    EventLog.CreateEventSource(Program.Product, "Application");
-                }
-                _ = logging.AddEventLog(settings => settings.SourceName = Program.Product);
-            })
-            .ConfigureServices((hostContext, services) =>
-            {
-                _ = services.AddHostedService<Server>();
-                _ = services.AddSingleton<PcapNg>();
-                _ = services.AddScoped<ClientContext>();
-                _ = services.AddScoped<ConnectedClient>();
-                _ = services.AddScoped<AttachedClient>();
-            })
+                .AddCommandLine(args)
+            )
+            .ConfigureLogging((context, logging) => _ = logging
+                // The default builder also adds an EventLog provider, but we don't want that.
+                .ClearProviders()
+                .AddConsole()
+                .AddDebug()
+                .AddEtwLogger()
+            )
+            .ConfigureServices((hostContext, services) => _ = services
+                .AddHostedService<Server>()
+                .AddSingleton<PcapNg>()
+                .AddScoped<ClientContext>()
+                .AddScoped<ConnectedClient>()
+                .AddScoped<AttachedClient>()
+            )
             .Build();
 
         await host.RunAsync(cancellationToken);

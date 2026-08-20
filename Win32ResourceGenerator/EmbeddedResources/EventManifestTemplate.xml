@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<instrumentationManifest xmlns="{{DefaultXmlNs}}" xmlns:win="{{WinXmlNs}}">
+  <instrumentation>
+    <events>
+      <provider name="{{ProviderName}}" guid="{{ProviderGuid}}" symbol="P" resourceFileName="usbipd.exe" messageFileName="usbipd.exe" message="$(string.Provider.Name)">
+        <channels>
+          <channel name="{{ProviderName}}/Operational" chid="O" type="Operational" enabled="true" message="$(string.Channel.Operational.Name)" />
+          <channel name="{{ProviderName}}/Debug" chid="D" type="Debug" enabled="false" message="$(string.Channel.Debug.Name)" />
+        </channels>
+        <templates>
+          <template tid="T">
+            <data name="Message" inType="win:UnicodeString"/>
+          </template>
+        </templates>
+        <events>
+          {{eventsXml}}
+        </events>
+      </provider>
+    </events>
+  </instrumentation>
+  <localization>
+    <resources culture="en-US">
+      <stringTable>
+        <string id="Provider.Name" value="{{ProviderName}}" />
+        <string id="Channel.Operational.Name" value="Operational" />
+        <string id="Channel.Debug.Name" value="Debug" />
+        <string id="M" value="%1" />
+      </stringTable>
+    </resources>
+  </localization>
+</instrumentationManifest>
