@@ -46,7 +46,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
 
     <!-- Bump MSTest.Sdk "transitive" dependencies (they are actually direct dependencies) -->
-    <!-- none at this time -->
+    <MicrosoftTestingExtensionsCodeCoverageVersion>18.10.0</MicrosoftTestingExtensionsCodeCoverageVersion>
 
     <!-- Deterministic builds -->
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
