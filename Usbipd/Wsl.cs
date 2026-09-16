@@ -97,6 +97,9 @@ static partial class Wsl
         _ = startInfo.Environment.Remove("WSL_UTF8");
         if (linux is not null)
         {
+            // This ensures that Ctrl+C is handled by our parent process only and is not hijacked by wsl.exe.
+            startInfo.CreateNewProcessGroup = true;
+            startInfo.CreateNoWindow = true;
             startInfo.ArgumentList.Add("--distribution");
             startInfo.ArgumentList.Add(linux.Value.distribution);
             startInfo.ArgumentList.Add("--user");
