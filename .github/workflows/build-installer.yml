@@ -80,21 +80,33 @@ jobs:
           dotnet publish --configuration Release --no-build --runtime win-arm64 --property:PublishProfile=arm64 Usbipd --binaryLogger:publish-arm64.binlog
           dotnet build --configuration Release --no-restore --property:Platform=ARM64 Installer --binaryLogger:installer-arm64.binlog
 
-      # GitHub will always zip the artifacts and add .zip to the filename.
-      # Therefore, it makes no sense to upload individual .msi files. We always upload everything as a single artifacts container.
-      - name: Upload Artifacts
-        id: upload
+      - name: Upload x64 Installer
+        id: upload-x64
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: artifacts
-          path: 'Installer/bin/*/release/*.msi'
+          archive: false
+          path: Installer/bin/x64/Release/usbipd-win_${{ env.GitVersion_MajorMinorPatch }}_x64.msi
 
-      - name: Build Attestation
+      - name: Upload arm64 Installer
+        id: upload-arm64
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          archive: false
+          path: Installer/bin/arm64/Release/usbipd-win_${{ env.GitVersion_MajorMinorPatch }}_arm64.msi
+
+      - name: Build x64 Attestation
         if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
         uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
         with:
-          subject-name: artifacts.zip
-          subject-digest: sha256:${{ steps.upload.outputs.artifact-digest }}
+          subject-name: usbipd-win_${{ env.GitVersion_MajorMinorPatch }}_x64.msi
+          subject-digest: sha256:${{ steps.upload-x64.outputs.artifact-digest }}
+
+      - name: Build arm64 Attestation
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-name: usbipd-win_${{ env.GitVersion_MajorMinorPatch }}_arm64.msi
+          subject-digest: sha256:${{ steps.upload-arm64.outputs.artifact-digest }}
 
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
