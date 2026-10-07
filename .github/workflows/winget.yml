@@ -20,7 +20,7 @@ jobs:
 
     steps:
       - name: Publish (WinGet)
-        uses: vedantmgoyal9/winget-releaser@4ffc7888bffd451b357355dc214d43bb9f23917e # v2
+        uses: vedantmgoyal9/winget-releaser@f29ed1ffd34f91223a2aebaa71beaab0901ff9fd # v2
         with:
           identifier: dorssel.usbipd-win
           token: ${{ secrets.WINGET_TOKEN }}
