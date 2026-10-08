@@ -53,6 +53,7 @@ SetupDiSetDeviceInstallParams
 
 FILE_SKIP_COMPLETION_PORT_ON_SUCCESS
 
+DEVPKEY_Device_BusReportedDeviceDesc
 DEVPKEY_Device_Children
 DEVPKEY_Device_CompatibleIds
 DEVPKEY_Device_DevNodeStatus
