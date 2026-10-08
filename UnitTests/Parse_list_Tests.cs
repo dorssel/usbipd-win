@@ -12,7 +12,7 @@ sealed class Parse_list_Tests
     public void Success()
     {
         var mock = CreateMock();
-        mock.Setup(m => m.List(false,
+        mock.Setup(m => m.List(false, false,
             It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Success));
 
         Test(ExitCode.Success, mock, "list");
@@ -22,17 +22,27 @@ sealed class Parse_list_Tests
     public void SuccessWithUsbids()
     {
         var mock = CreateMock();
-        mock.Setup(m => m.List(true,
+        mock.Setup(m => m.List(true, false,
             It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Success));
 
         Test(ExitCode.Success, mock, "list", "--usbids");
     }
 
     [TestMethod]
+    public void SuccessWithConnected()
+    {
+        var mock = CreateMock();
+        mock.Setup(m => m.List(false, true,
+            It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Success));
+
+        Test(ExitCode.Success, mock, "list", "--connected");
+    }
+
+    [TestMethod]
     public void Failure()
     {
         var mock = CreateMock();
-        mock.Setup(m => m.List(false,
+        mock.Setup(m => m.List(false, false,
             It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(ExitCode.Failure));
 
         Test(ExitCode.Failure, mock, "list");
@@ -42,7 +52,7 @@ sealed class Parse_list_Tests
     public void Canceled()
     {
         var mock = CreateMock();
-        mock.Setup(m => m.List(false,
+        mock.Setup(m => m.List(false, false,
             It.IsNotNull<IConsole>(), It.IsAny<CancellationToken>())).Throws<OperationCanceledException>();
 
         Test(ExitCode.Canceled, mock, "list");
