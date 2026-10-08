@@ -20,7 +20,7 @@ interface ICommandHandlers
     Task<ExitCode> Detach(VidPid vidPid, IConsole console, CancellationToken cancellationToken);
     Task<ExitCode> DetachAll(IConsole console, CancellationToken cancellationToken);
     Task<ExitCode> License(IConsole console, CancellationToken cancellationToken);
-    Task<ExitCode> List(bool usbIds, IConsole console, CancellationToken cancellationToken);
+    Task<ExitCode> List(bool usbIds, bool connectedOnly, IConsole console, CancellationToken cancellationToken);
     Task<ExitCode> PolicyAdd(PolicyRule rule, IConsole console, CancellationToken cancellationToken);
     Task<ExitCode> PolicyList(IConsole console, CancellationToken cancellationToken);
     Task<ExitCode> PolicyRemove(Guid guid, IConsole console, CancellationToken cancellationToken);
