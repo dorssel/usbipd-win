@@ -460,11 +460,16 @@ static class Program
         }
         {
             //
-            //  list [--usbids]
+            //  list [--usbids] [--connected]
             //
             var usbidsOption = new Option<bool>("--usbids", "-u")
             {
                 Description = "Show device description from Linux database",
+                Arity = ArgumentArity.Zero,
+            };
+            var connectedOption = new Option<bool>("--connected", "-c")
+            {
+                Description = "Only show connected devices",
                 Arity = ArgumentArity.Zero,
             };
             //
@@ -474,9 +479,10 @@ static class Program
                 "Lists currently connected USB devices as well as USB devices that are shared but are not currently connected.")
             {
                 usbidsOption,
+                connectedOption,
             };
             listCommand.SetAction(async (parseResult, cancellationToken) => (int)
-                await commandHandlers.List(parseResult.GetValue(usbidsOption), console, cancellationToken)
+                await commandHandlers.List(parseResult.GetValue(usbidsOption), parseResult.GetValue(connectedOption), console, cancellationToken)
             );
             rootCommand.Subcommands.Add(listCommand);
         }
