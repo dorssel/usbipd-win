@@ -96,6 +96,8 @@ sealed class CommandHandlersCli_Tests
         var console = new TestConsole();
 
         await cli.List(false, true, console, TestContext.CancellationToken);
+        Assert.Contains("Connected:", console.OutText);
+        Assert.DoesNotContain("Persisted:", console.OutText);
     }
 
     [TestMethod]
