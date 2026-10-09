@@ -92,10 +92,22 @@ sealed class CommandHandlersCli_Tests
     [TestMethod]
     public async Task List_Connected()
     {
-        var cli = (ICommandHandlers)new CommandHandlers();
-        var console = new TestConsole();
+        const string persistedDescription = "Persisted Test Device";
+        UsbipdRegistry.Instance.Persist(@"USB\VID_1111&PID_1111\111111", persistedDescription);
 
+        var cli = (ICommandHandlers)new CommandHandlers();
+
+        var console = new TestConsole();
+        await cli.List(false, false, console, TestContext.CancellationToken);
+        Assert.Contains("Connected:", console.OutText);
+        Assert.Contains("Persisted:", console.OutText);
+        Assert.Contains(persistedDescription, console.OutText);
+
+        console = new TestConsole();
         await cli.List(false, true, console, TestContext.CancellationToken);
+        Assert.Contains("Connected:", console.OutText);
+        Assert.DoesNotContain("Persisted:", console.OutText);
+        Assert.DoesNotContain(persistedDescription, console.OutText);
     }
 
     [TestMethod]
