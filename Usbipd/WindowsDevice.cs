@@ -154,6 +154,15 @@ sealed partial class WindowsDevice : IEquatable<WindowsDevice>
                 AddDescription(friendlyName);
             }
 
+            // The BusReportedDeviceDesc is very useful for USB\COMPOSITE, as it often contains the
+            // USB string table description of the device, which is more specific than the FriendlyName.
+            // For example, it can distinguish between different types of HID devices,
+            // whereas the FriendlyName is often just "HID Device" for all of them.
+            if (TryGetProperty(Node, PInvoke.DEVPKEY_Device_BusReportedDeviceDesc, out string description))
+            {
+                AddDescription(description);
+            }
+
             foreach (var childDevice in Children)
             {
                 // NAME is FriendlyName (if it exists), or else it is Description (if it exists).
