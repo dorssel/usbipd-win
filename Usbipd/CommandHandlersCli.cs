@@ -113,7 +113,7 @@ sealed partial class CommandHandlers : ICommandHandlers
         }
     }
 
-    Task<ExitCode> ICommandHandlers.List(bool usbIds, IConsole console, CancellationToken cancellationToken)
+    Task<ExitCode> ICommandHandlers.List(bool usbIds, bool connectedOnly, IConsole console, CancellationToken cancellationToken)
     {
         if (!CheckInstalled(console))
         {
@@ -138,16 +138,19 @@ sealed partial class CommandHandlers : ICommandHandlers
         }
         console.Out.WriteLine();
 
-        console.Out.WriteLine("Persisted:");
-        console.Out.WriteLine($"{"GUID",-36}  DEVICE");
-        foreach (var device in allDevices.Where(d => !d.BusId.HasValue && d.PersistedGuid.HasValue).OrderBy(d => d.PersistedGuid.GetValueOrDefault()))
+        if (!connectedOnly)
         {
-            Debug.Assert(device.PersistedGuid.HasValue);
-            console.Out.Write($"{device.PersistedGuid.Value,-36:D}  ");
-            console.WriteTruncated(GetDescription(device, usbIds), 60, false);
+            console.Out.WriteLine("Persisted:");
+            console.Out.WriteLine($"{"GUID",-36}  DEVICE");
+            foreach (var device in allDevices.Where(d => !d.BusId.HasValue && d.PersistedGuid.HasValue).OrderBy(d => d.PersistedGuid.GetValueOrDefault()))
+            {
+                Debug.Assert(device.PersistedGuid.HasValue);
+                console.Out.Write($"{device.PersistedGuid.Value,-36:D}  ");
+                console.WriteTruncated(GetDescription(device, usbIds), 60, false);
+                console.Out.WriteLine();
+            }
             console.Out.WriteLine();
         }
-        console.Out.WriteLine();
 
         _ = console.CheckAndReportServerRunning(false);
         console.ReportIfForceNeeded();
