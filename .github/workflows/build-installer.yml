@@ -82,14 +82,14 @@ jobs:
 
       - name: Upload x64 Installer
         id: upload-x64
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           archive: false
           path: Installer/bin/x64/Release/usbipd-win_${{ env.GitVersion_MajorMinorPatch }}_x64.msi
 
       - name: Upload arm64 Installer
         id: upload-arm64
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           archive: false
           path: Installer/bin/arm64/Release/usbipd-win_${{ env.GitVersion_MajorMinorPatch }}_arm64.msi
