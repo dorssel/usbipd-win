@@ -31,6 +31,12 @@ static class VBoxUsb
                 }
             }
             {
+                // GET_DEVICE initializes the driver's cached high-speed flag used for ISO scheduling.
+                // USBSUP_GETDEV contains one pointer; the driver requires equally sized input and output.
+                var output = new byte[IntPtr.Size];
+                _ = await file.IoControlAsync(SUPUSB_IOCTL.GET_DEVICE, output, output);
+            }
+            {
                 var output = new byte[Unsafe.SizeOf<UsbSupClaimDev>()];
                 // NOTE: input is not actually used by the driver, but it needs to be present and have the same length as the output.
                 _ = await file.IoControlAsync(SUPUSB_IOCTL.USB_CLAIM_DEVICE, output, output);
