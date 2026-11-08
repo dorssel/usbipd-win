@@ -12,16 +12,12 @@ using System.Diagnostics;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
-using System.Reflection;
 using Usbipd.Automation;
 
 namespace Usbipd;
 
 static class Program
 {
-    public static readonly string Product = Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyProductAttribute>()!.Product;
-    public static readonly string Copyright = Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyCopyrightAttribute>()!.Copyright;
-
     static void AddParseError<T>(ArgumentResult argumentResult)
     {
         var value = argumentResult.Tokens[0].Value;
@@ -182,7 +178,7 @@ static class Program
         public override int Invoke(ParseResult parseResult)
         {
             // Always prepend the product and version.
-            parseResult.InvocationConfiguration.Output.WriteLine($"{Product} {GitVersionInformation.MajorMinorPatch}");
+            parseResult.InvocationConfiguration.Output.WriteLine($"{ThisAssembly.Product} {ThisAssembly.NuGetPackageVersion}");
             parseResult.InvocationConfiguration.Output.WriteLine();
 
             var command = parseResult.CommandResult.Command;

@@ -12,7 +12,9 @@ SPDX-License-Identifier: GPL-3.0-only
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
 
     <Configurations>Release</Configurations>
-    <Configuration>Release</Configuration>
+
+    <!-- We cannot use the version info injected into the generator itself, as the generator always uses Release build. -->
+    <NBGV_EmitThisAssemblyClass>false</NBGV_EmitThisAssemblyClass>
   </PropertyGroup>
 
   <ItemGroup>

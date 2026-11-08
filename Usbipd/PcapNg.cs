@@ -447,7 +447,7 @@ sealed partial class PcapNg
         block.Write((ushort)0); // minor PcapNg version
         block.Write(0xffffffffffffffff); // unspecified section size
         AddOption(block, 3, $"{Environment.OSVersion.VersionString}"); // shb_os
-        AddOption(block, 4, $"{Program.Product} {GitVersionInformation.InformationalVersion}"); // shb_userappl
+        AddOption(block, 4, $"{ThisAssembly.Product} {ThisAssembly.NuGetPackageVersion}"); // shb_userappl
         return FinishBlock(block);
     }
 

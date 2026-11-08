@@ -82,7 +82,7 @@ sealed partial class Server : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        Logger.Debug(GitVersionInformation.InformationalVersion);
+        Logger.Debug(ThisAssembly.AssemblyInformationalVersion);
 
         // Cleanup any left-overs in case the previous instance crashed.
         _ = UsbipdRegistry.Instance.SetAllDevicesAsDetached();

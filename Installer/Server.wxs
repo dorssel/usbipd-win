@@ -69,7 +69,7 @@ SPDX-License-Identifier: GPL-3.0-only
                 -->
                 <RegistryKey Root="HKLM" Key="SOFTWARE\usbipd-win" ForceDeleteOnUninstall="yes">
                     <RegistryValue Name="APPLICATIONFOLDER" Type="string" Value="[APPLICATIONFOLDER]" />
-                    <RegistryValue Name="Version" Type="string" Value="$(var.GitVersion_MajorMinorPatch)" />
+                    <RegistryValue Name="Version" Type="string" Value="$(var.NuGetPackageVersion)" />
                     <RegistryKey
                         Key="Devices"
                         ForceCreateOnInstall="yes"

@@ -8,6 +8,7 @@ using System.Globalization;
 using System.Reflection;
 using System.Text;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.Diagnostics;
 using Windows.Win32;
 using Windows.Win32.Storage.FileSystem;
 
@@ -19,8 +20,6 @@ public class Generator : IIncrementalGenerator
     readonly string WindowsSDKBuildToolsBinVersionedArchFolder;
 
     readonly byte[] Resources;
-
-    readonly FileVersionInfo FileVersionInfo;
 
     readonly string EventManifestTemplate;
 
@@ -69,9 +68,20 @@ public class Generator : IIncrementalGenerator
                     VersionInfoTemplate = reader.ReadToEnd();
                 }
             }
-            // Our own FileVersionInfo is used to generate the VersionInfo.rc file.
-            FileVersionInfo = FileVersionInfo.GetVersionInfo(assembly.Location);
         }
+    }
+
+    static BuildOptions CreateTargetBuildOptions(AnalyzerConfigOptionsProvider provider)
+    {
+        // NOTE: We need to box the struct in order to set its properties through reflection.
+        object buildOptions = new BuildOptions();
+        foreach (var p in typeof(BuildOptions).GetProperties())
+        {
+            _ = provider.GlobalOptions.TryGetValue($"build_property.{p.Name}", out var value);
+            p.SetValue(buildOptions, value ?? string.Empty);
+        }
+        // Unbox the struct and return it.
+        return (BuildOptions)buildOptions;
     }
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
@@ -84,20 +94,23 @@ public class Generator : IIncrementalGenerator
                 && !syntaxNode.SyntaxTree.FilePath.EndsWith(".g.cs", StringComparison.OrdinalIgnoreCase),
             (context, _) => LoggerMessage.Create(context));
 
-        var buildOptions = context.AnalyzerConfigOptionsProvider.Select((provider, ct) =>
-        {
-            _ = provider.GlobalOptions.TryGetValue("build_property.ProjectDir", out var projectDir);
-            _ = provider.GlobalOptions.TryGetValue("build_property.intermediateOutputPath", out var intermediateOutputPath);
-            _ = provider.GlobalOptions.TryGetValue("build_property.Configuration", out var configuration);
-            return new BuildOptions(projectDir ?? string.Empty, intermediateOutputPath ?? string.Empty, configuration ?? string.Empty);
-        });
+        var buildOptions = context.AnalyzerConfigOptionsProvider.Select((provider, cancellationToken) => CreateTargetBuildOptions(provider));
 
-        var loggerMessagesWithOptions = loggerMessages.Collect().Combine(buildOptions);
+        // We need to access ThisAssembly *from the target project* (because the generator always uses Release build itself).
+        var messagesAndOptionsAndCompiler = loggerMessages.Collect().Combine(buildOptions).Combine(context.CompilationProvider);
 
-        context.RegisterSourceOutput(loggerMessagesWithOptions, (context, loggerMessagesWithOptions) =>
+        context.RegisterSourceOutput(messagesAndOptionsAndCompiler, (context, messagesAndOptionsAndCompiler) =>
         {
-            var loggerMessages = loggerMessagesWithOptions.Left;
-            var buildOptions = loggerMessagesWithOptions.Right;
+            var loggerMessages = messagesAndOptionsAndCompiler.Left.Left;
+            var buildOptions = messagesAndOptionsAndCompiler.Left.Right;
+            var compilation = messagesAndOptionsAndCompiler.Right;
+
+            var targetAssembly = compilation.GetTypeByMetadataName("ThisAssembly");
+            if (targetAssembly is null)
+            {
+                // ThisAssembly is not available in the target project (yet), so we cannot generate the Win32 resources.
+                return;
+            }
 
             var seenIds = new Dictionary<int, LoggerMessage>();
             var hasErrors = false;
@@ -185,7 +198,7 @@ public class Generator : IIncrementalGenerator
             var applicationManifest = File.ReadAllBytes(Path.Combine(buildOptions.ProjectDir, "app.manifest"));
             _ = UpdateIfContentChanged(Path.Combine(generatorOutputDir, "app.manifest"), applicationManifest);
 
-            _ = GenerateVersionInfo(generatorOutputDir, buildOptions.Configuration == "Release");
+            _ = GenerateVersionInfo(targetAssembly, generatorOutputDir, buildOptions);
 
             if (IsUpdateRequired(generatorOutputDir,
                 ["Resources.rc", "app.manifest", "VersionInfo.rc", "EventManifest.rc", "EventManifestTEMP.BIN", "MSG00001.bin"],
@@ -245,23 +258,32 @@ public class Generator : IIncrementalGenerator
         return true;
     }
 
-    bool GenerateVersionInfo(string generatorOutputDir, bool release)
+    static string GetConstantStringValue(INamedTypeSymbol typeSymbol, string fieldName)
+    {
+        var field = typeSymbol.GetMembers(fieldName).OfType<IFieldSymbol>().FirstOrDefault();
+
+        return field is not null && field.IsConst && field.HasConstantValue ? field.ConstantValue?.ToString() ?? string.Empty : string.Empty;
+    }
+
+    bool GenerateVersionInfo(INamedTypeSymbol targetAssembly, string generatorOutputDir, BuildOptions buildOptions)
     {
         var culture = new CultureInfo("en-US", false);
 
         var versionInfoPath = Path.Combine(generatorOutputDir, "VersionInfo.rc");
 
-        var version = new Version(GitVersionInformation.AssemblySemFileVer);
+        var assemblyFileVersion = new Version(GetConstantStringValue(targetAssembly, "AssemblyFileVersion"));
 
         VS_FIXEDFILEINFO_FILE_FLAGS fileFlags = 0;
         string? privateBuild = null;
-        if (!release)
+        if (buildOptions.Configuration != "Release")
         {
             fileFlags |= VS_FIXEDFILEINFO_FILE_FLAGS.VS_FF_DEBUG | VS_FIXEDFILEINFO_FILE_FLAGS.VS_FF_PRIVATEBUILD;
             privateBuild = "This is an unofficial (debug) build.";
         }
-        else if (version.Revision == 0)
+        else if (assemblyFileVersion.Revision == 0)
         {
+            // On official CI builds, the Revision field of the AssemblyFileVersion is set to the GITHUB_RUN_NUMBER.
+            // If it is 0, then this is a local build (not from CI).
             fileFlags |= VS_FIXEDFILEINFO_FILE_FLAGS.VS_FF_PRIVATEBUILD;
             privateBuild = "This is an unofficial (non-CI) build.";
         }
@@ -274,22 +296,26 @@ public class Generator : IIncrementalGenerator
 
         var versionInfoContent = VersionInfoTemplate
             .Replace("VS_VERSION_INFO", $"{PInvoke.VS_VERSION_INFO}")
-            .Replace("VERSION_MAJOR", $"{version.Major}")
-            .Replace("VERSION_MINOR", $"{version.Minor}")
-            .Replace("VERSION_PATCH", $"{version.Build}")
-            .Replace("CI_BUILD_NUMBER", $"{version.Revision}")
-            .Replace("COMMITS_SINCE_VERSION_SOURCE", $"{GitVersionInformation.CommitsSinceVersionSource}")
+            .Replace("VERSION_MAJOR", $"{assemblyFileVersion.Major}")
+            .Replace("VERSION_MINOR", $"{assemblyFileVersion.Minor}")
+            .Replace("VERSION_PATCH", $"{assemblyFileVersion.Build}")
+            // GITHUB_RUN_NUMBER is stored in the Revision field of the numeric FILEVERSION (already available as the Revision of the AssemblyFileVersion).
+            .Replace("GITHUB_RUN_NUMBER", $"{assemblyFileVersion.Revision}")
+            // The commit height is stored in the Revision field of the numeric PRODUCTVERSION.
+            .Replace("COMMITS_SINCE_VERSION_SOURCE", GetConstantStringValue(targetAssembly, "GitVersionHeight"))
             .Replace("VOS_NT_WINDOWS32", $"0x{(uint)VS_FIXEDFILEINFO_FILE_OS.VOS_NT_WINDOWS32:x8}L")
             .Replace("VFT_APP", $"0x{(uint)VS_FIXEDFILEINFO_FILE_TYPE.VFT_APP:x8}L")
             .Replace("VS_FFI_FILEFLAGSMASK", $"0x{PInvoke.VS_FFI_FILEFLAGSMASK:x8}L")
             .Replace("FILE_FLAGS", $"0x{(uint)fileFlags:x8}L")
             .Replace("{{OptionalPrivateBuild}}", privateBuild)
             .Replace("{{BlockCulture}}", $"{culture.LCID:x4}{Encoding.Unicode.CodePage:x4}")
-            .Replace("{{CompanyName}}", $"{FileVersionInfo.CompanyName}")
-            .Replace("{{FileVersion}}", $"{FileVersionInfo.FileVersion}")
-            .Replace("{{LegalCopyright}}", $"{FileVersionInfo.LegalCopyright}")
-            .Replace("{{ProductName}}", $"{FileVersionInfo.ProductName}")
-            .Replace("{{ProductVersion}}", $"{FileVersionInfo.ProductVersion}")
+            .Replace("{{CompanyName}}", GetConstantStringValue(targetAssembly, "Company"))
+            .Replace("{{FileDescription}}", GetConstantStringValue(targetAssembly, "AssemblyTitle"))
+            .Replace("{{FileVersion}}", GetConstantStringValue(targetAssembly, "AssemblyInformationalVersion"))
+            .Replace("{{InternalName}}", GetConstantStringValue(targetAssembly, "AssemblyName"))
+            .Replace("{{LegalCopyright}}", GetConstantStringValue(targetAssembly, "Copyright"))
+            .Replace("{{ProductName}}", GetConstantStringValue(targetAssembly, "Product"))
+            .Replace("{{ProductVersion}}", GetConstantStringValue(targetAssembly, "NuGetPackageVersion"))
             .Replace("{{LCID}}", $"{culture.LCID}")
             .Replace("{{CodePage}}", $"{Encoding.Unicode.CodePage}")
             ;

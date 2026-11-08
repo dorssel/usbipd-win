@@ -10,7 +10,7 @@
 LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
 
 VS_VERSION_INFO VERSIONINFO
-    FILEVERSION VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH, CI_BUILD_NUMBER
+    FILEVERSION VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH, GITHUB_RUN_NUMBER
     PRODUCTVERSION VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH, COMMITS_SINCE_VERSION_SOURCE
     FILEFLAGSMASK VS_FFI_FILEFLAGSMASK
     FILEFLAGS FILE_FLAGS
@@ -23,9 +23,9 @@ BEGIN
         BLOCK "{{BlockCulture}}"
         BEGIN
             VALUE "CompanyName", "{{CompanyName}}"
-            VALUE "FileDescription", "Utility for sharing locally connected USB devices to other machines"
+            VALUE "FileDescription", "{{FileDescription}}"
             VALUE "FileVersion", "{{FileVersion}}"
-            VALUE "InternalName", "usbipd"
+            VALUE "InternalName", "{{InternalName}}"
             VALUE "LegalCopyright", "{{LegalCopyright}}"
             VALUE "OriginalFilename", "usbipd.exe"
             VALUE "ProductName", "{{ProductName}}"

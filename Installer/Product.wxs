@@ -10,11 +10,10 @@ SPDX-License-Identifier: GPL-3.0-only
     >
     <Package
         ProductCode="$(var.ProductCode)"
-        Name="usbipd-win"
+        Name="$(var.Product)"
         Language="1033"
-        Codepage="0"
-        Version="$(var.GitVersion_MajorMinorPatch)"
-        Manufacturer="Frans van Dorsselaer"
+        Version="$(var.BuildVersion3Components)"
+        Manufacturer="$(var.Company)"
         UpgradeCode="{EA1D5623-E6A7-4E4A-9259-E3972226646F}"
         UpgradeStrategy="majorUpgrade"
         InstallerVersion="500"

@@ -42,8 +42,12 @@ SPDX-License-Identifier: GPL-3.0-only
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
     <PublishDocumentationFiles>false</PublishDocumentationFiles>
 
-    <!-- GitVersion will handle this -->
-    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+    <!-- Nerdbank.GitVersioning -->
+    <GitVersionBaseDirectory>$(MSBuildThisFileDirectory)</GitVersionBaseDirectory>
+    <PublicRelease Condition="!$(ContinuousIntegrationBuild)">false</PublicRelease>
+    <PublicRelease Condition="'$(GITHUB_REF_NAME)' != 'master'">false</PublicRelease>
+    <PublicRelease Condition="'$(Configuration)' != 'Release'">false</PublicRelease>
+    <NBGV_SetCloudBuildVersionVars Condition="'$(NBGV_SetCloudBuildVersionVars)' != 'true'">false</NBGV_SetCloudBuildVersionVars>
 
     <!-- Bump MSTest.Sdk "transitive" dependencies (they are actually direct dependencies) -->
     <!-- none at this time -->
@@ -60,20 +64,35 @@ SPDX-License-Identifier: GPL-3.0-only
   <!-- Required for Dependabot -->
   <PropertyGroup Label="Dependabot" Condition="'$(DEPENDABOT)' == 'true'">
     <RestoreLockedMode>false</RestoreLockedMode>
-    <GitVersion_AllowShallowEnabled>true</GitVersion_AllowShallowEnabled>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="GitVersion.MsBuild" PrivateAssets="all" />
+    <PackageReference Include="Nerdbank.GitVersioning" PrivateAssets="all" />
   </ItemGroup>
 
-  <Target Name="SetCopyright" AfterTargets="GetVersion">
+  <ItemGroup>
+    <PrereleaseIdentifier Condition="!$(ContinuousIntegrationBuild)" Include="private" />
+    <PrereleaseIdentifier Condition="'$(GITHUB_REF_NAME)' != 'master'" Include="dev" />
+    <PrereleaseIdentifier Condition="'$(Configuration)' != 'Release'" Include="debug" />
+  </ItemGroup>
+
+  <Target Name="VersioningFixups" AfterTargets="GetBuildVersion">
     <PropertyGroup>
       <!-- For deterministic builds, use the commit year as the copyright year. -->
-      <CopyrightYear Condition="$(ContinuousIntegrationBuild)">$([System.DateTime]::Parse($(GitVersion_CommitDate)).ToString("yyyy"))</CopyrightYear>
-      <CopyrightYear Condition="!$(ContinuousIntegrationBuild)">$([System.DateTime]::UtcNow.ToString("yyyy"))</CopyrightYear>
-      <Copyright>Copyright (C) $(CopyrightYear)  $(Company)</Copyright>
+      <Copyright>Copyright © $([System.DateTime]::new($(GitCommitDateTicks)).Year)  $(Company)</Copyright>
+      <!-- We want the full commit hash in the InformationalVersion (but not in the NuGet package version, which has a limit of 64 characters). -->
+      <AssemblyInformationalVersion>$(AssemblyInformationalVersion.Split('+')[0])+$(GitCommitId)</AssemblyInformationalVersion>
+      <!-- We inject the GitHub run-number as the fourth component of the file version. 0 means "no CI build number" (i.e. a non-CI build). -->
+      <AssemblyFileVersion Condition="'$(GITHUB_RUN_NUMBER)' != ''">$(BuildVersion3Components).$(GITHUB_RUN_NUMBER)</AssemblyFileVersion>
+      <AssemblyFileVersion Condition="'$(GITHUB_RUN_NUMBER)' == ''">$(BuildVersion3Components).0</AssemblyFileVersion>
     </PropertyGroup>
+    <ItemGroup>
+      <AdditionalThisAssemblyFields Include="Company" String="$(Company)" />
+      <AdditionalThisAssemblyFields Include="Copyright" String="$(Copyright)" />
+      <AdditionalThisAssemblyFields Include="GitVersionHeight" String="$(GitVersionHeight)" />
+      <AdditionalThisAssemblyFields Include="NuGetPackageVersion" String="$(NuGetPackageVersion)" />
+      <AdditionalThisAssemblyFields Include="Product" String="$(Product)" />
+    </ItemGroup>
   </Target>
 
 </Project>

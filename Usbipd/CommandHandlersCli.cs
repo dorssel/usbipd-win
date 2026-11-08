@@ -74,8 +74,8 @@ sealed partial class CommandHandlers : ICommandHandlers
         // 70 leads (approximately) to the GPL default.
         var width = console.IsOutputRedirected ? 70 : console.WindowWidth;
         foreach (var line in Wrap($"""
-            {Program.Product} {GitVersionInformation.MajorMinorPatch}
-            {Program.Copyright}
+            {ThisAssembly.Product} {ThisAssembly.NuGetPackageVersion}
+            {ThisAssembly.Copyright}
 
             This program is free software: you can redistribute it and/or modify \
             it under the terms of the GNU General Public License as published by \

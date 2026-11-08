@@ -68,14 +68,15 @@ static class Installation
 
             var applicationFolder = GetRegistryStringValue(stdout, "APPLICATIONFOLDER");
             var exeFile = Path.Combine(Path.GetFullPath(applicationFolder), "usbipd.exe");
-            if (!Version.TryParse(GetRegistryStringValue(stdout, "Version"), out var version) || !File.Exists(exeFile))
+            if (!File.Exists(exeFile))
             {
                 throw new ApplicationFailedException("usbipd-win is not installed.");
             }
-            if (version != Version.Parse(GitVersionInformation.MajorMinorPatch))
+            var installedVersion = GetRegistryStringValue(stdout, "Version");
+            if (installedVersion != ThisAssembly.NuGetPackageVersion)
             {
                 throw new ApplicationFailedException(
-                    $"PowerShell module version {GitVersionInformation.MajorMinorPatch} does not match installed usbipd-win version {version}.");
+                    $"PowerShell module version {ThisAssembly.NuGetPackageVersion} does not match installed usbipd-win version {installedVersion}.");
             }
 #if DEBUG
             return Path.GetFullPath(Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetCallingAssembly().Location),

@@ -2,11 +2,11 @@
   "version": 2,
   "dependencies": {
     ".NETStandard,Version=v2.0": {
-      "GitVersion.MsBuild": {
+      "Nerdbank.GitVersioning": {
         "type": "Direct",
-        "requested": "[6.8.2, )",
-        "resolved": "6.8.2",
-        "contentHash": "eTd8jUiogUXpVssFyDWWdMrPr5Cdc57tWaQ3Cv/eMIhnumOHZhDkc/wcy8hYU8aH7NS4VT2w/pHjVITDSTXMGw=="
+        "requested": "[3.10.94, )",
+        "resolved": "3.10.94",
+        "contentHash": "sn6gFIx6bwFj3Me0XGmek3gLZi/MZC8C4tRLwslXGeBcXcVxvFpZyDrQA93G8TiYgxTS7J7triKB7hj5wXzSxA=="
       },
       "NETStandard.Library": {
         "type": "Direct",
