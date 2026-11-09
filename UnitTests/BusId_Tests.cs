@@ -1,4 +1,4 @@
-﻿// SPDX-FileCopyrightText: 2022 Frans van Dorsselaer
+// SPDX-FileCopyrightText: 2022 Frans van Dorsselaer
 //
 // SPDX-License-Identifier: GPL-3.0-only
 
@@ -26,6 +26,10 @@ sealed class BusId_Tests
         {
             var busId = new BusId(0, 1);
         });
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() =>
+        {
+            var busId = new BusId(100, 1);
+        });
     }
 
     [TestMethod]
@@ -34,6 +38,10 @@ sealed class BusId_Tests
         Assert.ThrowsExactly<ArgumentOutOfRangeException>(() =>
         {
             var busId = new BusId(1, 0);
+        });
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() =>
+        {
+            var busId = new BusId(1, 100);
         });
     }
 
