@@ -52,6 +52,12 @@ jobs:
           dotnet restore
           dotnet restore Installer
 
+      - name: GitVersioning
+        run: |
+          dotnet build --configuration Release --no-restore `
+            --property:NBGV_SetCloudBuildVersionVars=true `
+            --target:Win32ResourceGenerator:GetBuildVersion,Win32ResourceGenerator:SetCloudBuildVersionVars
+
       - name: Build x64
         run: |
           dotnet build --configuration Release --no-restore --property:Platform=x64 `
@@ -85,27 +91,27 @@ jobs:
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           archive: false
-          path: Installer/bin/x64/Release/usbipd-win_${{ env.GitVersion_MajorMinorPatch }}_x64.msi
+          path: Installer/bin/x64/Release/usbipd-win_${{ env.NBGV_NuGetPackageVersion }}_x64.msi
 
       - name: Upload arm64 Installer
         id: upload-arm64
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           archive: false
-          path: Installer/bin/arm64/Release/usbipd-win_${{ env.GitVersion_MajorMinorPatch }}_arm64.msi
+          path: Installer/bin/arm64/Release/usbipd-win_${{ env.NBGV_NuGetPackageVersion }}_arm64.msi
 
       - name: Build x64 Attestation
         if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
         uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
         with:
-          subject-name: usbipd-win_${{ env.GitVersion_MajorMinorPatch }}_x64.msi
+          subject-name: usbipd-win_${{ env.NBGV_NuGetPackageVersion }}_x64.msi
           subject-digest: sha256:${{ steps.upload-x64.outputs.artifact-digest }}
 
       - name: Build arm64 Attestation
         if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
         uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
         with:
-          subject-name: usbipd-win_${{ env.GitVersion_MajorMinorPatch }}_arm64.msi
+          subject-name: usbipd-win_${{ env.NBGV_NuGetPackageVersion }}_arm64.msi
           subject-digest: sha256:${{ steps.upload-arm64.outputs.artifact-digest }}
 
       - name: Upload test results to Codecov

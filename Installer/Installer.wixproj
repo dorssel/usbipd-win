@@ -9,8 +9,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <AcceptEula>wix7</AcceptEula>
     <Platforms>x64;ARM64</Platforms>
     <RuntimeIdentifiers>win-x64;win-arm64</RuntimeIdentifiers>
-    <OutputName>usbipd-win</OutputName>
-    <DefineConstants>Copyright=$(Copyright)</DefineConstants>
+    <OutputName>$(Product)</OutputName>
     <Pedantic>true</Pedantic>
     <BuildProjectReferences>false</BuildProjectReferences>
   </PropertyGroup>
@@ -22,34 +21,34 @@ SPDX-License-Identifier: GPL-3.0-only
     <BindPath Include="..\Usbipd\bin\publish\$(Platform)" />
     <BindPath Include="..\Usbipd.PowerShell\bin\publish" />
   </ItemGroup>
-  <Target Name="SetTarget" AfterTargets="GetVersion">
-    <!--
-    Now that we have determined the version, augment the OutputName to include the version number.
-    -->
-    <Message Importance="high" Text="Version detected as $(GitVersion_FullSemVer)" />
-    <CreateProperty Value="$(OutputName)_$(GitVersion_MajorMinorPatch)_$(Platform.ToLowerInvariant())">
-      <Output TaskParameter="Value" PropertyName="TargetName" />
-    </CreateProperty>
-    <CreateProperty Value="$(TargetName)$(TargetExt)">
-      <Output TaskParameter="Value" PropertyName="TargetFileName" />
-    </CreateProperty>
-    <CreateProperty Value="$(TargetDir)$(TargetFileName)">
-      <Output TaskParameter="Value" PropertyName="TargetPath" />
-    </CreateProperty>
-    <CreateProperty Value="$(TargetName).wixpdb">
-      <Output TaskParameter="Value" PropertyName="TargetPdbFileName" />
-    </CreateProperty>
-    <CreateProperty Value="$(TargetPdbDir)$(TargetPdbFileName)">
-      <Output TaskParameter="Value" PropertyName="TargetPdbPath" />
-    </CreateProperty>
-    <!--
-    This ensures that each x.y.z version has a different ProductCode, so every update is a MajorUpgrade.
-    It also ensures that 2 builds of the same x.y.z version will never be installed simultaneously.
-    The alternative (WiX AllowSameVersionUpgrades) causes ICE61.
-    -->
-    <CreateProperty Value="$(DefineConstants);ProductCode=EA1D5623-E6A7-4E4A-9259-E39722$([System.Byte]::Parse($(GitVersion_Major)).ToString(X2))$([System.Byte]::Parse($(GitVersion_Minor)).ToString(X2))$([System.Byte]::Parse($(GitVersion_Patch)).ToString(X2))">
-      <Output TaskParameter="Value" PropertyName="DefineConstants" />
-    </CreateProperty>
+  <Target Name="SetTarget" DependsOnTargets="GetBuildVersion" AfterTargets="VersioningFixups" BeforeTargets="BeforeBuild">
+    <Message Importance="high" Text="Version detected as $(NuGetPackageVersion)" />
+    <PropertyGroup>
+      <!--
+      Now that we have determined the version, augment the OutputName to include the version number.
+      -->
+      <TargetName>$(OutputName)_$(NuGetPackageVersion)_$(Platform.ToLowerInvariant())</TargetName>
+      <TargetFileName>$(TargetName)$(TargetExt)</TargetFileName>
+      <TargetPath>$(TargetDir)$(TargetFileName)</TargetPath>
+      <TargetPdbFileName>$(TargetName).wixpdb</TargetPdbFileName>
+      <TargetPdbPath>$(TargetPdbDir)$(TargetPdbFileName)</TargetPdbPath>
+
+      <BuildVersionMajor>$([System.Version]::Parse('$(BuildVersion)').Major)</BuildVersionMajor>
+      <BuildVersionMinor>$([System.Version]::Parse('$(BuildVersion)').Minor)</BuildVersionMinor>
+      <BuildVersionBuild>$([System.Version]::Parse('$(BuildVersion)').Build)</BuildVersionBuild>
+
+      <DefineConstants>$(DefineConstants);Product=$(Product)</DefineConstants>
+      <DefineConstants>$(DefineConstants);Company=$(Company)</DefineConstants>
+      <DefineConstants>$(DefineConstants);Copyright=$(Copyright)</DefineConstants>
+      <DefineConstants>$(DefineConstants);NuGetPackageVersion=$(NuGetPackageVersion)</DefineConstants>
+      <DefineConstants>$(DefineConstants);BuildVersion3Components=$(BuildVersion3Components)</DefineConstants>
+      <!--
+      This ensures that each x.y.z version has a different ProductCode, so every update is a MajorUpgrade.
+      It also ensures that 2 builds of the same x.y.z version will never be installed simultaneously.
+      The alternative (WiX AllowSameVersionUpgrades) causes ICE61.
+      -->
+      <DefineConstants>$(DefineConstants);ProductCode=EA1D5623-E6A7-4E4A-9259-E39722$([System.Byte]::Parse($(BuildVersionMajor)).ToString(X2))$([System.Byte]::Parse($(BuildVersionMinor)).ToString(X2))$([System.Byte]::Parse($(BuildVersionBuild)).ToString(X2))</DefineConstants>
+    </PropertyGroup>
   </Target>
   <Target Name="AssumePublishedDependencies" BeforeTargets="BeforeBuild">
     <Message Importance="high" Text="Making installer for (assumed) pre-published Usbipd and Usbipd.PowerShell" />

@@ -17,3 +17,4 @@ using System.Diagnostics.CodeAnalysis;
     Justification = "Some unit tests require reflection")]
 [assembly: SuppressMessage("Style", "IDE0053:Use expression body for lambda expression", Justification = "Better readability for Assert.ThrowsExactly")]
 [assembly: SuppressMessage("Style", "IDE0058:Expression value is never used", Justification = "Not useful for tests")]
+[assembly: SuppressMessage("Usage", "MSTEST0084:Platform compatibility attributes should be consistent with '[OSCondition]'", Justification = "Everything is Windows only")]

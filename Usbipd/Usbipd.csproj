@@ -20,6 +20,7 @@ SPDX-License-Identifier: GPL-3.0-only
     <OptimizationPreference>Speed</OptimizationPreference>
 
     <AssemblyName>usbipd</AssemblyName>
+    <AssemblyTitle>USB/IP Server</AssemblyTitle>
   </PropertyGroup>
 
   <ItemGroup>

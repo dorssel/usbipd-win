@@ -41,7 +41,7 @@ sealed class UsbipdRegistry_Tests
         using var usbipdKey = TestRegistry.CreateSubKey(@"SOFTWARE\usbipd-win");
         usbipdKey.SetValue("APPLICATIONFOLDER", AppDomain.CurrentDomain.BaseDirectory);
 #pragma warning disable CS0436 // Type conflicts with imported type
-        usbipdKey.SetValue("Version", GitVersionInformation.MajorMinorPatch);
+        usbipdKey.SetValue("Version", ThisAssembly.NuGetPackageVersion);
 #pragma warning restore CS0436 // Type conflicts with imported type
         using var devicesKey = usbipdKey.CreateSubKey("Devices");
         using var policyKey = usbipdKey.CreateSubKey("Policy");

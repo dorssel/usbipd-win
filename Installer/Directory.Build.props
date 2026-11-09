@@ -9,7 +9,6 @@ SPDX-License-Identifier: GPL-3.0-only
   <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)..\'))" />
 
   <ItemGroup>
-    <PackageReference Include="Dorssel.GitVersion.MsBuild" PrivateAssets="all" />
     <PackageReference Include="WixToolset.Firewall.wixext" />
     <PackageReference Include="WixToolset.UI.wixext" />
     <PackageReference Include="WixToolset.Util.wixext" />
