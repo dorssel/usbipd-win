@@ -466,7 +466,7 @@
         "type": "Project",
         "dependencies": {
           "Microsoft.Extensions.Hosting.WindowsServices": "[10.0.15, )",
-          "System.CommandLine": "[2.0.15, )"
+          "System.CommandLine": "[3.0.0, )"
         }
       },
       "Microsoft.Extensions.Hosting.WindowsServices": {
@@ -482,9 +482,9 @@
       },
       "System.CommandLine": {
         "type": "CentralTransitive",
-        "requested": "[2.0.15, )",
-        "resolved": "2.0.15",
-        "contentHash": "zsnY7Ex2dPmbS/Nrg5RUKJFCEMbHeP9TdzmTJrsNh59mgr8ulba1SHmE1SVgmVqivvr79kV1GAlInC44F4ggEg=="
+        "requested": "[3.0.0, )",
+        "resolved": "3.0.0",
+        "contentHash": "swNpSTl0iYJeBuvYYfaY+VxzZ5YC8wklwkqDCNOq2aTQqJzjauJfh/O3Zw93nwxspWrxvZTjT45f8VPR0ParEA=="
       }
     },
     "net10.0-windows10.0.17763/win-arm64": {
