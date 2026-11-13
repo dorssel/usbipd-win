@@ -81,6 +81,12 @@ jobs:
           dotnet publish --configuration Release --no-build Usbipd.PowerShell --binaryLogger:publish-PowerShell.binlog
           dotnet build --configuration Release --no-restore --property:Platform=x64 Installer --binaryLogger:installer-x64.binlog
 
+      - name: Smoke Test (x64 only)
+        run: |
+          .\Usbipd\bin\publish\x64\usbipd.exe --version
+          .\Usbipd\bin\publish\x64\usbipd.exe --help
+          .\Usbipd\bin\publish\x64\usbipd.exe license
+
       - name: Build arm64 Installer
         run: |
           dotnet publish --configuration Release --no-build --runtime win-arm64 --property:PublishProfile=arm64 Usbipd --binaryLogger:publish-arm64.binlog

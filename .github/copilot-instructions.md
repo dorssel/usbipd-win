@@ -52,3 +52,42 @@ and aligns with Section 2 and 3 patterns, approve the configuration change.
 * **Defer to Live CI Validation:**
 Treat the actual validation of build outputs and target executions as the responsibility of the real CI runtime
 pipeline. If the structural XML is valid, approve the pull request.
+
+## 5. Pull Request Review Guidelines
+
+When reviewing pull requests, adhere to the following rules regarding approvals and environment limitations:
+
+* **Strict Compiler & AOT Checks:**
+All projects enforce `TreatWarningsAsErrors` (including Native AOT and trimming analyzers such as `IL2xxx` and `IL3xxx`).
+Do not flag potential trimming/AOT warnings or request manual build verification for them unless you spot an explicit
+suppression (`[UnconditionalSuppressMessage]`) or dynamic reflection pattern that bypasses static analysis.
+
+* **Automated Publish & CLI Smoke Tests:**
+Every pull request runs a full Native AOT `dotnet publish` in CI and executes an automated smoke test against the compiled
+standalone binary. Assume basic CLI startup, command parsing (`System.CommandLine`), and artifact generation are validated
+by CI unless the PR modifies the build/smoke-test scripts without updating test coverage.
+
+* **Review Focus:**
+Focus code reviews on behavioral regressions, edge cases, command-line argument handling logic, and unsafe
+reflection/trimming suppressions rather than general Native AOT build verification.
+
+* **Focus on Static Analysis:**
+Base your review and approval decision strictly on code quality, logic, security, style, and static correctness visible in the diff.
+
+* **Flag Risks Without Blocking:**
+If a PR introduces high-risk changes—such as major framework upgrades (.NET 11), `System.CommandLine` updates,
+platform-specific Windows code, or Native AOT/trimming configurations—note any potential edge cases or manual testing
+recommendations as informational comments, but do not mark the review as "Needs a closer look" or block approval solely
+due to environment unavailability.
+
+## Approval & CI Policy
+
+* **Do Not Withhold Approval for CI:**
+Branch protection requires all CI workflows (including Native AOT publish, `TreatWarningsAsErrors`, and CLI smoke tests)
+to pass before any pull request can merge. Never mark a PR as "Needs a closer look" or withhold approval simply to wait
+for CI confirmation of build, AOT, or runtime compatibility.
+
+* **Approval Criteria:**
+If the diff has zero unresolved code, logic, security, or trimming-suppression issues, mark the pull request as ready to
+approve. Multi-package or framework upgrades (such as .NET SDK/TFM bumps alongside `Microsoft.Extensions` and
+`System.CommandLine`) should be approved based solely on static code quality, leaving runtime verification to the mandatory CI gate.
