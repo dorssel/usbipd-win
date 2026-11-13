@@ -161,10 +161,7 @@ static class UsbIp
 
     static void ReverseEndianness(this Span<int> values)
     {
-        foreach (ref var i in values)
-        {
-            i = BinaryPrimitives.ReverseEndianness(i);
-        }
+        BinaryPrimitives.ReverseEndianness(values, values);
     }
 
     static void ReverseEndianness(this ref UsbIpHeader header)

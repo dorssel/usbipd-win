@@ -80,7 +80,7 @@ static class Installation
             }
 #if DEBUG
             return Path.GetFullPath(Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetCallingAssembly().Location),
-                @"..\..\..\..\Usbipd\bin\x64\Debug\net10.0\usbipd.exe"));
+                @"..\..\..\..\Usbipd\bin\x64\Debug\net11.0\usbipd.exe"));
 #else
             return exeFile;
 #endif

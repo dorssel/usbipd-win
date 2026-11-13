@@ -528,7 +528,7 @@ sealed partial class CommandHandlers : ICommandHandlers
         });
         var json = JsonSerializer.Serialize(state, context.State);
 
-        await console.Out.WriteAsync(json);
+        await console.Out.WriteAsync(json, cancellationToken);
         return ExitCode.Success;
     }
 
