@@ -11,7 +11,6 @@ using Windows.Win32.Foundation;
 
 namespace Usbipd;
 
-
 sealed class DriverDetails
 {
     static public readonly DriverDetails Instance = new();

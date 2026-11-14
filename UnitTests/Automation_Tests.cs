@@ -268,7 +268,7 @@ sealed class Automation_Tests
             converter.Write(writer, new(1, 42), JsonSerializerOptions.Default);
         }
         writer.Flush();
-        CollectionAssert.AreEqual("\"1-42\""u8.ToArray(), memoryStream.ToArray());
+        Assert.AreSequenceEqual("\"1-42\""u8, memoryStream.ToArray());
     }
 
     [TestMethod]
@@ -334,7 +334,7 @@ sealed class Automation_Tests
             converter.Write(writer, IPAddress.Parse("1.2.3.4"), JsonSerializerOptions.Default);
         }
         writer.Flush();
-        CollectionAssert.AreEqual("\"1.2.3.4\""u8.ToArray(), memoryStream.ToArray());
+        Assert.AreSequenceEqual("\"1.2.3.4\""u8, memoryStream.ToArray());
     }
 
     [TestMethod]

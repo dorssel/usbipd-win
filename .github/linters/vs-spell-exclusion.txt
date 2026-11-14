@@ -13,7 +13,9 @@ errno
 ffff
 ioctl
 ioctls
+json
 linux
+Nerdbank
 netstandard
 nosemgrep
 pcap

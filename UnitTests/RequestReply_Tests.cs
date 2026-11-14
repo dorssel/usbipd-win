@@ -24,6 +24,6 @@ sealed class RequestReply_Tests
         var requestReply = new RequestReply(42, [1, 2, 3]);
 
         Assert.AreEqual(42u, requestReply.Seqnum);
-        CollectionAssert.AreEqual(new byte[] { 1, 2, 3 }, requestReply.Bytes);
+        Assert.AreSequenceEqual(new byte[] { 1, 2, 3 }, requestReply.Bytes);
     }
 }

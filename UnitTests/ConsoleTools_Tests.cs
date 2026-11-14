@@ -22,7 +22,7 @@ sealed class ConsoleTools_Tests
     public void Wrap(string input, int width, string[] expected)
     {
         var result = ConsoleTools.Wrap(input, width);
-        CollectionAssert.AreEquivalent(expected, new List<string>(result));
+        Assert.AreSequenceEqual(expected, result);
     }
 
 
