@@ -57,8 +57,6 @@ public class LoggerMessage
 
     static public LoggerMessage Create(GeneratorAttributeSyntaxContext context)
     {
-        var diagnosticDescriptors = new List<DiagnosticDescriptor>();
-
         int? constructorId = null;
         int? constructorLevel = null;
         string? constructorMessage = null;

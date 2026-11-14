@@ -8,14 +8,9 @@ using Windows.Win32.System.Diagnostics.Etw;
 
 namespace Usbipd;
 
-sealed class EtwLogger : ILogger
+sealed class EtwLogger(REGHANDLE registrationHandle) : ILogger
 {
-    readonly REGHANDLE RegistrationHandle;
-
-    public EtwLogger(REGHANDLE registrationHandle)
-    {
-        RegistrationHandle = registrationHandle;
-    }
+    readonly REGHANDLE RegistrationHandle = registrationHandle;
 
     public IDisposable? BeginScope<TState>(TState state) where TState : notnull
     {

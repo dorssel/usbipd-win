@@ -84,7 +84,7 @@ sealed class UsbipdRegistry_Tests
     [TestMethod]
     public void Persist()
     {
-        Assert.HasCount(0, UsbipdRegistry.Instance.GetBoundDevices());
+        Assert.IsEmpty(UsbipdRegistry.Instance.GetBoundDevices());
 
         UsbipdRegistry.Instance.Persist(@"USB\VID_1111&PID_1111\111111", "Test 1");
         UsbipdRegistry.Instance.Persist(@"USB\VID_2222&PID_2222\222222", "Test 2");
@@ -95,7 +95,7 @@ sealed class UsbipdRegistry_Tests
     [TestMethod]
     public void GetBoundDevices_MissingInstanceId()
     {
-        Assert.HasCount(0, UsbipdRegistry.Instance.GetBoundDevices());
+        Assert.IsEmpty(UsbipdRegistry.Instance.GetBoundDevices());
 
         UsbipdRegistry.Instance.Persist(@"USB\VID_1111&PID_1111\111111", "Test 1");
         UsbipdRegistry.Instance.Persist(@"USB\VID_2222&PID_2222\222222", "Test 2");
@@ -112,7 +112,7 @@ sealed class UsbipdRegistry_Tests
     [TestMethod]
     public void GetBoundDevices_DuplicateInstanceId()
     {
-        Assert.HasCount(0, UsbipdRegistry.Instance.GetBoundDevices());
+        Assert.IsEmpty(UsbipdRegistry.Instance.GetBoundDevices());
 
         // We test case invariance as well.
         UsbipdRegistry.Instance.Persist(@"USB\VID_1111&PID_1111\111111", "Test 1");
@@ -124,7 +124,7 @@ sealed class UsbipdRegistry_Tests
     [TestMethod]
     public void GetBoundDevices_MissingDescription()
     {
-        Assert.HasCount(0, UsbipdRegistry.Instance.GetBoundDevices());
+        Assert.IsEmpty(UsbipdRegistry.Instance.GetBoundDevices());
 
         UsbipdRegistry.Instance.Persist(@"USB\VID_1111&PID_1111\111111", "Test 1");
         UsbipdRegistry.Instance.Persist(@"USB\VID_2222&PID_2222\222222", "Test 2");
@@ -162,7 +162,7 @@ sealed class UsbipdRegistry_Tests
 
         UsbipdRegistry.Instance.StopSharingAllDevices();
 
-        Assert.HasCount(0, UsbipdRegistry.Instance.GetBoundDevices());
+        Assert.IsEmpty(UsbipdRegistry.Instance.GetBoundDevices());
     }
 
     [TestMethod]
@@ -191,7 +191,7 @@ sealed class UsbipdRegistry_Tests
         {
             UsbipdRegistry.Instance.AddPolicyRule(invalidRule);
         });
-        Assert.HasCount(0, UsbipdRegistry.Instance.GetPolicyRules());
+        Assert.IsEmpty(UsbipdRegistry.Instance.GetPolicyRules());
     }
 
     [TestMethod]
@@ -254,7 +254,7 @@ sealed class UsbipdRegistry_Tests
 
         UsbipdRegistry.Instance.RemovePolicyRuleAll();
 
-        Assert.HasCount(0, UsbipdRegistry.Instance.GetPolicyRules());
+        Assert.IsEmpty(UsbipdRegistry.Instance.GetPolicyRules());
     }
 
     [TestMethod]
