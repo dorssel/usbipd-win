@@ -176,7 +176,7 @@ sealed partial class CommandHandlers : ICommandHandlers
             }
             return ExitCode.Success;
         }
-        if (!CheckWriteAccess(console))
+        if (!CheckDevicesWriteAccess(console))
         {
             return ExitCode.AccessDenied;
         }
@@ -245,7 +245,7 @@ sealed partial class CommandHandlers : ICommandHandlers
             console.ReportInfo($"Device with busid '{busId}' was already not shared.");
             return Task.FromResult(ExitCode.Success);
         }
-        if (!CheckWriteAccess(console))
+        if (!CheckDevicesWriteAccess(console))
         {
             return Task.FromResult(ExitCode.AccessDenied);
         }
@@ -275,7 +275,7 @@ sealed partial class CommandHandlers : ICommandHandlers
             // This would result in a no-op, which may not be what the user intended.
             return ExitCode.Failure;
         }
-        if (!CheckWriteAccess(console))
+        if (!CheckDevicesWriteAccess(console))
         {
             // We don't actually know if there is anything to clean up, but if there is
             // then administrator privileges are required.
@@ -354,7 +354,7 @@ sealed partial class CommandHandlers : ICommandHandlers
         // also removes stub drivers for devices that are neither shared nor connected.
         // Therefore, UnbindAll() cannot use the generic Unbind() helper.
 
-        if (!CheckWriteAccess(console))
+        if (!CheckDevicesWriteAccess(console))
         {
             return Task.FromResult(ExitCode.AccessDenied);
         }
@@ -545,7 +545,7 @@ sealed partial class CommandHandlers : ICommandHandlers
             return Task.FromResult(ExitCode.Failure);
         }
 
-        if (!CheckWriteAccess(console))
+        if (!CheckPolicyWriteAccess(console))
         {
             return Task.FromResult(ExitCode.AccessDenied);
         }
@@ -601,7 +601,7 @@ sealed partial class CommandHandlers : ICommandHandlers
             return Task.FromResult(ExitCode.Failure);
         }
 
-        if (!CheckWriteAccess(console))
+        if (!CheckPolicyWriteAccess(console))
         {
             return Task.FromResult(ExitCode.AccessDenied);
         }
@@ -617,7 +617,7 @@ sealed partial class CommandHandlers : ICommandHandlers
             return Task.FromResult(ExitCode.Failure);
         }
 
-        if (!CheckWriteAccess(console))
+        if (!CheckPolicyWriteAccess(console))
         {
             return Task.FromResult(ExitCode.AccessDenied);
         }
