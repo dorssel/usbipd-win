@@ -158,9 +158,9 @@ sealed partial class CommandHandlers : ICommandHandlers
 #pragma warning restore CA1849 // Call async methods when in an async method
     }
 
-    static ExitCode Bind(BusId busId, bool force, IConsole console)
+    static ExitCode Bind(BusId busId, bool force, IConsole console, VidPid? vidPid = null)
     {
-        var device = DeviceExtensions.GetAll().SingleOrDefault(d => d.BusId.HasValue && d.BusId.Value == busId);
+        var device = DeviceExtensions.GetAll().SingleOrDefault(d => d.BusId.HasValue && d.BusId.Value == busId && (vidPid is null || d.HardwareId == vidPid));
         if (device is null)
         {
             console.ReportError($"There is no device with busid '{busId}'.");
@@ -222,7 +222,7 @@ sealed partial class CommandHandlers : ICommandHandlers
         }
 
         return GetBusIdByHardwareId(vidPid, console) is BusId busId
-            ? Task.FromResult(Bind(busId, force, console))
+            ? Task.FromResult(Bind(busId, force, console, vidPid))
             : Task.FromResult(ExitCode.Failure);
     }
 
