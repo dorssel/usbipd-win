@@ -1,0 +1,77 @@
+# SPDX-FileCopyrightText: 2026 Frans van Dorsselaer
+#
+# SPDX-License-Identifier: GPL-3.0-only
+
+---
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+
+name: SLSA
+
+on:
+  workflow_dispatch:
+    inputs:
+      # checkov:skip=CKV_GHA_7: Required input for generating SLSA provenance for an existing release.
+      tag_name:
+        description: 'The existing release tag to generate provenance for (e.g., v1.2.0)'
+        required: true
+        type: string
+
+permissions: {}
+
+jobs:
+  subjects:
+    name: Subjects
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    outputs:
+      hashes: ${{ steps.compute-hashes.outputs.hashes }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Download Existing Release Assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE: ${{ inputs.tag_name }}
+        run: |
+          gh release download "${RELEASE}" --dir release-artifacts
+
+      - name: Fail if provenance already exists
+        run: |
+          shopt -s nullglob
+          PROVENANCE=(release-artifacts/*.intoto.jsonl)
+          if [ ${#PROVENANCE[@]} -gt 0 ]; then
+            echo "Provenance file(s) already exist."
+            exit 1
+          fi
+
+      - name: Compute Hashes
+        id: compute-hashes
+        shell: bash
+        run: |
+          cd release-artifacts
+          shopt -s dotglob
+          ASSETS=(*)
+          echo "hashes=$(sha256sum -- "${ASSETS[@]}" | base64 -w0)" >> "$GITHUB_OUTPUT"
+
+  provenance:
+    needs: [subjects]
+    # This will fail, because generator_generic_slsa3 demands using version pinning, instead of hash pinning.
+    # Instead, use the workflow from the 'slsa' branch.
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@f7dd8c54c2067bafc12ca7a55595d5ee9b75204a # v2.1.0
+
+    permissions:
+      actions: read
+      id-token: write
+      contents: write
+
+    with:
+      base64-subjects: ${{ needs.subjects.outputs.hashes }}
+      upload-assets: true
+      upload-tag-name: ${{ inputs.tag_name }}
