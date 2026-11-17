@@ -62,9 +62,9 @@ jobs:
 
   provenance:
     needs: [subjects]
-    # This will fail, because generator_generic_slsa3 demands using version pinning, instead of hash pinning.
-    # Instead, use the workflow from the 'slsa' branch.
-    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@f7dd8c54c2067bafc12ca7a55595d5ee9b75204a # v2.1.0
+    # This is a fix, because generator_generic_slsa3 demands using version pinning, instead of hash pinning.
+    # Do not merge this into the default branch.
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.1.0 # f7dd8c54c2067bafc12ca7a55595d5ee9b75204a
 
     permissions:
       actions: read
