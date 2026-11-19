@@ -1,4 +1,4 @@
-﻿// SPDX-FileCopyrightText: 2025 Frans van Dorsselaer
+// SPDX-FileCopyrightText: 2025 Frans van Dorsselaer
 //
 // SPDX-License-Identifier: GPL-3.0-only
 
@@ -217,7 +217,7 @@ sealed partial class WindowsDevice : IEquatable<WindowsDevice>
             }
             var bus = ushort.Parse(match.Groups[2].Value, CultureInfo.InvariantCulture);
             var port = ushort.Parse(match.Groups[1].Value, CultureInfo.InvariantCulture);
-            return bus == 0 || port == 0 ? BusId.IncompatibleHub : new(bus, port);
+            return bus is 0 or > 99 || port is 0 or > 99 ? BusId.IncompatibleHub : new(bus, port);
         }
     }
 
