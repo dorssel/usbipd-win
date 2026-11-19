@@ -18,6 +18,8 @@ SPDX-License-Identifier: GPL-3.0-only
     <PublishAot>true</PublishAot>
     <CopyOutputSymbolsToPublishDirectory>false</CopyOutputSymbolsToPublishDirectory>
     <OptimizationPreference>Speed</OptimizationPreference>
+    <!-- The Windows thread pool (the NativeAOT default) can hand out the same overlapped twice; use the portable thread pool. -->
+    <UseWindowsThreadPool>false</UseWindowsThreadPool>
 
     <AssemblyName>usbipd</AssemblyName>
     <AssemblyTitle>USB/IP Server</AssemblyTitle>
