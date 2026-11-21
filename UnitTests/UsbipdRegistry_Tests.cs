@@ -166,10 +166,17 @@ sealed class UsbipdRegistry_Tests
     }
 
     [TestMethod]
-    public void HasWriteAccess()
+    public void HasDevicesWriteAccess()
     {
         // The test registry is always writable.
-        Assert.IsTrue(UsbipdRegistry.Instance.HasWriteAccess);
+        Assert.IsTrue(UsbipdRegistry.Instance.HasDevicesWriteAccess);
+    }
+
+    [TestMethod]
+    public void HasPolicyWriteAccess()
+    {
+        // The test registry is always writable.
+        Assert.IsTrue(UsbipdRegistry.Instance.HasPolicyWriteAccess);
     }
 
     [TestMethod]
