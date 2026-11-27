@@ -22,6 +22,8 @@ static class Linux
     {
         SUCCESS = 0,
         /// <summary>linux: errno-base.h</summary>
+        EIO = 5,
+        /// <summary>linux: errno-base.h</summary>
         EPIPE = 32,
         /// <summary>linux: errno.h</summary>
         ETIME = 62,
