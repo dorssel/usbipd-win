@@ -320,30 +320,29 @@ sealed class AttachedEndpoint
         else
         {
             // This is a normal URB, for which the completion is awaited asynchronously.
-            if (buf.Length > 0)
+            async Task SendUrbAsync()
             {
-                // Input or output, exceptions or not, this buffer must be locked until after the ioctl has completed.
-                var gcHandle = GCHandle.Alloc(buf, GCHandleType.Pinned);
+                GCHandle handle = default;
                 try
                 {
-                    urb.buf = gcHandle.AddrOfPinnedObject();
+                    if (buf.Length != 0)
+                    {
+                        handle = GCHandle.Alloc(buf, GCHandleType.Pinned);
+                        urb.buf = handle.AddrOfPinnedObject();
+                    }
                     StructToBytes(urb, bytes);
-                    ioctl = Device.IoControlAsync(SUPUSB_IOCTL.SEND_URB, bytes, bytes);
+                    _ = await Device.IoControlAsync(SUPUSB_IOCTL.SEND_URB, bytes, bytes);
                 }
-                catch
+                finally
                 {
-                    gcHandle.Free();
-                    throw;
+                    if (handle.IsAllocated)
+                    {
+                        handle.Free();
+                    }
                 }
-                _ = ioctl.ContinueWith(task => gcHandle.Free(),
-                    CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
             }
-            else
-            {
-                urb.buf = 0;
-                StructToBytes(urb, bytes);
-                ioctl = Device.IoControlAsync(SUPUSB_IOCTL.SEND_URB, bytes, bytes);
-            }
+
+            ioctl = SendUrbAsync();
         }
 
         // At this point we have initiated the ioctl (and possibly awaited it for special cases).
@@ -352,6 +351,26 @@ sealed class AttachedEndpoint
         var replyTask = ioctl.ContinueWith(RequestReply (task, _) =>
         {
             _ = Interlocked.Decrement(ref InterlockedSubmits);
+
+            if (!task.IsCompletedSuccessfully)
+            {
+                var error = task.Exception?.GetBaseException();
+                if (Logger.IsEnabled(LogLevel.Debug))
+                {
+                    Logger.Debug($"SEND_URB failed for seq {basic.seqnum}: {error?.Message}");
+                }
+                var failed = new UsbIpHeader
+                {
+                    basic = new() { command = UsbIpCmd.USBIP_RET_SUBMIT, seqnum = basic.seqnum },
+                    ret_submit = new()
+                    {
+                        status = task.IsCanceled ? -(int)Errno.ECONNRESET : -(int)Errno.EIO,
+                        number_of_packets = submit.number_of_packets,
+                    },
+                };
+                Pcap.DumpPacketNonIsoReply(basic, submit, failed.ret_submit, ReadOnlySpan<byte>.Empty);
+                return new(basic.seqnum, failed.ToBytes());
+            }
 
             BytesToStruct(bytes, out urb);
 
