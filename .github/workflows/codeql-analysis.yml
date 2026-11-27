@@ -38,7 +38,7 @@ jobs:
           fetch-depth: 0
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
+        uses: github/codeql-action/init@915412ff23e8b7659517e607487dbeae018f2934 # v4.39.5
         with:
           languages: csharp
           build-mode: manual
@@ -60,4 +60,4 @@ jobs:
           dotnet build --configuration Release --no-restore --property:Platform=x64
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
+        uses: github/codeql-action/analyze@915412ff23e8b7659517e607487dbeae018f2934 # v4.39.5
