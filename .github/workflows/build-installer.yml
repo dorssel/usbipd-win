@@ -140,13 +140,13 @@ jobs:
 
       - name: Submit Dependencies to GitHub
         if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
-        uses: advanced-security/component-detection-dependency-submission-action@a02aeda7a175ad4dd38a13c4d3ff2df9da8f2cf0 # v0.2.0
+        uses: advanced-security/component-detection-dependency-submission-action@9887d3a4295305f4e7b03a1cfdb2099d44cadf52 # v0.2.1
         with:
           detectorArgs: MSBuildBinaryLog=Enable
           detectorsFilter: MSBuildBinaryLog
 
       - name: Dependency Review
         if: github.event_name == 'pull_request'
-        uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        uses: actions/dependency-review-action@bbc44d14a204704ccc493733616cd1e93a0321ec # v5.0.1
         with:
           comment-summary-in-pr: always
